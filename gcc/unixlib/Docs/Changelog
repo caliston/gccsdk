@@ -1,3 +1,7 @@
+Thu Aug 02 09:22:31 2001  Nick Burrett  <nick@dsvr.net>
+
+	* vfork.c: Unset debugging mode.
+
 Thu Aug 02 15:55:07 2001  John Tytgat <John.Tytgat@aaug.net>
 
         Removing clashing symbols between UnixLib and OSLib.
