@@ -1,10 +1,10 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/h/netdb,v $
- * $Date: 1997/10/09 19:59:47 $
- * $Revision: 1.5 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/netdb.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -18,6 +18,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Error status for non-reentrant lookup functions.  */
+extern int h_errno;
 
 /* Database entry for a single host. */
 struct hostent
