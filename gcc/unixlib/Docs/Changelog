@@ -1,3 +1,7 @@
+Tue Oct 02 11:18:36 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* unixlib/asm_dec.s (EOPSYS): Change to 88 inline with errno.h.
+
 Tue Oct 02 11:15:13 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* signal/_signal.s (__h_error): Call __unixlib_raise_signal

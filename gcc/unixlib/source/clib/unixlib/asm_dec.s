@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/asm_dec.s,v $
-; $Date: 2001/08/07 16:45:16 $
-; $Revision: 1.2.2.1 $
+; $Date: 2001/09/05 16:28:57 $
+; $Revision: 1.2.2.2 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -270,7 +270,7 @@ SIGUSR2 EQU	31	;   user signal 2
 SIGLOST EQU	32	;   resource lost
 SIGERR	EQU	33	;   RISC OS error
 
-EOPSYS	EQU	106	; RISC OS error
+EOPSYS	EQU	88	; RISC OS error
 
 
 OS_WriteS	EQU	&000001
