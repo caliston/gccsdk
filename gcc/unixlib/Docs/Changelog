@@ -1,3 +1,7 @@
+Mon Apr 01 11:27:23 2002  Peter Naulls  <peter@chocky.org>
+
+	* ctype.h (isprint): Fix logic error.
+
 Sat Mar 30 10:09:52 2002  Alex Waugh  <alex@alexwaugh.com>
 
 	* unix/tty.c (__ttyicanon): Don't set error if EOF is encountered.
