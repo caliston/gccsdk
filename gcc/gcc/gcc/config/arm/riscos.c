@@ -200,7 +200,7 @@ arm_error_throwback (file, line, prefix, s, ap)
       arm_throwback_new_file (arm_error_file);
       /* We might have been passed a null argument pointer.  */
       if (ap)
-        vsprintf (message, s, ap);
+        vsnprintf (message, 256, s, ap);
       /* Traditionally, warning messages are prefixed by the
          word 'warning'.  */
       arm_throwback_error (arm_error_file,
