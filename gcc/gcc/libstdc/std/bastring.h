@@ -1,5 +1,5 @@
 // Main templates for the -*- C++ -*- string classes.
-// Copyright (C) 1994, 1995 Free Software Foundation
+// Copyright (C) 1994, 1995, 1999 Free Software Foundation
 
 // This file is part of the GNU ANSI C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -169,9 +169,9 @@ public:
     }
 
   explicit basic_string (): dat (nilRep.grab ()) { }
-  basic_string (const basic_string& str): dat (str.rep ()->grab ()) { }
-  basic_string (const basic_string& str, size_type pos, size_type n = npos)
-    : dat (nilRep.grab ()) { assign (str, pos, n); }
+  basic_string (const basic_string& _str): dat (_str.rep ()->grab ()) { }
+  basic_string (const basic_string& _str, size_type pos, size_type n = npos)
+    : dat (nilRep.grab ()) { assign (_str, pos, n); }
   basic_string (const charT* s, size_type n)
     : dat (nilRep.grab ()) { assign (s, n); }
   basic_string (const charT* s)
@@ -180,20 +180,20 @@ public:
     : dat (nilRep.grab ()) { assign (n, c); }
 #ifdef __STL_MEMBER_TEMPLATES
   template<class InputIterator>
-    basic_string(InputIterator begin, InputIterator end)
+    basic_string(InputIterator __begin, InputIterator __end)
 #else
-  basic_string(const_iterator begin, const_iterator end)
+  basic_string(const_iterator __begin, const_iterator __end)
 #endif
-    : dat (nilRep.grab ()) { assign (begin, end); }
+    : dat (nilRep.grab ()) { assign (__begin, __end); }
 
   ~basic_string ()
     { rep ()->release (); }
 
   void swap (basic_string &s) { charT *d = dat; dat = s.dat; s.dat = d; }
 
-  basic_string& append (const basic_string& str, size_type pos = 0,
+  basic_string& append (const basic_string& _str, size_type pos = 0,
 			size_type n = npos)
-    { return replace (length (), 0, str, pos, n); }
+    { return replace (length (), 0, _str, pos, n); }
   basic_string& append (const charT* s, size_type n)
     { return replace (length (), 0, s, n); }
   basic_string& append (const charT* s)
@@ -208,6 +208,9 @@ public:
 #endif
     { return replace (iend (), iend (), first, last); }
 
+  void push_back(charT __c)
+  { append(1, __c); }
+  
   basic_string& assign (const basic_string& str, size_type pos = 0,
 			size_type n = npos)
     { return replace (0, npos, str, pos, n); }
@@ -343,8 +346,8 @@ public:
   size_type find (const basic_string& str, size_type pos = 0) const
     { return find (str.data(), pos, str.length()); }
   size_type find (const charT* s, size_type pos, size_type n) const;
-  size_type find (const charT* s, size_type pos = 0) const
-    { return find (s, pos, traits::length (s)); }
+  size_type find (const charT* _s, size_type pos = 0) const
+    { return find (_s, pos, traits::length (_s)); }
   size_type find (charT c, size_type pos = 0) const;
 
   size_type rfind (const basic_string& str, size_type pos = npos) const
@@ -466,36 +469,36 @@ inline basic_string <charT, traits, Allocator>
 operator+ (const basic_string <charT, traits, Allocator>& lhs,
 	   const basic_string <charT, traits, Allocator>& rhs)
 {
-  basic_string <charT, traits, Allocator> str (lhs);
-  str.append (rhs);
-  return str;
+  basic_string <charT, traits, Allocator> _str (lhs);
+  _str.append (rhs);
+  return _str;
 }
 
 template <class charT, class traits, class Allocator>
 inline basic_string <charT, traits, Allocator>
 operator+ (const charT* lhs, const basic_string <charT, traits, Allocator>& rhs)
 {
-  basic_string <charT, traits, Allocator> str (lhs);
-  str.append (rhs);
-  return str;
+  basic_string <charT, traits, Allocator> _str (lhs);
+  _str.append (rhs);
+  return _str;
 }
 
 template <class charT, class traits, class Allocator>
 inline basic_string <charT, traits, Allocator>
 operator+ (charT lhs, const basic_string <charT, traits, Allocator>& rhs)
 {
-  basic_string <charT, traits, Allocator> str (1, lhs);
-  str.append (rhs);
-  return str;
+  basic_string <charT, traits, Allocator> _str (1, lhs);
+  _str.append (rhs);
+  return _str;
 }
 
 template <class charT, class traits, class Allocator>
 inline basic_string <charT, traits, Allocator>
 operator+ (const basic_string <charT, traits, Allocator>& lhs, const charT* rhs)
 {
-  basic_string <charT, traits, Allocator> str (lhs);
-  str.append (rhs);
-  return str;
+  basic_string <charT, traits, Allocator> _str (lhs);
+  _str.append (rhs);
+  return _str;
 }
 
 template <class charT, class traits, class Allocator>
