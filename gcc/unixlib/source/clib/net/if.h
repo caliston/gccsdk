@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/if.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/net/Attic/if.h,v $
+ * $Date: 2001/09/11 15:45:23 $
+ * $Revision: 1.1.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -25,8 +25,8 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#ifndef __SYS_IF_H
-#define __SYS_IF_H 1
+#ifndef __NET_IF_H
+#define __NET_IF_H 1
 
 /*
  * Interface request structure used for socketioctl's

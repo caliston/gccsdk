@@ -1,3 +1,8 @@
+Fri Jul 26 13:32:38 2002  Nick Burrett  <nick@dsvr.net>
+
+	* stdint.h: Add missing #endif
+	* net/if.h: Set __NET_IF_H rather than __SYS_IF_H.
+
 Fri Jul 26 11:00:15 2002  Nick Burrett  <nick@dsvr.net>
 
 	* stdio/fpos.c (fseek): Set errno to EINVAL if the offset to

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdint.h,v $
- * $Date: 2001/09/14 14:01:17 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2002/02/07 10:19:30 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -147,6 +147,7 @@ typedef unsigned long int uintmax_t;
 #define INT_FAST32_MIN		(-2147483647-1)
 #ifdef __GNUC__
 #define INT_FAST64_MIN		(-9223372036854775807LL-1)
+#endif
 
 /* Maximum of fast signed integral types having a minimum size.  */
 #define INT_FAST8_MAX		(127)
