@@ -3,8 +3,15 @@
 
 export TLIB
 
-all:	make bison fileutils flex gperf grep gzip patch \
-	sed arm-simulator
+host_bin_dir = $(ux_gccpkg)/$(gn_standard_exec_prefix)
+bin_dir = $(ro_gccpkg)/$(gn_standard_exec_prefix)
+gcc_bin_dir = $(ro_gccpkg)/$(gn_gcc_bin_dir)
+LIBIBERTY = $(gcc_bin_dir)/$(TRG)/o/libiberty
+
+export host_bin_dir bin_dir gcc_bin_dir LIBIBERTY
+
+all:	make diff bison fileutils flex gperf grep gzip patch \
+	sed
 
 .PHONY: bison
 .PHONY: diff
@@ -16,9 +23,8 @@ all:	make bison fileutils flex gperf grep gzip patch \
 .PHONY: make
 .PHONY: patch
 .PHONY: sed
-.PHONY: arm-simulator
 
-arm-simulator bison diff fileutils flex gperf grep gzip make patch sed:
+bison diff fileutils flex gperf grep gzip make patch sed:
 	mkdir -p $(objdir)/riscos-progs/$@
 	$(MAKE) -C $@
 

@@ -1,7 +1,7 @@
 /* GNU ld implementation as a wrapper to an ARM/RISC OS linker
    for the GNU compiler, with support for the C++ template repository.
 
-   Copyright (C) 1997-1999 Free Software Foundation, Inc.
+   Copyright (C) 1997, 1998, 1999, 2000, 2001 Nick Burrett
    Contributed by Nick Burrett (nick.burrett@btinternet.com)
 
 This file is part of GNU CC.
@@ -24,6 +24,8 @@ Boston, MA 02111-1307, USA.  */
 /* If building for a cross-compilation environment then be sure to
    define CROSS_COMPILE.  */
 
+#include "sdk-config.h"
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -49,7 +51,7 @@ Boston, MA 02111-1307, USA.  */
 #include "demangle.h"
 #include "getopt.h"
 
-#define LD_VERSION "2.21"
+#define LD_VERSION "2.22"
 #define LD_DATE __DATE__
 
 #ifndef __GNUC__
@@ -57,7 +59,14 @@ Boston, MA 02111-1307, USA.  */
 #define __attribute__(x) /* Ignore */
 #endif
 
+/* The maximum number of times we shall re-compile a C++ program to
+   instantiate the templates.  With GCC 2.95, I suspect this feature
+   is no-longer required.  */
 #define MAX_ITERATIONS 17
+
+/* Maximum number of command line arguments that our linker supports.
+   FIXME We should remove this feature and support unlimited arguments.  */
+#define MAXARGS 2048
 
 /* Obstack allocation and deallocation routines.  */
 #define obstack_chunk_alloc xmalloc
@@ -138,6 +147,16 @@ xrealloc (char *ptr, int size)
   return result;
 }
 
+#ifndef HAVE_STPCPY
+static char *stpcpy (char *s, const char *s2)
+{
+  while ((*s++ = *s2++))
+    ;
+
+  return s - 1;
+}
+#endif
+
 static void
 linker_initialise (void)
 {
@@ -214,9 +233,9 @@ main (int argc, char *argv[])
     }
 #endif /* CROSS_COMPILE */
 
-  object_list = (args *)xmalloc (sizeof (args) * ARG_MAX);
+  object_list = (args *)xmalloc (sizeof (args) * MAXARGS);
   object_list[0].arg = (char *)0;
-  command_line = (args *)xmalloc (sizeof (args) * (ARG_MAX >> 2));
+  command_line = (args *)xmalloc (sizeof (args) * (MAXARGS >> 2));
   command_line[0].arg = (char *)0;
 
   object_offset = command_line_offset = 0;
@@ -713,7 +732,7 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
 	    s = stpcpy (s, str);
 #else
 	  temp = __riscosify (str, 0, __RISCOSIFY_DONT_TRUNCATE,
-			      filename, sizeof (filename));
+			      filename, sizeof (filename), NULL);
 	  if (s != NULL)
 	    s = stpcpy (s, filename);
 #endif
@@ -740,7 +759,7 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
 #else
       /* Convert all the objects to a RISC OS format for the linker.  */
       temp = __riscosify (str, 0, __RISCOSIFY_DONT_TRUNCATE, filename,
-			  sizeof (filename));
+			  sizeof (filename), NULL);
 #endif
       if (temp != NULL)
 	{
@@ -776,7 +795,7 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
       temp = strcpy (filename, viafile);
 #else
       temp = __riscosify (viafile, 0, __RISCOSIFY_DONT_TRUNCATE,
-			  filename, sizeof (filename));
+			  filename, sizeof (filename), NULL);
 #endif
       if (temp != NULL)
 	{
@@ -793,7 +812,7 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
   temp = strcpy (filename, redir);
 #else
   temp = __riscosify (redir, 0, __RISCOSIFY_DONT_TRUNCATE,
-		      filename, sizeof (filename));
+		      filename, sizeof (filename), NULL);
 #endif
   if (temp != NULL)
     {
@@ -1490,10 +1509,15 @@ append_arg (args *argv, int *offset, const char *text)
   if (tlink_verbose >= 5)
     printf ("append arg: offset = %d, text = %s\n", *offset, text);
 
-  argv[*offset].arg = (char *)xmalloc (strlen (text) + 1);
-  strcpy (argv[*offset].arg, text);
-  *offset = *offset + 1;
-  argv[*offset].arg = 0;
+  if (*offset >= MAXARGS)
+    printf ("append arg: too many arguments (exceeded %d)\n", MAXARGS);
+  else
+    {
+      argv[*offset].arg = (char *)xmalloc (strlen (text) + 1);
+      strcpy (argv[*offset].arg, text);
+      *offset = *offset + 1;
+      argv[*offset].arg = 0;
+    }
 }
 
 static void
@@ -1535,7 +1559,7 @@ static int check_and_add_library (const char *file_name)
   temp = strcpy (converted, file_name);
 #else
   temp = __riscosify (file_name, 0, __RISCOSIFY_DONT_TRUNCATE,
-		      converted, sizeof (converted));
+		      converted, sizeof (converted), NULL);
 #endif
   if (temp == NULL)
     return 0;
@@ -1649,11 +1673,26 @@ static void add_input_file (const char *fname)
 
 static void add_output_file (const char *fname)
 {
+#if defined(CROSS_COMPILE) && defined(ENABLE_FILETYPE_FF8)
+  char tmp[256];
+  int len;
+
+  /* If asked for, append a filetype to the RISC OS executable in the
+     format of ,xxx.  Network mounts, will automatically remove the
+     ,xxx suffix and replace it with proper filetype information.  */
+  strcpy (tmp, fname);
+  len = strlen (tmp);
+  /* If the filetype suffix already exists then don't add it again.  */
+  if (len < 4 || (strcmp (tmp + len - 4, ",ff8") && len < 252))
+    strcat (tmp, ",ff8");
+#else
+  const char *tmp = fname;
+#endif
   if (tlink_verbose >= 4)
-    printf ("adding output file %s\n", fname);
+    printf ("adding output file %s\n", tmp);
 
   append_arg (command_line, &command_line_offset, "-o");
-  append_arg (command_line, &command_line_offset, fname);
+  append_arg (command_line, &command_line_offset, tmp);
 }
 
 static void add_option_file (const char *option, const char *fname)

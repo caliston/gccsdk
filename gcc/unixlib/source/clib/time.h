@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/time.h,v $
- * $Date: 2000/07/15 14:52:12 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -46,7 +46,7 @@ extern clock_t clock (void);
 extern time_t time (time_t *__result);
 
 struct tm
-  {
+{
   int tm_sec; 	/* seconds (0 - 59) */
   int tm_min; 	/* minutes (0 - 59) */
   int tm_hour;	/* hours (0 - 23) */
@@ -57,8 +57,8 @@ struct tm
   int tm_yday;	/* day of year (0 - 365) */
   int tm_isdst;	/* 1 - DST in effect,0 - not,-1 - not known */
   int tm_gmtoff;	/* offset east of UTC (GMT) in seconds */
-  char tm_zone[4];	/* abbreviation of timezone name */
-  };
+  char *tm_zone;	/* abbreviation of timezone name */
+};
 
 /* Convert the broken-down time value into a string in a standard
    format:  "Sat Jul 12 14:47:12 1997\n"  */
@@ -82,7 +82,7 @@ extern struct tm *gmtime (const time_t *__time);
 
 /* Convert a broken-down time structure to a calendar time
    representation.  */
-extern time_t mktime (const struct tm *__brokentime);
+extern time_t mktime (struct tm *__brokentime);
 
 /* Place characters into the 's' as controlled by the 'format'.
    'format' is specialised for printing components of 'brokentime'

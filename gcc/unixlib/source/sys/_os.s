@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_os.s,v $
-; $Date: 2000/07/15 14:52:34 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:21 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -14,15 +14,11 @@
 
 	EXPORT	os_console
 os_console
+	; Set operating system output stream to the console only
 	MOV	a1, #3
 	MOV	a2, #0
 	SWI	XOS_Byte
-	BVS	os_console_l1
-	MOV	a1, #2
-	MOV	a2, #2
-	SWI	XOS_Byte
 	MOVVC	a1, #0
-os_console_l1
 	MVNVS	a1, #0
 	return	AL, pc, lr
 
@@ -66,6 +62,7 @@ os_keyflush
 
 	EXPORT	os_423
 os_423
+	; Enable serial port and keyboard for input
 	MOV	a1, #2
 	MOV	a2, #2
 	SWI	XOS_Byte

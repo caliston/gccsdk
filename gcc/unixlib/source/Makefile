@@ -1,22 +1,21 @@
 # Makefile for UnixLib for the ARM/RISC OS GCC port
-# Copyright (c) 2000 Nick Burrett
+# Copyright (c) 2000, 2001 Nick Burrett
 # Written by Nick Burrett <nick@dsvr.net>
 #
 # This file is part of the GNU Compiler Collection
 #
 
 # Defs for GCC
-CC = $(standard_exec_prefix)/gcc $(CFLAGS)
-CFLAGS = -O2 $(OPTS) $(TARGET_DEFS) -D__UNIXLIB_INTERNALS -pedantic -Wall -Wno-long-long
+CROSS_CFLAGS += -D__UNIXLIB_INTERNALS -pedantic -Wall -Wno-long-long
 INCLUDES = -isystem clib
 
 libunixobj=$(objdir)/unixlib/$(TRG)
 
 $(libunixobj)/%.o: %.c
-	$(CC) -o $@ -c $< $(INCLUDES) $(CFL)
+	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ -c $< $(INCLUDES) $(CFL)
 
 $(libunixobj)/%.o: %.s
-	$(CC) -o $@ -c $< $(CFL1)
+	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ -c $< $(CFL1)
 
 COMPLEX = $(libunixobj)/complex/cabs.o \
 	$(libunixobj)/complex/cacos.o \
@@ -329,7 +328,6 @@ SIGNAL_ASM =	$(libunixobj)/signal/sigexec.o \
 	$(libunixobj)/signal/_coredump.o \
 	$(libunixobj)/signal/_signal.o
 
-
 STDIO = $(libunixobj)/stdio/clearerr.o \
 	$(libunixobj)/stdio/fclose.o \
 	$(libunixobj)/stdio/feof.o \
@@ -400,8 +398,7 @@ SYS =	$(libunixobj)/sys/alarm.o \
 	$(libunixobj)/sys/syslib.o \
 	$(libunixobj)/sys/vfork.o
 
-SYS_ASM =	$(libunixobj)/sys/_address.o \
-	$(libunixobj)/sys/_alloca.o \
+SYS_ASM =	$(libunixobj)/sys/_alloca.o \
 	$(libunixobj)/sys/_divsi3.o \
 	$(libunixobj)/sys/_divtest.o \
 	$(libunixobj)/sys/_exec.o \
@@ -580,10 +577,21 @@ ASM_OBJS = $(MATH_ASM) $(COMMON_ASM) $(GCCCOMPAT_ASM) $(NETLIB_ASM) \
 	$(SIGNAL_ASM) $(STDIO_ASM) $(SCL_ASM) $(SYS_ASM) $(TIME_ASM) \
 	$(UNIX_ASM)
 
-all:	$(TBIN)/$(TRG)/unixlib.o
+all:	$(ux_gcc_bin_dir)/$(TRG)/unixlib.o $(ro_gcc_bin_dir)/$(TRG)/o/unixlib
 
-$(TBIN)/$(TRG)/unixlib.o:	$(C_OBJS) $(ASM_OBJS)
-	$(standard_exec_prefix)/libfile -c $@ $(C_OBJS) $(ASM_OBJS)
+install_headers:
+	$(insthdr) clib "*.h" unixlib $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/arpa "*.h" unixlib/arpa $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/machine "*.h" unixlib/machine $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/netinet "*.h" unixlib/netinet $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/sys "*.h" unixlib/sys $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/unixlib "*.[hs]" unixlib/unixlib $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+
+$(ux_gcc_bin_dir)/$(TRG)/unixlib.o:	$(C_OBJS) $(ASM_OBJS)
+	$(CROSS_AR) $(CROSS_AR_FLAGS) $@ $(C_OBJS) $(ASM_OBJS)
+
+$(ro_gcc_bin_dir)/$(TRG)/o/unixlib:	$(C_OBJS) $(ASM_OBJS)
+	$(CROSS_AR) $(CROSS_AR_FLAGS) $@ $(C_OBJS) $(ASM_OBJS)
 
 # Static dependencies:
 $(libunixobj)/abort.o: abort.c
@@ -642,7 +650,7 @@ $(libunixobj)/common/cvttime.o: common/cvttime.c
 $(libunixobj)/common/exist.o: common/exist.c
 $(libunixobj)/common/fdname.o: common/fdname.c
 $(libunixobj)/common/funcallerr.o: common/funcallerr.c
-$(libunixobj)/ommon/riscosify.o: common/riscosify.c
+$(libunixobj)/common/riscosify.o: common/riscosify.c
 $(libunixobj)/common/riscosifyc.o: common/riscosifyc.c
 $(libunixobj)/common/serial.o: common/serial.c
 $(libunixobj)/common/sockvalid.o: common/sockvalid.c

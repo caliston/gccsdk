@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,9 +9,9 @@
 #include "BString.h"
 #include "BError.h"
 
-#ifndef UNIX
-extern "C" OS_File(int *);
-extern "C" OS_GBPB(int *);
+#ifndef CROSS_COMPILE
+extern "C" void OS_File(int *);
+extern "C" void OS_GBPB(int *);
 #endif
 
 Buffer::Buffer()
@@ -187,17 +188,18 @@ int Buffer::length()
 
 unsigned char &Buffer::operator[](int a_index)
 {
- if(a_index>=m_length)
- {
- 	m_data=(unsigned char *) realloc(m_data,(a_index+1)*sizeof(unsigned char));
-	if(!m_data)
- 		THROW_SPEC_ERR(BError::NewFailed)
- 	int i;
- 	m_size=m_length=a_index+1;
- 	for(i=0;i<=a_index;i++)
- 		m_data[i]=0;
- }
- return m_data[a_index];
+  if(a_index>=m_length)
+    {
+      m_data=(unsigned char *) realloc(m_data,(a_index+1)*sizeof(unsigned char));
+      if(!m_data)
+	THROW_SPEC_ERR(BError::NewFailed);
+
+      int i;
+      m_size=m_length=a_index+1;
+      for(i=0;i<=a_index;i++)
+	m_data[i]=0;
+    }
+  return m_data[a_index];
 }
 
 unsigned char *Buffer::getData()
@@ -222,7 +224,7 @@ void Buffer::save(const BString &a_file, int a_append)
  }
  else
  {
-#ifdef UNIX
+#ifdef CROSS_COMPILE
 	fp = fopen (a_file(), "wb");
 	if (fp == NULL)
 	  THROW_SPEC_ERR(BError::CantOpenFile);
@@ -249,7 +251,7 @@ void Buffer::load(const BString &a_file)
  if(!fp)
  	THROW_SPEC_ERR(BError::FileNotFound);
 
-#ifdef UNIX
+#ifdef CROSS_COMPILE
  struct stat f;
 
  stat (a_file(), &f);
