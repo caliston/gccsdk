@@ -117,11 +117,11 @@ getInclude (const char *filename, const char *mode)
 	sprintf (incpath, "%s%c%s", incdir[i], DIR, file);
 #ifdef CROSS_COMPILE
 	if (access (incpath, F_OK) == 0)
-	  return (fopen (incpath, mode));
+	  return fopen (incpath, mode);
 #else
 	if ((fp = fopen (incpath, mode)) != 0)
 	  return fp;
 #endif
       }
-  return (NULL);
+  return NULL;
 }

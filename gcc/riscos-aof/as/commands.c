@@ -389,6 +389,7 @@ c_get (void)
   if (!getfp)
     {
       error (ErrorError, TRUE, "Cannot open file \"%s\"", filename);
+      free (filename);
       return;
     }
   push_file (asmfile);
@@ -397,7 +398,7 @@ c_get (void)
   dependPut (" ", filename, "");
 #endif
 #ifdef CROSS_COMPILE
-  inputName = getfp;
+  inputName = filename;
 #else
   inputName = CanonicaliseFile (getfp);
 #endif
@@ -442,7 +443,7 @@ c_lnk (void)
   inputFinish ();
   inputLineNo = 0;
 #ifdef CROSS_COMPILE
-  inputName = lnkfp;
+  inputName = filename;
 #else
   inputName = CanonicaliseFile (lnkfp);
 #endif
