@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/fcntl.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -91,6 +91,8 @@ extern "C" {
 #define O_PIPE		0x4000 /* UnixLib specific */
 #define O_UNLINKED	0x8000 /* UnixLib specific - unlink file on close */
 
+/* Don't make terminal device controlling terminal */
+#define O_NOCTTY       0x10000
 
 
 /* Duplicate file descriptor.  */

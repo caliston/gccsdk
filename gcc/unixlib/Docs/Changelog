@@ -1,3 +1,26 @@
+Thu Feb  7 10:17:01 2002  Peter Naulls  <peter@chocky.org>
+
+	* alloc.c: Clean up compiler warnings.
+	* netlib/host.c: Likewise.
+	* stdarg.h: Likewise.
+	* machine/nan.h (NAN): Likewise.
+
+	* inttypes.h: Add __extension__ to GCC specific C extensions.
+	* stdint.h: Likewise.
+	* stdlib.h: Likewise.
+	* wchar.h: Likewise.
+	* unixlib/types.h: Likewise.
+
+	* math.h (exp2, exp10, round, lround, llround, drem): Prototype.
+	* machine/ieee754.h (__ieee754_exp): Prototype.
+	
+	* fcntl.h (O_NOCTTY): Define.
+	* assert.h (assert): Remove __noreturn__.
+	
+Tue Jan 31 16:18:22 2002  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* getopt.h: Don't include the GNU specific getopt long stuff.
+
 Tue Jan 31 16:18:22 2002  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* getopt.h: New file.

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/wchar.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -231,13 +231,15 @@ extern unsigned long int wcstoul (const wchar_t *__nptr,
 #if defined (__GNUC__)
 /* Convert initial portion of wide string NPTR to `long int'
    representation.  */
-extern long long int wcstoq (const wchar_t *__nptr, wchar_t **__endptr,
-				  int __base);
+__extension__ extern long long int wcstoq (const wchar_t *__nptr,
+					   wchar_t **__endptr,
+					   int __base);
 
 /* Convert initial portion of wide string NPTR to `unsigned long long int'
    representation.  */
-extern unsigned long long int wcstouq (const wchar_t *__nptr,
-					    wchar_t **__endptr, int __base);
+__extension__ extern unsigned long long int wcstouq (const wchar_t *__nptr,
+						     wchar_t **__endptr,
+						     int __base);
 #endif /* GCC.  */
 
 

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/inttypes.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -239,6 +239,7 @@ extern "C" {
 #endif
 
 /* We have to define the `uintmax_t' type using `lldiv_t'.  */
+__extension__
 typedef struct
 {
   long long int quot;         /* Quotient.  */

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/math.h,v $
- * $Date: 2001/08/08 18:42:55 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -80,8 +80,14 @@ extern double atanh (double __x) __attribute__ ((__const__));
 
 /* Exponential and logarithmic functions.  */
 
-/* Exponentional function of x.  */
+/* Exponentional function of x (2 ^ e).  */
 extern double exp (double __x) __attribute__ ((__const__));
+
+/* Exponentional function of x (2 ^ x).  */
+extern double exp2 (double __x) __attribute__ ((__const__));
+
+/* Exponentional function of x (10 ^ x).  */
+extern double exp10 (double __x) __attribute__ ((__const__));
 
 /* Break value into a normalized fracton and an integral power of 2.  */
 extern double frexp (double value, int *__exp);
@@ -118,6 +124,17 @@ extern double fabs (double __x) __attribute__ ((__const__));
 
 /* Largest integer not greater than X.  */
 extern double floor (double __x) __attribute__ ((__const__));
+
+/* Nearest integer to X, away from 0 as a double.  */
+extern double round (double __x) __attribute__ ((__const__));
+
+/* Nearest integer to X, away from 0 as a long int.  */
+extern long lround (double __x) __attribute__ ((__const__));
+
+#ifdef __GNUC__
+/* Nearest integer to X, away from 0 as a long long.  */
+extern long long llround (double __x) __attribute__ ((__const__));
+#endif
 
 /* Floating-point modulo remainder of X/Y.  */
 extern double fmod (double __x, double __y) __attribute__ ((__const__));
@@ -163,6 +180,9 @@ extern double ceil (double __x) __attribute__ ((__const__));
 
 /* Return x rounded toward -inf to integral value.  */
 extern double floor (double __x) __attribute__ ((__const__));
+
+/* Return remainder of dividing x by y.  */
+extern double drem (double __x, double __y) __attribute__ ((__const__));
 
 /* Returns x REM p = x - [x/p]*p as if in infinite precise arithmetic,
    where [x/p] is the (infinite bit) integet nearest x/p (in half way

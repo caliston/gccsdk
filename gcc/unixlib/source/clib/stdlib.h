@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdlib.h,v $
- * $Date: 2001/09/14 14:01:17 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/10/04 12:50:46 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -43,6 +43,7 @@ typedef struct
 
 #ifdef __GNUC__
 /* Returned by `lldiv'.  */
+__extension__
 typedef struct
   {
     long long int quot;	/* Quotient.  */
@@ -163,6 +164,7 @@ extern long int	labs (long int __x) __attribute__ ((__const__));
 extern div_t div (int __numer, int __denom) __attribute__ ((__const__));
 extern ldiv_t ldiv (long __numer, long __denom) __attribute__ ((__const__));
 #ifdef __GNUC__
+__extension__
 extern lldiv_t lldiv (long long __numer, long long __denom) __attribute__ ((__const__));
 #endif
 
@@ -190,9 +192,11 @@ extern unsigned long strtoul (const char *__nptr,
 
 #ifdef __GNUC__
 /* Convert a string to a 64-bit integer.  */
+__extension__
 extern long long strtoll (const char *__nptr, char **__endptr, int __base);
 
 /* Convert a string to an unsigned 64-bit integer.  */
+__extension__
 extern unsigned long long strtoull (const char *__nptr,
 				    char **__endptr, int __base);
 #endif

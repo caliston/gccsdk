@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/machine/h/nan,v $
- * $Date: 1999/11/16 13:31:17 $
- * $Revision: 1.4 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/machine/nan.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -14,6 +14,6 @@
 /* IEEE Not A Number.  */
 
 extern const char __nan[8];
-#define NAN (*(const double *) __nan)
+#define NAN (*(const double *)(const void *) __nan)
 
 #endif

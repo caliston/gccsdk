@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/types.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -24,7 +24,9 @@ typedef unsigned int __u_int;
 typedef unsigned long __u_long;
 
 #ifdef __GNUC__
+__extension__
 typedef unsigned long long int __u_quad_t;
+__extension__
 typedef long long int __quad_t;
 typedef __quad_t *__qaddr_t;
 #else

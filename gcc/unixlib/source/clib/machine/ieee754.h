@@ -1,10 +1,10 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/machine/h/ieee754,v $
- * $Date: 1997/10/09 19:59:51 $
- * $Revision: 1.3 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/machine/ieee754.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -91,5 +91,9 @@ union ieee854_long_double
   };
 
 #define IEEE854_LONG_DOUBLE_BIAS 0x3fff
+
+
+double __ieee754_exp (double x);
+
 
 #endif
