@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdlib.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -92,6 +92,9 @@ extern int putenv (const char *__string);
 
 /* Execute the given line via the CLI.  */
 extern int system (const char *__command);
+
+/* Canonicalise a filename */
+extern char *realpath (const char *__file_name, char *__resolved_name);
 
 #ifdef __UNIXLIB_INTERNALS
 

@@ -1,3 +1,8 @@
+Thu Oct  4 13:50:05 2001  Alex Waugh  <alex@alexwaugh.com>
+
+	* stdlib/realpath.c: New file.
+	* stdlib.h (realpath): Declare.
+
 Tue Oct 02 11:18:36 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* unixlib/asm_dec.s (EOPSYS): Change to 88 inline with errno.h.

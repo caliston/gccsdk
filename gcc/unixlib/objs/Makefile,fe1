@@ -1,8 +1,8 @@
-# Project:   UnixLib 3.8
+# Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2001/09/11 14:16:00 $
-# $Revision: 1.2.2.4 $
+# $Date: 2001/09/11 14:20:03 $
+# $Revision: 1.2.2.5 $
 # $State: Exp $
 # $Author: admin $
 
@@ -183,6 +183,8 @@ STDIO =	stdio.o.clearerr stdio.o.fclose stdio.o.feof stdio.o.ferror \
 
 STDIO_ASM =	stdio.o._printf
 
+STDLIB = stdlib.o.realpath
+
 SCL_ASM = scl.o._kcurskch scl.o._kernel scl.o._kgetenv scl.o._kosargs \
 	scl.o._kosbget scl.o._kosbput scl.o._kosbyte scl.o._koscli \
 	scl.o._kosfile scl.o._kosfind scl.o._kosgbpb scl.o._kosrdch \
@@ -249,15 +251,15 @@ WCHAR = wchar.o.btowc wchar.o.mblen wchar.o.mbrlen wchar.o.mbrtowc \
 STAMP =	!Stamp common.!Stamp complex.!Stamp gcccompat.!Stamp \
 	grp.!Stamp locale.!Stamp math.!Stamp math-asm.!Stamp \
 	netlib.!Stamp pwd.!Stamp resource.!Stamp signal.!Stamp \
-	scl.!Stamp stdio.!Stamp sys.!Stamp termios.!Stamp time.!Stamp \
-	unix.!Stamp wchar.!Stamp
+	scl.!Stamp stdio.!Stamp stdlib.!Stamp sys.!Stamp \
+	termios.!Stamp time.!Stamp unix.!Stamp wchar.!Stamp
 
 # Final targets:
 UnixLib:   $(STAMP)
 	$(AR) $(ARflags) -o $@ o.* common.o.* complex.o.* gcccompat.o.* \
 	grp.o.* locale.o.* math.o.* math-asm.o.* netlib.o.* pwd.o.* \
-	resource.o.* scl.o.* signal.o.* stdio.o.* sys.o.* termios.o.* \
-	time.o.* unix.o.* wchar.o.*
+	resource.o.* scl.o.* signal.o.* stdio.o.* stdlib.o.* sys.o.* \
+	termios.o.* time.o.* unix.o.* wchar.o.*
 
 test:	test.link
 
@@ -305,6 +307,8 @@ clean:
 	-remove signal.!stamp
 	-wipe stdio.o.* fv~r~c
 	-remove stdio.!stamp
+	-wipe stdlib.o.* fv~r~c
+	-remove stdlib.!stamp
 	-wipe sys.o.* fv~r~c
 	-remove sys.!stamp
 	-wipe termios.o.* fv~r~c
@@ -377,6 +381,10 @@ signal.!Stamp:	$(SIGNAL) $(SIGNAL_ASM)
 stdio.!Stamp:	$(STDIO) $(STDIO_ASM)
 	-remove stdio.!Stamp
 	-create stdio.!Stamp 0
+
+stdlib.!Stamp:	$(STDLIB)
+	-remove stdlib.!Stamp
+	-create stdlib.!Stamp 0
 
 sys.!Stamp:	$(SYS) $(SYS_ASM)
 	-remove sys.!Stamp
@@ -765,6 +773,8 @@ stdio.o.stdio:		stdio.c.stdio
 stdio.o.tmpfile:	stdio.c.tmpfile
 stdio.o.ungetc:		stdio.c.ungetc
 stdio.o._printf:	stdio.s._printf <UnixHdr$Dir>.unixlib.s.asm_dec
+
+stdlib.o.realpath:	stdlib.c.realpath
 
 sys.o.alarm:		sys.c.alarm
 sys.o.brk:		sys.c.brk
