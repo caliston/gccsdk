@@ -1,3 +1,11 @@
+Fri Jul 19 14:16:30 2002  John Tytgat <John.Tytgat@aaug.net>
+
+	* stdlib/_rand48.c, drand48.c, erand48.c, jrand48.c, lcong48.c
+          lrand48.c, mrand48.c, nrand48.c, random.c, seed48.c
+          srand48.c: Added RCS style comment header
+	* sys/vfork.c (__vfork): The last environment and argument
+	  vector needs to be NULL.
+
 Fri Jul 19 14:13:45 2002  John Tytgat <John.Tytgat@aaug.net>
 
 	* objs/Makefile,fe1: Removed o.rand
