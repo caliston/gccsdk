@@ -2,10 +2,11 @@
 # Copyright (c) 1997, 1998, 1999, 2000 Nick Burrett
 # Written by Nick Burrett <nick@dsvr.net>
 
-CC_S = $(CROSS_CC) -xassembler-with-cpp
+CC_S = $(CROSS_CC) -xassembler-with-cpp $(CFL)
 INCLUDES = -I. -I../../include -I./include -I./config -I./cp
 CROSS_CFLAGS += -D$(targetsystem)
 CROSS_CFLAGS += -DIN_GCC -DHAVE_CONFIG_H -DIN_LIBGCC2 -D__GCC_FLOAT_NOT_NEEDED
+CROSS_CFLAGS += $(CFL)
 
 libgccobjdir=$(objdir)/gcc-$(VERSION)/libgcc/$(TRG)
 
