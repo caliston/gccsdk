@@ -1,10 +1,10 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/h/fcntl,v $
- * $Date: 1997/10/09 19:59:46 $
- * $Revision: 1.7 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/fcntl.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  *
  ***************************************************************************/
@@ -16,6 +16,10 @@
 
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
+#endif
+
+#ifdef __USE_XOPEN
+#include <sys/stat.h>
 #endif
 
 #ifdef __cplusplus

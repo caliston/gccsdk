@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/sys/h/tty,v $
- * $Date: 1997/12/17 22:02:53 $
- * $Revision: 1.6 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/tty.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
-#ifndef __SYS_TTY_H
-#define __SYS_TTY_H
+#ifndef __UNIXLIB_TTY_H
+#define __UNIXLIB_TTY_H
 
 #ifndef __TERMIOS_H
 #include <termios.h>
@@ -19,13 +19,8 @@
 #include <sys/ioctl.h>
 #endif
 
-#define __TTY_STATIC_BUFS
-
-#ifdef __TTY_STATIC_BUFS
-/* #error static tty bufs not implemented completely */
 #ifndef __SYS_PARAM_H
 #include <sys/param.h>
-#endif
 #endif
 
 #ifdef __cplusplus
@@ -46,18 +41,11 @@ struct tty
   int (*scan) (int);
   int (*init) (void);
   int (*flush) (void);
-#ifdef __TTY_STATIC_BUFS
   int sx,cx;		/* screen x, character x */
   int cnt;		/* number of characters in input buffer */
   char *ptr;		/* read pointer in input buffer */
   char buf[MAX_INPUT];  /* input buffer */
   char del[MAX_INPUT];  /* number of displayed characters for character cx */
-#else
-  char *buf, *ptr;
-  int cnt;		/* number of characters in input buffer */
-  char *del;
-  int sx,cx;		/* screen x, character x */
-#endif
   int lookahead;	/* [1 byte or -1] lookahead to allow select() */
   };
 

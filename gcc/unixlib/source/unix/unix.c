@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2001/09/04 16:32:04 $
- * $Revision: 1.2.2.5 $
+ * $Date: 2001/09/11 14:16:00 $
+ * $Revision: 1.2.2.6 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.5 2001/09/04 16:32:04 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.6 2001/09/11 14:16:00 admin Exp $";
 #endif
 
 #include <stdio.h>
@@ -406,18 +406,6 @@ create_process_structure (void)
   p->tty = calloc (MAXTTY, sizeof (struct tty));
   if (p->tty == NULL)
     return NULL;
-
-#ifndef __TTY_STATIC_BUFS
-  /* While not strictly necessary to allocate the del buffer here,
-     it helps when we need to print a fatal message due to lack
-     of memory during a later part of the initialisation of Unixlib.  */
-  for (i = 0; i < MAXTTY; i++)
-    {
-      p->tty[i].del = malloc (_POSIX_PATH_MAX);
-      if (p->tty[i].del == NULL)
-        return NULL;
-    }
-#endif
 
   /* Set the magic word for our new process structure. We will use
      this when checking the validity of the pointer specified by

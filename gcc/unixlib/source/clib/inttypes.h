@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/h/inttypes,v $
- * $Date: 2000/01/12 16:55:06 $
- * $Revision: 1.1 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/inttypes.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -237,6 +237,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* We have to define the `uintmax_t' type using `lldiv_t'.  */
+typedef struct
+{
+  long long int quot;         /* Quotient.  */
+  long long int rem;          /* Remainder.  */
+} imaxdiv_t;
 
 /* Like `strtol' but convert to `intmax_t'.  */
 extern intmax_t strtoimax (const char *__nptr,

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/syslog.c,v $
- * $Date: 2001/09/04 16:32:04 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2001/09/05 16:32:59 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: syslog.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
+static const char rcs_id[] = "$Id: syslog.c,v 1.2.2.3 2001/09/05 16:32:59 admin Exp $";
 #endif
 
 /*
@@ -58,6 +58,7 @@ static const char rcs_id[] = "$Id: syslog.c,v 1.2.2.2 2001/09/04 16:32:04 admin 
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -200,7 +201,7 @@ vsyslog (int pri, const char *fmt, va_list ap)
 
 
 void
-openlog (char *ident, int logstat, int logfac)
+openlog (const char *ident, int logstat, int logfac)
 {
   if (ident != NULL)
     LogTag = ident;

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/h/stdint,v $
- * $Date: 2000/01/12 16:55:06 $
- * $Revision: 1.1 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdint.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -10,10 +10,6 @@
 
 #ifndef __STDINT_H
 #define __STDINT_H 1
-
-#ifndef __STDDEF_H
-#include <stddef.h>
-#endif
 
 /* Exact integral types.  */
 
@@ -25,13 +21,13 @@ typedef signed char int8_t;
 typedef short int int16_t;
 typedef int int32_t;
 typedef long long int int64_t;
-#endif
 
 /* Unsigned.  */
 typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned long long int uint64_t;
+#endif
 
 
 /* Small types.  */
@@ -65,11 +61,11 @@ typedef unsigned long long int uint_fast64_t;
 
 
 /* Types for `void *' pointers.  */
-#ifndef intptr_t
+#ifndef __intptr_t_defined
+#define __intptr_t_defined
 typedef int intptr_t;
-#define intptr_t intptr_t
-#endif
 typedef unsigned int uintptr_t;
+#endif
 
 
 #ifdef __GNUC__

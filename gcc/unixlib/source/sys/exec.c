@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/exec.c,v $
- * $Date: 2001/09/04 16:32:04 $
- * $Revision: 1.2.2.7 $
+ * $Date: 2001/09/11 14:16:00 $
+ * $Revision: 1.2.2.8 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: exec.c,v 1.2.2.7 2001/09/04 16:32:04 admin Exp $";
+static const char rcs_id[] = "$Id: exec.c,v 1.2.2.8 2001/09/11 14:16:00 admin Exp $";
 #endif
 
 #include <ctype.h>
@@ -559,13 +559,6 @@ execve (const char *execname, char **argv, char **envp)
 	    ushift2 (process->tty[i].init, variable, code, int (*)(void));
 	  if (process->tty[i].flush)
 	    ushift2 (process->tty[i].flush, variable, code, int (*)(void));
-
-#ifndef __TTY_STATIC_BUFS
-	  if (process->tty[i].del)
-	    ushift (process->tty[i].del, variable, code);
-	  if (process->tty[i].buf)
-	    ushift (process->tty[i].buf, variable, code);
-#endif
 	  if (process->tty[i].ptr)
 	    ushift (process->tty[i].ptr, variable, code);
 	}
@@ -646,13 +639,6 @@ __exret (void)
 	    dshift2 (process->tty[i].init, variable, code, int (*)(void));
 	  if (process->tty[i].flush)
 	    dshift2 (process->tty[i].flush, variable, code, int (*)(void));
-
-#ifndef __TTY_STATIC_BUFS
-	  if (process->tty[i].del)
-	    dshift (process->tty[i].del, variable, code);
-	  if (process->tty[i].buf)
-	    dshift (process->tty[i].buf, variable, code);
-#endif
 	  if (process->tty[i].ptr)
 	    dshift (process->tty[i].ptr, variable, code);
 	}

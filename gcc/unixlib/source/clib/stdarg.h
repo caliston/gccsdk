@@ -1,10 +1,10 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/h/stdarg,v $
- * $Date: 1997/10/09 19:59:48 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdarg.h,v $
+ * $Date: 2001/01/29 15:10:19 $
  * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -25,6 +25,7 @@ typedef char *va_list;
 	*(t *)(((a) += va_align(sizeof(t))) - va_align(sizeof(t))) : \
 	(t)(*(int *)(((a) += sizeof(int)) - sizeof(int))))
 #define va_end(a)	((void)((a) = (char *)-1))
+#define va_copy(dest, src) (dest) = (src)
 
 #ifdef __cplusplus
 	}

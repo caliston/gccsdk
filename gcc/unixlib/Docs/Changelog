@@ -1,3 +1,54 @@
+Fri Sep 14 15:00:02 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	This is part one of a large header file cleanup.  The patch
+	reduces the namespace pollution of including too many header
+	files, by creating special __need_XXX macros for headers that
+	only need certain definitions.  Multiple definitions are
+	fixed by using special __XXX_defined macros.
+	* complex.h, dirent.h, fcntl.h, fnmatch.h, glob.h: Changed.
+	* grp.h, math.h, pwd.h, setjmp.h, stdarg.h, stddef.h: Changed.
+	* stdint.h, stdio.h, stdlib.h, string.h, termios.h: Changed.
+	* time.h, unistd.h, utime.h, wchar.h: Changed.
+	* sys/poll.h, sys/resource.h, sys/select.h: Changed.
+	* sys/socket.h, sys/stat.h, sys/syslog.h: Changed.
+	* sys/time.h, sys/timeb.h, sys/types.h, sys/uio.h: Changed.
+	* sys/utsname.h, sys/wait.h: Changed.
+	* unixlib/dev.h, unixlib/local.h, unixlib/types.h: Changed.
+	* unixlib/unix.h: Changed.
+
+	* unixlib/tty.h: Renamed from sys/tty.h.
+	* poll.h: New header file.
+	* pthread.h: New header file.
+	* syslog.h: New header file.
+	
+	* sys/exec.c (execve): Delete code in __TTY_STATIC_BUFS.
+	(__exret): Likewise.
+	* unix/tty.c (__ttyopen): Likewise.
+	(__ttyclose): Likewise.
+	(__ttyread): Likewise.
+	(__ttyicannon): Likewise.
+	(__ttywrite): Likewise.
+	(__ttydel): Likewise.
+	* unix/unix.c (create_process_structure): Likewise.
+
+	* unix/alphasort.c (alphasort): Fix definition.
+	* unix/poll.c (poll): Likewise.
+	* unix/syslog.c (openlog): Likewise.
+	* unix/pselect.c: Include time.h.
+	* unix/select.c (select): Change __FD_SETSIZE to FD_SETSIZE.
+	
+	* unixlib/features.h: Added macros as a placeholder for part two
+	of the header file cleanup.
+	
+	* strings.h (index, rindex): Moved here from string.h.
+	(bcmp, bcopy, bzero, strcasecmp, strncasecmp): Likewise.
+	* inttypes.h (imaxdiv_t): Define.
+	
+	* ctype.h (_toupper, _tolower): Declare.
+	* div.c (lldiv): New function.	
+	* ctypeproc.c (_tolower): New function.
+	(_toupper): New function.
+
 Tue Sep 11 17:53:37 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* errno.h (EAGAIN): Renumber from 82 to 11 to bring inline

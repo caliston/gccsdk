@@ -1,44 +1,57 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/time.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifndef __SYS_TIME_H
-#define __SYS_TIME_H 1
+
+#if ! defined __need_timeval
+#define __SYS_TIME_H
+#endif
+
+#if !defined __timeval_defined && (defined __SYS_TIME_H || defined __need_timeval)
+#define __timeval_defined
+#include <unixlib/types.h>
+/* A time value that is accurate to the nearest
+   microsecond but also has a range of years.  */
+struct timeval
+  {
+    __time_t tv_sec;		/* Seconds.  */
+    __suseconds_t tv_usec;	/* Microseconds.  */
+  };
+#endif
+#undef __need_timeval
+
+#ifdef __SYS_TIME_H
+
+#define __need_time_t
+#include <time.h>
+#include <sys/select.h>
+
+#ifndef __suseconds_t_defined
+typedef __suseconds_t suseconds_t;
+#define __suseconds_t_defined
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* A time value that is accurate to the nearest
-   microsecond but also has a range of years.  */
-struct timeval
-  {
-    int tv_sec;			/* Seconds.  */
-    int tv_usec;		/* Microseconds.  */
-  };
-
-/* POSIX.4 structure for a time value.  This is like a `struct timeval' but
-   has nanoseconds instead of microseconds.  */
-struct timespec
-  {
-    long int ts_sec;		/* Seconds.  */
-    long int ts_nsec;		/* Nanoseconds.  */
-  };
 
 /* Macros for converting between `struct timeval' and `struct timespec'.  */
 #define TIMEVAL_TO_TIMESPEC(tv, ts) {                                   \
-        (ts)->ts_sec = (tv)->tv_sec;                                    \
-        (ts)->ts_nsec = (tv)->tv_usec * 1000;                           \
+        (ts)->tv_sec = (tv)->tv_sec;                                    \
+        (ts)->tv_nsec = (tv)->tv_usec * 1000;                           \
 }
 #define TIMESPEC_TO_TIMEVAL(tv, ts) {                                   \
-        (tv)->tv_sec = (ts)->ts_sec;                                    \
-        (tv)->tv_usec = (ts)->ts_nsec / 1000;                           \
+        (tv)->tv_sec = (ts)->tv_sec;                                    \
+        (tv)->tv_usec = (ts)->tv_nsec / 1000;                           \
 }
 
 
@@ -99,8 +112,8 @@ extern int getitimer (enum __itimer_which, struct itimerval *);
 /* Set the timer WHICH to *NEW.  If OLD is not NULL,
    set *OLD to the old value of timer WHICH.
    Returns 0 on success, -1 on errors.  */
-extern int setitimer (enum __itimer_which, const struct itimerval *new_timer,
-		      struct itimerval *old_timer);
+extern int setitimer (enum __itimer_which, const struct itimerval *__new_timer,
+		      struct itimerval *__old_timer);
 
 /* Change the access time of FILE to TVP[0] and
    the modification time of FILE to TVP[1].  */
@@ -121,3 +134,4 @@ extern int utimes (const char *, const struct timeval __tvp[2]);
 
 
 #endif /* sys/time.h */
+#endif /* ! __SYS_TIME_H */

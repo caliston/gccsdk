@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/termios.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/11 15:07:33 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -23,6 +23,9 @@ extern "C" {
 
 /* Get the system-dependent definitions of `struct termios', `tcflag_t',
    `cc_t', `speed_t', and all the macros specifying the flag bits.  */
+typedef __speed_t speed_t;
+typedef __tcflag_t tcflag_t;
+typedef __cc_t cc_t;
 
 /* These macros are also defined in some ioctls.h files (with numerically
    identical values), but this serves to shut up cpp's complaining. */
@@ -242,22 +245,22 @@ extern "C" {
 struct termios
 {
   /* Input modes.  */
-  __tcflag_t c_iflag;
+  tcflag_t c_iflag;
 
   /* Output modes.  */
-  __tcflag_t c_oflag;
+  tcflag_t c_oflag;
 
   /* Control modes.  */
-  __tcflag_t c_cflag;
+  tcflag_t c_cflag;
 
   /* Local modes.  */
-  __tcflag_t c_lflag;
+  tcflag_t c_lflag;
 
   /* Control characters.  */
-  __cc_t c_cc[NCCS];
+  cc_t c_cc[NCCS];
 
   /* Input and output baud rates.  */
-  __speed_t __ispeed, __ospeed;
+  speed_t __ispeed, __ospeed;
 };
 
 /* Return the output baud rate stored in *TERMIOS_P.  */

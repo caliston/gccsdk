@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2001/09/11 13:40:57 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/11 14:16:00 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -86,9 +86,52 @@ extern "C" {
 #define	STDOUT_FILENO	1	/* Standard output.  */
 #define	STDERR_FILENO	2	/* Standard error output.  */
 
-#ifndef __STDDEF_H
-#include <stddef.h>
+#ifndef __ssize_t_defined
+typedef __ssize_t ssize_t;
+#define __ssize_t_defined
 #endif
+
+#define __need_size_t
+#define __need_NULL
+#include <stddef.h>
+
+/* The Single Unix specification says that some more types are
+   available here.  */
+#ifndef __gid_t_defined
+typedef __gid_t gid_t;
+#define __gid_t_defined
+#endif
+
+#ifndef __uid_t_defined
+typedef __uid_t uid_t;
+#define __uid_t_defined
+#endif
+
+#ifndef __off_t_defined
+typedef __off_t off_t;
+#define __off_t_defined
+#endif
+
+#ifndef __useconds_t_defined
+typedef __useconds_t useconds_t;
+#define __useconds_t_defined
+#endif
+
+#ifndef __pid_t_defined
+typedef __pid_t pid_t;
+#define __pid_t_defined
+#endif
+
+#ifndef __intptr_t_defined
+typedef __intptr_t intptr_t;
+#define __intptr_t_defined
+#endif
+
+#ifndef __socklen_t_defined
+typedef __socklen_t socklen_t;
+#define __socklen_t_defined
+#endif
+
 
 /* Values for the second argument to access.  */
 

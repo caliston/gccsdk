@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/select.c,v $
- * $Date: 2001/09/04 16:32:04 $
- * $Revision: 1.2.2.3 $
+ * $Date: 2001/09/11 13:18:50 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: select.c,v 1.2.2.3 2001/09/04 16:32:04 admin Exp $";
+static const char rcs_id[] = "$Id: select.c,v 1.2.2.4 2001/09/11 13:18:50 admin Exp $";
 #endif
 
 /* netlib/socket.c: Written by Peter Burwood, July 1997  */
@@ -134,8 +134,8 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
     }
 
   /* Limit number of bits to check rather than returning an error.  */
-  if (nfds > __FD_SETSIZE)
-    nfds = __FD_SETSIZE;
+  if (nfds > FD_SETSIZE)
+    nfds = FD_SETSIZE;
 
 #ifdef DEBUG
   dump_fd_set (nfds, readfds, stderr);

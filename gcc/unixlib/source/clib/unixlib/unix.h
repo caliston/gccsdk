@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/Attic/unix.h,v $
- * $Date: 2001/09/06 14:52:00 $
- * $Revision: 1.1.2.2 $
+ * $Date: 2001/09/11 14:16:00 $
+ * $Revision: 1.1.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -23,8 +23,8 @@
 #include <unixlib/sigstate.h>
 #endif
 
-#ifndef __SYS_TTY_H
-#include <sys/tty.h>
+#ifndef __UNIXLIB_TTY_H
+#include <unixlib/tty.h>
 #endif
 #ifndef __SETJMP_H
 #include <setjmp.h>

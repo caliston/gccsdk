@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdio.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/02 10:25:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -11,17 +11,24 @@
 /* ANSI Standard 4.9: Input/Output <stdio.h>.  */
 
 #ifndef __STDIO_H
-#define __STDIO_H
 
-#ifndef __UNIXLIB_FEATURES_H
+#if !defined __need_FILE
+#define __STDIO_H
+#endif
+
 #include <unixlib/features.h>
-#endif
-#ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
-#endif
-#ifndef __STDDEF_H
+#define __need_size_t
+#define __need_NULL
 #include <stddef.h>
+
+#if !defined __FILE_defined && (defined __STDIO_H || defined __need_FILE)
+#define __FILE_defined
+typedef struct __iobuf FILE;
 #endif
+#undef __need_FILE
+
+#ifdef __STDIO_H
 
 typedef char *__va_list;
 
@@ -60,11 +67,6 @@ typedef __off_t fpos_t;
 /* Seek from end of file.  */
 #ifndef SEEK_END
 #define SEEK_END	2
-#endif
-
-#ifndef __FILE_declared
-#define __FILE_declared 1
-typedef struct __iobuf FILE;
 #endif
 
 /* The mode of file input/output. */
@@ -402,4 +404,5 @@ extern __ssize_t getdelim (char **__lineptr, size_t *__n,
 	}
 #endif
 
-#endif
+#endif /* __STDIO_H */
+#endif /* ! __STDIO_H */

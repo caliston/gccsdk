@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/tty.c,v $
- * $Date: 2001/09/11 14:16:00 $
- * $Revision: 1.4.2.8 $
+ * $Date: 2001/09/11 15:07:33 $
+ * $Revision: 1.4.2.9 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tty.c,v 1.4.2.8 2001/09/11 14:16:00 admin Exp $";
+static const char rcs_id[] = "$Id: tty.c,v 1.4.2.9 2001/09/11 15:07:33 admin Exp $";
 #endif
 
 /* System V tty device driver for RISC OS.  */
@@ -27,7 +27,7 @@ static const char rcs_id[] = "$Id: tty.c,v 1.4.2.8 2001/09/11 14:16:00 admin Exp
 #include <sys/types.h>
 #include <unixlib/unix.h>
 #include <unixlib/dev.h>
-#include <sys/tty.h>
+#include <unixlib/tty.h>
 #include <unixlib/os.h>
 #include <unixlib/dev.h>
 #include <sys/select.h>
@@ -391,10 +391,6 @@ __ttyopen (struct __unixlib_fd *file_desc, const char *file, int mode)
     }
 #endif
 
-#ifndef __TTY_STATIC_BUFS
-  tty->buf = 0;
-  tty->del = 0;
-#endif
   tty->ptr = tty->buf;
   tty->cnt = 0;
   tty->sx  = tty->cx = 0;
@@ -416,18 +412,6 @@ __ttyclose (struct __unixlib_fd *file_desc)
 {
   struct tty *tty = __u->tty + (int) file_desc->handle;
 
-#ifndef __TTY_STATIC_BUFS
-  if ((unsigned char *) tty->del >= __lomem
-      && (unsigned char *) tty->del < __break)
-    free (tty->del);
-  if ((unsigned char *) tty->buf >= __lomem
-      && (unsigned char *) tty->buf < __break)
-    free (tty->buf);
-
-  tty->buf = 0;
-  tty->del = 0;
-#endif
-
   tty->ptr = tty->buf;
   tty->cnt = 0;
   tty->sx  = tty->cx = 0;
@@ -440,16 +424,6 @@ int
 __ttyread (struct __unixlib_fd *file_desc, void *buf, int nbyte)
 {
   struct tty *tty = __u->tty + (int) file_desc->handle;
-
-#ifndef __TTY_STATIC_BUFS
-  if (tty->del == NULL)
-    {
-      tty->del = malloc (MAX_INPUT);
-      if (tty->del = NULL)
-	return -1;
-      tty->sx = tty->cx = 0;
-    }
-#endif
 
   return (tty->t->c_lflag & ICANON)
 	  ? __ttyicanon (file_desc, buf, nbyte, tty)
@@ -474,17 +448,6 @@ __ttyicanon (const struct __unixlib_fd *file_desc, void *buf, int nbyte,
 #define F_LNEXT		000001
 #define F_MAX		000002
 #define F_NDELAY	000004
-
-#ifndef __TTY_STATIC_BUFS
-  if (tty->buf == NULL)
-    {
-      tty->buf = malloc (MAX_INPUT);
-      if (tty->buf == NULL)
-	return -1;
-      tty->cnt = 0;
-      tty->ptr = tty->buf;
-    }
-#endif
 
   if (tty == __u->tty)
     __os_byte (0xe5, 0xff, 0, 0);		/* Disable SIGINT.  */
@@ -757,16 +720,6 @@ __ttywrite (struct __unixlib_fd *file_desc, const void *buf, int nbyte)
   const cc_t * const cc = tty->t->c_cc;
   int (*const out) (int) = tty->out;
 
-#ifndef __TTY_STATIC_BUFS
-  if (tty->del == NULL)
-    {
-      tty->del = malloc (MAX_INPUT);
-      if (tty->del == NULL)
-	return -1;
-      tty->sx = tty->cx = 0;
-    }
-#endif
-
   while (i < nbyte)
     {
       c = s[i++];
@@ -841,18 +794,6 @@ static void
 __ttydel (struct tty *tty, tcflag_t lflag)
 {
   int x;
-
-#ifndef __TTY_STATIC_BUFS
-  /* this should be impossible since the call path to this static function
-     should have already checked tty->del.  */
-  if (tty->del == NULL)
-    {
-      tty->del = malloc (MAX_INPUT);
-      if (tty->del == NULL)
-	return -1;
-      tty->sx = tty->cx = 0;
-    }
-#endif
 
   if (tty->sx != 0)
     {

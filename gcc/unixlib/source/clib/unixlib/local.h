@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/local.h,v $
- * $Date: 2001/09/03 12:03:29 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/11 14:16:00 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -14,21 +14,17 @@
 #ifndef __UNIXLIB_LOCAL_H
 #define __UNIXLIB_LOCAL_H 1
 
-#ifndef __STDDEF_H
-#include <stddef.h>
-#endif
-
 #ifdef __UNIXLIB_INTERNALS
 
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
 
-/* Prevent inclusion of <stdio.h>.  */
-#ifndef __FILE_declared
-#define __FILE_declared 1
-typedef struct __iobuf FILE;
-#endif
+#define __need_size_t
+#include <stddef.h>
+
+#define __need_FILE
+#include <stdio.h>
 
 #endif /* __UNIXLIB_INTERNALS */
 
