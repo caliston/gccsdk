@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/flsbuf.c,v $
- * $Date: 2001/01/29 15:10:21 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: flsbuf.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
+static const char rcs_id[] = "$Id: flsbuf.c,v 1.2.2.1 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -32,12 +32,6 @@ int
 __flsbuf (int c, FILE *stream)
 {
   unsigned char *buffer;
-
-  if (!__validfp (stream) || !stream->__mode.__write)
-    {
-      (void) __set_errno (EINVAL);
-      return EOF;
-    }
 
   if (ferror (stream))
     return EOF;
@@ -90,7 +84,7 @@ __flsbuf (int c, FILE *stream)
       stream->__error = 1;
       return EOF;
     }
-  stream->__offset += 1;
+  stream->__offset ++;
 
   return c;
 }

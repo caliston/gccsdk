@@ -1,3 +1,12 @@
+Tue Jan 15 13:20:42 2002  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* stdio.h (_IOMAGIC): Change to 0xfe000000 in order to reduce
+	the number of instructions required to check for a valid stream.
+	* stdio/flsbuf.c (__flsbuf): Remove check on stream validity
+	since all callers provide this.
+	* stdio/putc.c (fputc): Implement old `putc' macro here to remove
+	infinite loop caused by last change.
+
 Sat Jan 12 16:31:01 2002  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* stdio.h (putc): Do not define as a macro.  We should not

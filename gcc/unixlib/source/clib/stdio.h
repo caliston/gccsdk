@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdio.h,v $
- * $Date: 2002/01/12 15:47:12 $
- * $Revision: 1.2.2.3 $
+ * $Date: 2002/01/12 16:32:02 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -110,7 +110,7 @@ struct __iobuf
 #ifdef __UNIXLIB_INTERNALS
 
 /* Magic number to fill __magic.  */
-#define _IOMAGIC 0xfedabeeb
+#define _IOMAGIC 0xfe000000
 
 #if __INTEGRITY_CHECK
 /* Nonzero if stream is a valid stream.  */
