@@ -112,10 +112,10 @@ To compile to the object form, use the -c switch. i.e.
 will compile and assemble 'c.file' to 'o.file'.
 
 To compile the same files but using the SharedCLibrary as the target
-run-time library instead of UnixLib, add the switch '-mstubs' to the
+run-time library instead of UnixLib, add the switch '-mlibscl' to the
 command line. For example:
 
-  gcc c.hellow -mstubs
+  gcc c.hellow -mlibscl
 
 will compile and link the c.hellow source file, using header files
 from the SharedCLibrary, and linking against the library C:o.stubs.
@@ -192,13 +192,16 @@ RISC OS specific options
    Error throwbacks will only occur when the DDEUtils module has previously
    been loaded.
 
- -mstubs
-   compiles to target SharedCLibrary and tells the linker to link with
-   the file C:o.stubs instead of UnixLib.
+ -mlibscl
+   build and link source code against the SharedCLibrary headers and
+   library files.
 
  -munixlib
-   tell the linker to target UnixLib instead of the SharedCLibrary. The
-   linker will attempt to link with the file Unix:o.unixlib.
+   build and link source code against the UnixLib headers and library
+   files. 
+
+   -mlibscl and -munixlib are mutually exclusive.  -munixlib is the
+   default.
 
  -mamu
    Generate the file !Depend which contains a list of all the source
@@ -277,7 +280,7 @@ To implement dynamic allocations within a function, it is necessary to add
 an extra field to jmpbuf. Fortunately the setjmp.h header files recognise
 __JMP_BUF_SIZE and can alter their jmpbuf array appropriately.
 
-When targetting the SharedCLibrary (i.e. -mstubs switch is supplied on
+When targetting the SharedCLibrary (i.e. -mlibscl switch is supplied on
 gcc command line) then an additional preprocessor constant is defined,
 namely `__TARGET_SCL__'.
 
