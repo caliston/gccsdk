@@ -1605,6 +1605,23 @@ static void parse_library (const char *library)
           && list->name[i] != '/')
         strcat (file_name, "/");
 
+#ifdef CROSS_COMPILE 
+      strcat (file_name, "lib"); 
+      strcat (file_name, library); 
+      strcat (file_name, ".a"); 
+#else 
+      strcat (file_name, "a.lib"); 
+      strcat (file_name, library); 
+#endif 
+      if (check_and_add_library (file_name) == 1) 
+       return; 
+ 
+      /* Couldn't find lib<name>.a so try lib<name>.o */ 
+      strcpy (file_name, list->name); 
+      if (list->name[i] != ':' && list->name[i] != '.' 
+          && list->name[i] != '/') 
+        strcat (file_name, "/"); 
+
 #ifdef CROSS_COMPILE
       strcat (file_name, "lib");
       strcat (file_name, library);
