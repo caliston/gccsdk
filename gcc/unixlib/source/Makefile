@@ -635,8 +635,37 @@ install_source:
 		 clib/machine clib/net clib/netinet clib/sys clib/unixlib; do \
 	  $(instsrc) $$dir "*.[chs]" source/$$dir $(ro_unixlibpkg) ; done
 
+# Split AR to work around Cygwin 16Kbyte command line limit,
 $(ux_gcc_bin_dir)/$(TRG)/unixlib.o $(ro_gcc_bin_dir)/$(TRG)/o/unixlib $(ro_unixlibpkg)/source/clib/o/unixlib: $(C_OBJS) $(ASM_OBJS)
-	$(CROSS_AR) $(CROSS_AR_FLAGS) $@ $(C_OBJS) $(ASM_OBJS)
+	$(CROSS_AR) -c $@ $(COMPLEX)
+	$(CROSS_AR) -i $@ $(MATH)
+	$(CROSS_AR) -i $@ $(OBJS)
+	$(CROSS_AR) -i $@ $(COMMON)
+	$(CROSS_AR) -i $@ $(LOCALE)
+	$(CROSS_AR) -i $@ $(NETLIB)
+	$(CROSS_AR) -i $@ $(PWD)
+	$(CROSS_AR) -i $@ $(GRP)
+	$(CROSS_AR) -i $@ $(RESOURCE)
+	$(CROSS_AR) -i $@ $(SIGNAL)
+	$(CROSS_AR) -i $@ $(STAT)
+	$(CROSS_AR) -i $@ $(STDIO)
+	$(CROSS_AR) -i $@ $(STDLIB)
+	$(CROSS_AR) -i $@ $(SYS)
+	$(CROSS_AR) -i $@ $(TIME)
+	$(CROSS_AR) -i $@ $(TERMIOS)
+	$(CROSS_AR) -i $@ $(UNISTD)
+	$(CROSS_AR) -i $@ $(UNIX)
+	$(CROSS_AR) -i $@ $(WCHAR)
+	$(CROSS_AR) -i $@ $(MATH_ASM)
+	$(CROSS_AR) -i $@ $(COMMON_ASM)
+	$(CROSS_AR) -i $@ $(GCCCOMPAT_ASM)
+	$(CROSS_AR) -i $@ $(NETLIB_ASM)
+	$(CROSS_AR) -i $@ $(SIGNAL_ASM)
+	$(CROSS_AR) -i $@ $(STDIO_ASM)
+	$(CROSS_AR) -i $@ $(SCL_ASM)
+	$(CROSS_AR) -i $@ $(SYS_ASM)
+	$(CROSS_AR) -i $@ $(TIME_ASM)
+	$(CROSS_AR) -i $@ $(UNIX_ASM)
 
 $(SUL):	$(MODULE)
 	$(CROSS_CC) $(MODULE) -Xlinker -module -o $@
