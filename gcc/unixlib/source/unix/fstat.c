@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/fstat.c,v $
- * $Date: 2001/09/04 16:32:04 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2002/08/17 10:58:56 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: fstat.c,v 1.2.2.1 2001/09/04 16:32:04 admin Exp $";
+static const char rcs_id[] = "$Id: fstat.c,v 1.2.2.2 2002/08/17 10:58:56 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -66,7 +66,7 @@ fstat (int fd, struct stat *buf)
 
       /* __os_file returns the allocated size of the file,
          but we want the current extent of the file */
-      err = __os_args (2, file_desc->handle, 0, argsregs);
+      err = __os_args (2, (int) file_desc->handle, 0, argsregs);
       if (err)
         {
           __seterr (err);

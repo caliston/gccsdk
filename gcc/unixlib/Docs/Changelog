@@ -1,3 +1,7 @@
+Sat Aug 17 13:58:36 2002  Nick Burrett  <nick@dsvr.net>
+
+	* unix/fstat.c (fstat): Fix bad cast.
+
 Sat Aug 17 12:02:23 2002  Nick Burrett  <nick@dsvr.net>
 
 	* netlib/h_errno.c (h_errno): Change type to int. Include netdb.h.
