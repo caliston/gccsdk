@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_coredump.s,v $
-; $Date: 2001/09/01 13:44:29 $
-; $Revision: 1.2.2.2 $
+; $Date: 2001/09/05 16:28:57 $
+; $Revision: 1.2.2.3 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -423,7 +423,7 @@ backtrace_prhex_l1
 backtrace_prhex_spaces
 	DCB	"    "	; four space characters to initialise the buffer
 
-	AREA	|C$$Data|, DATA, NOINIT
+	AREA	|C$$zidata|, DATA, NOINIT
 
 backtrace_prhex_buffer
 	%	12

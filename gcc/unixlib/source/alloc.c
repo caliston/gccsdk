@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/c/alloc,v $
- * $Date: 2000/08/17 16:16:06 $
- * $Revision: 1.9 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/alloc.c,v $
+ * $Date: 2001/01/29 15:10:18 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: alloc,v 1.9 2000/08/17 16:16:06 admin Exp $: alloc,v 1.4 1996/12/29 21:47:10 unixlib Exp $";
+static const char rcs_id[] = "$Id: alloc.c,v 1.2 2001/01/29 15:10:18 admin Exp $: alloc,v 1.4 1996/12/29 21:47:10 unixlib Exp $";
 #endif
 
 /* #define DEBUG 1 */
@@ -3015,6 +3015,12 @@ int malloc_trim(pad) size_t pad;
 
 
 
+
+/* NAB: I have removed this functions as I don't think they are
+   useful on RIS COS.  */
+#if 0
+
+
 /*
   malloc_usable_size:
 
@@ -3176,6 +3182,8 @@ int mALLOPt(param_number, value) int param_number; int value;
       return 0;
   }
 }
+
+#endif
 
 /*
 

@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_vfork.s,v $
-; $Date: 2001/01/29 15:10:21 $
-; $Revision: 1.2 $
+; $Date: 2001/08/02 13:27:19 $
+; $Revision: 1.2.2.1 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -70,9 +70,9 @@ vfork
 	LDR	a2, [a1, #52]
 	B	longjmp
 
-	AREA	|C$$data|, DATA
+	AREA	|C$$zidata|, DATA, NOINIT
 |__saved_lr|
-	DCD	0
+	%	4
 
 	END
 

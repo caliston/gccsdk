@@ -1,3 +1,27 @@
+Tue Sep 11 14:04:13 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* alloc.c (malloc_useable_size): Don't compile.  I don't think
+	this is used on RISC OS.
+	(malloc_update_mallinfo): Likewise.
+	(malloc_stats): Likewise.
+	(mALLOPt): Likewise.
+	
+	* signal/_coredump.s: Change AREA C$$data to C$$zidata.
+	* sys/_alloca.s: Likewise.
+	* sys/_vfork.s: Likewise.
+
+	* sys/_sdiv.s: Rename C$code to C$$code.
+	* scl/_memchk.s: Likewise.
+	* sys/_udiv10.s: Likewise.
+	* sys/_smod.s: Likewise.
+	* sys/_umod.s: Likewise.
+	* sys/_divtest.s: Likewise.
+	* sys/_profile.s: Likewise.
+	* sys/_sdiv10.s: Likewise.
+
+	* time/setitmr.c (remove_ticker): Add inline attribute.
+	(add_ticker): Likewise.
+	
 Tue Sep 11 13:55:54 2001  Alex Waugh  <ajw498@ecs.soton.ac.uk>
 
 	* sysexits.h: New header file.
