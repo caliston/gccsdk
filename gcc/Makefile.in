@@ -156,8 +156,6 @@ build-stg2:	libiberty-stg2 libgcc unixlib gcc-stg2 \
 trg10=apcs26/unixlib
 trg11=apcs26/libscl
 
-trg15=apcs32/libscl
-
 trg20=apcs32/arch3/unixlib
 trg21=apcs32/arch4/unixlib
 
@@ -195,7 +193,8 @@ riscos-aof-stg2:
 
 libscl:
 	$(MAKE) -C libscl "TRG=$(trg11)" $(cfl11)
-	$(MAKE) -C libscl "TRG=$(trg15)" $(cfl15)
+	$(MAKE) -C libscl "TRG=$(trg30)" $(cfl30)
+	$(MAKE) -C libscl "TRG=$(trg31)" $(cfl31)
 
 riscos-progs:
 	$(MAKE) -C riscos-progs "TRG=$(trg10)" $(cfl10)
@@ -245,7 +244,6 @@ directories:
 
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg10)
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg11)
-	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg15)
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg20)
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg21)
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg30)
