@@ -1,3 +1,7 @@
+Sat Mar 30 10:00:52 2002  Alex Waugh  <alex@alexwaugh.com>
+
+	* sys/_jmp.s: Fix APCS-32 typo.
+
 Sat Mar 30 10:00:52 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	* unistd.h (ualarm): Declare. 

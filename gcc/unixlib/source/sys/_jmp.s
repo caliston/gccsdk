@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_jmp.s,v $
-; $Date: 2001/08/07 16:45:16 $
-; $Revision: 1.2.2.1 $
+; $Date: 2001/09/05 16:28:57 $
+; $Revision: 1.2.2.2 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -111,7 +111,7 @@ longjmp
 	[ {CONFIG} = 26
 	LDMIA	v1, {a1, v1, v2, v3, v4, v5, v6, fp, sp, pc}^
 	|
-	LDMIA	v1, {a2, v1, v2, v3, v4, v5, v6, fp, sp, pc}
+	LDMIA	v1, {a1, v1, v2, v3, v4, v5, v6, fp, sp, pc}
 	]
 
 	; if we get here something has screwed up. The old value
