@@ -114,8 +114,8 @@ void Librarian::run()
 		  }
 
   		library->addMembers(argList);
- 		library->updateOflSymt();
  		library->updateOflTime();
+ 		library->updateOflSymt();
   		library->save();
   		break;
 
@@ -143,8 +143,8 @@ void Librarian::run()
   			library->extractMembers(argList, destDir);
 
   		library->deleteMembers(argList);
- 		library->updateOflSymt();
  		library->updateOflTime();
+ 		library->updateOflSymt();
   		library->save();
   		break;
 

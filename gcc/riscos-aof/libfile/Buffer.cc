@@ -18,7 +18,7 @@ Buffer::Buffer()
 {
  m_size=1000;
  m_data=(unsigned char *) malloc(m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  m_length=0;
 }
@@ -28,7 +28,7 @@ Buffer::Buffer(Buffer &a_buffer)
  m_size=a_buffer.m_size;
  m_length=a_buffer.m_length;
  m_data=(unsigned char *) malloc(m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  memcpy(m_data,a_buffer.m_data,m_length);
 }
@@ -38,7 +38,7 @@ Buffer::Buffer(Buffer *a_buffer)
  m_size=a_buffer->m_size;
  m_length=a_buffer->m_length;
  m_data=(unsigned char *) malloc(m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  memcpy(m_data,a_buffer->m_data,m_length);
 }
@@ -55,7 +55,7 @@ void Buffer::empty()
  	free(m_data);
  m_size=1000;
  m_data=(unsigned char *) malloc(m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  m_length=0;
 }
@@ -65,7 +65,7 @@ void Buffer::set(Buffer *a_buffer)
  m_size=a_buffer->m_size;
  m_length=a_buffer->m_length;
  m_data=(unsigned char *) realloc(m_data, m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  memcpy(m_data,a_buffer->m_data,m_length);
 }
@@ -75,7 +75,7 @@ void Buffer::set(Buffer *a_buffer, int a_start, int a_len)
  m_size = a_len;
  m_length = a_len;
  m_data = (unsigned char *) realloc(m_data, m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  memcpy(m_data, &((a_buffer->m_data)[a_start]), m_length);
 }
@@ -88,7 +88,7 @@ Buffer &Buffer::operator=(const Buffer &a_buffer)
  m_size=a_buffer.m_size;
  m_length=a_buffer.m_length;
  m_data=(unsigned char *) malloc(m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  memcpy(m_data,a_buffer.m_data,m_length);
  return *this;
@@ -98,7 +98,7 @@ void Buffer::increase(int a_bytes)
 {
  m_size+=a_bytes;
  m_data=(unsigned char *) realloc(m_data,m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
 }
 
