@@ -1,19 +1,19 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/netlib/shutdown.c,v $
- * $Date: 2000/07/15 14:52:26 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:20 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  * (c) Copyright 1997 Nicholas Clark
  ***************************************************************************/
 
 #ifdef EMBED_RCSIS
-static const char rcs_id[] = "$Id: shutdown.c,v 1.1.1.1 2000/07/15 14:52:26 nick Exp $";
+static const char rcs_id[] = "$Id: shutdown.c,v 1.2 2001/01/29 15:10:20 admin Exp $";
 #endif
 
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 #include <sys/socket.h>
 #include <unixlib/fd.h>
 #include <unixlib/local.h>

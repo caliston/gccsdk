@@ -1,22 +1,28 @@
 # Makefile for UnixLib for the ARM/RISC OS GCC port
-# Copyright (c) 2000 Nick Burrett
+# Copyright (c) 2000, 2001 Nick Burrett
 # Written by Nick Burrett <nick@dsvr.net>
 #
 # This file is part of the GNU Compiler Collection
 #
 
 # Defs for GCC
-CC = $(standard_exec_prefix)/gcc $(CFLAGS)
-CFLAGS = -O2 $(OPTS) $(TARGET_DEFS) -D__UNIXLIB_INTERNALS -pedantic -Wall -Wno-long-long
+WARNINGS = -pedantic -Wall -Wundef -Wpointer-arith \
+          -Wcast-align -Wwrite-strings -Wstrict-prototypes \
+          -Wmissing-prototypes -Wmissing-declarations -Wnested-externs \
+          -Winline -Wno-unused -Wno-long-long -W -Wcast-qual -Wshadow
+
+CROSS_CFLAGS += -D__UNIXLIB_INTERNALS $(WARNINGS) 
+
+#CROSS_CFLAGS += -D__UNIXLIB_INTERNALS -pedantic -Wall -Wno-long-long
 INCLUDES = -isystem clib
 
 libunixobj=$(objdir)/unixlib/$(TRG)
 
 $(libunixobj)/%.o: %.c
-	$(CC) -o $@ -c $< $(INCLUDES) $(CFL)
+	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ -c $< $(INCLUDES) $(CFL)
 
 $(libunixobj)/%.o: %.s
-	$(CC) -o $@ -c $< $(CFL1)
+	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ -c $< $(CFL) $(CFL1)
 
 COMPLEX = $(libunixobj)/complex/cabs.o \
 	$(libunixobj)/complex/cacos.o \
@@ -41,6 +47,12 @@ COMPLEX = $(libunixobj)/complex/cabs.o \
 	$(libunixobj)/complex/csqrt.o \
 	$(libunixobj)/complex/ctan.o \
 	$(libunixobj)/complex/ctanh.o
+
+CRYPT =	$(libunixobj)/crypt/crypt.o \
+	$(libunixobj)/crypt/crypt-entry.o \
+	$(libunixobj)/crypt/crypt_util.o \
+	$(libunixobj)/crypt/md5.o \
+	$(libunixobj)/crypt/md5-crypt.o \
 
 MATH =	$(libunixobj)/math/acosh.o \
 	$(libunixobj)/math/asinh.o \
@@ -135,7 +147,6 @@ OBJS =	$(libunixobj)/abort.o \
 	$(libunixobj)/ctypeproc.o \
 	$(libunixobj)/div.o \
 	$(libunixobj)/errno.o \
-	$(libunixobj)/fcrypt.o \
 	$(libunixobj)/index.o \
 	$(libunixobj)/memccpy.o \
 	$(libunixobj)/memchr.o \
@@ -144,7 +155,6 @@ OBJS =	$(libunixobj)/abort.o \
 	$(libunixobj)/memset.o \
 	$(libunixobj)/psignal.o \
 	$(libunixobj)/qsort.o \
-	$(libunixobj)/rand.o \
 	$(libunixobj)/stpcpy.o \
 	$(libunixobj)/stpncpy.o \
 	$(libunixobj)/strcat.o \
@@ -171,7 +181,9 @@ OBJS =	$(libunixobj)/abort.o \
 	$(libunixobj)/strtok.o \
 	$(libunixobj)/strtok_r.o \
 	$(libunixobj)/strtol.o \
+	$(libunixobj)/strtoll.o \
 	$(libunixobj)/strtoul.o \
+	$(libunixobj)/strtoull.o \
 	$(libunixobj)/system.o \
 	$(libunixobj)/termcap.o
 
@@ -188,7 +200,8 @@ COMMON = $(libunixobj)/common/attrib.o \
 	$(libunixobj)/common/uname.o \
 	$(libunixobj)/common/unixify.o
 
-COMMON_ASM =	$(libunixobj)/common/_exist.o
+COMMON_ASM =	$(libunixobj)/common/_exist.o \
+	$(libunixobj)/common/_riscosify.o
 
 GCCCOMPAT_ASM = $(libunixobj)/gcccompat/_udivdi3.o \
 	$(libunixobj)/gcccompat/_umoddi3.o \
@@ -201,6 +214,8 @@ LOCALE = $(libunixobj)/locale/ctypetable.o \
 	$(libunixobj)/locale/strcoll.o \
 	$(libunixobj)/locale/strxfrm.o \
 	$(libunixobj)/locale/territory.o
+
+MODULE = $(libunixobj)/module/sul.o
 
 NETLIB = $(libunixobj)/netlib/accept.o \
 	$(libunixobj)/netlib/bind.o \
@@ -280,6 +295,16 @@ PWD =	$(libunixobj)/pwd/fgetpwent.o \
 	$(libunixobj)/pwd/putpwent.o \
 	$(libunixobj)/pwd/pwdread.o
 
+GRP =	$(libunixobj)/grp/fgetgrent.o \
+	$(libunixobj)/grp/fgetgrentr.o \
+	$(libunixobj)/grp/getgroups.o \
+	$(libunixobj)/grp/getgrent.o \
+	$(libunixobj)/grp/getgrnam.o \
+	$(libunixobj)/grp/getgrnam_r.o \
+	$(libunixobj)/grp/getgrgid.o \
+	$(libunixobj)/grp/getgrgid_r.o \
+	$(libunixobj)/grp/grpread.o
+
 RESOURCE =	$(libunixobj)/resource/getegid.o \
 	$(libunixobj)/resource/geteuid.o \
 	$(libunixobj)/resource/getgid.o \
@@ -305,7 +330,6 @@ SIGNAL =	$(libunixobj)/signal/init.o \
 	$(libunixobj)/signal/pause.o \
 	$(libunixobj)/signal/post.o \
 	$(libunixobj)/signal/raise.o \
-	$(libunixobj)/signal/setup.o \
 	$(libunixobj)/signal/sigaction.o \
 	$(libunixobj)/signal/sigaddset.o \
 	$(libunixobj)/signal/sigaltstk.o \
@@ -322,13 +346,11 @@ SIGNAL =	$(libunixobj)/signal/init.o \
 	$(libunixobj)/signal/sigsets.o \
 	$(libunixobj)/signal/sigstack.o \
 	$(libunixobj)/signal/sigsuspend.o \
-	$(libunixobj)/signal/sigwakeup.o \
 	$(libunixobj)/signal/sleep.o
 
 SIGNAL_ASM =	$(libunixobj)/signal/sigexec.o \
 	$(libunixobj)/signal/_coredump.o \
 	$(libunixobj)/signal/_signal.o
-
 
 STDIO = $(libunixobj)/stdio/clearerr.o \
 	$(libunixobj)/stdio/fclose.o \
@@ -366,6 +388,21 @@ STDIO = $(libunixobj)/stdio/clearerr.o \
 
 STDIO_ASM =	$(libunixobj)/stdio/_printf.o
 
+STDLIB = $(libunixobj)/stdlib/drand48.o \
+	$(libunixobj)/stdlib/erand48.o \
+	$(libunixobj)/stdlib/jrand48.o \
+	$(libunixobj)/stdlib/lcong48.o \
+	$(libunixobj)/stdlib/mrand48.o \
+	$(libunixobj)/stdlib/nrand48.o \
+	$(libunixobj)/stdlib/_rand48.o \
+	$(libunixobj)/stdlib/rand.o \
+	$(libunixobj)/stdlib/random.o \
+	$(libunixobj)/stdlib/realpath.o \
+	$(libunixobj)/stdlib/seed48.o \
+	$(libunixobj)/stdlib/srand48.o
+
+STRING	= $(libunixobj)/string/swab.o
+
 SCL_ASM = $(libunixobj)/scl/_kcurskch.o \
 	$(libunixobj)/scl/_kernel.o \
 	$(libunixobj)/scl/_kgetenv.o \
@@ -383,9 +420,11 @@ SCL_ASM = $(libunixobj)/scl/_kcurskch.o \
 	$(libunixobj)/scl/_ksetenv.o \
 	$(libunixobj)/scl/_kswi_c.o
 
+STAT =	$(libunixobj)/stat/mknod.o \
+	$(libunixobj)/stat/mkfifo.o
+
 SYS =	$(libunixobj)/sys/alarm.o \
 	$(libunixobj)/sys/brk.o \
-	$(libunixobj)/sys/child.o \
 	$(libunixobj)/sys/debug.o \
 	$(libunixobj)/sys/errlist.o \
 	$(libunixobj)/sys/exec.o \
@@ -395,13 +434,10 @@ SYS =	$(libunixobj)/sys/alarm.o \
 	$(libunixobj)/sys/execv.o \
 	$(libunixobj)/sys/execvp.o \
 	$(libunixobj)/sys/mman.o \
-	$(libunixobj)/sys/os.o \
 	$(libunixobj)/sys/sigsetjmp.o \
-	$(libunixobj)/sys/syslib.o \
 	$(libunixobj)/sys/vfork.o
 
-SYS_ASM =	$(libunixobj)/sys/_address.o \
-	$(libunixobj)/sys/_alloca.o \
+SYS_ASM =	$(libunixobj)/sys/_alloca.o \
 	$(libunixobj)/sys/_divsi3.o \
 	$(libunixobj)/sys/_divtest.o \
 	$(libunixobj)/sys/_exec.o \
@@ -415,6 +451,7 @@ SYS_ASM =	$(libunixobj)/sys/_address.o \
 	$(libunixobj)/sys/_sdiv.o \
 	$(libunixobj)/sys/_sdiv10.o \
 	$(libunixobj)/sys/_smod.o \
+	$(libunixobj)/sys/_swi.o \
 	$(libunixobj)/sys/_syslib.o \
 	$(libunixobj)/sys/_udiv.o \
 	$(libunixobj)/sys/_udiv10.o \
@@ -462,11 +499,18 @@ TERMIOS =	$(libunixobj)/termios/cfgetispee.o \
 	$(libunixobj)/termios/tcsetattr.o \
 	$(libunixobj)/termios/tcsetpgrp.o
 
+UNISTD =	$(libunixobj)/unistd/chown.o \
+	$(libunixobj)/unistd/chroot.o \
+	$(libunixobj)/unistd/fchown.o \
+	$(libunixobj)/unistd/getpass.o \
+	$(libunixobj)/unistd/link.o \
+	$(libunixobj)/unistd/readlink.o \
+	$(libunixobj)/unistd/symlink.o
+
 UNIX =	$(libunixobj)/unix/access.o \
 	$(libunixobj)/unix/alphasort.o \
 	$(libunixobj)/unix/chdir.o \
 	$(libunixobj)/unix/chmod.o \
-	$(libunixobj)/unix/chown.o \
 	$(libunixobj)/unix/close.o \
 	$(libunixobj)/unix/creat.o \
 	$(libunixobj)/unix/getdtables.o \
@@ -475,7 +519,6 @@ UNIX =	$(libunixobj)/unix/access.o \
 	$(libunixobj)/unix/dup.o \
 	$(libunixobj)/unix/dup2.o \
 	$(libunixobj)/unix/fchmod.o \
-	$(libunixobj)/unix/fchown.o \
 	$(libunixobj)/unix/features.o \
 	$(libunixobj)/unix/fnmatch.o \
 	$(libunixobj)/unix/fcntl.o \
@@ -490,7 +533,6 @@ UNIX =	$(libunixobj)/unix/access.o \
 	$(libunixobj)/unix/ioctl.o \
 	$(libunixobj)/unix/isatty.o \
 	$(libunixobj)/unix/ispipe.o \
-	$(libunixobj)/unix/link.o \
 	$(libunixobj)/unix/lseek.o \
 	$(libunixobj)/unix/lstat.o \
 	$(libunixobj)/unix/mkdir.o \
@@ -511,6 +553,7 @@ UNIX =	$(libunixobj)/unix/access.o \
 	$(libunixobj)/unix/stat.o \
 	$(libunixobj)/unix/sync.o \
 	$(libunixobj)/unix/sysconf.o \
+	$(libunixobj)/unix/syslog.o \
 	$(libunixobj)/unix/truncate.o \
 	$(libunixobj)/unix/tty.o \
 	$(libunixobj)/unix/umask.o \
@@ -572,18 +615,72 @@ WCHAR = $(libunixobj)/wchar/btowc.o \
 # wchar.o.wcstol wchar.o.wcstoul wchar.o.wcstoq wchar.o.wcstouq
 #  wchar.o.wcstold wchar.o.wcstod wchar.o.wcstof
 
-C_OBJS = $(COMPLEX) $(MATH) $(OBJS) $(COMMON) $(LOCALE) $(NETLIB) \
-	$(PWD) $(RESOURCE) $(SIGNAL) $(STDIO) $(SYS) $(TIME) \
-	$(TERMIOS) $(UNIX) $(WCHAR)
+C_OBJS = $(COMPLEX) $(CRYPT) $(MATH) $(OBJS) $(COMMON) $(LOCALE) $(NETLIB) \
+	$(PWD) $(GRP) $(RESOURCE) $(SIGNAL) $(STAT) $(STDIO) $(STRING) \
+	$(STDLIB) $(SYS) $(TIME) $(TERMIOS) $(UNISTD) $(UNIX) $(WCHAR)
 
 ASM_OBJS = $(MATH_ASM) $(COMMON_ASM) $(GCCCOMPAT_ASM) $(NETLIB_ASM) \
 	$(SIGNAL_ASM) $(STDIO_ASM) $(SCL_ASM) $(SYS_ASM) $(TIME_ASM) \
 	$(UNIX_ASM)
 
-all:	$(TBIN)/$(TRG)/unixlib.o
+SUL = $(ro_syspkg)/310/Modules/SharedULib,ffa
 
-$(TBIN)/$(TRG)/unixlib.o:	$(C_OBJS) $(ASM_OBJS)
-	$(standard_exec_prefix)/libfile -c $@ $(C_OBJS) $(ASM_OBJS)
+all:	$(ux_gcc_bin_dir)/$(TRG)/unixlib.o $(ro_gcc_bin_dir)/$(TRG)/o/unixlib \
+	$(ro_unixlibpkg)/source/clib/o/unixlib $(SUL)
+
+install_headers:
+	$(insthdr) clib "*.h" unixlib $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/arpa "*.h" unixlib/arpa $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/machine "*.h" unixlib/machine $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/net "*.h" unixlib/net $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/netinet "*.h" unixlib/netinet $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/sys "*.h" unixlib/sys $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/unixlib "*.[hs]" unixlib/unixlib $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+
+install_source:
+	$(instsrc) . "*.[chs]" source $(ro_unixlibpkg)
+	for dir in common complex crypt gcccompat grp locale math math-asm \
+		module netlib pwd resource scl signal stat stdio stdlib sys \
+		 string termios time unistd unix wchar clib clib/arpa \
+		 clib/machine clib/net clib/netinet clib/sys clib/unixlib; do \
+	  $(instsrc) $$dir "*.[chs]" source/$$dir $(ro_unixlibpkg) ; done
+
+# Split AR to work around Cygwin 16Kbyte command line limit,
+$(ux_gcc_bin_dir)/$(TRG)/unixlib.o $(ro_gcc_bin_dir)/$(TRG)/o/unixlib $(ro_unixlibpkg)/source/clib/o/unixlib: $(C_OBJS) $(ASM_OBJS)
+	$(CROSS_AR) -c $@ $(COMPLEX)
+	$(CROSS_AR) -i $@ $(CRYPT)
+	$(CROSS_AR) -i $@ $(MATH)
+	$(CROSS_AR) -i $@ $(OBJS)
+	$(CROSS_AR) -i $@ $(COMMON)
+	$(CROSS_AR) -i $@ $(LOCALE)
+	$(CROSS_AR) -i $@ $(NETLIB)
+	$(CROSS_AR) -i $@ $(PWD)
+	$(CROSS_AR) -i $@ $(GRP)
+	$(CROSS_AR) -i $@ $(RESOURCE)
+	$(CROSS_AR) -i $@ $(SIGNAL)
+	$(CROSS_AR) -i $@ $(STAT)
+	$(CROSS_AR) -i $@ $(STDIO)
+	$(CROSS_AR) -i $@ $(STDLIB)
+	$(CROSS_AR) -i $@ $(STRING)
+	$(CROSS_AR) -i $@ $(SYS)
+	$(CROSS_AR) -i $@ $(TIME)
+	$(CROSS_AR) -i $@ $(TERMIOS)
+	$(CROSS_AR) -i $@ $(UNISTD)
+	$(CROSS_AR) -i $@ $(UNIX)
+	$(CROSS_AR) -i $@ $(WCHAR)
+	$(CROSS_AR) -i $@ $(MATH_ASM)
+	$(CROSS_AR) -i $@ $(COMMON_ASM)
+	$(CROSS_AR) -i $@ $(GCCCOMPAT_ASM)
+	$(CROSS_AR) -i $@ $(NETLIB_ASM)
+	$(CROSS_AR) -i $@ $(SIGNAL_ASM)
+	$(CROSS_AR) -i $@ $(STDIO_ASM)
+	$(CROSS_AR) -i $@ $(SCL_ASM)
+	$(CROSS_AR) -i $@ $(SYS_ASM)
+	$(CROSS_AR) -i $@ $(TIME_ASM)
+	$(CROSS_AR) -i $@ $(UNIX_ASM)
+
+$(SUL):	$(MODULE)
+	$(CROSS_CC) $(MODULE) -Xlinker -module -o $@
 
 # Static dependencies:
 $(libunixobj)/abort.o: abort.c
@@ -597,7 +694,6 @@ $(libunixobj)/ctypeproc.o: ctypeproc.c
 $(libunixobj)/div.o: div.c
 $(libunixobj)/dtoa.o: dtoa.c
 $(libunixobj)/errno.o: errno.c
-$(libunixobj)/fcrypt.o: fcrypt.c
 $(libunixobj)/index.o: index.c
 $(libunixobj)/memchr.o: memchr.c
 $(libunixobj)/memcmp.o: memcmp.c
@@ -606,7 +702,6 @@ $(libunixobj)/memccpy.o: memccpy.c
 $(libunixobj)/memset.o: memset.c
 $(libunixobj)/psignal.o: psignal.c
 $(libunixobj)/qsort.o: qsort.c
-$(libunixobj)/rand.o: rand.c
 $(libunixobj)/stpcpy.o: stpcpy.c
 $(libunixobj)/stpncpy.o: stpncpy.c
 $(libunixobj)/strcat.o: strcat.c
@@ -633,7 +728,9 @@ $(libunixobj)/strtod.o: strtod.c
 $(libunixobj)/strtok.o: strtok.c
 $(libunixobj)/strtok_r.o: strtok_r.c
 $(libunixobj)/strtol.o: strtol.c
+$(libunixobj)/strtoll.o: strtoll.c
 $(libunixobj)/strtoul.o: strtoul.c
+$(libunixobj)/strtoull.o: strtoull.c
 $(libunixobj)/system.o: system.c
 $(libunixobj)/termcap.o: termcap.c
 
@@ -642,7 +739,7 @@ $(libunixobj)/common/cvttime.o: common/cvttime.c
 $(libunixobj)/common/exist.o: common/exist.c
 $(libunixobj)/common/fdname.o: common/fdname.c
 $(libunixobj)/common/funcallerr.o: common/funcallerr.c
-$(libunixobj)/ommon/riscosify.o: common/riscosify.c
+$(libunixobj)/common/riscosify.o: common/riscosify.c
 $(libunixobj)/common/riscosifyc.o: common/riscosifyc.c
 $(libunixobj)/common/serial.o: common/serial.c
 $(libunixobj)/common/sockvalid.o: common/sockvalid.c
@@ -650,6 +747,7 @@ $(libunixobj)/common/stat.o: common/stat.c
 $(libunixobj)/common/uname.o: common/uname.c
 $(libunixobj)/common/unixify.o: common/unixify.c
 $(libunixobj)/common/_exist.o: common/_exist.s
+$(libunixobj)/common/_riscosify.o: common/_riscosify.s
 
 $(libunixobj)/complex/cabs.o: complex/cabs.c
 $(libunixobj)/complex/cacos.o: complex/cacos.c
@@ -674,6 +772,12 @@ $(libunixobj)/complex/csinh.o: complex/csinh.c
 $(libunixobj)/complex/csqrt.o: complex/csqrt.c
 $(libunixobj)/complex/ctan.o: complex/ctan.c
 $(libunixobj)/complex/ctanh.o: complex/ctanh.c
+
+$(libunixobj)/crypt/crypt.o: crypt/crypt.c
+$(libunixobj)/crypt/crypt-entry.o: crypt/crypt-entry.c
+$(libunixobj)/crypt/crypt_util.o: crypt/crypt_util.c
+$(libunixobj)/crypt/md5.o: crypt/md5.c
+$(libunixobj)/crypt/md5-crypt.o: crypt/md5-crypt.c
 
 $(libunixobj)/gcccompat/_udivdi3.o: gcccompat/_udivdi3.s clib/unixlib/asm_dec.s
 $(libunixobj)/gcccompat/_umoddi3.o: gcccompat/_umoddi3.s clib/unixlib/asm_dec.s
@@ -770,6 +874,8 @@ $(libunixobj)/math-asm/_sqrt.o: math-asm/_sqrt.s clib/unixlib/asm_dec.s
 $(libunixobj)/math-asm/_tan.o: math-asm/_tan.s clib/unixlib/asm_dec.s
 $(libunixobj)/math-asm/_tanh.o: math-asm/_tanh.s clib/unixlib/asm_dec.s
 
+$(libunixobj)/module/sul.o: module/sul.s
+
 $(libunixobj)/netlib/accept.o: netlib/accept.c
 $(libunixobj)/netlib/bind.o: netlib/bind.c
 $(libunixobj)/netlib/connect.o: netlib/connect.c
@@ -847,6 +953,16 @@ $(libunixobj)/pwd/getpwuid_r.o: pwd/getpwuid_r.c
 $(libunixobj)/pwd/putpwent.o: pwd/putpwent.c
 $(libunixobj)/pwd/pwdread.o: pwd/pwdread.c
 
+$(libunixobj)/grp/fgetgrent.o: grp/fgetgrent.c
+$(libunixobj)/grp/fgetgrentr.o: grp/fgetgrentr.c
+$(libunixobj)/grp/getgroups.o: grp/getgroups.c
+$(libunixobj)/grp/getgrent.o: grp/getgrent.c
+$(libunixobj)/grp/getgrnam.o: grp/getgrnam.c
+$(libunixobj)/grp/getgrnam_r.o: grp/getgrnam_r.c
+$(libunixobj)/grp/getgrgid.o: grp/getgrgid.c
+$(libunixobj)/grp/getgrgid_r.o: grp/getgrgid_r.c
+$(libunixobj)/grp/grpread.o: grp/grpread.c
+
 $(libunixobj)/resource/getegid.o: resource/getegid.c
 $(libunixobj)/resource/geteuid.o: resource/geteuid.c
 $(libunixobj)/resource/getgid.o: resource/getgid.c
@@ -914,6 +1030,9 @@ $(libunixobj)/signal/sigexec.o: signal/sigexec.s clib/unixlib/asm_dec.s
 $(libunixobj)/signal/_coredump.o: signal/_coredump.s clib/unixlib/asm_dec.s
 $(libunixobj)/signal/_signal.o: signal/_signal.s clib/unixlib/asm_dec.s
 
+$(libunixobj)/stat/mknod.o: stat/mknod.c
+$(libunixobj)/stat/mkfifo.o: stat/mkfifo.c
+
 $(libunixobj)/stdio/clearerr.o: stdio/clearerr.c
 $(libunixobj)/stdio/fclose.o: stdio/fclose.c
 $(libunixobj)/stdio/feof.o: stdio/feof.c
@@ -951,9 +1070,24 @@ $(libunixobj)/stdio/tmpfile.o: stdio/tmpfile.c
 $(libunixobj)/stdio/ungetc.o: stdio/ungetc.c
 $(libunixobj)/stdio/_printf.o: stdio/_printf.s clib/unixlib/asm_dec.s
 
+$(libunixojb)/stdlib/drand48.o: stdlib/drand48.c
+$(libunixojb)/stdlib/erand48.o: stdlib/erand48.c
+$(libunixojb)/stdlib/jrand48.o: stdlib/jrand48.c
+$(libunixojb)/stdlib/lcong48.o: stdlib/lcong48.c
+$(libunixojb)/stdlib/lrand48.o: stdlib/lrand48.c
+$(libunixojb)/stdlib/mrand48.o: stdlib/mrand48.c
+$(libunixojb)/stdlib/nrand48.o: stdlib/nrand48.c
+$(libunixojb)/stdlib/_rand48.o: stdlib/_rand48.c
+$(libunixojb)/stdlib/rand.o: stdlib/rand.c
+$(libunixojb)/stdlib/random.o: stdlib/random.c
+$(libunixobj)/stdlib/realpath.o: stdlib/realpath.c
+$(libunixojb)/stdlib/seed48.o: stdlib/seed48.c
+$(libunixojb)/stdlib/srand48.o: stdlib/srand48.c
+
+$(libunixobj)/string/swab.o: string/swab.c
+
 $(libunixobj)/sys/alarm.o: sys/alarm.c
 $(libunixobj)/sys/brk.o: sys/brk.c
-$(libunixobj)/sys/child.o: sys/child.c
 $(libunixobj)/sys/debug.o: sys/debug.c
 $(libunixobj)/sys/errlist.o: sys/errlist.c
 $(libunixobj)/sys/exec.o: sys/exec.c
@@ -982,6 +1116,7 @@ $(libunixobj)/sys/_sigjmp.o: sys/_sigjmp.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_sdiv.o: sys/_sdiv.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_sdiv10.o: sys/_sdiv10.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_smod.o: sys/_smod.s clib/unixlib/asm_dec.s
+$(libunixobj)/sys/_swi.o: sys/_swi.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_syslib.o: sys/_syslib.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_udiv.o: sys/_udiv.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_udiv10.o: sys/_udiv10.s clib/unixlib/asm_dec.s
@@ -1028,11 +1163,18 @@ $(libunixobj)/time/tzset.o: time/tzset.c
 $(libunixobj)/time/utimes.o: time/utimes.c
 $(libunixobj)/time/_clock.o: time/_clock.s clib/unixlib/asm_dec.s
 
+$(libunixobj)/unistd/chown.o: unistd/chown.c
+$(libunixobj)/unistd/chroot.o: unistd/chroot.c
+$(libunixobj)/unistd/getpass.o: unistd/getpass.c
+$(libunixobj)/unistd/fchown.o: unistd/fchown.c
+$(libunixobj)/unistd/link.o: unistd/link.c
+$(libunixobj)/unistd/readlink.o: unistd/readlink.c
+$(libunixobj)/unistd/symlink.o: unistd/symlink.c
+
 $(libunixobj)/unix/access.o: unix/access.c
 $(libunixobj)/unix/alphasort.o: unix/alphasort.c
 $(libunixobj)/unix/chdir.o: unix/chdir.c
 $(libunixobj)/unix/chmod.o: unix/chmod.c
-$(libunixobj)/unix/chown.o: unix/chown.c
 $(libunixobj)/unix/close.o: unix/close.c
 $(libunixobj)/unix/creat.o: unix/creat.c
 $(libunixobj)/unix/dev.o: unix/dev.c
@@ -1040,7 +1182,6 @@ $(libunixobj)/unix/dirent.o: unix/dirent.c
 $(libunixobj)/unix/dup.o: unix/dup.c
 $(libunixobj)/unix/dup2.o: unix/dup2.c
 $(libunixobj)/unix/fchmod.o: unix/fchmod.c
-$(libunixobj)/unix/fchown.o: unix/fchown.c
 $(libunixobj)/unix/features.o: unix/features.c
 $(libunixobj)/unix/fnmatch.o: unix/fnmatch.c
 $(libunixobj)/unix/fcntl.o: unix/fcntl.c
@@ -1056,7 +1197,6 @@ $(libunixobj)/unix/glob.c: unix/glob.c
 $(libunixobj)/unix/ioctl.o: unix/ioctl.c
 $(libunixobj)/unix/isatty.o: unix/isatty.c
 $(libunixobj)/unix/ispipe.o: unix/ispipe.c
-$(libunixobj)/unix/link.o: unix/link.c
 $(libunixobj)/unix/lseek.o: unix/lseek.c
 $(libunixobj)/unix/lstat.o: unix/lstat.c
 $(libunixobj)/unix/mkdir.o: unix/mkdir.c
@@ -1077,6 +1217,7 @@ $(libunixobj)/unix/setenv.o: unix/setenv.c
 $(libunixobj)/unix/stat.o: unix/stat.c
 $(libunixobj)/unix/sync.o: unix/sync.c
 $(libunixobj)/unix/sysconf.o: unix/sysconf.c
+$(libunixobj)/unix/syslog.o: unix/syslog.c
 $(libunixobj)/unix/truncate.o: unix/truncate.c
 $(libunixobj)/unix/tty.o: unix/tty.c
 $(libunixobj)/unix/umask.o: unix/umask.c

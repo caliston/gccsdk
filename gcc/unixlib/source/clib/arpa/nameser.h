@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/arpa/nameser.h,v $
- * $Date: 2000/07/15 14:52:14 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -65,11 +65,15 @@
 
 /*
  *      @(#)nameser.h	8.1 (Berkeley) 6/2/93
- *	$Id: nameser.h,v 1.1.1.1 2000/07/15 14:52:14 nick Exp $
+ *	$Id: nameser.h,v 1.2 2001/01/29 15:10:19 admin Exp $
  */
 
 #ifndef __ARPA_NAMESER_H
 #define __ARPA_NAMESER_H 1
+
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
 
 /* Freenet programmers interface - arpa/nameser.h - edited by stewart 2/2/96 */
 
@@ -89,9 +93,7 @@
 #endif
 /* End S.N.B. addition */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
 
 /*
  * revision information.  this is the release date in YYYYMMDD format.
@@ -376,9 +378,7 @@ extern __u_int32_t _getlong (const __u_char *);
 	(cp) += INT32SZ; \
 }
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 /* end of arpa.h.nameser */
 #endif

@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_mman.s,v $
-; $Date: 2000/07/15 14:52:34 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:21 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 ; sys/_mman.s: Written by Peter Burwood, June 1997
@@ -20,6 +20,7 @@
 	; do not overlap, so we don't have to worry whether to copy up
 	; or copy down.
 	EXPORT	|__mmap_page_copy|
+	NAME	__mmap_page_copy
 |__mmap_page_copy|
 	STMFD	sp!,{v1-v6,lr}
 |__mmap_page_copy_l1|

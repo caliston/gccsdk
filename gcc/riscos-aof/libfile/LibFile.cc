@@ -1,20 +1,20 @@
-#include <iostream.h>
+#include <iostream>
 #include "Librarian.h"
 #include "BError.h"
 
 int main(int argc,char **argv)
 {
-	BError *err;
+  try
+    {
+      Librarian libFile (argc, argv);
+      libFile.run();
+    }
 
-	TRY
-	{
-		Librarian libFile(argc,argv);
-		libFile.run();
-	}
-	CATCH(err)
-	{
-	 	cerr << err;
-	}
+  catch (BError err)
+    {
+      cerr << &err;
+      return 1;
+    }
 
-	return 0;
+  return 0;
 }

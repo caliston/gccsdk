@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/fstat.c,v $
- * $Date: 2000/07/15 14:52:43 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/08/17 10:58:56 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: fstat.c,v 1.1.1.1 2000/07/15 14:52:43 nick Exp $";
+static const char rcs_id[] = "$Id: fstat.c,v 1.2.2.2 2002/08/17 10:58:56 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -17,10 +17,10 @@ static const char rcs_id[] = "$Id: fstat.c,v 1.1.1.1 2000/07/15 14:52:43 nick Ex
 #include <stdlib.h>
 #include <dirent.h>
 
-#include <sys/dev.h>
-#include <sys/os.h>
+#include <unixlib/dev.h>
+#include <unixlib/os.h>
 #include <sys/stat.h>
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 
 #include <unixlib/local.h>
 #include <unixlib/swiparams.h>
@@ -43,6 +43,7 @@ fstat (int fd, struct stat *buf)
     {
       char *buffer;
       _kernel_oserror *err;
+      int argsregs[3];
 
       if (file_desc->dflag & FILE_ISDIR)
         buffer = ((DIR *) file_desc->handle)->dd_name_can;
@@ -53,7 +54,7 @@ fstat (int fd, struct stat *buf)
 	return __set_errno (EBADF);
 
       /* Get vital file statistics and use File$Path.  */
-      err = os_file (OSFILE_READCATINFO, buffer, regs);
+      err = __os_file (OSFILE_READCATINFO, buffer, regs);
       if (err)
 	{
 	  __seterr (err);
@@ -62,12 +63,22 @@ fstat (int fd, struct stat *buf)
 	}
       buf->st_ino = __get_file_ino (NULL, buffer);
       free (buffer);
+
+      /* __os_file returns the allocated size of the file,
+         but we want the current extent of the file */
+      err = __os_args (2, (int) file_desc->handle, 0, argsregs);
+      if (err)
+        {
+          __seterr (err);
+          return __set_errno (EIO);
+        }
+      regs[4] = argsregs[2];
     }
   else
     {
       /* Fake some stuff for the other device types.  */
       buf->st_ino = 0;
-      regs[0] = regs[2] = regs[4] = regs[5] = 0;
+      regs[0] = regs[2] = regs[3] = regs[4] = regs[5] = 0;
     }
 
   buf->st_dev = file_desc->device;

@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/math-asm/_signbit.s,v $
-; $Date: 2000/07/15 14:52:24 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -13,6 +13,7 @@
 	AREA	|C$$code|, CODE, READONLY
 
 	EXPORT	signbit
+	NAME	signbit
 signbit
 	and	a1, a1, #&80000000
 	return	AL, pc, lr

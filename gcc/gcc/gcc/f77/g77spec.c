@@ -428,7 +428,7 @@ For more information on g77 and gcc, type the commands `info -f g77'\n\
 and `info -f gcc' to read the Info documentation.\n\
 \n\
 For bug reporting instructions, please see:\n\
-<URL:http://www.gnu.org/software/gcc/faq.html#bugreport>.\n");
+%s.\n", GCCBUGURL);
 	  exit (0);
 	  break;
 #endif

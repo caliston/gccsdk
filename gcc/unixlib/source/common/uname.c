@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/uname.c,v $
- * $Date: 2000/07/15 14:52:18 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: uname.c,v 1.1.1.1 2000/07/15 14:52:18 nick Exp $";
+static const char rcs_id[] = "$Id: uname.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
 #endif
 
 /* Ensure old names are visible.  */
@@ -35,7 +35,10 @@ __uname (const char *name, int cflag)
 	      ? __RISCOSIFY_DONT_TRUNCATE : __RISCOSIFY_SHORT_TRUNCATE;
 
   if (! name)
-    return "";
+    {
+      __unbuf[0] = '\0';
+      return __unbuf;
+    }
 
   _name = (_name == __unbuf) ? (__unbuf + (sizeof(__unbuf)>>1)) : __unbuf;
 

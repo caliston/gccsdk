@@ -1,15 +1,19 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/inttypes.h,v $
- * $Date: 2000/07/15 14:52:11 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/08/18 15:19:05 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifndef __INTTYPES_H
 #define __INTTYPES_H 1
+
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
 
 /* Get the type definitions.  */
 #include <stdint.h>
@@ -234,9 +238,15 @@
 
 #endif	/* C++ && format macros */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
+
+/* We have to define the `uintmax_t' type using `lldiv_t'.  */
+__extension__
+typedef struct
+{
+  long long int quot;         /* Quotient.  */
+  long long int rem;          /* Remainder.  */
+} imaxdiv_t;
 
 /* Like `strtol' but convert to `intmax_t'.  */
 extern intmax_t strtoimax (const char *__nptr,
@@ -256,8 +266,6 @@ extern uintmax_t wcstoumax (const wchar_t *__nptr,
 			    wchar_t **__endptr, int __base);
 #endif
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif

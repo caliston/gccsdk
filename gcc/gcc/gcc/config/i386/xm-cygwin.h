@@ -50,7 +50,6 @@ do {									\
   (VAR) = _posixepath;							\
 } while (0)
 
-#define PATH_SEPARATOR ':'
 
 /* This is needed so that protoize will compile.  */
 #ifndef POSIX

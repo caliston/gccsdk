@@ -224,11 +224,7 @@ int frame_pointer_needed;
 
 /* Assign unique numbers to labels generated for profiling.  */
 
-static int profile_label_no;
-
-/* The first allocated profile_label_no at the start of a function.  */
-
-static int profile_label_no_start;
+int profile_label_no;
 
 /* Length so far allocated in PENDING_BLOCKS.  */
 
@@ -1673,7 +1669,7 @@ final_start_function (first, file, optimize)
 #endif
     profile_after_prologue (file);
 
-  profile_label_no_start = ++profile_label_no;
+  profile_label_no++;
 
   /* If we are doing basic block profiling, remember a printable version
      of the function name.  */
@@ -1705,7 +1701,9 @@ static void
 profile_function (file)
      FILE *file;
 {
+#ifndef NO_PROFILE_COUNTERS
   int align = MIN (BIGGEST_ALIGNMENT, LONG_TYPE_SIZE);
+#endif
 #if defined(ASM_OUTPUT_REG_PUSH)
 #if defined(STRUCT_VALUE_INCOMING_REGNUM) || defined(STRUCT_VALUE_REGNUM)
   int sval = current_function_returns_struct;
@@ -1715,14 +1713,14 @@ profile_function (file)
 #endif
 #endif /* ASM_OUTPUT_REG_PUSH */
 
-#if 0
+#ifndef NO_PROFILE_COUNTERS
   data_section ();
   ASM_OUTPUT_ALIGN (file, floor_log2 (align / BITS_PER_UNIT));
   ASM_OUTPUT_INTERNAL_LABEL (file, "LP", profile_label_no);
   assemble_integer (const0_rtx, LONG_TYPE_SIZE / BITS_PER_UNIT, 1);
+#endif
 
   function_section (current_function_decl);
-#endif
 
 #if defined(STRUCT_VALUE_INCOMING_REGNUM) && defined(ASM_OUTPUT_REG_PUSH)
   if (sval)
@@ -1773,22 +1771,6 @@ profile_function (file)
     }
 #endif
 #endif
-}
-
-/* Output block for profile data.  */
-static void output_profile_data (FILE *file)
-{
-  int x;
-  int align = MIN (BIGGEST_ALIGNMENT, LONG_TYPE_SIZE);
-
-  data_section ();
-
-  for (x = profile_label_no_start; x < profile_label_no; x++)
-    {
-      ASM_OUTPUT_ALIGN (file, floor_log2 (align / BITS_PER_UNIT));
-      ASM_OUTPUT_INTERNAL_LABEL (file, "LP", profile_label_no);
-      assemble_integer (const0_rtx, LONG_TYPE_SIZE / BITS_PER_UNIT, 1);
-    }
 }
 
 /* Output assembler code for the end of a function.
@@ -1852,9 +1834,6 @@ final_end_function (first, file, optimize)
 
   /* If FUNCTION_EPILOGUE is not defined, then the function body
      itself contains return instructions wherever needed.  */
-
-  if (profile_flag)
-    output_profile_data (file);
 }
 
 /* Add a block to the linked list that remembers the current line/file/function
@@ -3068,7 +3047,8 @@ cleanup_subreg_operands (insn)
       if (GET_CODE (recog_operand[i]) == SUBREG)
         recog_operand[i] = alter_subreg (recog_operand[i]);
       else if (GET_CODE (recog_operand[i]) == PLUS
-               || GET_CODE (recog_operand[i]) == MULT)
+               || GET_CODE (recog_operand[i]) == MULT
+	       || GET_CODE (recog_operand[i]) == MEM)
        recog_operand[i] = walk_alter_subreg (recog_operand[i]);
     }
 
@@ -3077,7 +3057,8 @@ cleanup_subreg_operands (insn)
       if (GET_CODE (*recog_dup_loc[i]) == SUBREG)
         *recog_dup_loc[i] = alter_subreg (*recog_dup_loc[i]);
       else if (GET_CODE (*recog_dup_loc[i]) == PLUS
-               || GET_CODE (*recog_dup_loc[i]) == MULT)
+               || GET_CODE (*recog_dup_loc[i]) == MULT
+	       || GET_CODE (*recog_dup_loc[i]) == MEM)
         *recog_dup_loc[i] = walk_alter_subreg (*recog_dup_loc[i]);
     }
 }
@@ -3128,7 +3109,7 @@ alter_subreg (x)
       PUT_CODE (x, MEM);
       MEM_COPY_ATTRIBUTES (x, y);
       MEM_ALIAS_SET (x) = MEM_ALIAS_SET (y);
-      XEXP (x, 0) = plus_constant (XEXP (y, 0), offset);
+      XEXP (x, 0) = plus_constant_for_output (XEXP (y, 0), offset);
     }
 
   return x;

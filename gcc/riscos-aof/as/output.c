@@ -3,11 +3,16 @@
  * Copyright © 1992 Niklas Röjemo
  * Copyright 1997, Nick Burrett.
  */
-
+#include "sdk-config.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "error.h"
 #include "chunkfile.h"
 #include "aoffile.h"
@@ -16,13 +21,12 @@
 #include "area.h"
 #include "os.h"
 #include "version.h"
-#include "endiandef.h"
 #include "uname.h"
 #if defined(UNIXLIB) || defined(CROSS_COMPILE)
 #include <ctype.h>
 #include <errno.h>
 #endif
-#ifdef __riscos
+#ifdef __riscos__
 #include "depend.h"
 #endif
 
@@ -33,10 +37,55 @@ extern int dde;
 #define FIX(n) ((3+(int)n)&~3)
 #define EXTRA(n) (FIX(n)-n)
 
-char *idfn_text = MESSAGE;
+const char *idfn_text = MESSAGE;
 
 #define MAXNAME 256
 static char outname[MAXNAME + 1];
+
+#define BYTE0SHIFT 24
+#define BYTE1SHIFT 16
+#define BYTE2SHIFT 8
+#define BYTE3SHIFT 0
+
+#if !defined(__riscos__) && defined(WORDS_BIGENDIAN)
+/* Convert to ARM byte-sex.  */
+static unsigned armword (unsigned val)
+{
+  union
+    {
+      unsigned i;
+      char c[4];
+    }
+  ret;
+
+  ret.c[0] = (val >> BYTE0SHIFT) & 0xff;
+  ret.c[1] = (val >> BYTE1SHIFT) & 0xff;
+  ret.c[2] = (val >> BYTE2SHIFT) & 0xff;
+  ret.c[3] = (val >> BYTE3SHIFT) & 0xff;
+  return (ret.i);
+}
+
+/* Convert from ARM byte-sex.  */
+static unsigned ourword (unsigned val)
+{
+  union
+  {
+    unsigned i;
+    char c[4];
+  }
+  ret;
+
+  ret.c[0] = (val >> BYTE0SHIFT) & 0xff;
+  ret.c[1] = (val >> BYTE1SHIFT) & 0xff;
+  ret.c[2] = (val >> BYTE2SHIFT) & 0xff;
+  ret.c[3] = (val >> BYTE3SHIFT) & 0xff;
+  return (ret.i);
+}
+#else
+/* Little endian host machines.  */
+#define armword(x) (x)
+#define ourword(x) (x)
+#endif
 
 void
 outputInit (char *outfile)
@@ -75,6 +124,7 @@ outputInit (char *outfile)
 	temp[-1] = 'o';
 #endif /* UNIXLIB */
 #endif /* CROSS_COMPILE */
+
       if ((objfile = fopen (outname, "wb")) == NULL)
 	{
 #if defined(UNIXLIB) || defined(CROSS_COMPILE)
@@ -112,7 +162,7 @@ outputRemove (void)
     remove (outname);
 }
 
-int
+static int
 countAreas (Symbol * ap)
 {
   int i = 0;
@@ -258,7 +308,7 @@ outputAof (void)
     {
       if (!(ap->area.info->type & AREA_UDATA))
 	{
-	  if (ourword (FIX (ap->value.ValueInt.i)) !=
+	  if ((size_t)ourword (FIX (ap->value.ValueInt.i)) !=
 	      fwrite ((void *) ap->area.info->image, sizeof (char),
 		      ourword (FIX (ap->value.ValueInt.i)), objfile))
 	    {

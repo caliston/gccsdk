@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/netlib/_net_error.s,v $
-; $Date: 2000/07/15 14:52:26 $
-; $Revision: 1.1.1.1 $
+; $Date: 2002/07/19 13:12:30 $
+; $Revision: 1.2.2.1 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -22,8 +22,10 @@
 ; Entry point from NetSWIsimple
 ; B to here in SVC mode with return address (flags and mode) in ip
 	EXPORT	|__net_error_simple_entry|
+	NAME	__net_error_simple_entry
 |__net_error_simple_entry|
 	MOV	lr, ip		; restore normality
+	B	|__net_error|
 ;
 ; continue through into standard net_error code
 ; standard net_error entered in SVC with BLVS immediately after SWI
@@ -31,6 +33,7 @@
 ; and hence must be preserved
 ;
 	EXPORT	|__net_error|
+	NAME	__net_error
 |__net_error|
 	STMFD	sp!, {a1, ip, lr}	; preserve ip (for when called as subroutine
 				; by NetSWI)

@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/local.h,v $
- * $Date: 2000/07/15 14:52:17 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/08/18 15:19:06 $
+ * $Revision: 1.2.2.5 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  * This file should eventually contain most / all of the unixlib specific
  * functions.
@@ -14,40 +14,34 @@
 #ifndef __UNIXLIB_LOCAL_H
 #define __UNIXLIB_LOCAL_H 1
 
-#ifndef __STDDEF_H
-#include <stddef.h>
-#endif
-
 #ifdef __UNIXLIB_INTERNALS
 
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
 
-/* Prevent inclusion of <stdio.h>.  */
-#ifndef __FILE_declared
-#define __FILE_declared 1
-typedef struct __iobuf FILE;
-#endif
+#define __need_size_t
+#include <stddef.h>
+
+#define __need_FILE
+#include <stdio.h>
 
 #endif /* __UNIXLIB_INTERNALS */
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
 #endif
 
-#ifdef __UNIXLIB_INTERNALS
+__BEGIN_DECLS
 
-/* Returns TRUE if specified range is ok, Otherwise returns FALSE.
-   Uses OS_ValidateAddress (PRMs 1-379).  */
-extern int __address_valid (const void *__start, const void *__end);
+#ifdef __UNIXLIB_INTERNALS
 
 /* Generate a file serial number. This should distinguish the file from
    all other files on the same device.  */
 extern __ino_t __get_file_ino (const char *__directory,
 			       const char *__filename);
 
-/* Return the converted to canonicalised RISCOS filename, or NULL on
+/* Return the converted to canonicalised RISC OS filename, or NULL on
    failure.  */
 extern char * __fd_to_name (int __riscos_fd, char *__buf, size_t __buflen);
 
@@ -104,12 +98,8 @@ extern char *__net_readline (FILE *__file, char *__buffer, int __length);
 /* Initialise unix file name translation.  */
 extern void __riscosify_init (void);
 
-#if 0
-extern int __sfixadd_l (const char *__sfix, ...);
-extern int __sfixadd_v (const char *const *__sfixes);
-extern int __sfixdel_l (const char *__sfix, ...);
-extern int __sfixdel_v (const char *const *__sfixes);
-#endif
+extern void __sfixinit (const char *list);
+extern void __sdirinit (void);
 
 /* Search special suffix list for __sfix (zero char terminated).  Returns
    NULL if suffix isn't to be used for suffix swapping, ptr to suffix
@@ -168,21 +158,26 @@ extern int __riscosify_control;
    will get a ",fff" extension when translated to their Unix form.  */
 #define __RISCOSIFY_FILETYPE_FFF_EXT	0x2000
 
+/* If the filename has a unix-style extension, look up the extension
+   using RISC OS MimeMap SWIs and set a filetype.  If the filetype
+   could not be found, use 0xFFF.                                  */
+#define __RISCOSIFY_FILETYPE_SET        0x4000
+ 
 /* Mask of acceptable values. Keep other bits zero. Checks may be made.  */
-#define __RISCOSIFY_MASK		0x3FF0
-
+#define __RISCOSIFY_MASK               0x7FF0
+  
 /* Value indicating that __riscosify[_std] didn't see a filetype extension
-   in it's argument __name or that it wasn't instructed to look for one.  */
-#define __RISCOSIFY_FILETYPE_NOTFOUND 	-1
+   in its argument __name or that it wasn't instructed to look for one.  */
+#define __RISCOSIFY_FILETYPE_NOTFOUND  -1
 
 /* Value indicating for __unixify that there is no filetype (e.g. a
    directory) even when __RISCOSIFY_FILETYPE_EXT is specified as one of
    the flag bits.  */
 #define __RISCOSIFY_FILETYPE_NOTSPECIFIED -1
 
-/* Convert Unix filenames/pathnames to Risc OS format creating the final
+/* Convert Unix filenames/pathnames to RISC OS format creating the final
    directory if necessary and CREATE_DIR is non-zero.
-   Pass Risc OS pathnames through unchanged.
+   Pass RISC OS pathnames through unchanged.
    Returns pointer to terminating '\0' in buffer,
    or NULL if there was a problem.  */
 extern char *__riscosify (const char *__name, int __create_dir,
@@ -193,6 +188,11 @@ extern char *__riscosify (const char *__name, int __create_dir,
 extern char *__riscosify_std (const char *__name, int __create_dir,
 			      char *__buffer, size_t __buf_len,
 			      int *__filetype);
+
+/* Gets the __riscosify_control value which can be defined by
+   the global variable __riscosify_control in the user program.
+   Returns 0 (= default value) when not defined.  */
+extern int __get_riscosify_control (void);
 
 /* Convert `__name' into a Unix style pathname and store in `buffer'.
    If buffer is non-null then it is at least buf_len long.  If buffer
@@ -249,8 +249,6 @@ extern int __uname_control;
 extern int *__uname_dont_pack_ptr;
 #endif /* __UNIXLIB_OLD_UNAME */
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif

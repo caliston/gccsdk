@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/stat.h,v $
- * $Date: 2000/07/15 14:52:16 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/06/15 12:59:11 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -13,16 +13,68 @@
 #ifndef __SYS_STAT_H
 #define __SYS_STAT_H
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
+#define __need_time_t
+#include <time.h>
+
+/* The Single Unix specification says that some more types are
+   available here.  */
+#ifndef __dev_t_defined
+typedef __dev_t dev_t;
+#define __dev_t_defined
 #endif
 
+#ifndef __gid_t_defined
+typedef __gid_t gid_t;
+#define __gid_t_defined
+#endif
+
+#ifndef __ino_t_defined
+typedef __ino_t ino_t;
+#define __ino_t_defined
+#endif
+
+#ifndef __mode_t_defined
+typedef __mode_t mode_t;
+#define __mode_t_defined
+#endif
+
+#ifndef __nlink_t_defined
+typedef __nlink_t nlink_t;
+#define __nlink_t_defined
+#endif
+
+#ifndef __off_t_defined
+typedef __off_t off_t;
+#define __off_t_defined
+#endif
+
+#ifndef __uid_t_defined
+typedef __uid_t uid_t;
+#define __uid_t_defined
+#endif
+
+#ifndef __blkcnt_t_defined
+typedef __blkcnt_t blkcnt_t;
+#define __blkcnt_t_defined
+#endif
+
+#ifndef __blksize_t_defined
+typedef __blksize_t blksize_t;
+#define __blksize_t_defined
+#endif
+
+__BEGIN_DECLS
+
 struct stat
-  {
+{
   __dev_t 	st_dev; /* Device containing the file.  */
   __ino_t 	st_ino; /* File serial number.  */
   __mode_t 	st_mode; /* File mode.  */
@@ -41,7 +93,7 @@ struct stat
 #define _STATBUF_ST_BLKSIZE /* Tell code we have this member. */
 /*  unsigned long int st_nblocks; / * Number of 512-byte blocks allocated.  */
   unsigned long int st_blocks; /* Number of 512-byte blocks allocated.  */
-  };
+};
 
 /* Bit masks.  */
 
@@ -130,29 +182,25 @@ extern void __stat (int *__regs, struct stat *__buf);
 #endif
 
 /* Set file access permissions for file to mode.  */
-extern int chmod (const char *file, __mode_t mode);
+extern int chmod (const char *__file, __mode_t __mode);
 
 /* Set file access permissions of the file fd is open on to mode.  */
-extern int fchmod (int fd, __mode_t mode);
+extern int fchmod (int __fd, __mode_t __mode);
 
 /* Set the file creation mask of the current process to mask,
    return the old creation mask.  */
-extern __mode_t umask (__mode_t mask);
+extern __mode_t umask (__mode_t __mask);
 
 /* Create a new directory named path, with permission bits mode.  */
-extern int mkdir (const char *path, __mode_t mode);
+extern int mkdir (const char *__path, __mode_t __mode);
 
-#if 0
 /* Create a device file named path, with permission and special bits mode
    and device number dev.  */
-extern int mknod (const char *path, __mode_t mode, __dev_t dev);
+extern int mknod (const char *__path, __mode_t __mode, __dev_t __dev);
 
 /* Create a new FIFO named path, with permission bits mode.  */
-extern int mkfifo (const char *path, __mode_t mode);
-#endif
+extern int mkfifo (const char *__path, __mode_t __mode);
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif

@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_divsi3.s,v $
-; $Date: 2000/07/15 14:52:34 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:21 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -15,9 +15,10 @@
 	AREA	|C$$code|, CODE, READONLY
 
 	IMPORT	|_kernel_sdiv|
+
 	EXPORT	|__divsi3|
 	EXPORT	|__divmodsi4|
-
+	NAME	__divsi3
 |__divsi3|
 |__divmodsi4|
 	MOV	a3, a1

@@ -205,7 +205,7 @@ _IO_str_count (fp)
 	  - fp->_IO_read_base);
 }
 
-_IO_pos_t
+_IO_off_t
 _IO_str_seekoff (fp, offset, dir, mode)
      _IO_FILE *fp;
      _IO_off_t offset;

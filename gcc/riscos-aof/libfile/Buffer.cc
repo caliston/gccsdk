@@ -1,23 +1,24 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <iostream.h>
+#include <iostream>
 #include <ctype.h>
 #include "Buffer.h"
 #include "BString.h"
 #include "BError.h"
 
-#ifndef UNIX
-extern "C" OS_File(int *);
-extern "C" OS_GBPB(int *);
+#ifndef CROSS_COMPILE
+extern "C" void *OS_File(int *);
+extern "C" void *OS_GBPB(int *);
 #endif
 
 Buffer::Buffer()
 {
  m_size=1000;
  m_data=(unsigned char *) malloc(m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  m_length=0;
 }
@@ -27,7 +28,7 @@ Buffer::Buffer(Buffer &a_buffer)
  m_size=a_buffer.m_size;
  m_length=a_buffer.m_length;
  m_data=(unsigned char *) malloc(m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  memcpy(m_data,a_buffer.m_data,m_length);
 }
@@ -37,7 +38,7 @@ Buffer::Buffer(Buffer *a_buffer)
  m_size=a_buffer->m_size;
  m_length=a_buffer->m_length;
  m_data=(unsigned char *) malloc(m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  memcpy(m_data,a_buffer->m_data,m_length);
 }
@@ -54,7 +55,7 @@ void Buffer::empty()
  	free(m_data);
  m_size=1000;
  m_data=(unsigned char *) malloc(m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  m_length=0;
 }
@@ -64,7 +65,7 @@ void Buffer::set(Buffer *a_buffer)
  m_size=a_buffer->m_size;
  m_length=a_buffer->m_length;
  m_data=(unsigned char *) realloc(m_data, m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  memcpy(m_data,a_buffer->m_data,m_length);
 }
@@ -74,7 +75,7 @@ void Buffer::set(Buffer *a_buffer, int a_start, int a_len)
  m_size = a_len;
  m_length = a_len;
  m_data = (unsigned char *) realloc(m_data, m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  memcpy(m_data, &((a_buffer->m_data)[a_start]), m_length);
 }
@@ -87,7 +88,7 @@ Buffer &Buffer::operator=(const Buffer &a_buffer)
  m_size=a_buffer.m_size;
  m_length=a_buffer.m_length;
  m_data=(unsigned char *) malloc(m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
  memcpy(m_data,a_buffer.m_data,m_length);
  return *this;
@@ -97,7 +98,7 @@ void Buffer::increase(int a_bytes)
 {
  m_size+=a_bytes;
  m_data=(unsigned char *) realloc(m_data,m_size*sizeof(unsigned char));
- if(!m_data)
+ if(!m_data && m_size)
  	THROW_SPEC_ERR(BError::NewFailed);
 }
 
@@ -187,17 +188,18 @@ int Buffer::length()
 
 unsigned char &Buffer::operator[](int a_index)
 {
- if(a_index>=m_length)
- {
- 	m_data=(unsigned char *) realloc(m_data,(a_index+1)*sizeof(unsigned char));
-	if(!m_data)
- 		THROW_SPEC_ERR(BError::NewFailed)
- 	int i;
- 	m_size=m_length=a_index+1;
- 	for(i=0;i<=a_index;i++)
- 		m_data[i]=0;
- }
- return m_data[a_index];
+  if(a_index>=m_length)
+    {
+      m_data=(unsigned char *) realloc(m_data,(a_index+1)*sizeof(unsigned char));
+      if(!m_data)
+	THROW_SPEC_ERR(BError::NewFailed);
+
+      int i;
+      m_size=m_length=a_index+1;
+      for(i=0;i<=a_index;i++)
+	m_data[i]=0;
+    }
+  return m_data[a_index];
 }
 
 unsigned char *Buffer::getData()
@@ -222,7 +224,7 @@ void Buffer::save(const BString &a_file, int a_append)
  }
  else
  {
-#ifdef UNIX
+#ifdef CROSS_COMPILE
 	fp = fopen (a_file(), "wb");
 	if (fp == NULL)
 	  THROW_SPEC_ERR(BError::CantOpenFile);
@@ -236,7 +238,8 @@ void Buffer::save(const BString &a_file, int a_append)
  	reg[4] = (int) m_data;
  	reg[5] = reg[4] + m_length;
 
- 	OS_File(reg);
+ 	if (OS_File(reg) != NULL)
+	  THROW_SPEC_ERR(BError::CantOpenFile);
 #endif
  }
 }
@@ -249,7 +252,7 @@ void Buffer::load(const BString &a_file)
  if(!fp)
  	THROW_SPEC_ERR(BError::FileNotFound);
 
-#ifdef UNIX
+#ifdef CROSS_COMPILE
  struct stat f;
 
  stat (a_file(), &f);

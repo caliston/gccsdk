@@ -3,14 +3,20 @@
  *  main.c
  * Copyright © 1992 Niklas Röjemo
  */
+#include "sdk-config.h"
 #include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <locale.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
-#include "strdup.h"
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
+#include "main.h"
 #include "input.h"
 #include "output.h"
 #include "error.h"
@@ -83,9 +89,7 @@ as_help (char *progname)
 }
 
 
-extern void as_target (char *);	/* in targetcpu.c */
-
-#ifdef __riscos
+#ifdef __riscos__
 extern int _kernel_setenv (const char *, const char *);
 static char *prefix;
 #else
@@ -100,7 +104,7 @@ restore_prefix (void)
 {
   if (!finished || noerrors ())
     outputRemove ();
-#ifdef __riscos
+#ifdef __riscos__
   if (prefix)
     _kernel_setenv ("Prefix$Dir", prefix);
 #endif
@@ -111,7 +115,7 @@ restore_prefix (void)
 int
 main (int argc, char **argv)
 {
-#ifdef __riscos
+#ifdef __riscos__
   ProgName = getenv ("Prefix$Dir");
   /* There's a strange problem with Prefix$Dir becoming unset if
    * throwback is used...
@@ -267,7 +271,7 @@ main (int argc, char **argv)
   else
     {
       inputInit (SourceFileName);
-      errorInit (throwback, inputName);
+      errorInit (inputName);
       outputInit (ObjFileName);
       areaInit ();
       setjmp (asmContinue);
@@ -278,7 +282,7 @@ main (int argc, char **argv)
 	fprintf (stdout, "%s: Error when writing object file '%s'.\n", ProgName, ObjFileName);
       else
 	outputAof ();
-#ifdef __riscos
+#ifdef __riscos__
       dependPut ("\n", "", "");
 #endif
       outputFinish ();

@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/fcntl.h,v $
- * $Date: 2000/07/15 14:52:11 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/02/07 10:19:30 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  *
  ***************************************************************************/
@@ -14,14 +14,19 @@
 #ifndef __FCNTL_H
 #define __FCNTL_H
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
+#ifdef __USE_XOPEN
+#include <sys/stat.h>
 #endif
 
+__BEGIN_DECLS
 
 /* File access modes for open() and fcntl()  */
 
@@ -87,6 +92,8 @@ extern "C" {
 #define O_PIPE		0x4000 /* UnixLib specific */
 #define O_UNLINKED	0x8000 /* UnixLib specific - unlink file on close */
 
+/* Don't make terminal device controlling terminal */
+#define O_NOCTTY       0x10000
 
 
 /* Duplicate file descriptor.  */
@@ -204,9 +211,6 @@ extern int creat (const char *file, __mode_t mode);
 extern int lockf (int fd, int cmd, __off_t len);
 #endif
 
-
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif

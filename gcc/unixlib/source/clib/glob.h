@@ -1,23 +1,24 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/glob.h,v $
- * $Date: 2000/07/15 14:52:11 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifndef __GLOB_H
 #define __GLOB_H 1
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #undef __ptr_t
 #define __ptr_t void *
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+__BEGIN_DECLS
 
 /* Bits set in the 'flags' argument to `glob'.  */
 #define	GLOB_ERR	(1 << 0)/* Return on read errors.  */
@@ -43,8 +44,10 @@ extern "C"
 
 /* Error returns from `glob'.  */
 #define	GLOB_NOSPACE	1	/* Ran out of memory.  */
+#define GLOB_ABORTED	2	/* Read error.  */
 #define	GLOB_ABEND	2	/* Read error.  */
 #define	GLOB_NOMATCH	3	/* No matches found.  */
+#define GLOB_NOSYS	4	/* Not implemented.  */
 
 /* Need the definition of struct stat.  */
 #ifdef __GNUC__
@@ -90,8 +93,6 @@ extern int glob (const char *__pattern, int __flags,
 /* Free storage allocated in 'pglob' by a previous call to glob.  */
 extern void globfree (glob_t *__pglob);
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif

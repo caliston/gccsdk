@@ -1,5 +1,6 @@
 /* Front-end tree definitions for GNU compiler.
-   Copyright (C) 1989, 93-98, 1999 Free Software Foundation, Inc.
+   Copyright (C) 1989, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+   Free Software Foundation, Inc.
 
 This file is part of GNU CC.
 
@@ -1635,7 +1636,7 @@ extern int set_alignment;
 extern int set_word_size;
 
 /* If non-zero, bits in (power-)sets start with the highest bit.  */
-extern int set_words_big_endian;
+extern int set_words_big_endian; 
 #endif /* GPC */
 
 /* Concatenate two lists (chains of TREE_LIST nodes) X and Y
@@ -2215,6 +2216,7 @@ extern tree reorder_blocks		PROTO ((tree *, tree,
 						struct rtx_def *));
 extern void free_temps_for_rtl_expr	PROTO ((tree));
 extern void instantiate_virtual_regs	PROTO ((tree, struct rtx_def *));
+extern void unshare_all_rtl		PROTO ((tree, struct rtx_def *));
 extern int max_parm_reg_num		PROTO ((void));
 extern void push_function_context	PROTO ((void));
 extern void pop_function_context	PROTO ((void));

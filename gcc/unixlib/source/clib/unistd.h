@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2000/07/15 14:52:12 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/09/24 12:04:04 $
+ * $Revision: 1.2.2.11 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -13,18 +13,15 @@
 #ifndef __UNISTD_H
 #define __UNISTD_H
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifndef __GNUC__
-#undef  __attribute__
-#define __attribute__(x) /* Ignore */
-#endif
+__BEGIN_DECLS
 
 /* These may be used to determine what facilities are present at compile time.
    Their values can be obtained at run time from sysconf.  */
@@ -86,9 +83,52 @@ extern "C" {
 #define	STDOUT_FILENO	1	/* Standard output.  */
 #define	STDERR_FILENO	2	/* Standard error output.  */
 
-#ifndef __STDDEF_H
-#include <stddef.h>
+#ifndef __ssize_t_defined
+typedef __ssize_t ssize_t;
+#define __ssize_t_defined
 #endif
+
+#define __need_size_t
+#define __need_NULL
+#include <stddef.h>
+
+/* The Single Unix specification says that some more types are
+   available here.  */
+#ifndef __gid_t_defined
+typedef __gid_t gid_t;
+#define __gid_t_defined
+#endif
+
+#ifndef __uid_t_defined
+typedef __uid_t uid_t;
+#define __uid_t_defined
+#endif
+
+#ifndef __off_t_defined
+typedef __off_t off_t;
+#define __off_t_defined
+#endif
+
+#ifndef __useconds_t_defined
+typedef __useconds_t useconds_t;
+#define __useconds_t_defined
+#endif
+
+#ifndef __pid_t_defined
+typedef __pid_t pid_t;
+#define __pid_t_defined
+#endif
+
+#ifndef __intptr_t_defined
+typedef __intptr_t intptr_t;
+#define __intptr_t_defined
+#endif
+
+#ifndef __socklen_t_defined
+typedef __socklen_t socklen_t;
+#define __socklen_t_defined
+#endif
+
 
 /* Values for the second argument to access.  */
 
@@ -141,8 +181,24 @@ extern int pipe (int __pipedes[2]);
 /* Schedule an alarm.  */
 extern unsigned int alarm (unsigned int __seconds);
 
-/* Make the process sleep for 'seconds' seconds.  */
+/* Make the process sleep for '__seconds' seconds, or until a signal arrives
+   and is not ignored.  The function returns the number of seconds less
+   than '__seconds' which it actually slept (zero if it slept the full time).
+   If a signal handler does a `longjmp' or modifies the handling of the
+   SIGALRM signal while inside `sleep' call, the handling of the SIGALRM
+   signal afterwards is undefined.  There is no return value to indicate
+   error, but if `sleep' returns '__seconds', it probably didn't work.  */
 extern unsigned int sleep (unsigned int __seconds);
+
+/* Set an alarm to go off (generating a SIGALRM signal) in VALUE
+   microseconds.  If INTERVAL is nonzero, when the alarm goes off, the
+   timer is reset to go off every INTERVAL microseconds thereafter.
+   Returns the number of microseconds remaining before the alarm.  */
+extern __useconds_t ualarm(__useconds_t __useconds, __useconds_t __interval);
+
+/* Make the process sleep for '__usec' microseconds, or until a signal
+   arrives that is not blocked or ignored.  */
+extern int usleep (__useconds_t __usec);
 
 /* Suspend the process until a signal arrives.  */
 extern int pause (void);
@@ -174,19 +230,24 @@ extern char **environ;
 
 /* Replace the current process, executing path with args argv and
    environment envp.  */
-extern int execve (const char *__path, char **__argv, char **__envp);
+extern int execve (const char *__path, char * const __argv[],
+		   char *const __envp[]);
 
 /* Execute PATH with arguments ARGV and environment from `environ'.  */
-extern int execv (const char *__path, char **__argv);
+extern int execv (const char *__path, char *const __argv[]);
+
 /* Execute PATH with all arguments after PATH until a NULL pointer,
    and the argument after that for environment.  */
 extern int execle (const char *__path, const char *__arg, ...);
+
 /* Execute PATH with all arguments after PATH until
    a NULL pointer and environment from `environ'.  */
 extern int execl (const char *__path, const char *__arg, ...);
+
 /* Execute FILE, searching in the `PATH' environment variable if it contains
    no slashes, with arguments ARGV and environment from `environ'.  */
-extern int execvp (const char *__file, char **__argv);
+extern int execvp (const char *__file, char *const __argv[]);
+
 /* Execute FILE, searching in the `PATH' environment variable if
    it contains no slashes, with all arguments after FILE until a
    NULL pointer and environment from `environ'.  */
@@ -320,6 +381,12 @@ extern int ispipe (int __fd);
 /* Make a link to from named to.  */
 extern int link (const char *__from, const char *__to);
 
+/* Make a symbolic to from named to.  */
+extern int symlink (const char *__from, const char *__to);
+
+/* Read vaue of a symbolic link.  */
+extern int readlink (const char *__path, char *__buf, size_t __butsiz);
+
 /* Remove the line name.  */
 extern int unlink (const char *__name);
 
@@ -331,11 +398,14 @@ extern int rmdir (const char *__path);
 /* Return the login name of the user.  */
 extern char *getlogin (void);
 
-#if 0
 /* Set the foreground process group ID of FD set PGRP_ID.  */
 extern int tcsetpgrp (int __fd, __pid_t __pgrp_id);
 
+/* Return the foreground process group ID of FD.  */
+extern __pid_t tcgetpgrp (int __fd);
 
+
+#if 0
 /* Set the login name returned by `getlogin'.  */
 extern int setlogin (const char *__name);
 
@@ -394,7 +464,6 @@ extern size_t getpagesize (void);
 extern int getdtablesize (void);
 
 #if 0
-
 /* Return the current machine's Internet number.  */
 extern long int gethostid (void);
 
@@ -414,10 +483,6 @@ extern int vhangup (void);
    turn accounting off.  This call is restricted to the super-user.  */
 extern int acct (const char *__name);
 
-/* Make PATH be the root directory (the starting point for absolute paths).
-   This call is restricted to the super-user.  */
-extern int chroot (const char *__path);
-
 /* Make the block special device PATH available to the system for swapping.
    This call is restricted to the super-user.  */
 extern int swapon (const char *__path);
@@ -430,12 +495,15 @@ extern int reboot (int __howto);
 extern char *getusershell (void);
 extern void endusershell (void); /* Discard cached info.  */
 extern void setusershell (void); /* Rewind and re-read the file.  */
+#endif
 
+/* Make PATH be the root directory (the starting point for absolute paths).
+   This call is restricted to the super-user.  */
+extern int chroot (const char *__path);
 
 /* Prompt with PROMPT and read a string from the terminal without echoing.
    Uses /dev/tty if possible; otherwise stderr and stdin.  */
 extern char *getpass (const char *__prompt);
-#endif
 
 /* POSIX 2 extensions.  */
 
@@ -449,30 +517,17 @@ enum
 /* Get the value of the string-valued system variable NAME.  */
 extern size_t confstr (int __name, char *__buf, size_t __len);
 
-/* Process the arguments in ARGV (ARGC of them, minus
-   the program name) for options given in OPTS.
-
-   If `opterr' is zero, no messages are generated
-   for invalid options; it defaults to 1.
-   `optind' is the current index into ARGV.
-   `optarg' is the argument corresponding to the current option.
-   Return the option character from OPTS just read.
-   Return -1 when there are no more options.
-   For unrecognized options, or options missing arguments,
-   `optopt' is set to the option letter, and '?' is returned.
-
-   The OPTS string is a list of characters which are recognized option
-   letters, optionally followed by colons, specifying that that letter
-   takes an argument, to be placed in `optarg'.
-
-   The argument `--' causes premature termination of argument scanning,
-   explicitly telling `getopt' that there are no more options. */
-extern int getopt (int __argc, char *const *__argv, const char *__opts);
-extern int opterr, optind, optopt, optreset;
-extern char *optarg;
-
-#ifdef __cplusplus
-	}
+#ifdef __USE_XOPEN
+/* Swab pairs bytes in the first N bytes of the area pointed to by
+   FROM and copy the result to TO.  The value of TO must not be in the
+   range [FROM - N + 1, FROM - 1].  If N is odd the first byte in FROM
+   is without partner.  */
+extern void swab (const void * __from, void * __to, ssize_t __n);
 #endif
+
+#define __need_getopt
+#include <getopt.h>
+
+__END_DECLS
 
 #endif

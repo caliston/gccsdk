@@ -1,7 +1,7 @@
 /* GNU ld implementation as a wrapper to an ARM/RISC OS linker
    for the GNU compiler, with support for the C++ template repository.
 
-   Copyright (C) 1997-1999 Free Software Foundation, Inc.
+   Copyright (C) 1997, 1998, 1999, 2000, 2001 Nick Burrett
    Contributed by Nick Burrett (nick.burrett@btinternet.com)
 
 This file is part of GNU CC.
@@ -24,6 +24,7 @@ Boston, MA 02111-1307, USA.  */
 /* If building for a cross-compilation environment then be sure to
    define CROSS_COMPILE.  */
 
+#include "sdk-config.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -40,8 +41,6 @@ Boston, MA 02111-1307, USA.  */
 #include <sys/types.h>
 
 #ifndef CROSS_COMPILE
-#include <sys/os.h>
-#include <sys/swis.h>
 #include <unixlib/local.h>
 #endif
 
@@ -49,7 +48,7 @@ Boston, MA 02111-1307, USA.  */
 #include "demangle.h"
 #include "getopt.h"
 
-#define LD_VERSION "2.21"
+#define LD_VERSION "2.22"
 #define LD_DATE __DATE__
 
 #ifndef __GNUC__
@@ -57,7 +56,14 @@ Boston, MA 02111-1307, USA.  */
 #define __attribute__(x) /* Ignore */
 #endif
 
+/* The maximum number of times we shall re-compile a C++ program to
+   instantiate the templates.  With GCC 2.95, I suspect this feature
+   is no-longer required.  */
 #define MAX_ITERATIONS 17
+
+/* Maximum number of command line arguments that our linker supports.
+   FIXME We should remove this feature and support unlimited arguments.  */
+#define MAXARGS 2048
 
 /* Obstack allocation and deallocation routines.  */
 #define obstack_chunk_alloc xmalloc
@@ -65,7 +71,7 @@ Boston, MA 02111-1307, USA.  */
 
 static char *ldout;	  /* pathname for linker errors */
 static char *ld_viafile;  /* pathname for linker -via <file> object list  */
-static char *c_file_name; /* pathname of gcc.  */
+static const char *c_file_name; /* pathname of gcc.  */
 static struct obstack temporary_obstack;
 static struct obstack permanent_obstack;
 static char *temporary_firstobj;
@@ -106,9 +112,9 @@ static void llist_add (llist **list, const char *name);
 static void llist_free (llist *list);
 static void append_arg (args *, int *, const char *);
 static void tlink_init (void);
-static int tlink_execute (char *prog, char **argv, char *redir, char *viafile);
-static void do_tlink (char *, char **, args *);
-static void choose_temp_base (void);
+static int tlink_execute (const char *prog, char **argv, char *redir, char *viafile);
+static void do_tlink (const char *, char **, args *);
+static int choose_temp_base (void);
 static void dump_file (char *);
 static void ldversion (int);
 static void ldhelp (void);
@@ -118,10 +124,10 @@ extern char *riscos_to_unix (const char *, char *);
 
 /* Same as `malloc' but report error if no memory available.  */
 
-char *
+static void *
 xmalloc (unsigned size)
 {
-  register char *value = (char *) malloc (size);
+  void *value = malloc (size);
   if (value == 0)
     ld_error ("virtual memory exhausted");
   return value;
@@ -129,19 +135,39 @@ xmalloc (unsigned size)
 
 /* Same as `realloc' but report error if no memory available.  */
 
-char *
+static void *
 xrealloc (char *ptr, int size)
 {
-  char *result = (char *) realloc (ptr, size);
+  void *result = realloc (ptr, size);
   if (!result)
     ld_error ("virtual memory exhausted");
   return result;
+}
+
+#ifndef HAVE_STPCPY
+static char *stpcpy (char *s, const char *s2)
+{
+  while ((*s++ = *s2++))
+    ;
+
+  return s - 1;
+}
+#endif
+
+static void do_unlink (void)
+{
+  if (tlink_verbose < 15)
+    {
+      unlink (ld_viafile);
+      unlink (ldout);
+    }
 }
 
 static void
 linker_initialise (void)
 {
   FILE *temp;
+  int temp_filedesc;
 
   c_file_name = getenv ("COLLECT_GCC");
   if (c_file_name == 0)
@@ -156,28 +182,28 @@ linker_initialise (void)
   if (tlink_verbose >= 7)
     printf ("creating 1st temporary file\n");
 
-  choose_temp_base ();
+  temp_filedesc = choose_temp_base ();
   ldout = temp_filename;
-  temp = fopen (ldout, "w");
-  if (temp == NULL)
+  if (temp_filedesc == -1)
     {
-      fprintf (stderr, "ld: failed to create temporary filename '%s'\n", ldout);
+      fprintf (stderr, "ld: failed to create temporary filename '%s'\n",
+	       ldout);
       exit (1);
     }
-  fclose (temp);
+  close (temp_filedesc);
 
   if (tlink_verbose >= 7)
     printf ("creating 2nd temporary file\n");
   /* Create another unique file.  */
-  choose_temp_base ();
+  temp_filedesc = choose_temp_base ();
   ld_viafile = temp_filename;
-  temp = fopen (ld_viafile, "w");
-  if (temp == NULL)
+  if (temp_filedesc == -1)
     {
-      fprintf (stderr, "ld: failed to create temporary filename '%s'\n", ld_viafile);
+      fprintf (stderr, "ld: failed to create temporary filename '%s'\n",
+	       ld_viafile);
       exit (1);
     }
-  fclose (temp);
+  close (temp_filedesc);
 
   if (tlink_verbose >= 7)
     printf ("temporary files have been created\n");
@@ -186,37 +212,41 @@ linker_initialise (void)
 int
 main (int argc, char *argv[])
 {
-  char *requested_linker;
+  const char *requested_linker;
 
+  atexit (do_unlink);
   tlink_init ();
   linker_initialise ();
 
   if (tlink_verbose > 0)
     ldversion (0);
 
-#ifdef CROSS_COMPILE
-#ifdef STANDARD_EXEC_PREFIX
-  requested_linker = STANDARD_EXEC_PREFIX "drlink";
-#else
-  requested_linked = "drlink";
+#ifndef STANDARD_EXEC_PREFIX
+#define STANDARD_EXEC_PREFIX ""
 #endif
+
+#ifdef CROSS_COMPILE
+  requested_linker = STANDARD_EXEC_PREFIX "drlink";
 #else /* CROSS_COMPILE */
   requested_linker = getenv ("GCC$Linker");
 
   /* No linker has been specified, try finding one on the Run$Path.  */
   if (requested_linker == NULL || *requested_linker == '\0')
     {
-#ifdef STANDARD_EXEC_PREFIX
+      /* This is to force people to use the correct version of
+         drlink i.e. the one distributed with the GCCSDK.
+
+	 In the long term, it makes it easier to support the SDK because
+	 little changes in parts of UnixLib, such as struct proc, can
+	 make it difficult for `ld' to spawn `drlink'.  Therefore by
+	 having this restriction we can make sure it never happens.  */
       requested_linker = STANDARD_EXEC_PREFIX "drlink";
-#else
-      requested_linker = "drlink";
-#endif
     }
 #endif /* CROSS_COMPILE */
 
-  object_list = (args *)xmalloc (sizeof (args) * ARG_MAX);
+  object_list = (args *)xmalloc (sizeof (args) * MAXARGS);
   object_list[0].arg = (char *)0;
-  command_line = (args *)xmalloc (sizeof (args) * (ARG_MAX >> 2));
+  command_line = (args *)xmalloc (sizeof (args) * (MAXARGS >> 2));
   command_line[0].arg = (char *)0;
 
   object_offset = command_line_offset = 0;
@@ -337,11 +367,13 @@ hash_table_init (struct hash_table *table,
 
 /* Free a hash table.  */
 
+#if 0
 static void
 hash_table_free (struct hash_table *table)
 {
   obstack_free (&table->memory, (void *) NULL);
 }
+#endif
 
 /* Look up a string in a hash table.  */
 
@@ -430,6 +462,7 @@ hash_newfunc (struct hash_entry *entry, struct hash_table *table, const char *st
 
 /* Traverse a hash table.  */
 
+#if 0
 static void
 hash_traverse (struct hash_table *table,
 	       boolean (*func) (struct hash_entry *, void *),
@@ -448,6 +481,7 @@ hash_traverse (struct hash_table *table,
 	}
     }
 }
+#endif
 
 typedef struct symbol_hash_entry
 {
@@ -660,13 +694,16 @@ tlink_init (void)
 }
 
 static int
-tlink_execute (char *prog, char **argv, char *redir, char *viafile)
+tlink_execute (const char *prog, char **argv, char *redir, char *viafile)
 {
   char *command, *temp;
-  char **p_argv, *str, *s, filename[256];
+  char **p_argv, *str, *s = NULL, filename[256];
   FILE *handle;
-  int system_result, command_size;
+  int system_result;
+  unsigned int command_size;
+#ifdef __riscos__
   pid_t pid;
+#endif
 
   /* Reserve some space for the command line.  */
   command_size = 512;
@@ -681,14 +718,21 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
   handle = fopen (viafile, "w");
   if (!handle)
     {
-      printf ("ld: failed to open '%s' for writing. Trying without\n", viafile);
+      printf ("ld: failed to open '%s' for writing. Trying without\n",
+	      viafile);
       /* Reserve lots more space for the command line.  */
       command = xrealloc (command, 4096);
     }
 
   if (argv[0])
     {
+#ifdef CROSS_COMPILE
       s = stpcpy (command, argv[0]);
+#else
+      temp = __riscosify (argv[0], 0, __RISCOSIFY_DONT_TRUNCATE,
+			  filename, sizeof (filename), NULL);
+      s = stpcpy (command, filename);
+#endif
       if (tlink_verbose >= 5)
 	fprintf (stderr, "*%s", argv[0]);
     }
@@ -713,7 +757,7 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
 	    s = stpcpy (s, str);
 #else
 	  temp = __riscosify (str, 0, __RISCOSIFY_DONT_TRUNCATE,
-			      filename, sizeof (filename));
+			      filename, sizeof (filename), NULL);
 	  if (s != NULL)
 	    s = stpcpy (s, filename);
 #endif
@@ -740,7 +784,7 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
 #else
       /* Convert all the objects to a RISC OS format for the linker.  */
       temp = __riscosify (str, 0, __RISCOSIFY_DONT_TRUNCATE, filename,
-			  sizeof (filename));
+			  sizeof (filename), NULL);
 #endif
       if (temp != NULL)
 	{
@@ -776,7 +820,7 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
       temp = strcpy (filename, viafile);
 #else
       temp = __riscosify (viafile, 0, __RISCOSIFY_DONT_TRUNCATE,
-			  filename, sizeof (filename));
+			  filename, sizeof (filename), NULL);
 #endif
       if (temp != NULL)
 	{
@@ -793,7 +837,7 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
   temp = strcpy (filename, redir);
 #else
   temp = __riscosify (redir, 0, __RISCOSIFY_DONT_TRUNCATE,
-		      filename, sizeof (filename));
+		      filename, sizeof (filename), NULL);
 #endif
   if (temp != NULL)
     {
@@ -827,7 +871,7 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
   if (tlink_verbose >= 3)
     printf ("Command line to execute: '%s'\n", command);
 
-#ifdef __riscos
+#ifdef __riscos__
   pid = vfork ();
   if (pid == (pid_t) 0)
     {
@@ -837,13 +881,16 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
   else if (pid < (pid_t) 0)
     /* The fork failed.  */
     system_result = -1;
-  else if (waitpid (pid, &system_result, 0) != pid)
-    system_result = -1;
+  else
+    {
+      /* Parent process.  */
+      if (waitpid (pid, &system_result, 0) != pid)
+	system_result = -1;
+    }
 #else
   system_result = system (command);
 #endif
 
-  unlink (viafile);
   free (command);
 
   return system_result;
@@ -1256,7 +1303,7 @@ scan_linker_output (char *fname)
 
 
 void
-do_tlink (char *linker, char **ld_argv, args *object_lst)
+do_tlink (const char *linker, char **ld_argv, args *object_lst)
 {
   int exit_code = tlink_execute (linker, ld_argv, ldout, ld_viafile);
 
@@ -1281,18 +1328,19 @@ do_tlink (char *linker, char **ld_argv, args *object_lst)
     }
 
   dump_file (ldout);
-  unlink (ldout);
+
   if (exit_code)
     {
-      ld_error ("program %s returned exit status %d", linker, exit_code);
+      ld_error ("program %s returned exit status %d: %s", linker,
+		exit_code, (exit_code == 33) ? strerror (errno) : "");
       exit (exit_code);
     }
 }
 
-static void
+static int
 choose_temp_base (void)
 {
-  char *base = getenv ("TMPDIR");
+  const char *base = getenv ("TMPDIR");
   int len;
 
   if (base == (char *)0)
@@ -1301,7 +1349,7 @@ choose_temp_base (void)
       if (access (P_tmpdir, R_OK | W_OK) == 0)
 	base = P_tmpdir;
 #endif
-      if (base == (char *)0)
+      if (base == NULL)
 	{
 	  if (access ("/usr/tmp", R_OK | W_OK) == 0)
 	    base = "/usr/tmp/";
@@ -1317,7 +1365,7 @@ choose_temp_base (void)
     temp_filename[len++] = '/';
   strcpy (temp_filename + len, "ccXXXXXX");
 
-  mktemp (temp_filename);
+  return mkstemp (temp_filename);
 }
 
 static void
@@ -1392,7 +1440,7 @@ static void ldversion (int noisy)
     fprintf (stdout, "\n");
 }
 
-static void out (char *s)
+static void out (const char *s)
 {
   fprintf (stdout, "%s\n", s);
 }
@@ -1428,7 +1476,7 @@ static void ldhelp (void)
 
   out ("The following Drlink linker commands are recognised:");
   out ("  -acornmap, -area[map] <file>, -aif, -aof, -bin, -case");
-  out ("  -leave[weak], -map, -no[unused], -output, -qui[et]");
+  out ("  -leave[weak], -map, -m[odule], -no[unused], -output, -qui[et]");
   out ("  -res[can], -throwback, -via <file>, -verbose\n");
 
 #ifndef CROSS_COMPILE
@@ -1490,10 +1538,15 @@ append_arg (args *argv, int *offset, const char *text)
   if (tlink_verbose >= 5)
     printf ("append arg: offset = %d, text = %s\n", *offset, text);
 
-  argv[*offset].arg = (char *)xmalloc (strlen (text) + 1);
-  strcpy (argv[*offset].arg, text);
-  *offset = *offset + 1;
-  argv[*offset].arg = 0;
+  if (*offset >= MAXARGS)
+    printf ("append arg: too many arguments (exceeded %d)\n", MAXARGS);
+  else
+    {
+      argv[*offset].arg = (char *)xmalloc (strlen (text) + 1);
+      strcpy (argv[*offset].arg, text);
+      *offset = *offset + 1;
+      argv[*offset].arg = 0;
+    }
 }
 
 static void
@@ -1501,10 +1554,10 @@ add_library_file (const char *library)
 {
   llist *list = libraries;
 
-  if (strcmp (library, "m") == 0)
+  if (strcmp (library, "m") == 0 || strcmp (library, "c") == 0)
     {
       if (tlink_verbose >= 2)
-	printf ("Library libm was specified. Ignoring it\n");
+	printf ("Library lib%s was specified. Ignoring it\n", library);
       return;
     }
 
@@ -1528,14 +1581,12 @@ add_library_file (const char *library)
 static int check_and_add_library (const char *file_name)
 {
   char converted[256], *temp;
-  int regs[6];
-  struct stat f;
 
 #ifdef CROSS_COMPILE
   temp = strcpy (converted, file_name);
 #else
   temp = __riscosify (file_name, 0, __RISCOSIFY_DONT_TRUNCATE,
-		      converted, sizeof (converted));
+		      converted, sizeof (converted), NULL);
 #endif
   if (temp == NULL)
     return 0;
@@ -1568,6 +1619,23 @@ static void parse_library (const char *library)
       if (list->name[i] != ':' && list->name[i] != '.'
           && list->name[i] != '/')
         strcat (file_name, "/");
+
+#ifdef CROSS_COMPILE
+      strcat (file_name, "lib"); 
+      strcat (file_name, library); 
+      strcat (file_name, ".a"); 
+#else 
+      strcat (file_name, "a.lib"); 
+      strcat (file_name, library); 
+#endif 
+      if (check_and_add_library (file_name) == 1) 
+       return; 
+ 
+      /* Couldn't find lib<name>.a so try lib<name>.o */ 
+      strcpy (file_name, list->name); 
+      if (list->name[i] != ':' && list->name[i] != '.' 
+          && list->name[i] != '/') 
+        strcat (file_name, "/"); 
 
 #ifdef CROSS_COMPILE
       strcat (file_name, "lib");
@@ -1629,7 +1697,9 @@ add_library_search_path (const char *path)
 
 static void add_input_file (const char *fname)
 {
+#ifndef CROSS_COMPILE
   char tmp[256];
+#endif
 
   if (tlink_verbose >= 4)
     printf ("adding object file %s\n", fname);
@@ -1649,11 +1719,26 @@ static void add_input_file (const char *fname)
 
 static void add_output_file (const char *fname)
 {
+#if defined(CROSS_COMPILE) && defined(ENABLE_FILETYPE_FF8)
+  char tmp[256];
+  int len;
+
+  /* If asked for, append a filetype to the RISC OS executable in the
+     format of ,xxx.  Network mounts, will automatically remove the
+     ,xxx suffix and replace it with proper filetype information.  */
+  strcpy (tmp, fname);
+  len = strlen (tmp);
+  /* If the filetype suffix already exists then don't add it again.  */
+  if (len < 4 || (tmp[len - 4] != ',' && len < 252))
+    strcat (tmp, ",ff8");
+#else
+  const char *tmp = fname;
+#endif
   if (tlink_verbose >= 4)
-    printf ("adding output file %s\n", fname);
+    printf ("adding output file %s\n", tmp);
 
   append_arg (command_line, &command_line_offset, "-o");
-  append_arg (command_line, &command_line_offset, fname);
+  append_arg (command_line, &command_line_offset, tmp);
 }
 
 static void add_option_file (const char *option, const char *fname)
@@ -1701,6 +1786,7 @@ parse_args (int argc, char **argv)
 #define OPTION_AOF			160
 #define OPTION_BIN			161
 #define OPTION_QUIET			162
+#define OPTION_MODULE			163
 
   static struct option longopts[] = {
     {"acornmap", no_argument, NULL, OPTION_MAP},
@@ -1714,6 +1800,7 @@ parse_args (int argc, char **argv)
     {"leave", no_argument, NULL, OPTION_LEAVEWEAK},
     {"leaveweak", no_argument, NULL, OPTION_LEAVEWEAK},
     {"map", no_argument, NULL, OPTION_MAP},
+    {"module", no_argument, NULL, OPTION_MODULE},
     {"no", no_argument, NULL, OPTION_NOUNUSED},
     {"nounused", no_argument, NULL, OPTION_NOUNUSED},
     {"nounusedareas", no_argument, NULL, OPTION_NOUNUSED},
@@ -1762,6 +1849,7 @@ parse_args (int argc, char **argv)
 	case 'c':
 	  add_option ("-case");
 	  break;
+	case 'h':
 	case OPTION_HELP:
 	  ldhelp ();
 	  exit (0);
@@ -1779,6 +1867,9 @@ parse_args (int argc, char **argv)
 	  break;
 	case OPTION_MAP:
 	  add_option ("-map");
+	  break;
+	case OPTION_MODULE:
+	  add_option ("-module");
 	  break;
 	case OPTION_NOUNUSED:
 	  add_option ("-nounused");

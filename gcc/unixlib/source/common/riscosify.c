@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/riscosify.c,v $
- * $Date: 2000/07/15 14:52:18 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/09/24 11:29:18 $
+ * $Revision: 1.2.2.5 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: riscosify.c,v 1.1.1.1 2000/07/15 14:52:18 nick Exp $";
+static const char rcs_id[] = "$Id: riscosify.c,v 1.2.2.5 2002/09/24 11:29:18 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -17,9 +17,9 @@ static const char rcs_id[] = "$Id: riscosify.c,v 1.1.1.1 2000/07/15 14:52:18 nic
 #include <stdio.h>
 #include <string.h>
 #include <unixlib/local.h>
-#include <sys/unix.h>
-#include <sys/swis.h>
-#include <sys/os.h>
+#include <unixlib/unix.h>
+#include <unixlib/os.h>
+#include <swis.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <unixlib/swiparams.h>
@@ -116,7 +116,7 @@ __sdirinit (void)
       regs[4] = 3;
 
       /* OS_ReadVarVal fails when no more values found, so exit loop. */
-      if (os_swi (OS_ReadVarVal, regs) != NULL)
+      if (__os_swi (OS_ReadVarVal, regs) != NULL)
 	break;
 
       /* If it ends in ':' it's a path, else add '.'  */
@@ -204,8 +204,8 @@ __sfixinit (const char *list)
       entry->suffix[length] = '\0';
       where = sfix_hash (entry->suffix);
 #ifdef DEBUG
-      os_prhex (where); os_print (" '");
-      os_print (entry->suffix); os_print ("'\r\n");
+      __os_prhex (where); __os_print (" '");
+      __os_print (entry->suffix); __os_print ("'\r\n");
 #endif
       entry->next = __sfix[where];
       __sfix[where] = entry;
@@ -299,7 +299,7 @@ char *
 __riscosify_std (const char *name, int create_dir,
 		char *buffer, size_t buf_len, int *filetype)
 {
-  return __riscosify (name, create_dir, __riscosify_control, buffer,
+  return __riscosify (name, create_dir, __get_riscosify_control (), buffer,
   		      buf_len, filetype);
 }
 
@@ -411,9 +411,9 @@ __riscosify (const char *name, int create_dir,
       if (next == ':')
 	{
 #ifdef DEBUG
-	  os_print ("Found a `idefs:'\r\n\t\tbefore name = `");
-	  os_print (name); os_print ("'\r\n\t\tafter name = `");
-	  os_print (in0); os_print ("'\r\n");
+	  __os_print ("Found a `idefs:'\r\n\t\tbefore name = `");
+	  __os_print (name); __os_print ("'\r\n\t\tafter name = `");
+	  __os_print (in0); __os_print ("'\r\n");
 #endif
 	  /* Determine whether we are looking at a file system absolute
 	     path, or a pseudo-filing system generated from a path
@@ -430,9 +430,9 @@ __riscosify (const char *name, int create_dir,
 	      in0 += 2;	/* Pass over "::" and copy it to the output buffer.  */
 
 #ifdef DEBUG
-	      os_print ("Found a `idefs::'\r\n\t\tbefore name = `");
-	      os_print (name); os_print ("'\r\n\t\tafter name = `");
-	      os_print (in0); os_print ("'\r\n");
+	      __os_print ("Found a `idefs::'\r\n\t\tbefore name = `");
+	      __os_print (name); __os_print ("'\r\n\t\tafter name = `");
+	      __os_print (in0); __os_print ("'\r\n");
 #endif
 	      if ((out + (in0 - name)) > buf_end)
 		return NULL;
@@ -489,9 +489,9 @@ __riscosify (const char *name, int create_dir,
 		     Filing systems are [A-Za-z0-9_] which are not translated
 		     by the table.  */
 #ifdef DEBUG
-		  os_print ("Found a `idefs::hd'\r\n\t\tbefore name = `");
-		  os_print (name); os_print ("'\r\n\t\tafter name = `");
-		  os_print (in0); os_print ("'\r\n");
+		  __os_print ("Found a `idefs::hd'\r\n\t\tbefore name = `");
+		  __os_print (name); __os_print ("'\r\n\t\tafter name = `");
+		  __os_print (in0); __os_print ("'\r\n");
 #endif
 		  if ((out + (in0 - name)) >= buf_end)
 		    return NULL;
@@ -540,9 +540,9 @@ __riscosify (const char *name, int create_dir,
 		    return NULL;
 
 #ifdef DEBUG
-		  os_print ("Found a `idefs::hd.'\r\n\t\tbefore name = `");
-		  os_print (name); os_print ("'\r\n\t\tafter name = `");
-		  os_print (in0); os_print ("'\r\n");
+		  __os_print ("Found a `idefs::hd.'\r\n\t\tbefore name = `");
+		  __os_print (name); __os_print ("'\r\n\t\tafter name = `");
+		  __os_print (in0); __os_print ("'\r\n");
 #endif
 		  /* Copy that segment of the filename into the output
 		     RISC OS filename.  */
@@ -552,9 +552,9 @@ __riscosify (const char *name, int create_dir,
 		}
 #ifdef DEBUG
 	      *out = '\0';
-	      os_print ("Output buffer is `"); os_print (buffer);
-	      os_print ("'\r\nInput buffer is `"); os_print (name);
-	      os_print ("'\r\n");
+	      __os_print ("Output buffer is `"); __os_print (buffer);
+	      __os_print ("'\r\nInput buffer is `"); __os_print (name);
+	      __os_print ("'\r\n");
 #endif
 	    }
 	  else
@@ -586,9 +586,9 @@ __riscosify (const char *name, int create_dir,
 		return NULL;
 
 #ifdef DEBUG
-	      os_print ("Found a `gcc:'\r\n\t\tbefore name = `");
-	      os_print (name); os_print ("'\r\n\t\tafter name = `");
-	      os_print (name + (in0 - name)); os_print ("'\r\n");
+	      __os_print ("Found a `gcc:'\r\n\t\tbefore name = `");
+	      __os_print (name); __os_print ("'\r\n\t\tafter name = `");
+	      __os_print (name + (in0 - name)); __os_print ("'\r\n");
 #endif
 
 	      /* Copy the 'gcc:' segment of the filename into the output
@@ -649,9 +649,9 @@ __riscosify (const char *name, int create_dir,
 	return NULL;
 
 #ifdef DEBUG
-      os_print ("Found a `<'. before name = `");
-      os_print (name); os_print ("', after name = `");
-      os_print (name + (in0 - name)); os_print ("'\r\n");
+      __os_print ("Found a `<'. before name = `");
+      __os_print (name); __os_print ("', after name = `");
+      __os_print (name + (in0 - name)); __os_print ("'\r\n");
 #endif
       /* Copy the '<GCC$Dir>' segment of the filename into the output
 	 RISC OS filename.  */
@@ -668,8 +668,8 @@ __riscosify (const char *name, int create_dir,
             return NULL;
           *out++ = '.';
 #ifdef DEBUG
-          os_print ("Appended trailing `"); os_vdu (*in0);
-          os_print ("' as .\r\n");
+          __os_print ("Appended trailing `"); __os_vdu (*in0);
+          __os_print ("' as .\r\n");
 #endif
           name++;
         }
@@ -730,8 +730,8 @@ __riscosify (const char *name, int create_dir,
 
 #ifdef DEBUG
   *out = '\0';
-  os_print ("Special path check: output buff is `"); os_print (buffer);
-  os_print ("', input buff is `"); os_print (name); os_print ("'\r\n");
+  __os_print ("Special path check: output buff is `"); __os_print (buffer);
+  __os_print ("', input buff is `"); __os_print (name); __os_print ("'\r\n");
 #endif
   if (absolute_path)
     {
@@ -810,15 +810,15 @@ __riscosify (const char *name, int create_dir,
 
 
 #ifdef DEBUG
-  os_print ("Long route - \r\n");
+  __os_print ("Long route - \r\n");
 #endif
 
 main:
 
 #ifdef DEBUG
   *out = '\0';
-  os_print ("entering main loop: output buff is `"); os_print (buffer);
-  os_print ("', input buff is `"); os_print (name); os_print ("'\r\n");
+  __os_print ("entering main loop: output buff is `"); __os_print (buffer);
+  __os_print ("', input buff is `"); __os_print (name); __os_print ("'\r\n");
 #endif
   /* At this point the output buffer
      -1: Can't be empty if the input is exhausted
@@ -885,9 +885,9 @@ main:
       if (current == '.')
 	{
 #ifdef DEBUG
-       	  os_print ("Dot filenames `"); os_vdu (current);
-       	  os_print ("' `"); os_vdu (next); os_print ("' in `");
-       	  os_print (name); os_print ("'\r\n");
+       	  __os_print ("Dot filenames `"); __os_vdu (current);
+       	  __os_print ("' `"); __os_vdu (next); __os_print ("' in `");
+       	  __os_print (name); __os_print ("'\r\n");
 #endif
 
 	  switch (next)
@@ -931,6 +931,23 @@ main:
 	    last_comma = in0;
 	  next = *++in0;
 	}
+
+      /* Use MimeMap to find a filetype to match the filename
+         extension.  e.g.  file.html -> 0xfaf */
+      if ((flags & __RISCOSIFY_FILETYPE_SET) &&
+          filetype != NULL && last_dot != NULL)
+        {
+           _kernel_swi_regs regs;
+
+          regs.r[0] = MMM_TYPE_DOT_EXTN; /* Input extension */
+          regs.r[1] = (int)last_dot;
+          regs.r[2] = MMM_TYPE_RISCOS; /* Output filetype */
+
+	  /* If there's an error, then the filetype will remain
+	     __RISCOSIFY_FILETYPE_NOT_FOUND.  */
+          if (! _kernel_swi (MimeMap_Translate, &regs, &regs))
+	    *filetype = regs.r[3];
+        }
 
       /* Check if we have "blabla,xyz" as filename where `xyz' is a
          valid 12 bit hex number.  Only perform the check if
@@ -981,11 +998,11 @@ main:
 	      int regs[6];
 
 	      /* Create the directory if it doesn't exist.  */
-	      if (! os_file (OSFILE_READCATINFO_NOPATH, buffer, regs)
+	      if (! __os_file (OSFILE_READCATINFO_NOPATH, buffer, regs)
 	          && ! regs[0])
 		{
 		  regs[4] = 0;   /* Default number of entries in dir.  */
-		  os_file (8, buffer, regs);
+		  __os_file (8, buffer, regs);
 		}
 	    }
 
@@ -1005,7 +1022,7 @@ main:
 	     [From the choice of filenames above guess who is writing this]
 
 	     IMHO this is naïve:
-	     0: The directory doesn't exists
+	     0: The directory doesn't exist
 	     1: Write the file out as !Perl/lib/File.pm (!Perl.lib.File/pm)
 	     2: Create the directory to house more files
 	     3: Try to read back !Perl/lib/File.pm and it's "not there"
@@ -1062,7 +1079,7 @@ main:
       to_copy = truncate[__RISCOSIFY_TRUNCATE_VALUE(flags)];
 
       name--; /* Copying from name - 1.  */
-      if (to_copy < last_dot - name)
+      if (to_copy < (size_t) (last_dot - name))
 	drop_vowels = flags & __RISCOSIFY_DROP_VOWEL;
       else
 	to_copy = last_dot - name;

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/scanf.c,v $
- * $Date: 2000/07/15 14:52:32 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:21 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: scanf.c,v 1.1.1.1 2000/07/15 14:52:32 nick Exp $";
+static const char rcs_id[] = "$Id: scanf.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
 /*-
@@ -53,7 +53,7 @@ static const char rcs_id[] = "$Id: scanf.c,v 1.1.1.1 2000/07/15 14:52:32 nick Ex
 static char sccsid[] = "@(#)vfscanf.c	8.1 (Berkeley) 6/4/93";
 #endif
 static const char rcsid[] =
-		"$Id: scanf.c,v 1.1.1.1 2000/07/15 14:52:32 nick Exp $";
+		"$Id: scanf.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -124,7 +124,8 @@ vfscanf (FILE *fp, char const *fmt0, va_list ap)
 	int nconversions;	/* number of conversions */
 	int nread;		/* number of characters consumed from fp */
 	int base;		/* base argument to strtol/strtoul */
-	u_long (*ccfn)();	/* conversion function (strtol/strtoul) */
+	u_long (*ccfn)(const char *, char **, int);
+				/* conversion function (strtol/strtoul) */
 	char ccltab[256];	/* character class table for %[...] */
 	char buf[BUF];		/* buffer for numeric conversions */
 
@@ -149,7 +150,7 @@ vfscanf (FILE *fp, char const *fmt0, va_list ap)
 			    	}
 				if (!isspace(c)) {
 				  ungetc (c, fp);
-					break;
+				  break;
 				}
 				nread++;
 			}
@@ -208,13 +209,13 @@ literal:
 			/* FALLTHROUGH */
 		case 'd':
 			c = CT_INT;
-			ccfn = (u_long (*)())strtol;
+			ccfn = (u_long (*)(const char *, char **, int))strtol;
 			base = 10;
 			break;
 
 		case 'i':
 			c = CT_INT;
-			ccfn = (u_long (*)())strtol;
+			ccfn = (u_long (*)(const char *, char **, int))strtol;
 			base = 0;
 			break;
 
@@ -297,7 +298,7 @@ literal:
 			if (isupper(c))
 				flags |= LONG;
 			c = CT_INT;
-			ccfn = (u_long (*)())strtol;
+			ccfn = (u_long (*)(const char *, char **, int))strtol;
 			base = 10;
 			break;
 		}
@@ -309,8 +310,7 @@ literal:
 
 #ifdef DEBUG
 fprintf (stderr, "1. fp->i_ptr = %d, i_cnt = %d\n", *fp->i_ptr, fp->i_cnt);
-fprintf (stderr, "2. peekc (fp) = %c\n", peekc(fp));
-fprintf (stderr, "3. peekc (fp) = %c\n", peekc(fp));
+fprintf (stderr, "2. peekc (fp) = %d\n", peekc(fp));
 fprintf (stderr, "3. fp->i_ptr = %d, i_cnt = %d\n", *fp->i_ptr, fp->i_cnt);
 #endif
 		if (peekc (fp) == EOF)
@@ -321,13 +321,17 @@ fprintf (stderr, "3. fp->i_ptr = %d, i_cnt = %d\n", *fp->i_ptr, fp->i_cnt);
 		 */
 		if ((flags & NOSKIP) == 0) {
 		        int z = peekc (fp);
-			while (isspace(z)) {
-			        fp->i_ptr++;
-			        fp->i_cnt--;
-				nread++;
-				z = peekc (fp);
-				if (z == EOF)
-				  goto input_failure;
+			if (isspace(z)) {
+				for (;;) {
+					z = getc (fp);
+					if (z == EOF)
+						goto input_failure;
+					if (!isspace(z)) {
+						ungetc(z, fp);
+						break;
+					}
+					nread++;
+				}
 			}
 			/*
 			 * Note that there is at least one character in
@@ -425,30 +429,21 @@ fprintf (stderr, "3. fp->i_ptr = %d, i_cnt = %d\n", *fp->i_ptr, fp->i_cnt);
 			if (flags & SUPPRESS) {
 			   	int z;
 				n = 0;
-				z = getc (fp);
-				while (!isspace(z)) {
+				while ((z = peekc(fp)) != EOF && !isspace(z)) {
+					(void)getc(fp);
 					n++;
 					if (--width == 0)
 						break;
-					z = getc (fp);
-					if (z == EOF)
-					  break;
 				}
-				ungetc (z, fp);
 				nread += n;
 			} else {
 			        int z;
 				p0 = p = va_arg(ap, char *);
-				z = getc (fp);
-				while (!isspace(z)) {
-					*p++ = z;
+				while ((z = peekc(fp)) != EOF && !isspace(z)) {
+					*p++ = getc(fp);
 					if (--width == 0)
 						break;
-					z = getc (fp);
-					if (z == EOF)
-					  break;
 				}
-				ungetc (z, fp);
 				*p = 0;
 				nread += p - p0;
 				nassigned++;

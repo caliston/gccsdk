@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/math/exp.c,v $
- * $Date: 2000/07/15 14:52:21 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -66,6 +66,7 @@
 #include <machine/ieee754.h>
 #include <math.h>
 #include <fenv.h>
+#include <stdlib.h>
 
 extern const float __exp_deltatable[178];
 extern const double __exp_atable[355] /* __attribute__((mode(DF))) */;

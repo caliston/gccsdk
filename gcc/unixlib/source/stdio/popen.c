@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/popen.c,v $
- * $Date: 2000/07/15 14:52:31 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: popen.c,v 1.1.1.1 2000/07/15 14:52:31 nick Exp $";
+static const char rcs_id[] = "$Id: popen.c,v 1.2.2.1 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -22,12 +22,12 @@ static const char rcs_id[] = "$Id: popen.c,v 1.1.1.1 2000/07/15 14:52:31 nick Ex
 #include <sys/wait.h>
 
 #ifdef DEBUG
-#include <sys/os.h>
+#include <unixlib/os.h>
 #endif
 
 __STDIOLIB__
 
-/* FIXME, hang this of the FILE structure.  */
+/* FIXME, hang this off the FILE structure.  */
 struct pwr
   {
     FILE *f;
@@ -84,11 +84,11 @@ popen (const char *command, const char *mode)
 
 #ifdef DEBUG
   if (*mode == 'r')
-    os_print ("pipe(r): ");
+    __os_print ("pipe(r): ");
   else
-    os_print ("pipe(w): ");
-  os_print (command);
-  os_nl ();
+    __os_print ("pipe(w): ");
+  __os_print (command);
+  __os_nl ();
 #endif
 
   /* mode == 'r' means current process will read from the file created by the
@@ -163,7 +163,10 @@ pclose (FILE * stream)
     {
       /* The current process has written to the pipe, so now fork the child
 	 to read from the pipe.  */
-      struct pwr *pwr = __pwr, *prev_pwr = NULL;
+      static struct pwr *pwr;
+      struct pwr *prev_pwr = NULL;
+
+      pwr = __pwr;
 
       /* Locate saved pipe command and remove it from the list.  */
       while (pwr)

@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/scl/_kosfile.s,v $
-; $Date: 2000/07/15 14:52:29 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -12,9 +12,11 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	; _kernel_osfile (int op, char *name, _kernel_osfile_block *inout)
 	IMPORT	|__seterr|
+
+	; _kernel_osfile (int op, char *name, _kernel_osfile_block *inout)
 	EXPORT	|_kernel_osfile|
+	NAME	_kernel_osfile
 |_kernel_osfile|
 	; don't need v3, but it can be set with OS_File 20-23
 	STMFD	sp!, {v1-v3, lr}

@@ -125,7 +125,6 @@ dtor_section ()								\
 void								\
 common_section ()						\
 {								\
-  static int common_count = 1;					\
   if (in_section != in_common)					\
     {								\
       in_section = in_common;					\
@@ -241,7 +240,7 @@ do {							\
   long l;						\
   REAL_VALUE_TO_TARGET_SINGLE ((VALUE), l);		\
   REAL_VALUE_TO_DECIMAL ((VALUE), "%.7g", dstr);	\
-  fprintf ((STREAM), "\tDCD &%lx\t%s double %s\n",	\
+  fprintf ((STREAM), "\tDCD &%lx\t%s float %s\n",	\
 	   l, ASM_COMMENT_START, dstr);			\
 } while (0)
 
@@ -266,7 +265,7 @@ do {							\
 #define ASM_OUTPUT_ASCII(STREAM,PTR,LEN)		\
 {							\
   int i;						\
-  char *ptr = (PTR);					\
+  const char *ptr = (PTR);				\
   fprintf ((STREAM), "\tDCB");				\
   for (i = 0; i < (LEN); i++)				\
     fprintf ((STREAM), " &%02x%s", 			\

@@ -1,24 +1,27 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/time/setitmr.c,v $
- * $Date: 2000/07/15 14:52:42 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/09/11 14:16:00 $
+ * $Revision: 1.2.2.5 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: setitmr.c,v 1.1.1.1 2000/07/15 14:52:42 nick Exp $";
+static const char rcs_id[] = "$Id: setitmr.c,v 1.2.2.5 2001/09/11 14:16:00 admin Exp $";
 #endif
 
 #include <stddef.h>
 #include <errno.h>
-#include <sys/os.h>
-#include <sys/swis.h>
+#include <unixlib/os.h>
+#include <swis.h>
 #include <sys/time.h>
-#include <sys/unix.h>
-#include <sys/syslib.h>
+#include <unixlib/unix.h>
+
+#ifndef __GNUC__
+#define __inline__ /**/
+#endif
 
 /* setitimer provides a mechanism for a process to interrupt itself at
    some future time. This is achieved by setting a timer; when the
@@ -51,39 +54,36 @@ static const char rcs_id[] = "$Id: setitmr.c,v 1.1.1.1 2000/07/15 14:52:42 nick 
 
    The return value is 0 on success and -1 on failure.  */
 
-#ifdef __FEATURE_ITIMERS
 typedef void (*ticker) (void);
 
-static void
+static __inline__ void
 remove_ticker (ticker address, const struct timeval *old)
 {
   int regs[10];
 
   regs[0] = (int) address;
   regs[1] = (int) old;
-  os_swi (OS_RemoveTickerEvent, regs);
+  __os_swi (OS_RemoveTickerEvent, regs);
 }
 
-static int
+static __inline__ int
 add_ticker (const struct timeval *time, ticker address,
-	    const struct timeval *new)
+	    const struct timeval *newtime)
 {
   int regs[10];
 
   regs[0] = (int) (time->tv_sec * 100) + (time->tv_usec + 9999) / 10000;
   regs[1] = (int) address;
-  regs[2] = (int) new;
-  return os_swi (OS_CallAfter, regs) ? -1 : 0;
+  regs[2] = (int) newtime;
+  return __os_swi (OS_CallAfter, regs) ? -1 : 0;
 }
 
 static int
 check_ticker (const struct timeval *time)
 {
-  if (time->tv_sec > 0 || time->tv_usec > 0)
-    return 1;
-  if (time->tv_sec == 0 && time->tv_usec == 0)
-    return 2;
-  return 0;
+  return (time->tv_sec > 0 || time->tv_usec > 0) ? 1
+	  : (time->tv_sec == 0 && time->tv_usec == 0) ? 2
+	  : 0;
 }
 
 struct timer_control
@@ -98,23 +98,26 @@ static const struct timer_control timer_controls[__MAX_ITIMERS] =
   {__h_sigvtalrm_init, &__h_sigvtalrm_sema},	/* ITIMER_VIRTUAL */
   {__h_sigprof_init, &__h_sigprof_sema}		/* ITIMER_PROF */
 };
-#endif
 
 int
 setitimer (enum __itimer_which which, const struct itimerval *new_timer,
 	   struct itimerval *old_timer)
 {
-#ifdef __FEATURE_ITIMERS
   struct itimerval *itimer;
 
-  /* We can't implement interval timers whilst executing in a task window.  */
-  if (__taskwindow)
+  /* We can't implement interval timers whilst executing in a task window
+     nor whilst running as a WIMP program.   Note that when
+     __taskwindow == 1 => __wimpprogram == 1 but not necessairy vice-
+     versa so the test on __wimpprogram is enough. */
+  if (__wimpprogram)
     return __set_errno (ENOSYS);
 
-  if ((unsigned) which >= __MAX_ITIMERS)
+  if ((unsigned) which >= __MAX_ITIMERS
+      || new_timer->it_interval.tv_usec >= 1000000
+      || new_timer->it_value.tv_usec >= 1000000)
     return __set_errno (EINVAL);
 
-  /* __u is current process <sys/unix.h>.  */
+  /* __u is current process <unixlib/unix.h>.  */
   itimer = &__u->itimers[which];
   if (old_timer)
     *old_timer = *itimer;
@@ -135,7 +138,4 @@ setitimer (enum __itimer_which which, const struct itimerval *new_timer,
 		       &itimer->it_interval);
 
   return 0;
-#else
-  return __set_errno (ENOSYS);
-#endif
 }

@@ -1,25 +1,24 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/netlib/socket.c,v $
- * $Date: 2000/07/15 14:52:26 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  * (c) Copyright 1995 Sergio Monesi
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: socket.c,v 1.1.1.1 2000/07/15 14:52:26 nick Exp $";
+static const char rcs_id[] = "$Id: socket.c,v 1.2.2.1 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 #include <errno.h>
 
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 #include <sys/socket.h>
-#include <sys/dev.h>
+#include <unixlib/dev.h>
 #include <fcntl.h>
-#include <sys/syslib.h>
 #include <sys/netdb.h>
 
 int

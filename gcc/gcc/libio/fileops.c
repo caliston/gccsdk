@@ -419,7 +419,7 @@ _IO_file_sync (fp)
   return retval;
 }
 
-_IO_pos_t
+_IO_off_t
 _IO_file_seekoff (fp, offset, dir, mode)
      _IO_FILE *fp;
      _IO_off_t offset;
@@ -587,7 +587,7 @@ _IO_file_read (fp, buf, size)
   return read (fp->_fileno, buf, size);
 }
 
-_IO_pos_t
+_IO_off_t
 _IO_file_seek (fp, offset, dir)
      _IO_FILE *fp;
      _IO_off_t offset;

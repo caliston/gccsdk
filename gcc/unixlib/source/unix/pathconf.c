@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/pathconf.c,v $
- * $Date: 2000/07/15 14:52:44 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: pathconf.c,v 1.1.1.1 2000/07/15 14:52:44 nick Exp $";
+static const char rcs_id[] = "$Id: pathconf.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 /* unix.c.pathconf. Return filing system implementation details.
@@ -20,8 +20,8 @@ static const char rcs_id[] = "$Id: pathconf.c,v 1.1.1.1 2000/07/15 14:52:44 nick
 #include <limits.h>
 #include <unistd.h>
 #include <stddef.h>
-#include <sys/dev.h>
-#include <sys/unix.h>
+#include <unixlib/dev.h>
+#include <unixlib/unix.h>
 #include <unixlib/fd.h>
 #include <unixlib/local.h>
 

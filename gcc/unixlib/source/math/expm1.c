@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/math/expm1.c,v $
- * $Date: 2000/07/15 14:52:21 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -208,7 +208,10 @@ expm1 (double x)
       return x - (t - (huge + x));
     }
   else
-    k = 0;
+    {
+      c = 0;
+      k = 0;
+    }
 
   /* x is now in primary range */
   hfx = 0.5 * x;
