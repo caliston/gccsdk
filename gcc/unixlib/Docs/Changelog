@@ -1,3 +1,7 @@
+Sat Mar 30 10:09:52 2002  Alex Waugh  <alex@alexwaugh.com>
+
+	* unix/tty.c (__ttyicanon): Don't set error if EOF is encountered.
+
 Sat Mar 30 10:00:52 2002  Alex Waugh  <alex@alexwaugh.com>
 
 	* sys/_jmp.s: Fix APCS-32 typo.
