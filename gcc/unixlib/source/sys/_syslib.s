@@ -18,6 +18,7 @@ NO_CALLASWI * 1
 
 	IMPORT	|_main|
 	IMPORT	|__dynamic_no_da|, WEAK
+	IMPORT	|__dynamic_da_name|, WEAK
 	IMPORT	|__alloca_list|, WEAK
 
 	EXPORT	|__main|
@@ -152,6 +153,20 @@ NO_CALLASWI * 1
 
 
 no_old_area
+	; Allow the user the option of setting theirr own name for the
+	; dyanmic area used as a heap.   If the variable __dynamic_da_name
+	; exists, then it must be a char pointer (not an array) to an
+	; alternate name.  DAs are always used in this case, and there's
+	; no need to set a $heap variable.
+
+	; The main use of this is when the binary is called !RumImage.
+	; e.g.:  const char *__dynamic_da_name = "Nettle Heap";
+
+	LDR	v5, =|__dynamic_da_name|
+	TEQ	v5, #0
+	LDRNE	v5, [v5, #0]	; get the actual string referred to
+	BNE	t07
+	
 	; area name is program name + "$Heap"
 	LDR	a1, [ip, #0]	; __cli
 	MOV	a2, a1
@@ -172,7 +187,7 @@ t01
 	; 10 chars from end of name if length name > 10
 	; else start of name
 
-	; So, decending copy from a1 to v5
+	; So, descending copy from a1 to v5
 	; limit is a2, terminate early if we find "." or ":"
 t02
 	LDRB	a4, [a1, #-1]!
@@ -193,6 +208,7 @@ t03
 	CMP	a3, #0
 	BGE	no_dynamic_area
 
+t07
 	; create dynamic area
 	MOV	a1, #0
 	MOV	a2, #-1
@@ -381,10 +397,9 @@ exit_word
 	LDR	v2, =|__calling_environment|
 t04
 	MOV	a1, v1
-	LDMIA	v2, {a2, a3, a4}
+	LDMIA	v2!, {a2, a3, a4}
 	SWI	XOS_ChangeEnvironment
 	ADD	v1, v1, #1
-	ADD	v2, v2, #12	;  sizeof(handler)
 	CMP	v1, #17		;  __ENVIRONMENT_HANDLERS
 	BLT	t04
 	LDMFD	sp!, {a1, a2, a3, a4, v1, v2, pc}^
@@ -401,7 +416,7 @@ t05
 	MOV	a3, #0
 	MOV	a4, #0
 	SWI	XOS_ChangeEnvironment
-	STMVCIA	v2!, {a2, a3, a4}
+	STMIA	v2!, {a2, a3, a4}
 	ADD	v1, v1, #1
 	CMP	v1, #17
 	BLT	t05
@@ -567,3 +582,4 @@ struct_base
 |__u|		DCD	0				; offset = 76
 
 	END
+
