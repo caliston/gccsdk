@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/netdb.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2002/08/17 11:00:22 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -11,13 +11,15 @@
 #ifndef __NETDB_H
 #define __NETDB_H 1
 
-#ifndef _UNIXLIB_TYPES_H
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
+#ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
 
 /* Error status for non-reentrant lookup functions.  */
 extern int h_errno;
@@ -135,8 +137,6 @@ extern struct rpcent *getrpcbynumber (int __proto);
 /* no address, look for MX record */
 #define NO_ADDRESS	NO_DATA
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif

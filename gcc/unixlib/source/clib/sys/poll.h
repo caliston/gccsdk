@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/poll.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -11,15 +11,17 @@
 /* System V poll interface.  */
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: poll.h,v 1.2 2001/01/29 15:10:19 admin Exp $";
+static const char rcs_id[] = "$Id: poll.h,v 1.2.2.1 2001/09/14 14:01:17 admin Exp $";
 #endif
 
 #ifndef __SYS_POLL_H
 #define __SYS_POLL_H
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
 #endif
+
+__BEGIN_DECLS
 
 /* Type used for the number of file descriptors.  */
 typedef unsigned long int nfds_t;
@@ -63,8 +65,6 @@ struct pollfd
 
 extern int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout);
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif

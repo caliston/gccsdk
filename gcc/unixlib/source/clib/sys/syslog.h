@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/syslog.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -10,6 +10,10 @@
 
 #ifndef __SYSLOG_H
 #define __SYSLOG_H 1
+
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
 
 /*
  * Copyright (c) 1982, 1986, 1988, 1993
@@ -182,18 +186,14 @@ CODE facilitynames[] = {
 #define __need__va_list
 #include <stdarg.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
 
-void closelog (void);
-void openlog (const char *, int, int);
-int setlogmask (int);
-void syslog (int, const char *, ...);
-void vsyslog (int, const char *, va_list);
+extern void closelog (void);
+extern void openlog (const char *, int, int);
+extern int setlogmask (int);
+extern void syslog (int, const char *, ...);
+extern void vsyslog (int, const char *, va_list);
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif

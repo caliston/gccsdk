@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/string.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -13,16 +13,18 @@
 #ifndef __STRING_H
 #define __STRING_H
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #define __need_size_t
 #define __need_NULL
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
 
 /* Copy n bytes from src to dest.  */
-extern void *memcpy (void *__dest, const void *__src, size_t __n);
+extern void *memcpy (void * __dest, const void * __src, size_t __n);
 
 /* Copy n bytes from src to dest, guaranteeing correct
    behaviour for overlapping data.  */
@@ -129,8 +131,6 @@ extern const char *strsignal (int __sig);
 /* Return the descriptive error message string for an error code.  */
 extern char *strerror (int __errnum);
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif

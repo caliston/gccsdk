@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdio.h,v $
- * $Date: 2002/01/15 13:21:19 $
- * $Revision: 1.2.2.5 $
+ * $Date: 2002/04/03 07:45:46 $
+ * $Revision: 1.2.2.6 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -32,9 +32,7 @@ typedef struct __iobuf FILE;
 
 typedef char *__va_list;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
 
 typedef __off_t fpos_t;
 
@@ -393,9 +391,7 @@ extern __ssize_t getline (char **__lineptr, size_t *__n, FILE *__stream);
 extern __ssize_t getdelim (char **__lineptr, size_t *__n,
        		 	   int __delimiter, FILE *__stream);
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif /* __STDIO_H */
 #endif /* ! __STDIO_H */

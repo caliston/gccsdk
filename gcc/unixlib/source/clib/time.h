@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/time.h,v $
- * $Date: 2002/04/03 07:45:46 $
- * $Revision: 1.3.2.2 $
+ * $Date: 2002/04/18 07:35:04 $
+ * $Revision: 1.3.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -79,9 +79,11 @@ struct timespec
 
 #ifdef __TIME_H
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
 #endif
+
+__BEGIN_DECLS
 
 /* The number of clock ticks per second measured by the clock function.  */
 #define CLOCKS_PER_SEC 100
@@ -177,9 +179,7 @@ extern struct tm *__calendar_convert (int __swinum, const time_t *__tp);
 extern char *__standard_time (const char *__riscos_time);
 #endif /* __UNIXLIB_INTERNALS */
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif /* __TIME_H */
 #else

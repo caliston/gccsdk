@@ -1,10 +1,10 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/h/fcrypt,v $
- * $Date: 1997/10/09 19:59:46 $
- * $Revision: 1.4 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/fcrypt.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -13,15 +13,15 @@
 #ifndef __FCRYPT_H
 #define __FCRYPT_H 1
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
 #endif
+
+__BEGIN_DECLS
 
 extern void init_des (void);
 extern char *fcrypt (const char *, const char *);
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/time.h,v $
- * $Date: 2001/09/14 14:01:17 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2002/04/18 07:35:04 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -40,11 +40,11 @@ typedef __suseconds_t suseconds_t;
 #define __suseconds_t_defined
 #endif
 
-
-#ifdef __cplusplus
-extern "C" {
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
 #endif
 
+__BEGIN_DECLS
 
 /* Macros for converting between `struct timeval' and `struct timespec'.  */
 #define TIMEVAL_TO_TIMESPEC(tv, ts) {                                   \
@@ -130,10 +130,7 @@ extern int utimes (const char *, const struct timeval __tvp[2]);
    (tvp)->tv_sec == (uvp)->tv_sec && (tvp)->tv_usec CMP (uvp)->tv_usec)
 #define	timerclear(tvp)		((tvp)->tv_sec = (tvp)->tv_usec = 0)
 
-#ifdef __cplusplus
-	}
-#endif
-
+__END_DECLS
 
 #endif /* sys/time.h */
 #else

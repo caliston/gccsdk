@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/net/Attic/if.h,v $
- * $Date: 2001/09/11 15:45:23 $
- * $Revision: 1.1.2.1 $
+ * $Date: 2002/07/26 12:28:06 $
+ * $Revision: 1.1.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -27,6 +27,12 @@
 
 #ifndef __NET_IF_H
 #define __NET_IF_H 1
+
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
+__BEGIN_DECLS
 
 /*
  * Interface request structure used for socketioctl's
@@ -74,5 +80,7 @@ struct  ifconf {
 #define ifc_buf ifc_ifcu.ifcu_buf       /* buffer address */
 #define ifc_req ifc_ifcu.ifcu_req       /* array of structures returned */
 };
+
+__END_DECLS
 
 #endif

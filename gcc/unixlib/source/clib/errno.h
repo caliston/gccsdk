@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/errno.h,v $
- * $Date: 2001/09/11 16:53:58 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2002/04/03 07:45:46 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -13,9 +13,11 @@
 #ifndef __ERRNO_H
 #define __ERRNO_H
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
 #endif
+
+__BEGIN_DECLS
 
 #ifndef errno
 extern int errno;
@@ -131,8 +133,6 @@ extern int sys_nerr;
 #define __set_errno(val) (errno = (val), -1)
 #endif
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif

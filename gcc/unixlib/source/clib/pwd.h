@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/pwd.h,v $
- * $Date: 2001/09/14 14:01:17 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2002/06/10 11:42:49 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -12,6 +12,10 @@
 
 #ifndef __PWD_H
 #define __PWD_H 1
+
+#ifndef __UNIXLIB_FEATURES
+#include <unixlib/features.h>
+#endif
 
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
@@ -33,10 +37,7 @@ typedef __uid_t uid_t;
 #define __uid_t_defined
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+__BEGIN_DECLS
 
 struct passwd
 {
@@ -106,8 +107,6 @@ extern struct passwd *__pwdread (FILE *, struct passwd *);
 extern struct passwd *__pwddefault (void);
 #endif
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif

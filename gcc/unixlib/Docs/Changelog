@@ -1,3 +1,10 @@
+Sun Aug 18 16:15:25 2002  Nick Burrett  <nick@dsvr.net>
+
+	[ BUG 51 ]
+	* All header files: Include <unixlib/features.h>.  Use __BEGIN_DECLS
+	and __END_DECLS for the extern "C" decls.
+	* unix/tty.c (_BSD_SOURCE): Declare.
+	
 Sat Aug 17 13:58:36 2002  Nick Burrett  <nick@dsvr.net>
 
 	* unix/fstat.c (fstat): Fix bad cast.

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/locale.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2002/06/10 18:09:34 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -13,9 +13,11 @@
 #ifndef	__LOCALE_H
 #define	__LOCALE_H 1
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
 #endif
+
+__BEGIN_DECLS
 
 /* Locale information types.
    If you change these values, then you better fix setlocale().  */
@@ -106,8 +108,6 @@ extern int __setlocale_called;
 extern void __build_ctype_tables (int __territory);
 #endif
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif

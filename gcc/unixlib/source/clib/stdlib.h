@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdlib.h,v $
- * $Date: 2002/02/07 10:19:30 $
- * $Revision: 1.2.2.3 $
+ * $Date: 2002/06/12 13:33:54 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -13,19 +13,16 @@
 #ifndef __STDLIB_H
 #define __STDLIB_H
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #define __need_size_t
 #define __need_wchar_t
 #define __need_NULL
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifndef __GNUC__
-#undef  __attribute__
-#define __attribute__(x) /* Ignore */
-#endif
+__BEGIN_DECLS
   
 /* Returned by `div'.  */
 typedef struct
@@ -253,8 +250,6 @@ extern void srand48 (long int __seedval);
 extern unsigned short int *seed48 (unsigned short int __seed16v[3]);
 extern void lcong48 (unsigned short int __param[7]);
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif

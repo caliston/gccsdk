@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/mman.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2002/06/12 13:33:54 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -18,7 +18,13 @@
 #ifndef	__SYS_MMAN_H
 #define	__SYS_MMAN_H
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #include <sys/types.h>
+
+__BEGIN_DECLS
 
 /* Protections are chosen from these bits, OR'd together.  The
    implementation does not necessarily support PROT_EXEC or PROT_WRITE
@@ -61,10 +67,6 @@
 /* Flags for `mremap'.  */
 #define MREMAP_MAYMOVE	1	/* May move the pages when remapping.  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Map addresses starting near ADDR and extending for LEN bytes.  from
    OFFSET into the file FD describes according to PROT and FLAGS.  If ADDR
    is nonzero, it is the desired mapping address.  If the MAP_FIXED bit is
@@ -104,8 +106,6 @@ extern int madvise (__caddr_t __addr, size_t __len, int __advice);
    (caddr_t) -1 for errors (in which case `errno' is set).  */
 extern __caddr_t mremap (__caddr_t __addr, size_t __old_len, size_t __new_len, int __may_move);
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif	/* sys/mman.h */

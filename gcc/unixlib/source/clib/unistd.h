@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2002/03/30 09:40:18 $
- * $Revision: 1.2.2.6 $
+ * $Date: 2002/03/30 10:01:12 $
+ * $Revision: 1.2.2.7 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -13,18 +13,15 @@
 #ifndef __UNISTD_H
 #define __UNISTD_H
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifndef __GNUC__
-#undef  __attribute__
-#define __attribute__(x) /* Ignore */
-#endif
+__BEGIN_DECLS
 
 /* These may be used to determine what facilities are present at compile time.
    Their values can be obtained at run time from sysconf.  */
@@ -522,8 +519,6 @@ extern size_t confstr (int __name, char *__buf, size_t __len);
 #define __need_getopt
 #include <getopt.h>
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/local.h,v $
- * $Date: 2001/09/14 14:01:17 $
- * $Revision: 1.2.2.3 $
+ * $Date: 2002/08/17 10:52:33 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -28,9 +28,11 @@
 
 #endif /* __UNIXLIB_INTERNALS */
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
 #endif
+
+__BEGIN_DECLS
 
 #ifdef __UNIXLIB_INTERNALS
 
@@ -242,8 +244,6 @@ extern int __uname_control;
 extern int *__uname_dont_pack_ptr;
 #endif /* __UNIXLIB_OLD_UNAME */
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif

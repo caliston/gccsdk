@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/signal.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2002/04/03 07:45:46 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -13,6 +13,10 @@
 #ifndef __SIGNAL_H
 #define __SIGNAL_H
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
@@ -20,9 +24,7 @@
 #include <stddef.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
 
 /* Hangup (POSIX).  */
 #define SIGHUP	1
@@ -319,8 +321,6 @@ extern int sigaltstack (const struct sigaltstack *__ss,
 
 #define MINSIGSTKSZ 2048
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif

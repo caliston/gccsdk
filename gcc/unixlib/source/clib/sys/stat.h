@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/stat.h,v $
- * $Date: 2001/09/14 14:01:17 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2002/06/15 12:59:11 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -12,6 +12,10 @@
 
 #ifndef __SYS_STAT_H
 #define __SYS_STAT_H
+
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
 
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
@@ -67,10 +71,7 @@ typedef __blksize_t blksize_t;
 #define __blksize_t_defined
 #endif
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
 
 struct stat
 {
@@ -200,8 +201,6 @@ extern int mknod (const char *__path, __mode_t __mode, __dev_t __dev);
 /* Create a new FIFO named path, with permission bits mode.  */
 extern int mkfifo (const char *__path, __mode_t __mode);
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif
