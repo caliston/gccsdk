@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/ctype.h,v $
- * $Date: 2000/07/15 14:52:10 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/04/01 10:29:18 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -13,9 +13,11 @@
 #ifndef __CTYPE_H
 #define __CTYPE_H
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
 #endif
+
+__BEGIN_DECLS
 
 /* Characteristics. */
 extern unsigned char *__ctype;
@@ -64,7 +66,7 @@ extern int isupper (int __c);
 
 /* c is a printable character.  */
 extern int isprint (int __c);
-#define isprint(c) (__ctype[(int) (c)] & ~___ctype_ctrl)
+#define isprint(c) (~__ctype[(int) (c)] & ___ctype_ctrl)
 
 /* c is a printable character other than a space or a
    alphanumeric character.  */
@@ -88,6 +90,14 @@ extern int toupper (int __c);
 extern int tolower (int __c);
 #define tolower(c) ((int) __ctype_lower[(int) (c)])
 
+/* Convert c to upper case.  */
+extern int _toupper (int __c);
+#define _toupper(c) ((int) __ctype_upper[(int) (c)])
+
+/* Convert c to lower case.  */
+extern int _tolower (int __c);
+#define _tolower(c) ((int) __ctype_lower[(int) (c)])
+
 /* System V extension functions.  */
 
 /* Convert c to an ASCII character.  */
@@ -98,8 +108,6 @@ extern int toascii (int __c);
 extern int isascii (int __c);
 #define isascii(c) ((unsigned)(c) <= 0x7f)
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif

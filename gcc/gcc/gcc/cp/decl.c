@@ -188,6 +188,8 @@ static tree record_builtin_java_type PROTO((const char *, int));
 static const char *tag_name PROTO((enum tag_types code));
 static void find_class_binding_level PROTO((void));
 static struct binding_level *innermost_nonclass_level PROTO((void));
+static void finish_dtor PROTO((void));
+static void finish_ctor PROTO((int));
 static tree poplevel_class PROTO((void));
 static void warn_about_implicit_typename_lookup PROTO((tree, tree));
 static int walk_namespaces_r PROTO((tree, walk_namespaces_fn, void *));
@@ -334,6 +336,15 @@ tree __bltn_desc_array_type, __user_desc_array_type, __class_desc_array_type;
 tree __ptr_desc_array_type, __attr_dec_array_type, __func_desc_array_type;
 tree __ptmf_desc_array_type, __ptmd_desc_array_type;
 #endif
+
+/* This is the identifier __vlist. */
+tree vlist_identifier;
+
+/* This is the type _Vlist = vtable_entry_type**. */
+tree vlist_type_node;
+
+/* A null pointer of type _Vlist. */
+tree vlist_zero_node;
 
 /* Indicates that there is a type value in some namespace, although
    that is not necessarily in scope at the moment. */
@@ -6283,6 +6294,7 @@ init_decl_processing ()
 
   this_identifier = get_identifier (THIS_NAME);
   in_charge_identifier = get_identifier (IN_CHARGE_NAME);
+  vlist_identifier = get_identifier (VLIST_NAME);
   ctor_identifier = get_identifier (CTOR_NAME);
   dtor_identifier = get_identifier (DTOR_NAME);
   pfn_identifier = get_identifier (VTABLE_PFN_NAME);
@@ -6510,6 +6522,7 @@ init_decl_processing ()
 #if 0
   record_builtin_type (RID_MAX, NULL_PTR, ptr_type_node);
 #endif
+
   endlink = void_list_node;
   int_endlink = tree_cons (NULL_TREE, integer_type_node, endlink);
   double_endlink = tree_cons (NULL_TREE, double_type_node, endlink);
@@ -6848,6 +6861,16 @@ init_decl_processing ()
   vtbl_ptr_type_node = build_pointer_type (vtable_entry_type);
   layout_type (vtbl_ptr_type_node);
   record_builtin_type (RID_MAX, NULL_PTR, vtbl_ptr_type_node);
+
+  if (flag_vtable_thunks)
+    {
+      /* We need vlists only when using thunks; otherwise leave them
+	 as NULL_TREE. That way, it doesn't get into the way of the
+	 mangling.  */
+      vlist_type_node = build_pointer_type (vtbl_ptr_type_node); 
+      vlist_zero_node = build_int_2 (0, 0);
+      TREE_TYPE (vlist_zero_node) = vlist_type_node; 
+    }
 
   /* Simplify life by making a "sigtable_entry_type".  Give its
      fields names so that the debugger can use them.  */
@@ -8944,8 +8967,11 @@ grokfndecl (ctype, type, declarator, orig_declarator, virtualp, flags, quals,
 					    template_count,
 					    2 * (funcdef_flag != 0) +
 					    4 * (friendp != 0));
+
       if (decl == error_mark_node)
 	return NULL_TREE;
+
+      maybe_vlist_ctor_wrapper (decl, funcdef_flag);
 
       if ((! TYPE_FOR_JAVA (ctype) || check_java_method (decl))
 	  && check)
@@ -11386,6 +11412,10 @@ grokdeclarator (declarator, declspecs, decl_context, initialized, attrlist)
 		if (TYPE_USES_VIRTUAL_BASECLASSES (DECL_CONTEXT (decl)))
 		  arg_types = TREE_CHAIN (arg_types);
 
+		/* And the `vlist' argument. */
+		if (TYPE_USES_PVBASES (DECL_CONTEXT (decl)))
+		  arg_types = TREE_CHAIN (arg_types);
+
 		if (arg_types == void_list_node
 		    || (arg_types
 			&& TREE_CHAIN (arg_types)
@@ -12080,6 +12110,9 @@ replace_defarg (arg, init)
   TREE_PURPOSE (arg) = init;
 }
 
+/* Return 1 if D copies its arguments. This is used to test for copy
+   constructors and copy assignment operators.  */
+
 int
 copy_args_p (d)
      tree d;
@@ -12087,7 +12120,12 @@ copy_args_p (d)
   tree t = FUNCTION_ARG_CHAIN (d);
   if (DECL_CONSTRUCTOR_P (d)
       && TYPE_USES_VIRTUAL_BASECLASSES (DECL_CONTEXT (d)))
-    t = TREE_CHAIN (t);
+    {
+      t = TREE_CHAIN (t);
+      if (TYPE_USES_PVBASES (DECL_CONTEXT (d)))
+	t = TREE_CHAIN (t);
+    }
+
   if (t && TREE_CODE (TREE_VALUE (t)) == REFERENCE_TYPE
       && (TYPE_MAIN_VARIANT (TREE_TYPE (TREE_VALUE (t)))
 	  == DECL_CLASS_CONTEXT (d))
@@ -12117,7 +12155,8 @@ grok_ctor_properties (ctype, decl)
      added to any ctor so we can tell if the class has been initialized
      yet.  This could screw things up in this function, so we deliberately
      ignore the leading int if we're in that situation.  */
-  if (TYPE_USES_VIRTUAL_BASECLASSES (ctype))
+  if (TYPE_USES_VIRTUAL_BASECLASSES (ctype)
+      && !CLASSTYPE_IS_TEMPLATE (ctype))
     {
       my_friendly_assert (parmtypes
 			  && TREE_VALUE (parmtypes) == integer_type_node,
@@ -12125,6 +12164,17 @@ grok_ctor_properties (ctype, decl)
       parmtypes = TREE_CHAIN (parmtypes);
       parmtype = TREE_VALUE (parmtypes);
     }
+
+  if (TYPE_USES_PVBASES (ctype))
+    {
+      my_friendly_assert (parmtypes
+			  && TREE_VALUE (parmtypes) == vlist_type_node,
+			  980529);
+      parmtypes = TREE_CHAIN (parmtypes);
+      parmtype = TREE_VALUE (parmtypes);
+    }
+
+  maybe_vlist_ctor_wrapper (decl, 0);
 
   /* [class.copy]
 
@@ -12923,6 +12973,16 @@ xref_basetypes (code_type_node, name, ref, binfo)
 	    {
 	      TYPE_USES_VIRTUAL_BASECLASSES (ref) = 1;
 	      TYPE_USES_COMPLEX_INHERITANCE (ref) = 1;
+	      /* The PVBASES flag is never set for templates; we know
+		 only for instantiations whether the virtual bases are
+		 polymorphic. */
+	      if (flag_vtable_thunks >= 2 && !CLASSTYPE_IS_TEMPLATE (ref))
+		{
+		  if (via_virtual && TYPE_VIRTUAL_P (basetype))
+		    TYPE_USES_PVBASES (ref) = 1;
+		  else if (TYPE_USES_PVBASES (basetype))
+		    TYPE_USES_PVBASES (ref) = 1;
+		}
 	    }
 
 	  if (CLASS_TYPE_P (basetype))
@@ -13928,97 +13988,12 @@ store_return_init (return_id, init)
 }
 
 
-/* Finish up a function declaration and compile that function
-   all the way to assembler language output.  The free the storage
-   for the function definition.
+/* Emit implicit code for a destructor. This is a subroutine of
+   finish_function.  */
 
-   This is called after parsing the body of the function definition.
-   LINENO is the current line number.
-
-   FLAGS is a bitwise or of the following values:
-     1 - CALL_POPLEVEL
-       An extra call to poplevel (and expand_end_bindings) must be
-       made to take care of the binding contour for the base
-       initializers.  This is only relevant for constructors.
-     2 - INCLASS_INLINE
-       We just finished processing the body of an in-class inline
-       function definition.  (This processing will have taken place
-       after the class definition is complete.)
-
-   NESTED is nonzero if we were in the middle of compiling another function
-   when we started on this one.  */
-
-void
-finish_function (lineno, flags, nested)
-     int lineno;
-     int flags;
-     int nested;
+static void
+finish_dtor ()
 {
-  register tree fndecl = current_function_decl;
-  tree fntype, ctype = NULL_TREE;
-  rtx last_parm_insn, insns;
-  /* Label to use if this function is supposed to return a value.  */
-  tree no_return_label = NULL_TREE;
-  tree decls = NULL_TREE;
-  int call_poplevel = (flags & 1) != 0;
-  int inclass_inline = (flags & 2) != 0;
-  int in_template;
-
-  /* When we get some parse errors, we can end up without a
-     current_function_decl, so cope.  */
-  if (fndecl == NULL_TREE)
-    return;
-
-  if (function_depth > 1)
-    nested = 1;
-
-  fntype = TREE_TYPE (fndecl);
-
-/*  TREE_READONLY (fndecl) = 1;
-    This caused &foo to be of type ptr-to-const-function
-    which then got a warning when stored in a ptr-to-function variable.  */
-
-  /* This happens on strange parse errors.  */
-  if (! current_function_parms_stored)
-    {
-      call_poplevel = 0;
-      store_parm_decls ();
-    }
-
-  if (processing_template_decl)
-    {
-      if (DECL_CONSTRUCTOR_P (fndecl) && call_poplevel)
-	{
-	  decls = getdecls ();
-	  expand_end_bindings (decls, decls != NULL_TREE, 0);
-	  poplevel (decls != NULL_TREE, 0, 0);
-	}
-    }
-  else
-    {
-      if (write_symbols != NO_DEBUG /*&& TREE_CODE (fntype) != METHOD_TYPE*/)
-	{
-	  tree ttype = target_type (fntype);
-	  tree parmdecl;
-
-	  if (IS_AGGR_TYPE (ttype))
-	    /* Let debugger know it should output info for this type.  */
-	    note_debug_info_needed (ttype);
-
-	  for (parmdecl = DECL_ARGUMENTS (fndecl); parmdecl; parmdecl = TREE_CHAIN (parmdecl))
-	    {
-	      ttype = target_type (TREE_TYPE (parmdecl));
-	      if (IS_AGGR_TYPE (ttype))
-		/* Let debugger know it should output info for this type.  */
-		note_debug_info_needed (ttype);
-	    }
-	}
-
-      /* Clean house because we will need to reorder insns here.  */
-      do_pending_stack_adjust ();
-
-      if (dtor_label)
-	{
 	  tree binfo = TYPE_BINFO (current_class_type);
 	  tree cond = integer_one_node;
 	  tree exprstmt;
@@ -14026,6 +14001,7 @@ finish_function (lineno, flags, nested)
 	  tree virtual_size;
 	  int ok_to_optimize_dtor = 0;
 	  int empty_dtor = get_last_insn () == last_dtor_insn;
+	  rtx insns, last_parm_insn;
 
 	  if (current_function_assigns_this)
 	    cond = build (NE_EXPR, boolean_type_node,
@@ -14043,6 +14019,22 @@ finish_function (lineno, flags, nested)
 		  = (n_baseclasses == 0
 		     || (n_baseclasses == 1
 			 && TYPE_HAS_DESTRUCTOR (TYPE_BINFO_BASETYPE (current_class_type, 0))));
+	    }
+
+	  /* If this has a vlist1 parameter, allocate the corresponding vlist
+	     parameter.  */
+	  if (DECL_DESTRUCTOR_FOR_PVBASE_P (current_function_decl))
+	    {
+	      /* _Vlist __vlist; */
+	      tree vlist;
+	      
+	      mark_all_temps_used();
+	      vlist = pushdecl (build_decl (VAR_DECL, vlist_identifier,
+					    vlist_type_node));
+	      TREE_USED (vlist) = 1;
+	      DECL_ARTIFICIAL (vlist) = 1;
+	      expand_decl (vlist);
+	      expand_decl_init (vlist);
 	    }
 
 	  /* These initializations might go inline.  Protect
@@ -14069,10 +14061,12 @@ finish_function (lineno, flags, nested)
 	  /* These are two cases where we cannot delegate deletion.  */
 	  if (TYPE_USES_VIRTUAL_BASECLASSES (current_class_type)
 	      || TYPE_GETS_REG_DELETE (current_class_type))
-	    exprstmt = build_delete (current_class_type, current_class_ref, integer_zero_node,
+    exprstmt = build_delete 
+      (current_class_type, current_class_ref, integer_zero_node,
 				     LOOKUP_NONVIRTUAL|LOOKUP_DESTRUCTOR|LOOKUP_NORMAL, 0);
 	  else
-	    exprstmt = build_delete (current_class_type, current_class_ref, in_charge_node,
+    exprstmt = build_delete 
+      (current_class_type, current_class_ref, in_charge_node,
 				     LOOKUP_NONVIRTUAL|LOOKUP_DESTRUCTOR|LOOKUP_NORMAL, 0);
 
 	  /* If we did not assign to this, then `this' is non-zero at
@@ -14097,7 +14091,8 @@ finish_function (lineno, flags, nested)
 	      /* Run destructor on all virtual baseclasses.  */
 	      if (TYPE_USES_VIRTUAL_BASECLASSES (current_class_type))
 		{
-		  tree vbases = nreverse (copy_list (CLASSTYPE_VBASECLASSES (current_class_type)));
+	  tree vbases = nreverse 
+	    (copy_list (CLASSTYPE_VBASECLASSES (current_class_type)));
 		  expand_start_cond (build (BIT_AND_EXPR, integer_type_node,
 					    in_charge_node, integer_two_node), 0);
 		  while (vbases)
@@ -14107,10 +14102,10 @@ finish_function (lineno, flags, nested)
 			  tree vb = get_vbase
 			    (BINFO_TYPE (vbases),
 			     TYPE_BINFO (current_class_type));
+
 			  expand_expr_stmt
-			    (build_scoped_method_call
-			     (current_class_ref, vb, dtor_identifier,
-			      build_expr_list (NULL_TREE, integer_zero_node)));
+		    (build_base_dtor_call (current_class_ref, 
+					   vb, integer_zero_node));
 			}
 		      vbases = TREE_CHAIN (vbases);
 		    }
@@ -14162,6 +14157,28 @@ finish_function (lineno, flags, nested)
 
 	  start_sequence ();
 
+	  /* If we need thunk-style vlists, initialize them if the caller did
+	     not pass them. This requires a new temporary. The generated code
+	     looks like
+	     if (!(__in_charge & 4))
+	     __vlist = __vl.<type> + sizeof(__vl.<type>);
+	     else
+	     __vlist = __vlist1;
+	  */
+	  if (TYPE_USES_PVBASES (current_class_type))
+	    {
+	      tree vlist = lookup_name (vlist_identifier, 0);
+	      tree vlist1 = lookup_name (get_identifier (VLIST1_NAME), 0);
+	      cond = build (BIT_AND_EXPR, integer_type_node,
+			    in_charge_node, build_int_2 (4, 0));
+	      cond = build1 (TRUTH_NOT_EXPR, boolean_type_node, cond);
+	      expand_start_cond (cond, 0);
+	      init_vlist (current_class_type);
+	      expand_start_else ();
+	      expand_expr_stmt (build_modify_expr (vlist, NOP_EXPR, vlist1));
+	      expand_end_cond ();
+	    }
+
 	  /* If the dtor is empty, and we know there is not possible way we
 	     could use any vtable entries, before they are possibly set by
 	     a base class dtor, we don't have to setup the vtables, as we
@@ -14202,19 +14219,183 @@ finish_function (lineno, flags, nested)
 
 	  if (! ok_to_optimize_dtor)
 	    expand_end_cond ();
+}
+
+/* Emit implicit code for a constructor. This is a subroutine of
+   finish_function. CALL_POPLEVEL is the same variable in
+   finish_function.  */
+
+static void
+finish_ctor (call_poplevel)
+     int call_poplevel;
+{
+  register tree fndecl = current_function_decl;
+	  tree cond = NULL_TREE, thenclause = NULL_TREE;
+  rtx insns;
+  tree decls;
+
+  /* Allow constructor for a type to get a new instance of the object
+     using `build_new'.  */
+  tree abstract_virtuals = CLASSTYPE_ABSTRACT_VIRTUALS (current_class_type);
+  CLASSTYPE_ABSTRACT_VIRTUALS (current_class_type) = NULL_TREE;
+  
+  if (flag_this_is_variable > 0)
+    {
+      cond = build_binary_op (EQ_EXPR, current_class_ptr, integer_zero_node);
+      thenclause = 
+	build_modify_expr (current_class_ptr, NOP_EXPR,
+			   build_new (NULL_TREE, current_class_type, 
+				      void_type_node, 0));
+    }
+  
+  CLASSTYPE_ABSTRACT_VIRTUALS (current_class_type) = abstract_virtuals;
+  
+  start_sequence ();
+  
+  if (flag_this_is_variable > 0)
+    {
+      expand_start_cond (cond, 0);
+      expand_expr_stmt (thenclause);
+      expand_end_cond ();
+    }
+  
+  /* Emit insns from `emit_base_init' which sets up virtual
+     function table pointer(s).  */
+  if (base_init_expr)
+    {
+      expand_expr_stmt (base_init_expr);
+      base_init_expr = NULL_TREE;
+    }
+  
+  insns = get_insns ();
+  end_sequence ();
+  
+  /* This is where the body of the constructor begins.  */
+  
+  emit_insns_after (insns, last_parm_cleanup_insn);
+  
+  end_protect_partials ();
+  
+  /* This is where the body of the constructor ends.  */
+  expand_label (ctor_label);
+  ctor_label = NULL_TREE;
+  
+  if (call_poplevel)
+    {
+      decls = getdecls ();
+      expand_end_bindings (decls, decls != NULL_TREE, 0);
+      poplevel (decls != NULL_TREE, 1, 0);
+    }
+  
+  /* c_expand_return knows to return 'this' from a constructor.  */
+  c_expand_return (NULL_TREE);
+  
+  current_function_assigns_this = 0;
+  current_function_just_assigned_this = 0;
+}
+
+/* Finish up a function declaration and compile that function
+   all the way to assembler language output.  The free the storage
+   for the function definition.
+   
+   This is called after parsing the body of the function definition.
+   LINENO is the current line number.
+   
+   FLAGS is a bitwise or of the following values:
+     1 - CALL_POPLEVEL 
+       An extra call to poplevel (and expand_end_bindings) must be
+       made to take care of the binding contour for the base
+       initializers.  This is only relevant for constructors.
+     2 - INCLASS_INLINE
+       We just finished processing the body of an in-class inline
+       function definition.  (This processing will have taken place
+       after the class definition is complete.)
+
+   NESTED is nonzero if we were in the middle of compiling another function
+   when we started on this one.  */
+
+void
+finish_function (lineno, flags, nested)
+     int lineno;
+     int flags;
+     int nested;
+{
+  register tree fndecl = current_function_decl;
+  tree fntype, ctype = NULL_TREE;
+  /* Label to use if this function is supposed to return a value.  */
+  tree no_return_label = NULL_TREE;
+  tree decls = NULL_TREE;
+  int call_poplevel = (flags & 1) != 0; 
+  int inclass_inline = (flags & 2) != 0;
+  int in_template;
+  
+  /* When we get some parse errors, we can end up without a
+     current_function_decl, so cope.  */
+  if (fndecl == NULL_TREE)
+    return;
+  
+  if (function_depth > 1)
+    nested = 1;
+  
+  fntype = TREE_TYPE (fndecl);
+  
+  /*  TREE_READONLY (fndecl) = 1;
+      This caused &foo to be of type ptr-to-const-function
+      which then got a warning when stored in a ptr-to-function variable.  */
+  
+  /* This happens on strange parse errors.  */
+  if (! current_function_parms_stored)
+    {
+      call_poplevel = 0;
+      store_parm_decls ();
+    }
+  
+  if (processing_template_decl)
+    {
+      if (DECL_CONSTRUCTOR_P (fndecl) && call_poplevel)
+	{
+	  decls = getdecls ();
+	  expand_end_bindings (decls, decls != NULL_TREE, 0);
+	  poplevel (decls != NULL_TREE, 0, 0);
 	}
+    }
+  else
+    {
+      if (write_symbols != NO_DEBUG /*&& TREE_CODE (fntype) != METHOD_TYPE*/)
+	{
+	  tree ttype = target_type (fntype);
+	  tree parmdecl;
+	  
+	  if (IS_AGGR_TYPE (ttype))
+	    /* Let debugger know it should output info for this type.  */
+	    note_debug_info_needed (ttype);
+	  
+	  for (parmdecl = DECL_ARGUMENTS (fndecl); parmdecl; parmdecl = TREE_CHAIN (parmdecl))
+	    {
+	      ttype = target_type (TREE_TYPE (parmdecl));
+	      if (IS_AGGR_TYPE (ttype))
+		/* Let debugger know it should output info for this type.  */
+		note_debug_info_needed (ttype);
+	    }
+	}
+      
+      /* Clean house because we will need to reorder insns here.  */
+      do_pending_stack_adjust ();
+      
+      if (dtor_label)
+	finish_dtor ();
       else if (current_function_assigns_this)
 	{
 	  /* Does not need to call emit_base_init, because
 	     that is done (if needed) just after assignment to this
 	     is seen.  */
-
+	  
 	  if (DECL_CONSTRUCTOR_P (current_function_decl))
 	    {
 	      end_protect_partials ();
 	      expand_label (ctor_label);
 	      ctor_label = NULL_TREE;
-
+	      
 	      if (call_poplevel)
 		{
 		  decls = getdecls ();
@@ -14227,72 +14408,14 @@ finish_function (lineno, flags, nested)
 	  else if (TREE_CODE (TREE_TYPE (DECL_RESULT (current_function_decl))) != VOID_TYPE
 		   && return_label != NULL_RTX)
 	    no_return_label = build_decl (LABEL_DECL, NULL_TREE, NULL_TREE);
-
+	  
 	  current_function_assigns_this = 0;
 	  current_function_just_assigned_this = 0;
 	  base_init_expr = NULL_TREE;
 	}
-      else if (DECL_CONSTRUCTOR_P (fndecl))
-	{
-	  tree cond = NULL_TREE, thenclause = NULL_TREE;
-	  /* Allow constructor for a type to get a new instance of the object
-	     using `build_new'.  */
-	  tree abstract_virtuals = CLASSTYPE_ABSTRACT_VIRTUALS (current_class_type);
-	  CLASSTYPE_ABSTRACT_VIRTUALS (current_class_type) = NULL_TREE;
-
-	  if (flag_this_is_variable > 0)
-	    {
-	      cond = build_binary_op (EQ_EXPR,
-				      current_class_ptr, integer_zero_node);
-	      thenclause = build_modify_expr (current_class_ptr, NOP_EXPR,
-					      build_new (NULL_TREE, current_class_type, void_type_node, 0));
-	    }
-
-	  CLASSTYPE_ABSTRACT_VIRTUALS (current_class_type) = abstract_virtuals;
-
-	  start_sequence ();
-
-	  if (flag_this_is_variable > 0)
-	    {
-	      expand_start_cond (cond, 0);
-	      expand_expr_stmt (thenclause);
-	      expand_end_cond ();
-	    }
-
-	  /* Emit insns from `emit_base_init' which sets up virtual
-	     function table pointer(s).  */
-	  if (base_init_expr)
-	    {
-	      expand_expr_stmt (base_init_expr);
-	      base_init_expr = NULL_TREE;
-	    }
-
-	  insns = get_insns ();
-	  end_sequence ();
-
-	  /* This is where the body of the constructor begins.  */
-
-	  emit_insns_after (insns, last_parm_cleanup_insn);
-
-	  end_protect_partials ();
-
-	  /* This is where the body of the constructor ends.  */
-	  expand_label (ctor_label);
-	  ctor_label = NULL_TREE;
-
-	  if (call_poplevel)
-	    {
-	      decls = getdecls ();
-	      expand_end_bindings (decls, decls != NULL_TREE, 0);
-	      poplevel (decls != NULL_TREE, 1, 0);
-	    }
-
-	  /* c_expand_return knows to return 'this' from a constructor.  */
-	  c_expand_return (NULL_TREE);
-
-	  current_function_assigns_this = 0;
-	  current_function_just_assigned_this = 0;
-	}
+      else if (DECL_CONSTRUCTOR_P (fndecl)
+	       && !DECL_VLIST_CTOR_WRAPPER_P (fndecl))
+	finish_ctor (call_poplevel);
       else if (DECL_MAIN_P (fndecl))
 	{
 	  /* Make it so that `main' always returns 0 by default.  */
@@ -14306,10 +14429,10 @@ finish_function (lineno, flags, nested)
 	       && current_function_return_value == NULL_TREE
 	       && ! DECL_NAME (DECL_RESULT (current_function_decl)))
 	no_return_label = build_decl (LABEL_DECL, NULL_TREE, NULL_TREE);
-
+      
       if (flag_exceptions)
 	expand_exception_blocks ();
-
+      
       /* If this function is supposed to return a value, ensure that
 	 we do not fall into the cleanups by mistake.  The end of our
 	 function will look like this:

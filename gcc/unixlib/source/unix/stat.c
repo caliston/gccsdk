@@ -1,22 +1,23 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/stat.c,v $
- * $Date: 2000/07/15 14:52:45 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: stat.c,v 1.1.1.1 2000/07/15 14:52:45 nick Exp $";
+static const char rcs_id[] = "$Id: stat.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 #include <errno.h>
 #include <limits.h>
+#include <string.h>
 
-#include <sys/dev.h>
-#include <sys/os.h>
+#include <unixlib/dev.h>
+#include <unixlib/os.h>
 #include <sys/stat.h>
 
 #include <unixlib/local.h>
@@ -37,11 +38,22 @@ stat (const char *ux_filename, struct stat *buf)
     return __set_errno (ENAMETOOLONG);
 
   /* Get vital file statistics and use File$Path.  */
-  err = os_file (OSFILE_READCATINFO, filename, regs);
+  err = __os_file (OSFILE_READCATINFO, filename, regs);
   if (err)
     {
       __seterr (err);
       return __set_errno (EIO);
+    }
+
+  /* Trap case 'stat("/dev/null")' */
+  if (strcmp(filename, "null:") == 0)
+    {
+    buf->st_ino = 0;
+    regs[0] = regs[2] = regs[3] = regs[4] = regs[5] = 0;
+    buf->st_dev = DEV_NULL;
+    __stat(regs, buf);
+    buf->st_mode = S_IRUSR | S_IWUSR;
+    return 0;
     }
 
   /* Does the file has a filetype (at this point we aren't even sure that

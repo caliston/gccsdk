@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_coredump.s,v $
-; $Date: 2000/07/15 14:52:30 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/09/11 13:05:55 $
+; $Revision: 1.2.2.4 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -13,11 +13,12 @@
 	AREA	|C$$code|, CODE, READONLY
 
 	IMPORT	sys_siglist
-	EXPORT	|__write_termination|
 
 sys_siglist_ptr
 	DCD	sys_siglist
 
+	EXPORT	|__write_termination|
+	NAME	__write_termination
 |__write_termination|
 	LDR	a2, sys_siglist_ptr
 	MOV	ip, lr
@@ -30,7 +31,7 @@ sys_siglist_ptr
 	return	AL, pc, ip
 
 	EXPORT	|__write_corefile|
-
+	NAME	__write_corefile
 |__write_corefile|
 	LDR	a2, sys_siglist_ptr
 	MOV	ip, lr
@@ -53,6 +54,7 @@ sys_siglist_ptr
 ; hence APCS compliant
 
 	EXPORT	|__core|
+	NAME	__core
 |__core|
 	MOV	a1, fp
 ;
@@ -60,7 +62,6 @@ sys_siglist_ptr
 ;
 
 	IMPORT |__calling_environment|
-	IMPORT |__c_environment|
 
 NUM_ENV_HANDLERS * 17
 
@@ -72,13 +73,19 @@ NUM_ENV_HANDLERS * 17
 
 	MOV	v6, a1			; arg1 = frame pointer passed in
 
-; Remove environment handlers.
-
+	; Remove environment handlers.
 	MOV	a1, #NUM_ENV_HANDLERS - 1
 backtrace_remove_loop
-	LDMDB	ip!, {a2, a3, a4}
+	LDMDB	ip, {a2, a3, a4}
 	CMP	a1, #11			; Do not remove exit handler.
 	SWINE	XOS_ChangeEnvironment
+	; Ugh. Terribly hacky, but then so is RISC OS. :-)
+	; Temporarily store UnixLib handlers in place of the
+	; calling environment handlers.  The original values will
+	; be restored when we reach backtrace_reinstall_loop later.
+	; Hopefully this should work because backtrace was written
+	; to safeguard against any dodgy memory access.
+	STMDB	ip!, {a2, a3, a4}
 	SUBS	a1, a1, #1
 	BGE	backtrace_remove_loop
 
@@ -259,20 +266,22 @@ backtrack_fail_fp
 backtrace_endwhile
 	SWI	XOS_NewLine
 
-; Reinstall environment handlers.
-
-	LDR	ip, |__c_environment_end|
+	; Reinstall environment handlers.
+	LDR	ip, |__calling_environment_end|
 	MOV	a1, #NUM_ENV_HANDLERS - 1
 backtrace_reinstall_loop
-	LDMDB	ip!, {a2, a3, a4}
+	LDMDB	ip, {a2, a3, a4}
 	CMP	a1, #11	; Exit handler was not removed, so do not restore.
 	SWINE	XOS_ChangeEnvironment
+	; Here we are restoring the original calling environment handlers
+	; that were overwritten in __backtrace above.
+	STMDB	ip!, {a2, a3, a4}
 	SUBS	a1, a1, #1
 	BGE	backtrace_reinstall_loop
 
 	LDR	ip, |__backtrace_reg_ptr|
 	MOV	a1, #1	; for the benefit of _write_corefile, which returns 1
-	[	APCS32 = "no"
+	[	{CONFIG} = 26
 	LDMIA	ip, {v4, v5, v6, pc}^
 	|
 	LDMIA	ip, {v4, v5, v6, pc}
@@ -280,8 +289,6 @@ backtrace_reinstall_loop
 
 |__calling_environment_end|
 	DCD |__calling_environment| + NUM_ENV_HANDLERS * 12
-|__c_environment_end|
-	DCD |__c_environment| + NUM_ENV_HANDLERS * 12
 |__backtrace_reg_ptr|
 	DCD |__backtrace_reg|
 backtrace_prhex_buffer_ptr
@@ -418,7 +425,7 @@ backtrace_prhex_l1
 backtrace_prhex_spaces
 	DCB	"    "	; four space characters to initialise the buffer
 
-	AREA	|C$$Data|
+	AREA	|C$$zidata|, DATA, NOINIT
 
 backtrace_prhex_buffer
 	%	12
@@ -426,4 +433,3 @@ backtrace_prhex_buffer
 	%	16	; Four registers - v4, v5, v6, lr
 
 	END
-

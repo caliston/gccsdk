@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/_exist.s,v $
-; $Date: 2000/07/15 14:52:18 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:19 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -16,6 +16,7 @@
 ; Return nonzero if DIR is a directory.
 
 	EXPORT	|__isdir_raw|
+	NAME	__isdir_raw
 |__isdir_raw|
 	STMFD	sp!, {v1, v2, lr}
 	MOV	a2, a1
@@ -29,6 +30,7 @@
 ; Return nonzero if object exists (object, dir or image).
 
 	EXPORT	|__object_exists_raw|
+	NAME	__object_exists_raw
 |__object_exists_raw|
 	STMFD	sp!, {v1, v2, lr}
 	MOV	a2, a1

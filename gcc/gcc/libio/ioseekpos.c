@@ -25,10 +25,10 @@
 
 #include <libioP.h>
 
-_IO_pos_t
+_IO_off_t
 _IO_seekpos (fp, pos, mode)
      _IO_FILE *fp;
-     _IO_pos_t pos;
+     _IO_off_t pos;
      int mode;
 {
   _IO_pos_t retval;

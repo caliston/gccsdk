@@ -5808,7 +5808,7 @@
 	(match_operand:QI 2 "s_register_operand" "r"))
    (set (match_dup 0)
 	(plus:SI (match_dup 0) (match_operand:SI 1 "index_operand" "rJ")))]
-  ""
+  "REGNO(operands[0]) != REGNO(operands[2])"
   "str%?b\\t%2, [%0], %1")
 
 (define_peephole
@@ -5826,7 +5826,7 @@
 	(match_operand:SI 2 "s_register_operand" "r"))
    (set (match_dup 0)
 	(plus:SI (match_dup 0) (match_operand:SI 1 "index_operand" "rJ")))]
-  ""
+  "REGNO(operands[0]) != REGNO(operands[2])"
   "str%?\\t%2, [%0], %1")
 
 (define_peephole
@@ -5977,7 +5977,8 @@
    (return)]
   "(GET_CODE (operands[0]) == SYMBOL_REF && USE_RETURN_INSN (FALSE)
     && !get_frame_size () && !current_function_calls_alloca
-    && !current_function_outgoing_args_size && !current_function_args_size)"
+    && !current_function_outgoing_args_size && !current_function_args_size
+    && lr_save_eliminated)"
   "*
 {
   extern rtx arm_target_insn;
@@ -6005,7 +6006,8 @@
    (return)]
   "(GET_CODE (operands[1]) == SYMBOL_REF && USE_RETURN_INSN (FALSE)
     && !get_frame_size () && !current_function_calls_alloca
-    && !current_function_outgoing_args_size && !current_function_args_size)"
+    && !current_function_outgoing_args_size && !current_function_args_size
+    && lr_save_eliminated)"
   "*
 {
   extern rtx arm_target_insn;
@@ -6037,7 +6039,8 @@
    (return)]
   "(GET_CODE (operands[1]) == SYMBOL_REF && USE_RETURN_INSN (FALSE)
     && !get_frame_size () && !current_function_calls_alloca
-    && !current_function_outgoing_args_size && !current_function_args_size)"
+    && !current_function_outgoing_args_size && !current_function_args_size
+    && lr_save_eliminated)"
   "*
 {
   extern rtx arm_target_insn;

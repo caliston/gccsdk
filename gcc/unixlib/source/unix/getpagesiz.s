@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/getpagesiz.s,v $
-; $Date: 2000/07/15 14:52:46 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:22 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 ;
@@ -17,6 +17,7 @@
 
 	; size_t getpagesize (void)
 	EXPORT	getpagesize
+	NAME	getpagesize
 getpagesize
 	SWI	XOS_ReadMemMapInfo
 	return	AL, pc, lr

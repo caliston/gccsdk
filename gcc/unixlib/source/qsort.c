@@ -1,18 +1,18 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/qsort.c,v $
- * $Date: 2000/07/15 14:52:09 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: qsort.c,v 1.1.1.1 2000/07/15 14:52:09 nick Exp $";
+static const char rcs_id[] = "$Id: qsort.c,v 1.2.2.1 2001/09/01 13:44:29 admin Exp $";
 #endif
 
-#include <sys/syslib.h>
+#include <unixlib/unix.h>
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -177,7 +177,7 @@ qsort (register void *v, register size_t n, register size_t z,
   __z = z;
   __c = c;
 
-#ifdef PARANOID
+#ifdef __PARANOID
   /* check function pointer */
   __funcall ((*c), (v, v));
 #endif

@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/glob.c,v $
- * $Date: 2000/07/15 14:52:44 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -575,14 +575,7 @@ glob3 (Char *pathbuf, Char *pathend, Char *pattern, Char *restpattern, glob_t *p
 	DIR *dirp;
 	int err;
 	char buf[MAXPATHLEN];
-
-	/*
-	 * The readdirfunc declaration can't be prototyped, because it is
-	 * assigned, below, to two functions which are prototyped in glob.h
-	 * and dirent.h as taking pointers to differently typed opaque
-	 * structures.
-	 */
-	struct dirent *(*readdirfunc)();
+	struct dirent *(*readdirfunc)(DIR *dir);
 
 	*pathend = EOS;
 
@@ -601,7 +594,8 @@ glob3 (Char *pathbuf, Char *pathend, Char *pattern, Char *restpattern, glob_t *p
 
 	/* Search directory for matching names. */
 	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
-		readdirfunc = pglob->gl_readdir;
+		/* Cast from function type taking void pointer */
+		readdirfunc = (struct dirent *(*)(DIR *))pglob->gl_readdir;
 	else
 		readdirfunc = readdir;
 	while ((dp = (*readdirfunc)(dirp)) != NULL) {

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/open.c,v $
- * $Date: 2000/07/15 14:52:44 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: open.c,v 1.1.1.1 2000/07/15 14:52:44 nick Exp $";
+static const char rcs_id[] = "$Id: open.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <stdarg.h>
@@ -18,10 +18,9 @@ static const char rcs_id[] = "$Id: open.c,v 1.1.1.1 2000/07/15 14:52:44 nick Exp
 #include <string.h>
 #include <unistd.h>
 
-#include <sys/syslib.h>
 #include <sys/types.h>
-#include <sys/unix.h>
-#include <sys/dev.h>
+#include <unixlib/unix.h>
+#include <unixlib/dev.h>
 
 #include <unixlib/fd.h>
 #include <unixlib/local.h>
@@ -47,6 +46,8 @@ static const struct sfile __sfile[] =
 char *
 ttyname (int fd)
 {
+  static char name[10];
+
   if (BADF (fd))
     {
       (void) __set_errno (EBADF);
@@ -54,7 +55,7 @@ ttyname (int fd)
     }
 
   if (__u->fd[fd].device == DEV_TTY)
-    return "/dev/tty";
+    return strcpy (name, "/dev/tty");
 
   return NULL;
 }
@@ -113,9 +114,9 @@ open (const char *file, int oflag, ...)
 /* __riscosify() is called by __fsopen() */
 
 #ifdef DEBUG
-  os_print ("open(): file = ");
-  os_print (file);
-  os_print ("\r\n");
+  __os_print ("open(): file = ");
+  __os_print (file);
+  __os_print ("\r\n");
 #endif
 
   if (oflag & O_CREAT)

@@ -1,5 +1,6 @@
 /* Compiler driver program that can handle many languages.
-   Copyright (C) 1987, 89, 92-98, 1999 Free Software Foundation, Inc.
+   Copyright (C) 1987, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
+   2000 Free Software Foundation, Inc.
 
 This file is part of GNU CC.
 
@@ -40,8 +41,8 @@ compilation is specified by a string called a "spec".  */
 #include "prefix.h"
 
 #ifdef __riscos
-#include <sys/os.h>
-#include <sys/swis.h>
+#include <unixlib/os.h>
+#include <swis.h>
 #endif
 
 #ifdef VMS
@@ -841,7 +842,9 @@ struct option_map option_map[] =
    {"--include-barrier", "-I-", 0},
    {"--include-directory", "-I", "aj"},
    {"--include-directory-after", "-idirafter", "a"},
+   /* NAB++ */
    {"--include-cross-directory-after", "-icrossdirafter", "a"},
+   /* NAB-- */
    {"--include-prefix", "-iprefix", "a"},
    {"--include-with-prefix", "-iwithprefix", "a"},
    {"--include-with-prefix-before", "-iwithprefixbefore", "a"},
@@ -4695,7 +4698,7 @@ main (argc, argv)
 
     regs[0] = -1;
     regs[1] = -1;
-    os_swi (Wimp_SlotSize, regs);
+    __os_swi (Wimp_SlotSize, regs);
     if (regs[0] < (3000 * 1024))
       {
         fprintf (stderr,
@@ -5017,7 +5020,7 @@ main (argc, argv)
       if (! verbose_flag)
 	{
 	  printf ("\nFor bug reporting instructions, please see:\n");
-	  printf ("<URL:http://www.gnu.org/software/gcc/faq.html#bugreport>.\n");
+	  printf ("%s.\n", GCCBUGURL);
 
 	  exit (0);
 	}
@@ -5213,7 +5216,7 @@ main (argc, argv)
   if (print_help_list)
     {
       printf ("\nFor bug reporting instructions, please see:\n");
-      printf ("<URL:http://www.gnu.org/software/gcc/faq.html#bugreport>\n");
+      printf ("%s\n", GCCBUGURL);
     }
 
   exit (error_count > 0 ? (signal_count ? 2 : 1) : 0);

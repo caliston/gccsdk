@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/socket.h,v $
- * $Date: 2000/07/15 14:52:16 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/08/18 15:19:06 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -48,6 +48,10 @@
 
 /* Freenet programmers interface - sys/socket.h - edit by andy 23/5/95 */
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
@@ -56,9 +60,19 @@
 #include <sys/uio.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
+#define __need_size_t
+#define __need_NULL
+#include <stddef.h>
+
+#ifndef __socklen_t_defined
+typedef __socklen_t socklen_t;
+#define __socklen_t_defined
 #endif
+
+/* POSIX.1g specifies this type name for the `sa_family' member.  */
+typedef unsigned short int sa_family_t;
+
+__BEGIN_DECLS
 
 /*
  * Definitions related to sockets: types, address families, options.
@@ -159,7 +173,8 @@ extern "C" {
 /*
  * 4.3 BSD compatibility structure representing socket addresses
  */
-struct sockaddr {
+struct sockaddr
+{
   __u_short sa_family;	      /* Address family */
   char	  sa_data[14];	      /* Address data (maximum 14 bytes) */
 };
@@ -230,74 +245,77 @@ struct msghdr {
 /*
  * structure used for manipulating SO_LINGER option
  */
-struct linger {
+struct linger
+{
   int l_onoff;			 /* Option on/off toggle */
   int l_linger;			 /* Time to linger for (in seconds) */
 };
 
 /* Create a socket.  */
-extern int socket (int af, int type, int protocol);
+extern int socket (int af, int __type, int __protocol);
 
 /* Bind a name to a socket.  */
-extern int bind (int s, const struct sockaddr *name, int namelen);
+extern int bind (int __s, const struct sockaddr *__name, socklen_t namelen);
 
 /* Start listening for connections on a socket.  */
-extern int listen (int s, int backlog);
+extern int listen (int __s, int __backlog);
 
 /* Accept a connection on a socket.  */
-extern int accept (int s, struct sockaddr *name, int *namelen);
+extern int accept (int __s, struct sockaddr *__name, socklen_t *__namelen);
 
 /* Make a connection on a socket.  */
-extern int connect (int s, const struct sockaddr *name, int namelen);
+extern int connect (int __s, const struct sockaddr *__name, socklen_t namelen);
 
 /* Routines to receive data on a socket. */
-extern int recv (int s, void *msg, int len, int flags);
-extern int recvfrom (int s, void *msg, int len, int flags,
-		    struct sockaddr *from, int *fromlen);
-extern int recvmsg (int s, struct msghdr *msg, int flags);
+extern int recv (int __s, void *__msg, int __len, int __flags);
+extern int recvfrom (int __s, void *__msg, int __len, int __flags,
+		    struct sockaddr *__from, socklen_t *__fromlen);
+extern int recvmsg (int __s, struct msghdr *__msg, int __flags);
 
 /* Routines to send data from a socket.  */
-extern int send (int s, const void *msg, int len, int flags);
-extern int sendto (int s, const void *msg, int len, int flags,
-		   const struct sockaddr *to, int tolen);
-extern int sendmsg (int s, const struct msghdr *msg, int flags);
+extern int send (int __s, const void *__msg, int __len, int __flags);
+extern int sendto (int __s, const void *__msg, int __len, int __flags,
+		   const struct sockaddr *__to, int tolen);
+extern int sendmsg (int __s, const struct msghdr *__msg, int __flags);
 
 /* (Partially) shutdown a socket. Perl needs this. Use Perl. Don't use shutdown. */
-extern int shutdown (int s, int how);
+extern int shutdown (int __s, int __how);
 
 /* Manipulate socket options.  */
-extern int setsockopt (int s, int level, int optname, const void *optval, int optlen);
-extern int getsockopt (int s, int level, int optname, void *optval, int *optlen);
+extern int setsockopt (int __s, int __level, int __optname, const void *__optval, socklen_t optlen);
+extern int getsockopt (int __s, int __level, int __optname, void *__optval, socklen_t *__optlen);
 
 /* Find the names of a socket and its peer.  */
-extern int getsockname (int s, struct sockaddr *name, int *namelen);
-extern int getpeername (int s, struct sockaddr *name, int *namelen);
+extern int getsockname (int __s, struct sockaddr *__name, socklen_t *__namelen);
+extern int getpeername (int __s, struct sockaddr *__name, socklen_t *__namelen);
 
+extern int socketpair(int d, int type, int protocol, int sv[2]);
 
 /* Direct SWI veneers: */
-extern int _socket (int af, int type, int protocol);
-extern int _bind (int s, const struct sockaddr * name, int namelen);
-extern int _listen (int s, int backlog);
-extern int _accept (int s, struct sockaddr *name, int *namelen);
-extern int _connect (int s, const struct sockaddr *name, int namelen);
-extern int _recv (int s, void *msg, int len, int flags);
-extern int _recvfrom (int s, void *msg, int len, int flags,
-		     struct sockaddr *from, int *fromlen);
-extern int _recvmsg (int s, struct msghdr *msg, int flags);
-extern int _send (int s, const void *msg, int len, int flags);
-extern int _sendto (int s, const void *msg, int len, int flags,
-		   const struct sockaddr *to, int tolen);
-extern int _sendmsg (int s, const struct msghdr * msg, int flags);
-extern int _shutdown (int s, int how);
-extern int _setsockopt (int s, int level, int optname,
-       	   	        const void *optval, int optlen);
-extern int _getsockopt (int s, int level, int optname,
-       	   	        char *optval, int *optlen);
-extern int _getsockname (int s, struct sockaddr *name, int *namelen);
-extern int _getpeername (int s, struct sockaddr *name, int *namelen);
+extern int _socket (int af, int __type, int __protocol);
+extern int _bind (int __s, const struct sockaddr *__name, socklen_t __namelen);
+extern int _listen (int __s, int __backlog);
+extern int _accept (int __s, struct sockaddr *__name, socklen_t *__namelen);
+extern int _connect (int __s, const struct sockaddr *__name, socklen_t namelen);
 
-#ifdef __cplusplus
-}
-#endif
+extern int _recv (int __s, void *__msg, int __len, int __flags);
+extern int _recvfrom (int __s, void *__msg, int __len, int __flags,
+		     struct sockaddr *__from, socklen_t *__fromlen);
+extern int _recvmsg (int __s, struct msghdr *__msg, int __flags);
+
+extern int _send (int __s, const void *__msg, int __len, int __flags);
+extern int _sendto (int __s, const void *__msg, int __len, int __flags,
+		   const struct sockaddr *__to, int __tolen);
+extern int _sendmsg (int __s, const struct msghdr *__msg, int __flags);
+extern int _shutdown (int __s, int __how);
+
+extern int _setsockopt (int __s, int __level, int __optname,
+       	   	        const void *__optval, int __optlen);
+extern int _getsockopt (int __s, int __level, int __optname,
+       	   	        char *__optval, int *__optlen);
+extern int _getsockname (int __s, struct sockaddr *__name, socklen_t *__namelen);
+extern int _getpeername (int __s, struct sockaddr *__name, socklen_t *__namelen);
+
+__END_DECLS
 
 #endif /* socket.h */

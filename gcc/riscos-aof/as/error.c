@@ -2,14 +2,19 @@
  * error.c
  * Copyright © 1992 Niklas Röjemo
  */
-
+#include "sdk-config.h"
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "filestack.h"
 #include "error.h"
 #include "input.h"
@@ -25,7 +30,7 @@ static int no_errors = 0;
 static int no_warnings = 0;
 static char *source = NULL;
 
-#ifdef __riscos
+#ifdef __riscos__
 static int ThrowbackStarted;
 #endif
 
@@ -33,13 +38,13 @@ static char errbuf[2048];
 char er[1024];
 
 void 
-errorInit (int throwback, char *filename)
+errorInit (char *filename)
 {
   source = filename;
 }
 
 
-#ifdef __riscos
+#ifdef __riscos__
 void 
 errorFinish (void)
 {
@@ -49,7 +54,7 @@ errorFinish (void)
 #endif
 
 
-#ifdef __riscos
+#ifdef __riscos__
 char *
 LF (char *buf)
 {
@@ -89,9 +94,9 @@ TB (int level, long int lineno, char *error, const char *file)
   if (ThrowbackStarted > 0)
     ThrowbackSendError (level, lineno, error);
 }
-#endif /* __riscos */
+#endif /* __riscos__ */
 
-#ifndef __riscos
+#ifndef __riscos__
 #define TB(x,y,z,f)
 #endif
 
@@ -128,6 +133,9 @@ fixup (ErrorTag t)
 static void 
 doline (int t, long int line, int sameline)
 {
+#ifndef __riscos__
+  t = t;
+#endif
   if (line > 0)
     {
       TB (t, line, errbuf, inputName);
@@ -168,13 +176,13 @@ doline (int t, long int line, int sameline)
 void 
 error (ErrorTag e, BOOL c, const char *format,...)
 {
-  char *str;
+  const char *str;
   va_list ap;
   long int line;
   int sameline = 1;
   int t = 0;
 
-#ifdef __riscos
+#ifdef __riscos__
   switch (e)
     {
     case ErrorInfo:
@@ -263,11 +271,11 @@ void
 errorLine (long int lineno, const char *file,
 	   ErrorTag e, BOOL c, const char *format,...)
 {
-  char *str;
-  int t;
+  const char *str;
   va_list ap;
 
-#ifdef __riscos
+#ifdef __riscos__
+  int t;
   switch (e)
     {
     case ErrorInfo:

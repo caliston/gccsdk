@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/gcccompat/_divdi3.s,v $
-; $Date: 2000/07/15 14:52:20 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:19 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -16,11 +16,11 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	EXPORT |__divdi3|
-
 	; (a1, a2) ; (a3, a4)
 	; result in v2 and v3
 	; remainder in v4 and ip
+	EXPORT |__divdi3|
+	NAME	__divdi3
 |__divdi3|
 	; fast exits
 	; check the numerator for zero
@@ -106,4 +106,3 @@
 	stackreturn	AL, "v2, v3, v4, v6, pc"
 
 	END
-

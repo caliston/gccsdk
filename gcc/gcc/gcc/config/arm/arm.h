@@ -1,5 +1,6 @@
 /* Definitions of target machine for GNU compiler, for ARM.
-   Copyright (C) 1991, 93, 94, 95, 96, 97, 98, 1999 Free Software Foundation, Inc.
+   Copyright (C) 1991, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000
+   Free Software Foundation, Inc.
    Contributed by Pieter `Tiggr' Schoenmakers (rcpieter@win.tue.nl)
    and Martin Simmons (@harleqn.co.uk).
    More major hacks by Richard Earnshaw (rwe11@cl.cam.ac.uk)
@@ -65,12 +66,13 @@ enum arm_cond_code
   ARM_HI, ARM_LS, ARM_GE, ARM_LT, ARM_GT, ARM_LE, ARM_AL, ARM_NV
 };
 extern enum arm_cond_code arm_current_cc;
-extern char * arm_condition_codes[];
+extern char *arm_condition_codes[];
 
 #define ARM_INVERSE_CONDITION_CODE(X)  ((enum arm_cond_code) (((int)X) ^ 1))
 
 /* This is needed by the tail-calling peepholes */
 extern int frame_pointer_needed;
+extern int lr_save_eliminated;
 
 
 /* Just in case configure has failed to define anything. */
@@ -141,8 +143,6 @@ Unrecognized value in TARGET_CPU_DEFAULT.
 %{march=arm8:-D__ARM_ARCH_4__} \
 %{march=arm810:-D__ARM_ARCH_4__} \
 %{march=arm9:-D__ARM_ARCH_4T__} \
-%{march=arm920:-D__ARM_ARCH_4__} \
-%{march=arm920t:-D__ARM_ARCH_4T__} \
 %{march=arm9tdmi:-D__ARM_ARCH_4T__} \
 %{march=strongarm:-D__ARM_ARCH_4__} \
 %{march=strongarm110:-D__ARM_ARCH_4__} \
@@ -153,7 +153,6 @@ Unrecognized value in TARGET_CPU_DEFAULT.
 %{march=armv3m:-D__ARM_ARCH_3M__} \
 %{march=armv4:-D__ARM_ARCH_4__} \
 %{march=armv4t:-D__ARM_ARCH_4T__} \
-%{march=armv5:-D__ARM_ARCH_5__} \
 %{!march=*: \
  %{mcpu=arm2:-D__ARM_ARCH_2__} \
  %{mcpu=arm250:-D__ARM_ARCH_2__} \
@@ -174,8 +173,6 @@ Unrecognized value in TARGET_CPU_DEFAULT.
  %{mcpu=arm8:-D__ARM_ARCH_4__} \
  %{mcpu=arm810:-D__ARM_ARCH_4__} \
  %{mcpu=arm9:-D__ARM_ARCH_4T__} \
- %{mcpu=arm920:-D__ARM_ARCH_4__} \
- %{mcpu=arm920t:-D__ARM_ARCH_4T__} \
  %{mcpu=arm9tdmi:-D__ARM_ARCH_4T__} \
  %{mcpu=strongarm:-D__ARM_ARCH_4__} \
  %{mcpu=strongarm110:-D__ARM_ARCH_4__} \
@@ -313,9 +310,6 @@ extern const char * target_fp_name;
 function tries to return. */
 #define ARM_FLAG_ABORT_NORETURN (0x8000)
 
-/* Nonzero if function prologues should not load the PIC register. */
-#define ARM_FLAG_SINGLE_PIC_BASE (0x10000)
-
 #define TARGET_APCS			(target_flags & ARM_FLAG_APCS_FRAME)
 #define TARGET_POKE_FUNCTION_NAME	(target_flags & ARM_FLAG_POKE)
 #define TARGET_FPE			(target_flags & ARM_FLAG_FPE)
@@ -338,7 +332,6 @@ function tries to return. */
 #define TARGET_LITTLE_WORDS		(target_flags & ARM_FLAG_LITTLE_WORDS)
 #define TARGET_NO_SCHED_PRO		(target_flags & ARM_FLAG_NO_SCHED_PRO)
 #define TARGET_ABORT_NORETURN           (target_flags & ARM_FLAG_ABORT_NORETURN)
-#define TARGET_SINGLE_PIC_BASE		(target_flags & ARM_FLAG_SINGLE_PIC_BASE)
 
 /* SUBTARGET_SWITCHES is used to add flags on a per-config basis.
    Bit 31 is reserved.  See riscix.h.  */
@@ -393,9 +386,6 @@ function tries to return. */
   {"sched-prolog",             -ARM_FLAG_NO_SCHED_PRO, 	\
      "Do not move instructions into a function's prologue" }, \
   {"no-sched-prolog",           ARM_FLAG_NO_SCHED_PRO, "" }, \
-  {"single-pic-base",		ARM_FLAG_SINGLE_PIC_BASE,	\
-     "Do not load the PIC register in function prologues" },	\
-  {"no-single-pic-base",       -ARM_FLAG_SINGLE_PIC_BASE, "" },	\
   SUBTARGET_SWITCHES					\
   {"",				TARGET_DEFAULT }	\
 }
@@ -465,9 +455,6 @@ extern int arm_fast_multiply;
 
 /* Nonzero if this chip supports the ARM Architecture 4 extensions */
 extern int arm_arch4;
-
-/* Nonzero if this chip supports the ARM Architecture 5 extensions */
-extern int arm_arch5;
 
 /* Nonzero if this chip can benefit from load scheduling.  */
 extern int arm_ld_sched;
@@ -977,7 +964,7 @@ enum reg_class
    For the ARM, we wish to handle large displacements off a base
    register by splitting the addend across a MOV and the mem insn.
    This can cut the number of reloads needed. */
-#define LEGITIMIZE_RELOAD_ADDRESS(X, MODE, OPNUM, TYPE, IND_LEVELS, WIN)		\
+#define LEGITIMIZE_RELOAD_ADDRESS(X,MODE,OPNUM,TYPE,IND_LEVELS,WIN)		\
   do											\
     {											\
       if (GET_CODE (X) == PLUS								\
@@ -1022,8 +1009,7 @@ enum reg_class
 		       OPNUM, TYPE);							\
 	  goto WIN;									\
 	}										\
-    }											\
-  while (0)
+    } while (0)
 
 /* Return the maximum number of consecutive registers
    needed to represent mode MODE in a register of class CLASS.
@@ -1551,8 +1537,7 @@ enum reg_class
 	      && INTVAL (INDEX) > -range)  	      					\
 	    goto LABEL;									\
 	}										\
-    }											\
-  while (0)
+    } while (0)
 
 /* Jump to LABEL if X is a valid address RTX.  This must also take
    REG_OK_STRICT into account when deciding about valid registers, but it uses
@@ -1635,6 +1620,7 @@ enum reg_class
    On the ARM, try to convert [REG, #BIGCONST]
    into ADD BASE, REG, #UPPERCONST and [BASE, #VALIDCONST],
    where VALIDCONST == 0 in case of TImode.  */
+extern struct rtx_def *legitimize_pic_address ();
 #define LEGITIMIZE_ADDRESS(X, OLDX, MODE, WIN)				 \
 {									 \
   if (GET_CODE (X) == PLUS)						 \
@@ -1813,7 +1799,7 @@ enum reg_class
   ((X) == frame_pointer_rtx || (X) == stack_pointer_rtx	\
    || (X) == arg_pointer_rtx)
 
-#define DEFAULT_RTX_COSTS(X, CODE, OUTER_CODE)		\
+#define DEFAULT_RTX_COSTS(X,CODE,OUTER_CODE)		\
    return arm_rtx_costs (X, CODE);
 
 /* Moves to and from memory are quite expensive */
@@ -1897,7 +1883,7 @@ extern int making_const_table;
 
 #define REVERSIBLE_CC_MODE(MODE) ((MODE) != CCFPEmode)
 
-#define CANONICALIZE_COMPARISON(CODE, OP0, OP1)				\
+#define CANONICALIZE_COMPARISON(CODE,OP0,OP1)				\
   do									\
     {									\
       if (GET_CODE (OP1) == CONST_INT					\
@@ -1908,8 +1894,7 @@ extern int making_const_table;
           CODE = arm_canonicalize_comparison ((CODE), &const_op);	\
           OP1 = const_op;						\
         }								\
-    }									\
-  while (0)
+    } while (0)
 
 #define STORE_FLAG_VALUE 1
 
@@ -1917,8 +1902,7 @@ extern int making_const_table;
    stored from the compare operation.  Note that we can't use "rtx" here
    since it hasn't been defined!  */
 
-extern struct rtx_def * arm_compare_op0;
-extern struct rtx_def * arm_compare_op1;
+extern struct rtx_def *arm_compare_op0, *arm_compare_op1;
 
 /* Define the codes that are matched by predicates in arm.c */
 #define PREDICATE_CODES							\
@@ -1977,8 +1961,7 @@ extern struct rtx_def * arm_compare_op1;
 	}							\
       ASM_GENERATE_INTERNAL_LABEL (s, (PREFIX), (NUM));		\
       ASM_OUTPUT_LABEL (STREAM, s);		                \
-    }								\
-  while (0)
+    } while (0)
 #endif
 
 /* Output a push or a pop instruction (only used when profiling).  */
@@ -2213,7 +2196,6 @@ struct rtx_def;
 #ifndef HOST_WIDE_INT
 #include "hwint.h"
 #endif
-#define Hint HOST_WIDE_INT
 
 #ifndef HAVE_MACHINE_MODES
 #include "machmode.h"
@@ -2229,8 +2211,8 @@ struct rtx_def;
 
 void   arm_override_options PROTO ((void));
 int    use_return_insn PROTO ((int));
-int    const_ok_for_arm PROTO ((Hint));
-int    arm_split_constant RTX_CODE_PROTO ((Rcode, Mmode, Hint, Rtx, Rtx, int));
+int    const_ok_for_arm PROTO ((HOST_WIDE_INT));
+int    arm_split_constant RTX_CODE_PROTO ((Rcode, Mmode, HOST_WIDE_INT, Rtx, Rtx, int));
 Rcode  arm_canonicalize_comparison RTX_CODE_PROTO ((Rcode,  Rtx *));
 int    arm_return_in_memory PROTO ((Tree));
 int    legitimate_pic_operand_p PROTO ((Rtx));
@@ -2271,9 +2253,9 @@ Rcode  minmax_code PROTO ((Rtx));
 int    adjacent_mem_locations PROTO ((Rtx, Rtx));
 int    load_multiple_operation PROTO ((Rtx, Mmode));
 int    store_multiple_operation PROTO ((Rtx, Mmode));
-int    load_multiple_sequence PROTO ((Rtx *, int, int *, int *, Hint *));
+int    load_multiple_sequence PROTO ((Rtx *, int, int *, int *, HOST_WIDE_INT *));
 char * emit_ldm_seq PROTO ((Rtx *, int));
-int    store_multiple_sequence PROTO ((Rtx *, int, int *, int *, Hint *));
+int    store_multiple_sequence PROTO ((Rtx *, int, int *, int *, HOST_WIDE_INT *));
 char * emit_stm_seq PROTO ((Rtx *, int));
 int    arm_valid_machine_decl_attribute PROTO ((Tree, Tree, Tree));
 Rtx    arm_gen_load_multiple PROTO ((int, int, Rtx, int, int, int, int, int));

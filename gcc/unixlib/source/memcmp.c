@@ -1,23 +1,25 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/memcmp.c,v $
- * $Date: 2000/07/15 14:52:08 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/04/03 07:45:46 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: memcmp.c,v 1.1.1.1 2000/07/15 14:52:08 nick Exp $";
+static const char rcs_id[] = "$Id: memcmp.c,v 1.2.2.1 2002/04/03 07:45:46 admin Exp $";
 #endif
 
 #include <string.h>
+#include <strings.h>
 
 int
 memcmp (const void *s1, const void *s2, size_t n)
 {
-  register unsigned char *_s1 = (unsigned char *) s1, *_s2 = (unsigned char *) s2;
+  const unsigned char *_s1 = s1;
+  const unsigned char *_s2 = s2;
 
   while (n & 0x07)
     {

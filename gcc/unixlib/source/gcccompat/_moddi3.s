@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/gcccompat/_moddi3.s,v $
-; $Date: 2000/07/15 14:52:20 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:19 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -17,11 +17,11 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	EXPORT |__moddi3|
-
 	; (a1, a2) / (a3, a4)
 	;   result in v2 and v3
 	;   remainder in v4 and ip
+	EXPORT |__moddi3|
+	NAME	__moddi3
 |__moddi3|
 	; fast exits
 	;   check the numerator for zero

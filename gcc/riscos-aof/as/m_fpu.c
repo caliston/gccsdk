@@ -3,8 +3,13 @@
  * m_fpu.c
  * Copyright © 1992 Niklas Röjemo
  */
-
+#include "sdk-config.h"
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "mnemonics.h"
 #include "error.h"
 #include "option.h"
@@ -351,7 +356,7 @@ m_flt (WORD cc)
   putIns (ir);
 }
 
-void 
+static void 
 flagtransfer (WORD ir)
 {
   WORD op;
@@ -384,7 +389,7 @@ m_rfc (WORD cc)
   flagtransfer (M_RFC | cc);
 }
 
-void 
+static void 
 comparelow (WORD ir)		/* No precision and no rounding allowed ? */
 {
   ir |= LHS_OP (getFpuReg ());

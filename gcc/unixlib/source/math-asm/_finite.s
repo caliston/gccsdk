@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/math-asm/_finite.s,v $
-; $Date: 2000/07/15 14:52:24 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -15,6 +15,7 @@
 	; int finite (double x)
 	; return 1 if x is finite, else 0
 	EXPORT  finite
+	NAME	finite
 finite
 	BIC	a1, a1, #&80000000
 	ADD	a1, a1, #&100000

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/sigaltstk.c,v $
- * $Date: 2000/07/15 14:52:30 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:21 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: sigaltstk.c,v 1.1.1.1 2000/07/15 14:52:30 nick Exp $";
+static const char rcs_id[] = "$Id: sigaltstk.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
 /* Written by Nick Burrett, 27 August 1996.  */
@@ -17,7 +17,7 @@ static const char rcs_id[] = "$Id: sigaltstk.c,v 1.1.1.1 2000/07/15 14:52:30 nic
 #include <signal.h>
 #include <errno.h>
 #include <unixlib/sigstate.h>
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 
 /* Specifies an alternate stack for use during signal handling.
    When a signal is received by the process and its action

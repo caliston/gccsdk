@@ -5,6 +5,7 @@
 
 #ifndef __os_h
 #define __os_h
+#include <stdio.h>
 
 #ifdef CROSS_COMPILE
 /* UNIX specific information.  */
@@ -14,7 +15,7 @@
 
 #endif /* CROSS_COMPILE */
 
-#ifdef __riscos
+#ifdef __riscos__
 /* Acorn/RISC OS specific information.  */
 typedef struct os_error
 {
@@ -25,13 +26,14 @@ os_error;
 
 extern char *ErrorFile;
 
-WORD switonum (char *swi);
+int switonum (char *swi);
 os_error *cdir (char *name);
 
 
 int (OSCanonicalisePath) (char *path,
 			  char *buffer, int bufferSize,
 			  char *systemVar, char *defaultPath);
+int OSArgs7 (const FILE * fh, char *buffer, int bufferSize);
 
 os_error *ThrowbackStart (void);
 os_error *ThrowbackSendStart (const char *filename);
@@ -51,6 +53,12 @@ os_error *ThrowbackEnd (void);
 char *(toriscos) (char *name, char *oldsuffixes, char newsuffix);
 char *(CanonicalisePath) (const char *path);
 
-#endif /* __riscos */
+#endif /* __riscos__ */
+
+char *CanonicaliseFile (const FILE * path);
+
+#if (defined (CROSS_COMPILE) && ! defined (HAVE_STRNDUP)) || ! defined (CROSS_COMPILE)
+extern char *strndup (const char *str, int len);
+#endif
 
 #endif

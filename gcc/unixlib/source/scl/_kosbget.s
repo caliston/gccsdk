@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/scl/_kosbget.s,v $
-; $Date: 2000/07/15 14:52:28 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -12,9 +12,11 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	; int _kernel_osbget (int handle)
 	IMPORT	|__seterr|
+
+	; int _kernel_osbget (int handle)
 	EXPORT	|_kernel_osbget|
+	NAME	_kernel_osbget
 |_kernel_osbget|
 	STMFD	sp!, {lr}
 	MOV	a2, a1

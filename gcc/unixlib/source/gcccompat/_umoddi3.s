@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/gcccompat/_umoddi3.s,v $
-; $Date: 2000/07/15 14:52:20 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:19 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -16,11 +16,11 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	EXPORT |__umoddi3|
-
 	; (a1, a2) / (a3, a4)
 	; result in v2 and v3
 	; remainder in v4 and ip
+	EXPORT |__umoddi3|
+	NAME	__umoddi3
 |__umoddi3|
 	CMP	a1, #0
 	CMPEQ	a2, #0

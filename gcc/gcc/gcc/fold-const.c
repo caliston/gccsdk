@@ -1,5 +1,6 @@
 /* Fold a constant sub-tree into a single node for C-compiler
-   Copyright (C) 1987, 88, 92-98, 1999 Free Software Foundation, Inc.
+   Copyright (C) 1987, 1988, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
+   2000 Free Software Foundation, Inc.
 
 This file is part of GNU CC.
 
@@ -1460,11 +1461,16 @@ int_const_binop (code, arg1, arg2, notrunc, forsize)
       TREE_TYPE (t) = TREE_TYPE (arg1);
     }
 
-  TREE_OVERFLOW (t)
-    = ((notrunc ? (!uns || forsize) && overflow
-	: force_fit_type (t, (!uns || forsize) && overflow) && ! no_overflow)
-       | TREE_OVERFLOW (arg1)
-       | TREE_OVERFLOW (arg2));
+    TREE_OVERFLOW (t)
+#ifdef GPC
+      = ((notrunc ? overflow : force_fit_type (t, overflow))
+#else /* not GPC */
+	 = ((notrunc ? (!uns || forsize) && overflow
+	     : force_fit_type (t, (!uns || forsize) && overflow) && ! no_overflow)
+#endif /* not GPC */
+	    | TREE_OVERFLOW (arg1)
+	    | TREE_OVERFLOW (arg2));
+
   /* If we're doing a size calculation, unsigned arithmetic does overflow.
      So check if force_fit_type truncated the value.  */
   if (forsize
@@ -2131,7 +2137,7 @@ operand_equal_p (arg0, arg1, only_const)
 
       case STRING_CST:
 	return (TREE_STRING_LENGTH (arg0) == TREE_STRING_LENGTH (arg1)
-		&& ! strncmp (TREE_STRING_POINTER (arg0),
+		&& ! memcmp (TREE_STRING_POINTER (arg0),
 			      TREE_STRING_POINTER (arg1),
 			      TREE_STRING_LENGTH (arg0)));
 
@@ -3260,11 +3266,20 @@ make_range (exp, pin_p, plow, phigh)
 				 integer_one_node, 0);
 	      high = range_binop (MINUS_EXPR, type, n_low, 0,
 				 integer_one_node, 0);
-	      in_p = ! in_p;
+	      
+	      /* If the range is of the form +/- [ x+1, x ], we won't
+		 be able to normalize it.  But then, it represents the
+		 whole range or the empty set, so make it +/- [ -, - ].
+	      */
+	      if (tree_int_cst_equal (n_low, low)
+		  && tree_int_cst_equal (n_high, high))
+		low = high = 0;
+	      else
+		in_p = ! in_p;
 	    }
 	  else
 	    low = n_low, high = n_high;
-
+	  
 	  exp = arg0;
 	  continue;
 
@@ -5625,7 +5640,15 @@ fold (expr)
 		tree newconst
 		  = fold (build (PLUS_EXPR, TREE_TYPE (varop),
 				 constop, TREE_OPERAND (varop, 1)));
-		TREE_SET_CODE (varop, PREINCREMENT_EXPR);
+
+		/* Do not overwrite the current varop to be a preincrement,
+		   create a new node so that we won't confuse our caller who
+		   might create trees and throw them away, reusing the
+		   arguments that they passed to build.  This shows up in
+		   the THEN or ELSE parts of ?: being postincrements.  */
+		varop = build (PREINCREMENT_EXPR, TREE_TYPE (varop),
+			       TREE_OPERAND (varop, 0),
+			       TREE_OPERAND (varop, 1));
 
 		/* If VAROP is a reference to a bitfield, we must mask
 		   the constant by the width of the field.  */
@@ -5669,9 +5692,9 @@ fold (expr)
 		  }
 							 
 
-		t = build (code, type, TREE_OPERAND (t, 0),
-			   TREE_OPERAND (t, 1));
-		TREE_OPERAND (t, constopnum) = newconst;
+		t = build (code, type,
+			   (constopnum == 0) ? newconst : varop,
+			   (constopnum == 1) ? newconst : varop);
 		return t;
 	      }
 	  }
@@ -5684,7 +5707,15 @@ fold (expr)
 		tree newconst
 		  = fold (build (MINUS_EXPR, TREE_TYPE (varop),
 				 constop, TREE_OPERAND (varop, 1)));
-		TREE_SET_CODE (varop, PREDECREMENT_EXPR);
+
+		/* Do not overwrite the current varop to be a predecrement,
+		   create a new node so that we won't confuse our caller who
+		   might create trees and throw them away, reusing the
+		   arguments that they passed to build.  This shows up in
+		   the THEN or ELSE parts of ?: being postdecrements.  */
+		varop = build (PREDECREMENT_EXPR, TREE_TYPE (varop),
+			       TREE_OPERAND (varop, 0),
+			       TREE_OPERAND (varop, 1));
 
 		if (TREE_CODE (TREE_OPERAND (varop, 0)) == COMPONENT_REF
 		    && DECL_BIT_FIELD(TREE_OPERAND
@@ -5723,9 +5754,9 @@ fold (expr)
 		  }
 							 
 
-		t = build (code, type, TREE_OPERAND (t, 0),
-			   TREE_OPERAND (t, 1));
-		TREE_OPERAND (t, constopnum) = newconst;
+		t = build (code, type,
+			   (constopnum == 0) ? newconst : varop,
+			   (constopnum == 1) ? newconst : varop);
 		return t;
 	      }
 	  }

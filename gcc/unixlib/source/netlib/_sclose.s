@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/netlib/_sclose.s,v $
-; $Date: 2000/07/15 14:52:26 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -15,6 +15,7 @@
 	IMPORT	|__net_error_simple_entry|
 
 	EXPORT	|_sclose|
+	NAME	_sclose
 |_sclose|
 	NetSWIsimple0	XSocket_Close
 

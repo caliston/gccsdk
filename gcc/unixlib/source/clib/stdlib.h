@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdlib.h,v $
- * $Date: 2000/07/15 14:52:11 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/06/12 13:33:54 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -13,19 +13,17 @@
 #ifndef __STDLIB_H
 #define __STDLIB_H
 
-#ifndef __STDDEF_H
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
+#define __need_size_t
+#define __need_wchar_t
+#define __need_NULL
 #include <stddef.h>
-#endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifndef __GNUC__
-#undef  __attribute__
-#define __attribute__(x) /* Ignore */
-#endif
-
+__BEGIN_DECLS
+  
 /* Returned by `div'.  */
 typedef struct
   {
@@ -39,6 +37,16 @@ typedef struct
     long int quot;	/* Quotient.  */
     long int rem;	/* Remainder.  */
   } ldiv_t;
+
+#ifdef __GNUC__
+/* Returned by `lldiv'.  */
+__extension__
+typedef struct
+  {
+    long long int quot;	/* Quotient.  */
+    long long int rem;	/* Remainder.  */
+  } lldiv_t;
+#endif
 
 /* The largest number rand will return (same as INT_MAX).  */
 #define	RAND_MAX	2147483647
@@ -83,6 +91,9 @@ extern int putenv (const char *__string);
 /* Execute the given line via the CLI.  */
 extern int system (const char *__command);
 
+/* Canonicalise a filename */
+extern char *realpath (const char *__file_name, char *__resolved_name);
+
 #ifdef __UNIXLIB_INTERNALS
 
 /* Definitions for the atexit array of functions that are to be
@@ -115,34 +126,30 @@ extern void *valloc (size_t __bytes);
 /* src.c.alloc thinks these are in stdio.h, but that feels wrong ... */
 extern void *memalign (size_t __alignment, size_t __bytes);
 extern void cfree (void *__mem);
-extern size_t malloc_usable_size (void* __mem);
-extern void malloc_stats (void);
 extern int malloc_trim (size_t);
 
 /* Return a random integer between 0 and 2^31 (System V interface).  */
-extern long lrand (void);
-extern long lrand48 (void);
-#define lrand48() lrand()
-
-/* Return a random integer between 0 and RAND_MAX.  */
 extern int rand (void);
-#define rand() ((int)lrand())
-
-/* Return a random integer between 0 and RAND_MAX (BSD interface).  */
-extern long random (void);
-#define random() lrand()
 
 /* Seed the random number generator with the given number.  */
 extern void srand (long __seed);
 
+/* Return a random integer between 0 and RAND_MAX (BSD interface).  */
+extern long int random (void);
+
 /* Seed the random number generator (BSD interface).  */
-extern void srandom (long __seed);
-#define srandom(s) srand(s)
+extern void srandom (unsigned int __seed);
 
-/* Seed the random number generator (System V interface).  */
-extern void srand48 (long __seed);
-#define srand48(s) srand(s)
+/* Initialize the random number generator to use state buffer STATEBUF,
+   of length STATELEN, and seed it with SEED.  Optimal lengths are 8, 16,
+   32, 64, 128 and 256, the bigger the better; values less than 8 will
+   cause an error and values greater than 256 will be rounded down.  */
+extern char *initstate (unsigned int __seed, char *__statebuf,
+                        size_t __statelen);
 
+/* Switch the random number generator to state buffer STATEBUF,
+   which should have been previously initialized by `initstate'.  */
+extern char *setstate (char *__statebuf);
 
 /* Return the absolute value of x.  */
 extern int abs (int __x) __attribute__ ((__const__));
@@ -151,6 +158,10 @@ extern long int	labs (long int __x) __attribute__ ((__const__));
 /* Return numerator divided by denominator.  */
 extern div_t div (int __numer, int __denom) __attribute__ ((__const__));
 extern ldiv_t ldiv (long __numer, long __denom) __attribute__ ((__const__));
+#ifdef __GNUC__
+__extension__
+extern lldiv_t lldiv (long long __numer, long long __denom) __attribute__ ((__const__));
+#endif
 
 /* Convert a string to a floating point number.  */
 extern double atof (const char *__string);
@@ -176,9 +187,11 @@ extern unsigned long strtoul (const char *__nptr,
 
 #ifdef __GNUC__
 /* Convert a string to a 64-bit integer.  */
+__extension__
 extern long long strtoll (const char *__nptr, char **__endptr, int __base);
 
 /* Convert a string to an unsigned 64-bit integer.  */
+__extension__
 extern unsigned long long strtoull (const char *__nptr,
 				    char **__endptr, int __base);
 #endif
@@ -186,7 +199,7 @@ extern unsigned long long strtoull (const char *__nptr,
 /* Do a binary search for 'key' in 'base', which consists of
    'nmemb' elements of 'size' bytes each, using 'compare' to
    perform the comparisons.  */
-extern void *bsearch (const void *__ker, const void *__base,
+extern void *bsearch (const void *__key, const void *__base,
 		      size_t __nmemb, size_t __size,
 		      int (*__compare)(const void *, const void *));
 
@@ -217,8 +230,26 @@ extern int getsubopt (char **__option, const char *const *__tokens,
 		      char **__value);
 extern char *suboptarg;
 
-#ifdef __cplusplus
-	}
-#endif
+/* System V style 48-bit random number generator functions.  */
+
+/* Return a non-negative, double-precision floating-point value in
+   the range 0.0 to 1.0.  */
+extern double drand48 (void);
+extern double erand48 (unsigned short int __xsubi[3]);
+
+/* Return non-negative, long integer in the range 0 to 2^31.  */
+extern long int lrand48 (void);
+extern long int nrand48 (unsigned short int __xsubi[3]);
+
+/* Return signed, long integers in the range -2^31 to 2^31.  */
+extern long int mrand48 (void);
+extern long int jrand48 (unsigned short int __xsubi[3]);
+
+/* Seed random number generator.  */
+extern void srand48 (long int __seedval);
+extern unsigned short int *seed48 (unsigned short int __seed16v[3]);
+extern void lcong48 (unsigned short int __param[7]);
+
+__END_DECLS
 
 #endif

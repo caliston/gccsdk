@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/math-asm/_sincos.s,v $
-; $Date: 2000/07/15 14:52:24 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -12,8 +12,9 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	EXPORT	|__sincos|
 	; void sincos (double x, double *sinx, double *cosx)
+	EXPORT	|__sincos|
+	NAME	__sincos
 |__sincos|
 	STMFD	sp!,{a1, a2}
 	LDFD	f2, [sp], #8

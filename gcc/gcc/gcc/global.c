@@ -1248,7 +1248,6 @@ retry_global_alloc (regno, forbidden_regs)
 	 for this pseudo-reg.  If that fails, try any reg.  */
       if (N_REG_CLASSES > 1)
 	find_reg (allocno, forbidden_regs, 0, 0, 1);
-
       if (reg_renumber[regno] < 0
 	  && reg_alternate_class (regno) != NO_REGS)
 	find_reg (allocno, forbidden_regs, 1, 0, 1);

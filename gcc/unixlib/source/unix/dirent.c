@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/dirent.c,v $
- * $Date: 2000/07/15 14:52:43 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/02/07 10:29:19 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: dirent.c,v 1.1.1.1 2000/07/15 14:52:43 nick Exp $";
+static const char rcs_id[] = "$Id: dirent.c,v 1.2.2.4 2002/02/07 10:29:19 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -23,11 +23,10 @@ static const char rcs_id[] = "$Id: dirent.c,v 1.1.1.1 2000/07/15 14:52:43 nick E
 #include <unistd.h>
 #include <ctype.h>
 
-#include <sys/unix.h>
-#include <sys/syslib.h>
-#include <sys/os.h>
+#include <unixlib/unix.h>
+#include <unixlib/os.h>
 #include <sys/types.h>
-#include <sys/swis.h>
+#include <swis.h>
 
 #include <unixlib/local.h>
 
@@ -110,7 +109,7 @@ newstream (const char *name, __off_t offset)
   regs[0] = 37;
   regs[1] = (int) name;
   regs[2] = regs[3] = regs[4] = regs[5] = 0;
-  err = os_swi (OS_FSControl, regs);
+  err = __os_swi (OS_FSControl, regs);
   if (err)
     {
       __seterr (err);
@@ -128,7 +127,7 @@ newstream (const char *name, __off_t offset)
   regs[2] = (int) stream->dd_name_can;
   regs[3] = regs[4] = 0;
   regs[5] = 1 - regs[5];
-  err = os_swi (OS_FSControl, regs);
+  err = __os_swi (OS_FSControl, regs);
   if (err != NULL || regs[5] != 1)
     {
       __seterr (err);
@@ -184,10 +183,10 @@ opendir (const char *ux_name)
     }
 
 #ifdef DEBUG
-  os_print ("opendir: ux_name="); os_print (ux_name);
-  os_print (", ro name="); os_print (name);
-  os_print (", iletype=0x"); os_prhex (filetype);
-  os_print ("\r\n");
+  __os_print ("opendir: ux_name="); __os_print (ux_name);
+  __os_print (", ro name="); __os_print (name);
+  __os_print (", iletype=0x"); __os_prhex (filetype);
+  __os_print ("\r\n");
 #endif
   if (filetype != __RISCOSIFY_FILETYPE_NOTFOUND)
     {
@@ -209,7 +208,7 @@ opendir (const char *ux_name)
    * & __RISCOSIFY_NO_REVERSE_SUFFIX is clear, then we're about to enum
    * a dir which doesn't really exist from the unix point of view.
    */
-  if (!(__riscosify_control & __RISCOSIFY_NO_REVERSE_SUFFIX))
+  if (!(__get_riscosify_control () & __RISCOSIFY_NO_REVERSE_SUFFIX))
     {
       const char *leafname, *i;
 
@@ -232,8 +231,9 @@ opendir (const char *ux_name)
     }
 
   /* Get a new DIR stream.  */
-  stream = newstream (name, (__riscosify_control & __RISCOSIFY_NO_PROCESS)
-  	   	      	    ? GBPB_START_ENUM : GBPB_FAKE_CURRENTDIR);
+  stream = newstream (name,
+		      (__get_riscosify_control () & __RISCOSIFY_NO_PROCESS)
+		      ? GBPB_START_ENUM : GBPB_FAKE_CURRENTDIR);
   /* stream = NULL when newstream() failed. */
 
   return stream;
@@ -248,6 +248,7 @@ readdir_r (DIR *stream, struct dirent *entry, struct dirent **result)
   int regs[10];
   int x = 0, slen;
   char *str;
+  int riscosify_ctl = __get_riscosify_control ();
 
   *result = NULL;
 
@@ -287,7 +288,7 @@ readdir_r (DIR *stream, struct dirent *entry, struct dirent **result)
               /* When __RISCOSIFY_FILETYPE_EXT is set in __riscosify_control,
                  map <filename,xyz> to <filename>.d_name,xyz with xyz a
                  valid hex number. */
-              if ((__riscosify_control & __RISCOSIFY_FILETYPE_EXT)
+              if ((riscosify_ctl & __RISCOSIFY_FILETYPE_EXT)
                   && sresult->d_namlen > sizeof(",xyz")-1
                   && sresult->d_name[sresult->d_namlen - 4] == ','
                   && isxdigit (x = sresult->d_name[sresult->d_namlen - 3])
@@ -376,7 +377,7 @@ readdir_r (DIR *stream, struct dirent *entry, struct dirent **result)
             regs[4] = (int) stream->gbpb_off;
             regs[6] = 0;                    /* Match all names */
 
-            err = os_swi (OS_GBPB, regs);
+            err = __os_swi (OS_GBPB, regs);
             if (err)
               {
                 __seterr (err);
@@ -434,7 +435,7 @@ readdir_r (DIR *stream, struct dirent *entry, struct dirent **result)
       	       stream->dir_cache_index->obj_name, entry);
 #endif
       /* Copy name direct if flag is set.  */
-      if (__riscosify_control & __RISCOSIFY_NO_PROCESS)
+      if (riscosify_ctl & __RISCOSIFY_NO_PROCESS)
         {
           str = stpcpy (entry->d_name, stream->dir_cache_index->obj_name);
           slen = (offsetof (__os_gbpb_10, obj_name)
@@ -463,7 +464,7 @@ readdir_r (DIR *stream, struct dirent *entry, struct dirent **result)
 
           /* Need to add filetype extension (only for straight files not
              for directories nor image files) ? */
-          if ((__riscosify_control & __RISCOSIFY_FILETYPE_EXT)
+          if ((riscosify_ctl & __RISCOSIFY_FILETYPE_EXT)
               && stream->dir_cache_index->obj_type == 1
               && (stream->dir_cache_index->load_address & 0xfff00000U) == 0xfff00000U)
             {
@@ -499,11 +500,11 @@ readdir_r (DIR *stream, struct dirent *entry, struct dirent **result)
 
 #ifdef DEBUG
       fprintf (stderr, "reverse suffix %d, obj_type %d, d_name '%s'\n",
-      	       !(__riscosify_control & __RISCOSIFY_NO_REVERSE_SUFFIX),
+      	       !(riscosify_ctl & __RISCOSIFY_NO_REVERSE_SUFFIX),
       	       entry->d_type == DT_DIR, entry->d_name);
 #endif
       /* Check for reverse suffix dir swapping */
-      if (!(__riscosify_control & __RISCOSIFY_NO_REVERSE_SUFFIX)
+      if (!(riscosify_ctl & __RISCOSIFY_NO_REVERSE_SUFFIX)
           && entry->d_type == DT_DIR
           && __sfixfind (entry->d_name))
         {
@@ -631,7 +632,7 @@ rewinddir (DIR *stream)
 
       stream->dd_suf_off = GBPB_START_ENUM;
       stream->dd_off = stream->gbpb_off
-      	      = (__riscosify_control & __RISCOSIFY_NO_PROCESS)
+      	      = (__get_riscosify_control () & __RISCOSIFY_NO_PROCESS)
       	      	? GBPB_START_ENUM : GBPB_FAKE_CURRENTDIR;
       /* Force a re-cache of the directory entries.  */
       stream->do_read = 0;
@@ -658,3 +659,78 @@ closedir (DIR *stream)
 
   return result;
 }
+
+
+int
+scandir (const char *dir, struct dirent ***namelist,
+            int (*select)(const struct dirent *),
+            int (*cmp)(const struct dirent **, const struct dirent **))
+{
+    DIR *dp;
+    struct dirent **v = NULL;
+    size_t vsize = 0, i;
+    struct dirent *d;
+    int save;
+
+    dp = opendir(dir);
+    if (dp == NULL)
+        return -1;
+
+    save = errno;
+    __set_errno(0);
+
+    i = 0;
+    while ((d = readdir(dp)) != NULL)
+        if (select == NULL || (*select)(d))
+        {
+            struct dirent *vnew;
+            size_t dsize;
+
+            /* Ignore errors from select or readdir */
+            __set_errno(0);
+
+            if (i == vsize)
+            {
+                struct dirent **new;
+                if (vsize == 0)
+                    vsize = 10;
+                else
+                    vsize *= 2;
+                new = (struct dirent **) realloc(v, vsize * sizeof(*v));
+                if (new == NULL)
+                    break;
+                v = new;
+            }
+
+            /* FIXME: this 256 should be a macro, but see comments in dirent.h */
+            dsize = &d->d_name[256] - (char *) d;
+            vnew = (struct dirent *) malloc(dsize);
+            if (vnew == NULL)
+                break;
+
+            v[i++] = (struct dirent *) memcpy(vnew, d, dsize);
+        }
+
+    if (errno != 0)
+    {
+        save = errno;
+        (void) closedir(dp);
+
+        while (i > 0)
+            free(v[--i]);
+        free(v);
+
+        __set_errno (save);
+        return -1;
+    }
+
+    (void) closedir(dp);
+    __set_errno(save);
+
+    /* Sort the list if we have a comparison function to sort with.  */
+    if (cmp != NULL)
+        qsort(v, i, sizeof(*v),(int (*)(const void *,const void *))cmp);
+    *namelist = v;
+    return i;
+}
+

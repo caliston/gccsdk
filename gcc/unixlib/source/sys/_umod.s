@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_umod.s,v $
-; $Date: 2000/07/15 14:52:35 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/09/11 13:05:55 $
+; $Revision: 1.2.2.1 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -13,12 +13,12 @@
 divisor RN 0
 dividend RN 1
 
-	AREA	|C$code|, CODE, READONLY
+	AREA	|C$$code|, CODE, READONLY
 
 	EXPORT	|__rt_urem|
 	EXPORT	|x$uremainder|
 	EXPORT	|_kernel_urem|
-
+	NAME	__rt_urem
 |_kernel_urem|
 |x$uremainder|
 |__rt_urem|

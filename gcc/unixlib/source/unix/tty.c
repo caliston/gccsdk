@@ -1,18 +1,20 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/tty.c,v $
- * $Date: 2000/07/15 14:52:45 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/08/18 15:19:05 $
+ * $Revision: 1.4.2.13 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tty.c,v 1.1.1.1 2000/07/15 14:52:45 nick Exp $";
+static const char rcs_id[] = "$Id: tty.c,v 1.4.2.13 2002/08/18 15:19:05 admin Exp $";
 #endif
 
 /* System V tty device driver for RISC OS.  */
+
+#define _BSD_SOURCE
 
 #include <signal.h>
 #include <string.h>
@@ -24,16 +26,15 @@ static const char rcs_id[] = "$Id: tty.c,v 1.1.1.1 2000/07/15 14:52:45 nick Exp 
 #include <unistd.h>
 
 #include <sys/ioctl.h>
-#include <sys/syslib.h>
 #include <sys/types.h>
-#include <sys/unix.h>
-#include <sys/dev.h>
-#include <sys/tty.h>
-#include <sys/os.h>
-#include <sys/dev.h>
+#include <unixlib/unix.h>
+#include <unixlib/dev.h>
+#include <unixlib/tty.h>
+#include <unixlib/os.h>
+#include <unixlib/dev.h>
 #include <sys/select.h>
-#include <sys/swis.h>
-
+#include <swis.h>
+#include <unixlib/features.h>
 #include <unixlib/fd.h>
 
 #define IGNORE(x) x = x
@@ -70,9 +71,28 @@ static void __ttynl (struct tty *tty, tcflag_t oflag);
 
 static cc_t ttydefchars[NCCS] =
 {
-  CEOF, CEOL, CEOL, CERASE, CWERASE, CKILL, CREPRINT,
-  _POSIX_VDISABLE, CINTR, CQUIT, CSUSP, CDSUSP, CSTART, CSTOP, CLNEXT,
-  CDISCARD, CMIN, CTIME, CSTATUS, _POSIX_VDISABLE
+  CEOF, /* 0 */
+  CEOL, /* 1 */
+  CEOL, /* 2 */
+  CERASE, /* 3 */
+  CWERASE, /* 4 */
+  CKILL, /* 5 */
+  CREPRINT, /* 6 */
+
+  CERASE, /* 7 */
+  CINTR, /* 8 */
+  CQUIT, /* 9 */
+  CSUSP, /* 10 */
+  CDSUSP, /* 11 */
+  CSTART, /* 12 */
+
+  CSTOP, /* 13 */
+  CLNEXT, /* 14 */
+  CDISCARD, /* 15 */
+  CMIN, /* 16 */
+  CTIME, /* 17 */
+  CSTATUS, /* 18 */
+  _POSIX_VDISABLE /* 19 */
 };
 
 
@@ -84,13 +104,45 @@ __tty_console_gwinsz (struct winsize *win)
   int values[(sizeof (vars) - 1) / sizeof (int)];
   int regs[10];
 
-  regs[0] = (int) vars;
-  regs[1] = (int) values;
-  os_swi (OS_ReadVduVariables, regs);
-  win->ws_col = values[1] - values[0] + 1;
-  win->ws_row = values[3] - values[2] + 1;
-  win->ws_xpixel = values[5] - values[4] + 1;
-  win->ws_ypixel = values[7] - values[6] + 1;
+  if (__wimpprogram == 1)
+    {
+      char *size;
+      int lines = 24, cols = 80;
+
+      size = getenv ("LINES");
+      if (size)
+        {
+          lines = atoi (size);
+
+          if (lines <= 0)
+            lines = 24;
+        }
+
+      size = getenv ("COLUMNS");
+      if (size)
+        {
+          cols = atoi (size);
+
+          if (cols <= 0)
+            cols = 80;
+        }
+
+      win->ws_col = cols;
+      win->ws_row = lines;
+      win->ws_xpixel = cols * 8;
+      win->ws_ypixel = lines * 16;
+
+    }
+  else
+    {
+      regs[0] = (int) vars;
+      regs[1] = (int) values;
+      __os_swi (OS_ReadVduVariables, regs);
+      win->ws_col = values[1] - values[0] + 1;
+      win->ws_row = values[3] - values[2] + 1;
+      win->ws_xpixel = values[5] - values[4] + 1;
+      win->ws_ypixel = values[7] - values[6] + 1;
+  }
 }
 
 /* Set console window size.  */
@@ -105,29 +157,29 @@ __tty_console_swinsz (struct winsize *win)
 
   regs[0] = (int) vars;
   regs[1] = (int) values;
-  os_swi (OS_ReadVduVariables, regs);
-  os_vdu (28);
-  os_vdu (values[0]);
-  os_vdu (values[1] + win->ws_row - 1);
-  os_vdu (values[0] + win->ws_col - 1);
-  os_vdu (values[1]);
-  os_vdu (24);
+  __os_swi (OS_ReadVduVariables, regs);
+  __os_vdu (28);
+  __os_vdu (values[0]);
+  __os_vdu (values[1] + win->ws_row - 1);
+  __os_vdu (values[0] + win->ws_col - 1);
+  __os_vdu (values[1]);
+  __os_vdu (24);
   j = values[2];
   j <<= values[4];
-  os_vdu (j & 0xff);
-  os_vdu (j >> 8);
+  __os_vdu (j & 0xff);
+  __os_vdu (j >> 8);
   j = values[3] - (win->ws_ypixel - 1);
   j <<= values[5];
-  os_vdu (j & 0xff);
-  os_vdu (j >> 8);
+  __os_vdu (j & 0xff);
+  __os_vdu (j >> 8);
   j = values[2] + win->ws_xpixel - 1;
   j <<= values[4];
-  os_vdu (j & 0xff);
-  os_vdu (j >> 8);
+  __os_vdu (j & 0xff);
+  __os_vdu (j >> 8);
   j = values[3];
   j <<= values[5];
-  os_vdu (j & 0xff);
-  os_vdu (j >> 8);
+  __os_vdu (j & 0xff);
+  __os_vdu (j >> 8);
 #ifdef SIGWINCH
   /* Raise the 'Window size change' signal to notify any applications
      that might be interested.  */
@@ -142,9 +194,9 @@ __tty_console_gterm (struct termios *term)
   int regs[3];
 
   /* Get `Interrupt key' and state of `Interrupt key'.  */
-  os_byte (0xdc, 0, 0xff, regs);
+  __os_byte (0xdc, 0, 0xff, regs);
   term->c_cc[VINTR] = regs[1];
-  os_byte (0xe5, 0, 0xff, regs);
+  __os_byte (0xe5, 0, 0xff, regs);
   if (regs[1])
     term->c_lflag &= ~ISIG; /* Disable signals.  */
   else
@@ -156,12 +208,12 @@ static void
 __tty_console_sterm (struct termios *term)
 {
   /* Set `Interrupt key' and state of `Interrupt key'.  */
-  os_byte (0xdc, term->c_cc[VINTR], 0, NULL);
+  __os_byte (0xdc, term->c_cc[VINTR], 0, NULL);
   if (term->c_lflag & ISIG)
     /* Enable signals.  */
-    os_byte (0xe5, 0, 0, NULL);
+    __os_byte (0xe5, 0, 0, NULL);
   else
-    os_byte (0xe5, 0xff, 0, NULL);
+    __os_byte (0xe5, 0xff, 0, NULL);
 }
 
 #if __FEATURE_DEV_RS423
@@ -209,12 +261,12 @@ __tty_423_sterm (struct termios *term)
   regs[0] = 5;
   regs[1] = convert_baud_rate (term->__ispeed);
   if (regs[1] != 0)
-    os_swi (OS_SerialOp, regs);
+    __os_swi (OS_SerialOp, regs);
 
   regs[0] = 6;
   regs[1] = convert_baud_rate (term->__ospeed);
   if (regs[1] != 0)
-    os_swi (OS_SerialOp, regs);
+    __os_swi (OS_SerialOp, regs);
 
   /* Get the control mode.  */
   cflag = term->c_cflag;
@@ -242,7 +294,7 @@ __tty_423_sterm (struct termios *term)
     }
   regs[0] = 1;
   regs[1] = control;
-  os_swi (OS_SerialOp, regs);
+  __os_swi (OS_SerialOp, regs);
 }
 #endif
 
@@ -320,11 +372,11 @@ __ttyopen (struct __unixlib_fd *file_desc, const char *file, int mode)
       __tty_console_gterm (term);
       __tty_console_gwinsz (tty->w);
       /* Set function pointers used for low level operations.  */
-      tty->out = os_vdu;
-      tty->in = os_get;
-      tty->scan = os_inkey;
-      tty->init = os_console;
-      tty->flush = os_keyflush;
+      tty->out = __os_vdu;
+      tty->in = __os_get;
+      tty->scan = __os_inkey;
+      tty->init = __os_console;
+      tty->flush = __os_keyflush;
     }
 #if __FEATURE_DEV_RS423
   else if (type == TTY_423)
@@ -333,18 +385,14 @@ __ttyopen (struct __unixlib_fd *file_desc, const char *file, int mode)
       win->ws_col = 80;
       win->ws_row = 25;
       win->ws_xpixel = win->ws_ypixel = 0;
-      tty->out = os_423vdu;
-      tty->in = os_423get;
-      tty->scan = os_423inkey;
-      tty->init = os_423;
-      tty->flush = os_423flush;
+      tty->out = __os_423vdu;
+      tty->in = __os_423get;
+      tty->scan = __os_423inkey;
+      tty->init = __os_423;
+      tty->flush = __os_423flush;
     }
 #endif
 
-#ifndef __TTY_STATIC_BUFS
-  tty->buf = 0;
-  tty->del = 0;
-#endif
   tty->ptr = tty->buf;
   tty->cnt = 0;
   tty->sx  = tty->cx = 0;
@@ -366,18 +414,6 @@ __ttyclose (struct __unixlib_fd *file_desc)
 {
   struct tty *tty = __u->tty + (int) file_desc->handle;
 
-#ifndef __TTY_STATIC_BUFS
-  if ((unsigned char *) tty->del >= __lomem
-      && (unsigned char *) tty->del < __break)
-    free (tty->del);
-  if ((unsigned char *) tty->buf >= __lomem
-      && (unsigned char *) tty->buf < __break)
-    free (tty->buf);
-
-  tty->buf = 0;
-  tty->del = 0;
-#endif
-
   tty->ptr = tty->buf;
   tty->cnt = 0;
   tty->sx  = tty->cx = 0;
@@ -390,16 +426,6 @@ int
 __ttyread (struct __unixlib_fd *file_desc, void *buf, int nbyte)
 {
   struct tty *tty = __u->tty + (int) file_desc->handle;
-
-#ifndef __TTY_STATIC_BUFS
-  if (tty->del == NULL)
-    {
-      tty->del = malloc (MAX_INPUT);
-      if (tty->del = NULL)
-	return -1;
-      tty->sx = tty->cx = 0;
-    }
-#endif
 
   return (tty->t->c_lflag & ICANON)
 	  ? __ttyicanon (file_desc, buf, nbyte, tty)
@@ -425,26 +451,15 @@ __ttyicanon (const struct __unixlib_fd *file_desc, void *buf, int nbyte,
 #define F_MAX		000002
 #define F_NDELAY	000004
 
-#ifndef __TTY_STATIC_BUFS
-  if (tty->buf == NULL)
-    {
-      tty->buf = malloc (MAX_INPUT);
-      if (tty->buf == NULL)
-	return -1;
-      tty->cnt = 0;
-      tty->ptr = tty->buf;
-    }
-#endif
-
   if (tty == __u->tty)
-    os_byte (0xe5, 0xff, 0, 0);		/* Disable SIGINT.  */
+    __os_byte (0xe5, 0xff, 0, 0);		/* Disable SIGINT.  */
 
 ret:
 
   if (tty->cnt != 0)
     {
       if (tty == __u->tty)
-	os_byte (0xe5, 0, 0, 0);	/* Re-enable SIGINT.  */
+	__os_byte (0xe5, 0, 0, 0);	/* Re-enable SIGINT.  */
 
       i = (nbyte > tty->cnt) ? tty->cnt : nbyte;
       memcpy (buf, tty->ptr, i);
@@ -453,10 +468,10 @@ ret:
       return i;
     }
 
-  nflag = (file_desc->dflag & O_NDELAY) ? F_NDELAY : 0;
+  nflag = (file_desc->fflag & O_NDELAY) ? F_NDELAY : 0;
 
   ttybuf = tty->ptr = tty->buf;
-  tty->sx = tty->cx = 0;
+  tty->cx = 0;
   i = 0;
 
   for (;;)
@@ -468,11 +483,28 @@ ret:
       if (tty->lookahead < 0)
 	{
 	  if (nflag & F_NDELAY)
-	    c = __funcall ((*(tty->scan)), (0));
+	    {
+	      c = __funcall ((*(tty->scan)), (0));
+	      
+	      if (c < 0)
+		{
+	          if (__taskwindow)
+	            {
+                      _kernel_swi_regs regs;
+		      
+                      regs.r[0] = 6; /* Taskwindow sleep.  */
+                      regs.r[1] = 0; /* Just yield.  */
+		      
+                      _kernel_swi(OS_UpCall, &regs, &regs);
+		    }
+		  
+	          goto eol;
+		}
+            }
 	  else
-	    c = __funcall ((*(tty->in)), ());
-	  if (c < 0)
-	    goto eol;
+	    {
+	      c = __funcall ((*(tty->in)), ());
+	    }
 	}
       else
 	{
@@ -571,11 +603,15 @@ eol:
       }
 
   tty->cnt = i;
-  if (tty->cnt != 0)
+  if (tty->cnt != 0 && !(nflag & F_NDELAY))
     goto ret;
 
   if (tty == __u->tty)
-    os_byte (0xe5, 0, 0, 0);	/* Re-enable SIGINT.  */
+    __os_byte (0xe5, 0, 0, 0);	/* Re-enable SIGINT.  */
+
+  if (tty->cnt == 0 && c != ceof)
+    return __set_errno (EAGAIN);
+
   return 0;
 
 #undef F_LNEXT
@@ -600,7 +636,7 @@ __ttyiraw (const struct __unixlib_fd *file_desc, void *buf, int nbyte,
 
   nflag = 0;
 
-  if (file_desc->dflag & O_NDELAY)
+  if (file_desc->fflag & O_NDELAY)
     vm = vt = 0;
   else
     {
@@ -623,15 +659,30 @@ __ttyiraw (const struct __unixlib_fd *file_desc, void *buf, int nbyte,
       else
 	{
 	  if (nflag & F_NSCAN)
-	    c = __funcall ((*(tty->scan)), (0));
+            {
+	      c = __funcall ((*(tty->scan)), (0));
+	      
+	      if (c < 0)
+	        {
+	          if (__taskwindow)
+	            {
+                      _kernel_swi_regs regs;
+		      
+                      regs.r[0] = 6; /* Taskwindow sleep. */
+                      regs.r[1] = 0; /* Just yield.  */
+		      
+                      _kernel_swi(OS_UpCall, &regs, &regs);
+                    }
+		  
+	          if (i >= vm)
+	            return i;
+	          else
+	            continue;
+	        }
+            }
 	  else
-	    c = __funcall ((*(tty->in)), ());
-	  if (c < 0)
 	    {
-	      if (i >= vm)
-		return i;
-	      else
-		continue;
+	      c = __funcall ((*(tty->in)), ());
 	    }
 	}
       if (c == '\r' && iflag & IGNCR)
@@ -670,16 +721,6 @@ __ttywrite (struct __unixlib_fd *file_desc, const void *buf, int nbyte)
   const tcflag_t lflag = tty->t->c_lflag;
   const cc_t * const cc = tty->t->c_cc;
   int (*const out) (int) = tty->out;
-
-#ifndef __TTY_STATIC_BUFS
-  if (tty->del == NULL)
-    {
-      tty->del = malloc (MAX_INPUT);
-      if (tty->del == NULL)
-	return -1;
-      tty->sx = tty->cx = 0;
-    }
-#endif
 
   while (i < nbyte)
     {
@@ -755,18 +796,6 @@ static void
 __ttydel (struct tty *tty, tcflag_t lflag)
 {
   int x;
-
-#ifndef __TTY_STATIC_BUFS
-  /* this should be impossible since the call path to this static function
-     should have already checked tty->del.  */
-  if (tty->del == NULL)
-    {
-      tty->del = malloc (MAX_INPUT);
-      if (tty->del == NULL)
-	return -1;
-      tty->sx = tty->cx = 0;
-    }
-#endif
 
   if (tty->sx != 0)
     {
@@ -898,8 +927,13 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
       return 0;
       break;
     case TIOCSETA: /* Set termios struct.  */
+    case TIOCSETAW: /* Drain output, set.  */
+    case TIOCSETAF: /* Drain output, flush input, set.  */
       {
         struct termios *term = tty->t;
+
+	if (request == TIOCSETAF)
+	  __funcall ((*(tty->flush)), ());
 
         memcpy (term, arg, sizeof (struct termios));
         if (type == TTY_CON)
@@ -911,9 +945,7 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
       }
       return 0;
       break;
-    case TIOCSETAW: /* Drain output, set.  */
       break;
-    case TIOCSETAF: /* Drain output, flush input, set.  */
       break;
     case TIOCGETD: /* Get line discipline.  */
       break;
@@ -922,7 +954,7 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
     case TIOCSBRK: /* Set break bit.  */
 #if __FEATURE_DEV_RS423
       if (type == TTY_423 && !arg)
-	os_423break (25);
+	__os_423break (25);
 #endif
       return 0;
       break;
@@ -933,8 +965,10 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
     case TIOCCDTR: /* Clear data terminal ready.  */
       break;
     case TIOCGPGRP: /* Get pgrp of tty.  */
+      *(int *)arg = __u->pgrp;
       break;
     case TIOCSPGRP: /* Set pgrp of tty.  */
+      return __set_errno (EPERM);
       break;
     case TIOCOUTQ: /* Output queue size.  */
       break;
@@ -957,6 +991,136 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
     case TIOCMGET: /* Get all modem bits.  */
       break;
     case TIOCREMOTE: /* Remove input editing.  */
+      break;
+    case TIOCLGET:  /* Get Local Modes */
+      /* FIXME: This does nothing interesting - work in progress */
+      *(int *)arg = 0;
+      return 0;
+      break;
+    case TIOCLSET:  /* Set Local Modes */
+      /* FIXME: This does nothing interesting - work in progress */
+      return 0;
+      break;
+    case TIOCGETP: /* Get parameters - gtty */
+      {
+        struct termios *term = tty->t;
+        struct sgttyb *gtty = (struct sgttyb *)arg;
+	int flags = 0;
+
+        gtty->sg_ispeed = term->__ispeed;
+        gtty->sg_ispeed = term->__ospeed;
+        gtty->sg_erase  = term->c_cc[VERASE];
+        gtty->sg_kill   = term->c_cc[VKILL];
+
+	if (! (term->c_lflag & ICANON))
+	  flags |= (term->c_lflag & ISIG) ? CBREAK : RAW;
+
+	if (term->c_lflag & ECHO)
+	  flags |= ECHO;
+
+	if ((term->c_oflag & OPOST) && (term->c_oflag & ONLCR))
+	  flags |= CRMOD;
+
+	gtty->sg_flags = flags;
+      }
+      return 0;
+      break;
+    case TIOCSETP: /* Set parameters - stty */
+      {
+        struct termios *term = tty->t;
+        struct sgttyb *gtty = (struct sgttyb *) arg;
+        int flags = gtty->sg_flags;
+
+        term->__ispeed = gtty->sg_ispeed;
+        term->__ospeed = gtty->sg_ispeed;
+        term->c_cc[VERASE] = gtty->sg_erase;
+        term->c_cc[VKILL] = gtty->sg_kill;
+
+	term->c_iflag = ICRNL | IXON;
+	term->c_oflag = 0;
+	term->c_lflag = ISIG | ICANON;
+
+	if (flags & CBREAK)
+	  {
+	    term->c_iflag = 0;
+            term->c_lflag &= ~ICANON;
+          }
+	
+	if (flags & ECHO)
+	  term->c_lflag |= ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
+	
+	if (flags & CRMOD)
+	  term->c_oflag |= OPOST | ONLCR;
+
+	if (flags & RAW)
+	  {
+            term->c_iflag = 0;
+            term->c_lflag &= ~(ISIG | ICANON);
+          }
+	
+	if (!(term->c_lflag & ICANON))
+	  {
+            term->c_cc[VMIN] = 1;
+            term->c_cc[VTIME] = 0;
+          }
+      }
+      return 0;
+      break;
+    case TIOCGETC: /* Get special characters */
+      {
+        struct tchars *chars = (struct tchars *)arg;
+        struct termios *term = tty->t;
+
+	chars->t_intrc = term->c_cc[VINTR];
+	chars->t_quitc = term->c_cc[VQUIT];
+	chars->t_startc = term->c_cc[VSTART];
+	chars->t_stopc = term->c_cc[VSTOP];
+	chars->t_eofc = term->c_cc[VEOF];
+	chars->t_brkc = term->c_cc[VEOL];
+      }
+      return 0;
+      break;
+    case TIOCSETC: /* Set special characters */
+      {
+        struct tchars *chars = (struct tchars *)arg;
+        struct termios *term = tty->t;
+
+	term->c_cc[VINTR] = chars->t_intrc;
+	term->c_cc[VQUIT] = chars->t_quitc;
+	term->c_cc[VSTART] = chars->t_startc;
+	term->c_cc[VSTOP] = chars->t_stopc;
+	term->c_cc[VEOF] = chars->t_eofc;
+	term->c_cc[VEOL] = chars->t_brkc;
+      }
+      return 0;
+      break;
+    case TIOCGLTC: /* Get special characters */
+      {
+        struct ltchars *chars = (struct ltchars *)arg;
+        struct termios *term = tty->t;
+
+        chars->t_suspc = term->c_cc[VSUSP];
+        chars->t_dsuspc = term->c_cc[VDSUSP];
+        chars->t_rprntc = term->c_cc[VREPRINT];
+        chars->t_flushc = term->c_cc[VDISCARD];
+        chars->t_werasc = term->c_cc[VWERASE];
+        chars->t_lnextc = term->c_cc[VLNEXT];
+      }
+      return 0;
+      break;
+    case TIOCSLTC: /* Set special characters */
+      {
+        struct ltchars *chars = (struct ltchars *)arg;
+        struct termios *term = tty->t;
+
+	term->c_cc[VSUSP] = chars->t_suspc;
+	term->c_cc[VDSUSP] = chars->t_dsuspc;
+	term->c_cc[VREPRINT] = chars->t_rprntc;
+	term->c_cc[VDISCARD] = chars->t_flushc;
+	term->c_cc[VWERASE] = chars->t_werasc;
+	term->c_cc[VLNEXT] = chars->t_lnextc;
+      }
+      return 0;
       break;
     case TIOCGWINSZ: /* Get window size.  */
       {
