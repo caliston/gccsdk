@@ -1195,12 +1195,6 @@ XOS_Write0	*	&20002
 	DCD	0	/* unsigned int level */
 	DCD	0	/* chunk *list */
 
-|arm_unwinding|
-	DCD	0
-
-|arm_register_buffer|
-	%	32	/* reserve space for 8 registers */
-
 /* Structures used within this source:
 
 typedef struct __chunk {
@@ -1405,27 +1399,36 @@ gbaa_t3		RN	12
 	RETURNc(eq, pc, lr)
 	STMFD	sp!, {lr}
 	ADD	a1, a1, #chunk_size
-	BL	|malloc|
+	BL	malloc
 
 	/* If we could not malloc any space then print an error message
 	   and force an abort.  */
 	CMP	buffer, #0
 	ADREQ   a1, |dynamic_alloca_error|
 	SWIEQ	XOS_Write0
-	BLEQ	|abort|			/* abort never returns */
+	BLEQ	abort			/* abort never returns */
+
+	/*  get pointer to chunk list and level number */
 	LDR	arm_alloca_a, [pc, #|arm_alloca_ptr|-.-8]
 	LDMIA	arm_alloca_a, {gbaa_t2,gbaa_t3}
+
+	/*  store the frame pointer, chunk list ptr and level number
+	    in the memory we've just allocated.  */
 	LDR	gbaa_t1, [fp, #-12]
-	STMIA	buffer, {gbaa_t1,gbaa_t2,gbaa_t3}	/* set fp, level, prev */
+	STMIA	buffer, {gbaa_t1,gbaa_t2,gbaa_t3} /* set fp, level, prev */
+
+	/* Get proper frame return address and store it in the return_address
+	   field in our __chunk structure.  If not already done so,
+	   set the return address of the frame to __arm_alloca_free_all.  */
 	LDR	gbaa_t2, [fp, #-4]
 	BIC	gbaa_t1, gbaa_t2, #&FC000003
 	ADR	gbaa_t3, |___arm_alloca_free_all|
 	CMP	gbaa_t1, gbaa_t3
 	MOVEQ	gbaa_t2, #0
-	STR	gbaa_t2, [buffer, #12]
+	STR	gbaa_t2, [buffer, #chunks_retaddr_off]
 	STR	buffer, [arm_alloca_a, #list_off]
 	STRNE	gbaa_t3, [fp, #-4]
-	ADD	buffer, buffer, #16
+	ADD	buffer, buffer, #chunk_size
 	LDMFD	sp!, {pc}RETCOND
 
 |dynamic_alloca_error|
