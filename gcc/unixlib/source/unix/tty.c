@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/tty.c,v $
- * $Date: 2001/09/11 13:18:50 $
- * $Revision: 1.4.2.7 $
+ * $Date: 2001/09/11 14:16:00 $
+ * $Revision: 1.4.2.8 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tty.c,v 1.4.2.7 2001/09/11 13:18:50 admin Exp $";
+static const char rcs_id[] = "$Id: tty.c,v 1.4.2.8 2001/09/11 14:16:00 admin Exp $";
 #endif
 
 /* System V tty device driver for RISC OS.  */
@@ -69,9 +69,28 @@ static void __ttynl (struct tty *tty, tcflag_t oflag);
 
 static cc_t ttydefchars[NCCS] =
 {
-  CEOF, CEOL, CEOL, CERASE, CWERASE, CKILL, CREPRINT,
-  _POSIX_VDISABLE, CINTR, CQUIT, CSUSP, CDSUSP, CSTART, CSTOP, CLNEXT,
-  CDISCARD, CMIN, CTIME, CSTATUS, _POSIX_VDISABLE
+  CEOF, /* 0 */
+  CEOL, /* 1 */
+  CEOL, /* 2 */
+  CERASE, /* 3 */
+  CWERASE, /* 4 */
+  CKILL, /* 5 */
+  CREPRINT, /* 6 */
+
+  CERASE, /* 7 */
+  CINTR, /* 8 */
+  CQUIT, /* 9 */
+  CSUSP, /* 10 */
+  CDSUSP, /* 11 */
+  CSTART, /* 12 */
+
+  CSTOP, /* 13 */
+  CLNEXT, /* 14 */
+  CDISCARD, /* 15 */
+  CMIN, /* 16 */
+  CTIME, /* 17 */
+  CSTATUS, /* 18 */
+  _POSIX_VDISABLE /* 19 */
 };
 
 
@@ -1047,8 +1066,8 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
 
         gtty->sg_ispeed = term->__ispeed;
         gtty->sg_ispeed = term->__ospeed;
-        gtty->sg_erase  = term->c_cc[CERASE];
-        gtty->sg_kill   = term->c_cc[CKILL];
+        gtty->sg_erase  = term->c_cc[VERASE];
+        gtty->sg_kill   = term->c_cc[VKILL];
 
 	if (! (term->c_lflag & ICANON))
 	  flags |= (term->c_lflag & ISIG) ? CBREAK : RAW;
@@ -1071,8 +1090,8 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
 
         term->__ispeed = gtty->sg_ispeed;
         term->__ospeed = gtty->sg_ispeed;
-        term->c_cc[CERASE] = gtty->sg_erase;
-        term->c_cc[CKILL] = gtty->sg_kill;
+        term->c_cc[VERASE] = gtty->sg_erase;
+        term->c_cc[VKILL] = gtty->sg_kill;
 
 	term->c_iflag = ICRNL | IXON;
 	term->c_oflag = 0;
@@ -1109,12 +1128,12 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
         struct tchars *chars = (struct tchars *)arg;
         struct termios *term = tty->t;
 
-	chars->t_intrc = term->c_cc[CINTR];
-	chars->t_quitc = term->c_cc[CQUIT];
-	chars->t_startc = term->c_cc[CSTART];
-	chars->t_stopc = term->c_cc[CSTOP];
-	chars->t_eofc = term->c_cc[CEOF];
-	chars->t_brkc = term->c_cc[CBRK];
+	chars->t_intrc = term->c_cc[VINTR];
+	chars->t_quitc = term->c_cc[VQUIT];
+	chars->t_startc = term->c_cc[VSTART];
+	chars->t_stopc = term->c_cc[VSTOP];
+	chars->t_eofc = term->c_cc[VEOF];
+	chars->t_brkc = term->c_cc[VEOL];
       }
       return 0;
       break;
@@ -1123,12 +1142,12 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
         struct tchars *chars = (struct tchars *)arg;
         struct termios *term = tty->t;
 
-	term->c_cc[CINTR] = chars->t_intrc;
-	term->c_cc[CQUIT] = chars->t_quitc;
-	term->c_cc[CSTART] = chars->t_startc;
-	term->c_cc[CSTOP] = chars->t_stopc;
-	term->c_cc[CEOF] = chars->t_eofc;
-	term->c_cc[CBRK] = chars->t_brkc;
+	term->c_cc[VINTR] = chars->t_intrc;
+	term->c_cc[VQUIT] = chars->t_quitc;
+	term->c_cc[VSTART] = chars->t_startc;
+	term->c_cc[VSTOP] = chars->t_stopc;
+	term->c_cc[VEOF] = chars->t_eofc;
+	term->c_cc[VEOL] = chars->t_brkc;
       }
       return 0;
       break;
@@ -1137,12 +1156,12 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
         struct ltchars *chars = (struct ltchars *)arg;
         struct termios *term = tty->t;
 
-        chars->t_suspc = term->c_cc[CSUSP];
-        chars->t_dsuspc = term->c_cc[CDSUSP];
-        chars->t_rprntc = term->c_cc[CREPRINT];
-        chars->t_flushc = term->c_cc[CFLUSH];
-        chars->t_werasc = term->c_cc[CWERASE];
-        chars->t_lnextc = term->c_cc[CLNEXT];
+        chars->t_suspc = term->c_cc[VSUSP];
+        chars->t_dsuspc = term->c_cc[VDSUSP];
+        chars->t_rprntc = term->c_cc[VREPRINT];
+        chars->t_flushc = term->c_cc[VDISCARD];
+        chars->t_werasc = term->c_cc[VWERASE];
+        chars->t_lnextc = term->c_cc[VLNEXT];
       }
       return 0;
       break;
@@ -1151,12 +1170,12 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
         struct ltchars *chars = (struct ltchars *)arg;
         struct termios *term = tty->t;
 
-	term->c_cc[CSUSP] = chars->t_suspc;
-	term->c_cc[CDSUSP] = chars->t_dsuspc;
-	term->c_cc[CREPRINT] = chars->t_rprntc;
-	term->c_cc[CFLUSH] = chars->t_flushc;
-	term->c_cc[CWERASE] = chars->t_werasc;
-	term->c_cc[CLNEXT] = chars->t_lnextc;
+	term->c_cc[VSUSP] = chars->t_suspc;
+	term->c_cc[VDSUSP] = chars->t_dsuspc;
+	term->c_cc[VREPRINT] = chars->t_rprntc;
+	term->c_cc[VDISCARD] = chars->t_flushc;
+	term->c_cc[VWERASE] = chars->t_werasc;
+	term->c_cc[VLNEXT] = chars->t_lnextc;
       }
       return 0;
       break;

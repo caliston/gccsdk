@@ -1,3 +1,14 @@
+Tue Sep 11 16:07:13 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* termios.h: Re-synced with FreeBSD 4.3.
+	* sys/ioctl.h: Re-synced with FreeBSD 4.3.
+	* unix/tty.c (ttydefchars): Change index 7 from _POSIX_VDISABLE
+	to CERASE.
+	(__ttyioctl): References into the c_cc array should use the
+	V* macros rather than the C* macros.
+	t_flushc gets its value from VDISCARD, not VFLUSH.
+	t_brkc gets its value from VEOL, not CBRK.
+	
 Tue Sep 11 15:19:41 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* sys/child.c: Delete file.
