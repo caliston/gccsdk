@@ -9,7 +9,7 @@
 #include "os.h"
 #include "error.h"
 
-#ifndef HAVE_STRNDUP
+#if (defined (CROSS_COMPILE) && ! defined (HAVE_STRNDUP)) || ! defined (CROSS_COMPILE)
 char *
 strndup (const char *str, int len)
 {
