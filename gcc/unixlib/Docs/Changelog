@@ -1,3 +1,9 @@
+Wed Apr 03 09:41:27 2002  Nick Burrett  <nick@dsvr.net>
+
+	* netlib/host.c (gethostbyname2): New function.  Move the
+	main work of gethostbyname into here.
+	(gethostbyname): This is implmented in terms of gethostbyname2.
+	
 Wed Apr 03 08:45:18 2002  Peter Naulls  <peter@chocky.org>
 
 	* memcmp.c (memcmp): Fix compiler warnings.
