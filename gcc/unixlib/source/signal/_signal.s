@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_signal.s,v $
-; $Date: 2001/09/11 14:16:00 $
-; $Revision: 1.4.2.7 $
+; $Date: 2001/09/21 10:13:48 $
+; $Revision: 1.4.2.8 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -310,8 +310,9 @@ lb2	DCD	&FF000000 + lb2 - lb1
 	; a page-fault or a floating point exception.
 	TST	a3, #&80000000
 	; Bit 31 was not set so raise a RISC OS error.
-	MOVEQ	a1, #SIGERR
-	BLEQ	raise
+	MOVEQ	a2, #SIGERR
+	MOVEQ	a1, #0
+	BLEQ	|__unixlib_raise_signal|
 	LDMEQEA	fp, {a1, a2, a3, a4, fp, sp, pc}^
 
 	; Bit 31-was set, therefore it was a hardware error.

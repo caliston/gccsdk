@@ -1,3 +1,8 @@
+Tue Oct 02 11:15:13 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* signal/_signal.s (__h_error): Call __unixlib_raise_signal
+	rather than raise.
+
 Fri Sep 21 17:12:15 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* complex.h (cacos): Fix typo that I made in last change by John..
