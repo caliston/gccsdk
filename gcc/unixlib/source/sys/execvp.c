@@ -1,22 +1,22 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/execvp.c,v $
- * $Date: 2000/07/15 14:52:33 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:21 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: execvp.c,v 1.1.1.1 2000/07/15 14:52:33 nick Exp $";
+static const char rcs_id[] = "$Id: execvp.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
 #include <unistd.h>
 
 /* #define DEBUG 1 */
 #ifdef DEBUG
-#include <sys/os.h>
+#include <unixlib/os.h>
 #endif
 
 /* Execute file, searching in the 'path' environment variable if it
@@ -31,8 +31,8 @@ execvp (const char *name, char **argv)
       int x = -1;
       while (environ[++x])
         {
-          os_print ("--execvp: environ["); os_prdec (x); os_print ("]: ");
-          os_print (environ[x]); os_print ("\r\n");
+          __os_print ("--execvp: environ["); __os_prdec (x); __os_print ("]: ");
+          __os_print (environ[x]); __os_print ("\r\n");
         }
     }
 #endif

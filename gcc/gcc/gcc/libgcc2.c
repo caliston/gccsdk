@@ -3080,125 +3080,6 @@ __empty ()
 
 extern void __throw ();
 
-static struct eh_context *eh_context_initialize ();
-static struct eh_context *eh_context_static ();
-#if __GTHREADS
-static struct eh_context *eh_context_specific ();
-
-/* Pointer to function to return EH context. */
-static struct eh_context *(*get_eh_context) () = &eh_context_initialize;
-
-static __gthread_key_t eh_context_key;
-
-/* Destructor for struct eh_context. */
-static void
-eh_context_free (void *ptr)
-{
-  __gthread_key_dtor (eh_context_key, ptr);
-  if (ptr)
-    free (ptr);
-}
-#endif
-
-/* Routine to get EH context.
-   This one will simply call the function pointer. */
-
-void *
-__get_eh_context ()
-{
-#if __GTHREADS
-  return (void *) (*get_eh_context) ();
-#else
-  return (void *) eh_context_static ();
-#endif
-}
-
-/* Get and set the language specific info pointer. */
-
-void **
-__get_eh_info ()
-{
-  struct eh_context *eh;
-#if __GTHREADS
-  eh = (*get_eh_context) ();
-#else
-  eh = eh_context_static ();
-#endif
-  return &eh->info;
-}
-
-#if __GTHREADS
-static void
-eh_threads_initialize ()
-{
-  /* Try to create the key.  If it fails, revert to static method,
-     otherwise start using thread specific EH contexts. */
-  if (__gthread_key_create (&eh_context_key, &eh_context_free) == 0)
-    get_eh_context = &eh_context_specific;
-  else
-    get_eh_context = &eh_context_static;
-}
-
-/* Initialize EH context.
-   This will be called only once, since we change GET_EH_CONTEXT
-   pointer to another routine. */
-
-static struct eh_context *
-eh_context_initialize ()
-{
-  static __gthread_once_t once = __GTHREAD_ONCE_INIT;
-  /* Make sure that get_eh_context does not point to us anymore.
-     Some systems have dummy thread routines in their libc that
-     return a success (Solaris 2.6 for example). */
-  if (__gthread_once (&once, eh_threads_initialize) != 0
-      || get_eh_context == &eh_context_initialize)
-    {
-      /* Use static version of EH context. */
-      get_eh_context = &eh_context_static;
-    }
-  return (*get_eh_context) ();
-}
-#endif /* __GTHREADS */
-
-#if __GTHREADS
-/* Return a static EH context. */
-static struct eh_context *
-eh_context_static ()
-{
-  static struct eh_context eh;
-  static int initialized;
-  static void *top_elt[2];
-
-  if (! initialized)
-    {
-      initialized = 1;
-      memset (&eh, 0, sizeof eh);
-      eh.dynamic_handler_chain = top_elt;
-    }
-  return &eh;
-}
-#else
-
-static struct eh_context eh;
-static void *top_elt[2];
-
-/* Return a static EH context. */
-static struct eh_context *
-eh_context_static ()
-{
-  static int initialized;
-
-  if (! initialized)
-    {
-      initialized = 1;
-      memset (&eh, 0, sizeof eh);
-      eh.dynamic_handler_chain = top_elt;
-    }
-  return &eh;
-}
-#endif /* __GTHREADS */
-
-#if __GTHREADS
 static void *
 new_eh_context ()
 {
@@ -3224,7 +3105,111 @@ new_eh_context ()
   return &ehfc->c;
 }
 
+#if __GTHREADS
+static __gthread_key_t eh_context_key;
+
+/* Destructor for struct eh_context. */
+static void
+eh_context_free (void *ptr)
+{
+  __gthread_key_dtor (eh_context_key, ptr);
+  if (ptr)
+    free (ptr);
+}
+#endif
+
+/* Pointer to function to return EH context. */
+
+static struct eh_context *eh_context_initialize ();
+static struct eh_context *eh_context_static ();
+#if __GTHREADS
+static struct eh_context *eh_context_specific ();
+#endif
+
+static struct eh_context *(*get_eh_context) () = &eh_context_initialize;
+
+/* Routine to get EH context.
+   This one will simply call the function pointer. */
+
+void *
+__get_eh_context ()
+{
+  return (void *) (*get_eh_context) ();
+}
+
+/* Get and set the language specific info pointer. */
+
+void **
+__get_eh_info ()
+{
+  struct eh_context *eh = (*get_eh_context) ();
+  return &eh->info;
+}
+
+#if __GTHREADS
+static void
+eh_threads_initialize ()
+{
+  /* Try to create the key.  If it fails, revert to static method,
+     otherwise start using thread specific EH contexts. */
+  if (__gthread_key_create (&eh_context_key, &eh_context_free) == 0)
+    get_eh_context = &eh_context_specific;
+  else
+    get_eh_context = &eh_context_static;
+}
+#endif /* no __GTHREADS */
+
+/* Initialize EH context.
+   This will be called only once, since we change GET_EH_CONTEXT
+   pointer to another routine. */
+
+static struct eh_context *
+eh_context_initialize ()
+{
+#if __GTHREADS
+
+  static __gthread_once_t once = __GTHREAD_ONCE_INIT;
+  /* Make sure that get_eh_context does not point to us anymore.
+     Some systems have dummy thread routines in their libc that
+     return a success (Solaris 2.6 for example). */
+  if (__gthread_once (&once, eh_threads_initialize) != 0
+      || get_eh_context == &eh_context_initialize)
+    {
+      /* Use static version of EH context. */
+      get_eh_context = &eh_context_static;
+    }
+
+#else /* no __GTHREADS */
+
+  /* Use static version of EH context. */
+  get_eh_context = &eh_context_static;
+
+#endif /* no __GTHREADS */
+
+  return (*get_eh_context) ();
+}
+
+/* Return a static EH context. */
+
+static struct eh_context *
+eh_context_static ()
+{
+  static struct eh_context eh;
+  static int initialized;
+  static void *top_elt[2];
+
+  if (! initialized)
+    {
+      initialized = 1;
+      memset (&eh, 0, sizeof eh);
+      eh.dynamic_handler_chain = top_elt;
+    }
+  return &eh;
+}
+
+#if __GTHREADS
 /* Return a thread specific EH context. */
+
 static struct eh_context *
 eh_context_specific ()
 {
@@ -3257,12 +3242,7 @@ extern void longjmp (void *, int);
 void ***
 __get_dynamic_handler_chain ()
 {
-  struct eh_context *eh;
-#if __GTHREADS
-  eh = (*get_eh_context) ();
-#else
-  eh = eh_context_static ();
-#endif
+  struct eh_context *eh = (*get_eh_context) ();
   return &eh->dynamic_handler_chain;
 }
 
@@ -3279,11 +3259,7 @@ extern void __sjthrow (void) __attribute__ ((__noreturn__));
 void
 __sjthrow ()
 {
-#if __GTHREADS
   struct eh_context *eh = (*get_eh_context) ();
-#else
-  struct eh_context *eh = eh_context_static ();
-#endif
   void ***dhc = &eh->dynamic_handler_chain;
   void *jmpbuf;
   void (*func)(void *, int);
@@ -3361,11 +3337,7 @@ extern void __sjpopnthrow (void) __attribute__ ((__noreturn__));
 void
 __sjpopnthrow ()
 {
-#if __GTHREADS
   struct eh_context *eh = (*get_eh_context) ();
-#else
-  struct eh_context *eh = eh_context_static ();
-#endif
   void ***dhc = &eh->dynamic_handler_chain;
   void (*func)(void *, int);
   void *arg;

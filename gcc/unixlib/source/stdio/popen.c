@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/popen.c,v $
- * $Date: 2000/07/15 14:52:31 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:21 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: popen.c,v 1.1.1.1 2000/07/15 14:52:31 nick Exp $";
+static const char rcs_id[] = "$Id: popen.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -22,7 +22,7 @@ static const char rcs_id[] = "$Id: popen.c,v 1.1.1.1 2000/07/15 14:52:31 nick Ex
 #include <sys/wait.h>
 
 #ifdef DEBUG
-#include <sys/os.h>
+#include <unixlib/os.h>
 #endif
 
 __STDIOLIB__
@@ -84,11 +84,11 @@ popen (const char *command, const char *mode)
 
 #ifdef DEBUG
   if (*mode == 'r')
-    os_print ("pipe(r): ");
+    __os_print ("pipe(r): ");
   else
-    os_print ("pipe(w): ");
-  os_print (command);
-  os_nl ();
+    __os_print ("pipe(w): ");
+  __os_print (command);
+  __os_nl ();
 #endif
 
   /* mode == 'r' means current process will read from the file created by the

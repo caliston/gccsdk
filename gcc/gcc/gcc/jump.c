@@ -200,8 +200,6 @@ jump_optimize_1 (f, cross_jump, noop_moves, after_regscan, mark_labels_only)
   if (flag_exceptions && cross_jump)
     init_insn_eh_region (f, max_uid);
 
-  delete_barrier_successors (f);
-
   /* Leave some extra room for labels and duplicate exit test insns
      we make.  */
   max_jump_chain = max_uid * 14 / 10;
@@ -223,6 +221,8 @@ jump_optimize_1 (f, cross_jump, noop_moves, after_regscan, mark_labels_only)
 
   for (insn = exception_handler_labels; insn; insn = XEXP (insn, 1))
     LABEL_NUSES (XEXP (insn, 0))++;
+
+  delete_barrier_successors (f);
 
   /* Quit now if we just wanted to rebuild the JUMP_LABEL and REG_LABEL
      notes and recompute LABEL_NUSES.  */
@@ -2131,32 +2131,49 @@ delete_barrier_successors (f)
      rtx f;
 {
   rtx insn;
-
+  
   for (insn = f; insn;)
     {
       if (GET_CODE (insn) == BARRIER)
-	{
-	  insn = NEXT_INSN (insn);
-	  while (insn != 0 && GET_CODE (insn) != CODE_LABEL)
-	    {
-	      if (GET_CODE (insn) == NOTE
-		  && NOTE_LINE_NUMBER (insn) != NOTE_INSN_FUNCTION_END)
-		insn = NEXT_INSN (insn);
-	      else
-		insn = delete_insn (insn);
-	    }
-	  /* INSN is now the code_label.  */
-	}
+        {
+          insn = NEXT_INSN (insn);
+          while (insn != 0 && GET_CODE (insn) != CODE_LABEL)
+            {
+              if (GET_CODE (insn) == JUMP_INSN)
+                {
+                  /* Detect when we're deleting a tablejump; get rid of
+                     the jump table as well.  */
+                  rtx next1 = next_nonnote_insn (insn);
+                  rtx next2 = next1 ? next_nonnote_insn (next1) : 0;
+                  if (next2 && GET_CODE (next1) == CODE_LABEL
+                      && GET_CODE (next2) == JUMP_INSN
+                      && (GET_CODE (PATTERN (next2)) == ADDR_VEC
+                          || GET_CODE (PATTERN (next2)) == ADDR_DIFF_VEC))
+                    {
+                      delete_insn (insn);
+                      insn = next2;
+                    }
+                  else
+                    insn = delete_insn (insn);
+                }
+              else if (GET_CODE (insn) == NOTE
+                  && NOTE_LINE_NUMBER (insn) != NOTE_INSN_FUNCTION_END)
+                insn = NEXT_INSN (insn);
+              else
+                insn = delete_insn (insn);
+            }
+          /* INSN is now the code_label.  */
+        }
       /* Also remove (set (pc) (pc)) insns which can be created by
-	 gcse.  We eliminate such insns now to avoid having them
-	 cause problems later.  */
+         gcse.  We eliminate such insns now to avoid having them
+         cause problems later.  */
       else if (GET_CODE (insn) == JUMP_INSN
-	       && SET_SRC (PATTERN (insn)) == pc_rtx
-	       && SET_DEST (PATTERN (insn)) == pc_rtx)
-	insn = delete_insn (insn);
-
+               && SET_SRC (PATTERN (insn)) == pc_rtx
+               && SET_DEST (PATTERN (insn)) == pc_rtx)
+        insn = delete_insn (insn);
+      
       else
-	insn = NEXT_INSN (insn);
+        insn = NEXT_INSN (insn);
     }
 }
 

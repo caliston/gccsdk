@@ -3,11 +3,17 @@
  * Copyright © 1992 Niklas Röjemo, 1997 Darren Salt
  */
 
+#include "sdk-config.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "commands.h"
 #include "error.h"
 #include "input.h"
@@ -24,7 +30,6 @@
 #include "area.h"
 #include "lit.h"
 #include "macros.h"
-#include "strdup.h"
 #include "hash.h"
 #include "symbol.h"
 #include "local.h"
@@ -383,13 +388,18 @@ c_get (void)
   if (!getfp)
     {
       error (ErrorError, TRUE, "Cannot open file \"%s\"", filename);
+      free (filename);
       return;
     }
   push_file (asmfile);
   inputLineNo = 0;
 #ifdef __riscos__
   dependPut (" ", filename, "");
-  inputName = CanonicalisePath (filename);
+#endif
+#ifdef CROSS_COMPILE
+  inputName = filename;
+#else
+  inputName = CanonicaliseFile (getfp);
 #endif
   asmfile = getfp;
   if (verbose)
@@ -431,10 +441,10 @@ c_lnk (void)
   skiprest ();
   inputFinish ();
   inputLineNo = 0;
-#ifdef __riscos
-  inputName = CanonicalisePath (filename);
-#else
+#ifdef CROSS_COMPILE
   inputName = filename;
+#else
+  inputName = CanonicaliseFile (lnkfp);
 #endif
   if_depth = 0;
   asmfile = lnkfp;

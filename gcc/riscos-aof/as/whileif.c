@@ -2,18 +2,22 @@
  * whileif.c
  * Copyright 1997 Darren Salt
  */
-
+#include "sdk-config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "commands.h"
 #include "decode.h"
 #include "error.h"
 #include "input.h"
 #include "lex.h"
 #include "expr.h"
-#include "strdup.h"
 #include "value.h"
 #include "os.h"
 
@@ -28,10 +32,17 @@ if_skip (const char *onerror)
   char *str;
   int c;
   int nested = 0;
+  int tmp_inputExpand = inputExpand;
+  inputExpand = FALSE;
   while (inputNextLine ())
-    {
-      if (inputLook () && !isspace (inputGet ()))
-	str = inputSymbol (&c, 0);
+   {
+      if (inputLook () && !isspace (c = inputGet ()))
+	{
+	  char del = c == '|' ? c : 0;
+	  str = inputSymbol (&c, del);
+	  if (del && inputLook () == del)
+	    inputSkip ();
+	}
       skipblanks ();
       c = inputGet ();
       if (inputLook () && !isspace (inputGet ()))
@@ -51,11 +62,13 @@ if_skip (const char *onerror)
 	}
     }
   error (ErrorSerious, TRUE, onerror);
+  inputExpand = tmp_inputExpand;
   return;
 
 skipped:
   ignore_else = TRUE;
   inputRewind = TRUE;
+  inputExpand = tmp_inputExpand;
 }
 
 

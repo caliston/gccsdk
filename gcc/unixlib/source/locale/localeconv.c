@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/locale/localeconv.c,v $
- * $Date: 2000/07/15 14:52:20 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: localeconv.c,v 1.1.1.1 2000/07/15 14:52:20 nick Exp $";
+static const char rcs_id[] = "$Id: localeconv.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 /* Character localisation support. Written by Nick Burrett, 20 July 1997.  */
@@ -19,8 +19,8 @@ static const char rcs_id[] = "$Id: localeconv.c,v 1.1.1.1 2000/07/15 14:52:20 ni
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/os.h>
-#include <sys/swis.h>
+#include <unixlib/os.h>
+#include <swis.h>
 
 /* #define DEBUG */
 
@@ -32,7 +32,7 @@ static int read_symbol (int reason_code, int territory)
 
   regs[0] = territory;
   regs[1] = reason_code;
-  os_swi (Territory_ReadSymbols, regs);
+  __os_swi (Territory_ReadSymbols, regs);
   return regs[0];
 }
 
@@ -68,7 +68,7 @@ static void read_byte_list (int reason_code, char **grouping, int territory)
       *temp1++ = ';';
       regs[1] = (int)temp1;
       regs[2] = (int)(&temp[sizeof (temp) - 4] - temp1);
-      os_swi (OS_BinaryToDecimal, regs);
+      __os_swi (OS_BinaryToDecimal, regs);
       temp1 += regs[2];
     }
   *temp1 = '\0';

@@ -2,9 +2,14 @@
  * decode.c
  * Copyright © 1992 Niklas Röjemo
  */
-
+#include "sdk-config.h"
 #include <ctype.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include <stdio.h>
 #include "decode.h"
 #include "input.h"
@@ -764,11 +769,20 @@ decode (Lex * label)
       {
 	int l;			/* Is it a macro call? */
 	char *c;
-	Macro *m;
+	Macro *m = NULL;
 	if (macro)
 	  {
 	    inputRollback ();
-	    c = inputSymbol (&l, '\0');
+	    if (inputLook () == '|')
+	      {
+		inputSkip ();
+		c = inputSymbol (&l, '|');
+		if (inputGet () != '|')
+		  error (ErrorError, TRUE,
+			 "Identifier continues over newline");
+	      }
+	    else
+	      c = inputSymbol (&l, '\0');
 	    m = macroFind (l, c);
 	  }
 	if (macro && m)

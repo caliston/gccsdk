@@ -1,6 +1,5 @@
-/* Operating system specific defines to be used when targetting GCC
-   for RISC OS.
-   Copyright (C) 1998, 1999, 2000 Free Software Foundation, Inc.
+/* Operating system specific defines when targetting GCC for RISC OS.
+   Copyright (C) 1998, 1999, 2000, 2001 Free Software Foundation, Inc.
    Contributed by Nick Burrett (nick.burrett@btinternet.com)
 
 This file is part of GNU CC.
@@ -23,48 +22,7 @@ Boston, MA 02111-1307, USA.  */
 /* This overrides all the paths that cpp attempts to use, as otherwise we
    need to specifiy the same path several times.  */
 
-#ifndef CROSS_COMPILE
 /* Structure format: directory name, for C++ only, C++ aware.  */
-
-/* ***** These five defines should be in the Makefile ***** */
-
-#ifndef DEFAULT_TARGET_MACHINE
-#define DEFAULT_TARGET_MACHINE "arm-riscos-aof"
-#endif
-
-#ifndef DEFAULT_TARGET_VERSION
-#define DEFAULT_TARGET_VERSION "2_95_2"
-#endif
-
-/* Default prefix to try when searching for startup files.  */
-#ifndef STANDARD_STARTFILE_PREFIX
-#define STANDARD_STARTFILE_PREFIX "startup/"
-#endif
-
-/* Default prefix to try when searching for compiler executable files.  */
-#ifndef STANDARD_EXEC_PREFIX
-#define STANDARD_EXEC_PREFIX "gccpkg:bin/"
-#endif
-
-#ifndef GCC_INCLUDE_DIR
-#define GCC_INCLUDE_DIR "gccpkg:lib/gcc-lib/arm-riscos-aof/2_95_2/include"
-#endif
-
-#ifndef GPLUSPLUS_INCLUDE_DIR
-#define GPLUSPLUS_INCLUDE_DIR "gccpkg:lib/gcc-lib/arm-riscos-aof/2_95_2/include/g++-3"
-#endif
-
-#ifndef LOCAL_INCLUDE_DIR
-#define LOCAL_INCLUDE_DIR "gcclcl:include"
-#endif
-
-#ifndef SYSTEM_INCLUDE_DIR
-#define SYSTEM_INCLUDE_DIR "gccsys:include"
-#endif
-
-#ifndef TARGET_NAME
-#define TARGET_NAME "arm-riscos-aof"
-#endif
 
 #define INCLUDE_DEFAULTS			\
 {						\
@@ -76,8 +34,6 @@ Boston, MA 02111-1307, USA.  */
 }
 
 #define PATH_SEPARATOR ','
-
-#endif /* !CROSS_COMPILE */
 
 /* Descriptions for the assembler output format.  */
 
@@ -199,10 +155,6 @@ Boston, MA 02111-1307, USA.  */
 /* For AOF style output.  */
 #include "arm/aof.h"
 
-/* Define this if the AOF assemble cannot generate relocations for
-   PIC addresses directly.  */
-/* #define AOF_ASSEMBLER_PIC_PROBS */
-
 /* This code handle the constructor/destructor tables required for C++.
    It relies on a feature in the AOF linker that sorts areas in the object
    file into alphabetical order.  In the gcc library, we have two areas for
@@ -250,13 +202,12 @@ Boston, MA 02111-1307, USA.  */
 #define ASM_FINAL_SPEC ""
 
 
-#ifdef CROSS_COMPILE
-/* Cross-compiler specific definitions.  */
-
 /* Look for UnixLib unless mlibscl is set, then look for SharedCLib
    stubs.  */
 #define LIB_SPEC "%{!nostdlib:%{!mlibscl:-lunixlib}%{mlibscl:-lscl}}"
 
+#ifdef CROSS_COMPILE
+/* Cross-compiler specific definitions.  */
 #define CPP_SPEC "%(cpp_cpu_arch) %(cpp_apcs_pc) %(cpp_float) \
         -D__JMP_BUF_SIZE=24 %{mlibscl:-D__TARGET_SCL__} \
 	%{mlibscl:-icrossdirafter /libscl} \
@@ -265,22 +216,16 @@ Boston, MA 02111-1307, USA.  */
 #else
 /* Library specs for RISC OS.  We look for Unixlib in the path Unix:.
    SharedCLibrary headers will be looked for in C:.  */
-#define LIB_SPEC \
-	"%D %{!nostdlib:%{!mlibscl:-LUnix: -lunixlib}" \
-	"%{mlibscl:-LC: -lscl}}"
-
-#define LIBGCC_SPEC "%{!nostdlib:-lgcc}"
-
 #define CPP_SPEC "%(cpp_cpu_arch) %(cpp_apcs_pc) %(cpp_float) \
-	%{mamu:-MD !Depend} \
-	%{!mlibscl:-idirafter Unix:} %{mlibscl:-idirafter C:} \
-	-D__JMP_BUF_SIZE=24 %{mlibscl:-D__TARGET_SCL__}"
+	-D__JMP_BUF_SIZE=24 %{mlibscl:-D__TARGET_SCL__} \
+	%{mlibscl:-icrossdirafter /libscl} \
+	%{!mlibscl:-icrossdirafter /unixlib} \
+	%{mamu:-MD !Depend}"
 
 #endif /* CROSS_COMPILE */
 
 #undef CPP_PREDEFINES
-#define CPP_PREDEFINES  \
-	"-Darm -Driscos -Asystem(riscos) -Acpu(arm) -Amachine(acorn)"
+#define CPP_PREDEFINES "-Darm -Driscos -Asystem(riscos) -Acpu(arm) -Amachine(acorn)"
 
 /* Options to pass through to the assembler.  */
 #undef ASM_SPEC

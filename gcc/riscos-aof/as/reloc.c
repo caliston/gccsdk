@@ -2,10 +2,15 @@
  * reloc.c
  * Copyright © 1992 Niklas Röjemo
  */
-
+#include "sdk-config.h"
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "code.h"
 #include "get.h"
 #include "lex.h"
@@ -24,45 +29,26 @@
   (((image)[(offset)+3]<<24) | ((image)[(offset)+2]<<16) | \
    ((image)[(offset)+1]<<8 ) |  (image)[(offset)  ])
 
-static const char *relocstr[] = { "RelocShiftImm", "RelocImm8s4",
-    "RelocImmFloat",
-    "RelocBranch", "RelocSwi", "RelocCpuOffset", "RelocCopOffset",
-    "RelocAdr", "RelocAdrl", "RelocImmN", "RelocFloat", "RelocNone" };
+static const char *relocstr[] =
+{
+  "RelocShiftImm",
+  "RelocImm8s4",
+  "RelocImmFloat",
+  "RelocBranch",
+  "RelocSWI",
+  "RelocCpuOffset",
+  "RelocCopOffset",
+  "RelocAdr",
+  "RelocAdrl",
+  "RelocImmN",
+  "RelocFloat",
+  "RelocNone"
+};
 
 const char *
 reloc2String (RelocTag tag)
 {
-  return relocstr[tag - 1];
-#if 0
-  switch (tag)
-    {
-    case RelocShiftImm:
-      return "RelocShiftImm";
-    case RelocImm8s4:
-      return "RelocImm8s4";
-    case RelocImmFloat:
-      return "RelocImmFloat";
-    case RelocBranch:
-      return "RelocBranch";
-    case RelocSwi:
-      return "RelocSwi";
-    case RelocCpuOffset:
-      return "RelocCpuOffset";
-    case RelocCopOffset:
-      return "RelocCopOffset";
-    case RelocAdr:
-      return "RelocAdr";
-    case RelocAdrl:
-      return "RelocAdrl";
-    case RelocImmN:
-      return "RelocImmN";
-    case RelocFloat:
-      return "RelocFloat";
-    case RelocNone:
-      return "RelocNone";
-    }
-  return "reloc2String does not understand";
-#endif
+  return relocstr[tag];
 }
 
 
@@ -317,7 +303,7 @@ relocEval (Reloc * r, Value * value, Symbol * area)
 	case ValueInt:
 	  break;
 	default:
-	  errorLine (r->lineno, r->file, ErrorError, TRUE, "Linker cannot handle %s ", reloc2String (r->Tag));
+	  errorLine (r->lineno, r->file, ErrorError, TRUE, "Linker cannot handle %s", reloc2String (r->Tag));
 	  r->Tag = RelocNone;
 	  return 0;
 	}			/* ValueLateLabel */
@@ -527,7 +513,7 @@ relocOutput (FILE * outfile, Symbol * area)
 {
   Reloc *relocs;
   AofReloc areloc;
-  int How, loop, ip;
+  int How, loop = 0, ip;
   for (relocs = area->area.info->relocs; relocs; relocs = relocs->more)
     {
       switch (relocs->Tag)

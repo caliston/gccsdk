@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include "Chunk.h"
@@ -122,8 +123,13 @@ void Librarian::run()
 
 	case ActionExtractAll:
 		library->load();
+#ifdef CROSS_COMPILE
 		if(!m_argParser->getOption("-p"))
 		  destDir = "./";
+#else
+		if(!m_argParser->getOption("-p"))
+		  destDir = "@.";
+#endif
 		library->extractAllMembers(destDir);
 		break;
 

@@ -1055,15 +1055,15 @@ layout_type (type)
 	{
 #ifdef GPC
 	  int alignment = set_alignment ? set_alignment : set_word_size;
-          int lower_bound = TREE_INT_CST_LOW (TYPE_MIN_VALUE (TYPE_DOMAIN (type)));
-          int upper_bound = TREE_INT_CST_LOW (TYPE_MAX_VALUE (TYPE_DOMAIN (type)));
+	  int lower_bound = TREE_INT_CST_LOW (TYPE_MIN_VALUE (TYPE_DOMAIN (type)));
+	  int upper_bound = TREE_INT_CST_LOW (TYPE_MAX_VALUE (TYPE_DOMAIN (type)));
 	  int size_in_bits, rounded_size;
-          if (set_alignment)
-            size_in_bits = upper_bound - (lower_bound / alignment) * alignment + 1;
-          else
+	  if (set_alignment)
+	    size_in_bits = upper_bound - (lower_bound / alignment) * alignment + 1;
+	  else
 	    size_in_bits
-              = (TREE_INT_CST_LOW (TYPE_MAX_VALUE (TYPE_DOMAIN (type)))
-	         - TREE_INT_CST_LOW (TYPE_MIN_VALUE (TYPE_DOMAIN (type))) + 1);
+	      = (TREE_INT_CST_LOW (TYPE_MAX_VALUE (TYPE_DOMAIN (type)))
+		 - TREE_INT_CST_LOW (TYPE_MIN_VALUE (TYPE_DOMAIN (type))) + 1);
 	  rounded_size
 	    = ((size_in_bits + alignment - 1) / alignment) * alignment;
 #else /* not GPC */

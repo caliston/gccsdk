@@ -2,10 +2,14 @@
  * local.c
  * Copyright © 1997 Darren Salt
  */
-
+#include "sdk-config.h"
 #include <string.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
-#include "strdup.h"
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "local.h"
 #include "error.h"
 #include "asm.h"

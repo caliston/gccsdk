@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/syslog.c,v $
- * $Date: 2000/07/15 14:52:45 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/09/05 16:32:59 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: syslog.c,v 1.1.1.1 2000/07/15 14:52:45 nick Exp $";
+static const char rcs_id[] = "$Id: syslog.c,v 1.2.2.3 2001/09/05 16:32:59 admin Exp $";
 #endif
 
 /*
@@ -49,24 +49,26 @@ static const char rcs_id[] = "$Id: syslog.c,v 1.1.1.1 2000/07/15 14:52:45 nick E
 #include <sys/socket.h>
 #include <sys/syslog.h>
 #include <sys/uio.h>
+#include <unixlib/unix.h>
+#include <unixlib/os.h>
+#include <swis.h>
 #include <netdb.h>
 
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include <unistd.h>
 
 #include <stdarg.h>
 
-static int LogFile = -1;	/* fd for log */
-static int connected;		/* have done connect */
+
 static int LogStat = 0;		/* status bits, set by openlog() */
 static const char *LogTag = NULL;	/* string to tag the entry with */
 static int LogFacility = LOG_USER;	/* default facility code */
 static int LogMask = 0xff;	/* mask of priorities to be logged */
-extern char *__progname;	/* Program name, from crt0. */
 
 /*
  * syslog, vsyslog --
@@ -85,11 +87,13 @@ syslog (int pri, const char *fmt,...)
 void
 vsyslog (int pri, const char *fmt, va_list ap)
 {
-  register int cnt;
-  register char ch, *p, *t;
+  int cnt;
+  char ch, *p, *t;
   time_t now;
   int fd, saved_errno;
-  char *stdp, tbuf[2048], fmt_cpy[1024];
+  char *stdp = NULL, tbuf[2048], fmt_cpy[1024];
+  char *msg;
+  int regs[10];
 
 #define	INTERNALLOG	LOG_ERR|LOG_CONS|LOG_PERROR|LOG_PID
   /* Check for invalid bits. */
@@ -118,7 +122,22 @@ vsyslog (int pri, const char *fmt, va_list ap)
   if (LogStat & LOG_PERROR)
     stdp = p;
   if (LogTag == NULL)
-    LogTag = __progname;
+    {
+      char *leaf;
+      /* We must strip out any <foo$dir>. or foo: before the leafname of
+	 the executable, as the name passed to SysLog_Message is used
+	 as part of a filename.  */
+      leaf = strrchr(__u->argv[0],'.');
+      if (leaf == NULL)
+	leaf = __u->argv[0];
+      else
+	leaf ++;
+      LogTag = strrchr(leaf,':');
+      if (LogTag == NULL)
+	LogTag = leaf;
+      else
+	LogTag ++;
+    }
   if (LogTag != NULL)
     p += sprintf (p, "%s", LogTag);
   if (LogStat & LOG_PID)
@@ -130,7 +149,7 @@ vsyslog (int pri, const char *fmt, va_list ap)
     }
 
   /* Substitute error message for %m. */
-  for (t = fmt_cpy; ch = *fmt; ++fmt)
+  for (t = fmt_cpy; (ch = *fmt); ++fmt)
     if (ch == '%' && fmt[1] == 'm')
       {
 	++fmt;
@@ -140,6 +159,7 @@ vsyslog (int pri, const char *fmt, va_list ap)
       *t++ = ch;
   *t = '\0';
 
+  msg = p;
   p += vsprintf (p, fmt_cpy, ap);
   cnt = p - tbuf;
 
@@ -157,11 +177,11 @@ vsyslog (int pri, const char *fmt, va_list ap)
       (void) writev (STDERR_FILENO, iov, 2);
     }
 
-  /* Get connected, output the message to the local logger. */
-  if (!connected)
-    openlog ((char *)LogTag, LogStat | LOG_NDELAY, 0);
-  if (send (LogFile, tbuf, cnt, 0) >= 0)
-    return;
+  /* Ignore errors, syslog module is probably not loaded */
+  regs[0] = (int) LogTag;
+  regs[1] = (int) msg;
+  regs[2] = LOG_PRI (pri);
+  __os_swi (SysLog_LogMessage, regs);
 
   /*
    * Output the message to the console; don't worry about blocking,
@@ -179,47 +199,20 @@ vsyslog (int pri, const char *fmt, va_list ap)
     }
 }
 
-static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
 
 void
-openlog (char *ident, int logstat, int logfac)
+openlog (const char *ident, int logstat, int logfac)
 {
   if (ident != NULL)
     LogTag = ident;
   LogStat = logstat;
   if (logfac != 0 && (logfac & ~LOG_FACMASK) == 0)
     LogFacility = logfac;
-
-  if (LogFile == -1)
-    {
-      SyslogAddr.sa_family = AF_UNIX;
-      (void) strncpy (SyslogAddr.sa_data, _PATH_LOG,
-		      sizeof (SyslogAddr.sa_data));
-      if (LogStat & LOG_NDELAY)
-	{
-	  if ((LogFile = socket (AF_UNIX, SOCK_DGRAM, 0)) == -1)
-	    return;
-	  (void) fcntl (LogFile, F_SETFD, 1);
-	}
-    }
-  if (LogFile != -1 && !connected)
-    {
-      if (connect (LogFile, &SyslogAddr, sizeof (SyslogAddr)) == -1)
-        {
-	  (void) close (LogFile);
-	  LogFile = -1;
-        }
-      else
-        connected = 1;
-    }
 }
 
 void
 closelog (void)
 {
-  (void) close (LogFile);
-  LogFile = -1;
-  connected = 0;
 }
 
 /* setlogmask -- set the log mask level */

@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/syslog.h,v $
- * $Date: 2000/07/15 14:52:16 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -179,18 +179,15 @@ CODE facilitynames[] = {
 #define	LOG_NOWAIT	0x10	/* don't wait for console forks: DEPRECATED */
 #define	LOG_PERROR	0x20	/* log to stderr as well */
 
-#ifndef KERNEL
-
-#ifndef __STDARG_H
+#define __need__va_list
 #include <stdarg.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void closelog (void);
-void openlog (char *, int, int);
+void openlog (const char *, int, int);
 int setlogmask (int);
 void syslog (int, const char *, ...);
 void vsyslog (int, const char *, va_list);
@@ -198,7 +195,5 @@ void vsyslog (int, const char *, va_list);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* !KERNEL */
 
 #endif

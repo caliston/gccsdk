@@ -1,23 +1,23 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/time/stdtime.c,v $
- * $Date: 2000/07/15 14:52:42 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: stdtime.c,v 1.1.1.1 2000/07/15 14:52:42 nick Exp $";
+static const char rcs_id[] = "$Id: stdtime.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 /* Territory time support, written by Nick Burrett on 13 July 1997.  */
 
 #include <time.h>
 #include <locale.h>
-#include <sys/os.h>
-#include <sys/swis.h>
+#include <unixlib/os.h>
+#include <swis.h>
 #include <unixlib/local.h>
 
 /* Common function for ctime() and asctime().  */
@@ -35,7 +35,7 @@ __standard_time (const char *riscos_time)
   regs[2] = (int)result;
   regs[3] = sizeof (result);
   regs[4] = (int)"%W3 %M3 %DY %24:%MI:%SE %CE%YR";
-  os_swi (Territory_ConvertDateAndTime, regs);
+  __os_swi (Territory_ConvertDateAndTime, regs);
   p = (char *)regs[1];
   *p++ = '\n';
   *p++ = '\0';

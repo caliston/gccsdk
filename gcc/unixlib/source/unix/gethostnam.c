@@ -1,22 +1,22 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/gethostnam.c,v $
- * $Date: 2000/07/15 14:52:44 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/08/02 14:57:14 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: gethostnam.c,v 1.1.1.1 2000/07/15 14:52:44 nick Exp $";
+static const char rcs_id[] = "$Id: gethostnam.c,v 1.2.2.1 2001/08/02 14:57:14 admin Exp $";
 #endif
 
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sys/os.h>
+#include <unixlib/os.h>
 
 /* gethostname() returns
    1: <Inet$HostName> if Inet$HostName contains a dot
@@ -37,7 +37,7 @@ fakehostname (char *name, size_t len)
 
   /* Create a string that consists of "acorn<econet station number>".
      Read station number from CMOS location 1.  */
-  err = os_byte (161, 0, 0, regs);
+  err = __os_byte (161, 0, 0, regs);
   if (err)
     {
       __seterr (err);

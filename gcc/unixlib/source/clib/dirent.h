@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/dirent.h,v $
- * $Date: 2000/07/15 14:52:10 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -16,25 +16,18 @@
 #ifndef __UNIXLIB_FEATURES_H
 #include <unixlib/features.h>
 #endif
-#ifndef __STDDEF_H
+
+
+#define __need_size_t
 #include <stddef.h>
-#endif
+
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
-#endif
-#ifndef __SYS_PARAM_H
-#include <sys/param.h>
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* MAXNAMELEN is the BSD name for what POSIX calls NAME_MAX.  */
-
-/* Don't assume ADFS filename restrictions.
-   Keep in sync with <limits.h>, _POSIX_NAME_MAX.  */
-#define MAXNAMLEN	MAXPATHLEN
 
 /* This isn't really how ADFS stores files in a directory, but
    since no I/O is permitted on directories anyway this doesn't
@@ -45,7 +38,10 @@ struct dirent
   __ino_t	d_fileno;		/* file number of entry */
   size_t	d_namlen;		/* length of d_name */
   unsigned char d_type;			/* file type, possibly unknown */
-  char		d_name[MAXNAMLEN];	/* name */
+
+  /* FIXME:  Should be a macro constant, but causing difficulties
+     with namespace at the moment.  */
+  char		d_name[256];	/* name */
 };
 
 /* For backwards compatibility with BSD.  */
@@ -141,7 +137,7 @@ extern void rewinddir (DIR *__dirp);
 extern int closedir (DIR *__dirp);
 
 /* Function to compare two `struct dirent's alphabetically.  */
-extern int alphasort (const ptr_t __a, const ptr_t __b);
+extern int alphasort (const struct dirent **__a, const struct dirent ** __b);
 
 #if 0
 /* Scan the directory dir, calling 'select' on each directory entry.

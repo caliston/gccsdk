@@ -1,5 +1,5 @@
 // Member templates for the -*- C++ -*- string classes.
-// Copyright (C) 1994 Free Software Foundation
+// Copyright (C) 1994, 1999 Free Software Foundation
 
 // This file is part of the GNU ANSI C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -94,14 +94,14 @@ check_realloc (basic_string::size_type s) const
 
 template <class charT, class traits, class Allocator>
 void basic_string <charT, traits, Allocator>::
-alloc (basic_string::size_type size, bool save)
+alloc (basic_string::size_type __size, bool __save)
 {
-  if (! check_realloc (size))
+  if (! check_realloc (__size))
     return;
 
-  Rep *p = Rep::create (size);
+  Rep *p = Rep::create (__size);
 
-  if (save)
+  if (__save)
     {
       p->copy (0, data (), length ());
       p->len = length ();
@@ -116,19 +116,19 @@ template <class charT, class traits, class Allocator>
 basic_string <charT, traits, Allocator>&
 basic_string <charT, traits, Allocator>::
 replace (size_type pos1, size_type n1,
-	 const basic_string& str, size_type pos2, size_type n2)
+	 const basic_string& _str, size_type pos2, size_type n2)
 {
-  const size_t len2 = str.length ();
+  const size_t len2 = _str.length ();
 
   if (pos1 == 0 && n1 >= length () && pos2 == 0 && n2 >= len2)
-    return operator= (str);
+    return operator= (_str);
 
   OUTOFRANGE (pos2 > len2);
 
   if (n2 > len2 - pos2)
     n2 = len2 - pos2;
 
-  return replace (pos1, n1, str.data () + pos2, n2);
+  return replace (pos1, n1, _str.data () + pos2, n2);
 }
 
 template <class charT, class traits, class Allocator>
@@ -394,21 +394,21 @@ find_last_not_of (charT c, size_type pos) const
 
 template <class charT, class traits, class Allocator>
 int basic_string <charT, traits, Allocator>::
-compare (const basic_string& str, size_type pos, size_type n) const
+compare (const basic_string& _str, size_type pos, size_type n) const
 {
   OUTOFRANGE (pos > length ());
 
   size_t rlen = length () - pos;
   if (rlen > n)
     rlen = n;
-  if (rlen > str.length ())
-    rlen = str.length ();
-  int r = traits::compare (data () + pos, str.data (), rlen);
+  if (rlen > _str.length ())
+    rlen = _str.length ();
+  int r = traits::compare (data () + pos, _str.data (), rlen);
   if (r != 0)
     return r;
   if (rlen == n)
     return 0;
-  return (length () - pos) - str.length ();
+  return (length () - pos) - _str.length ();
 }
 
 template <class charT, class traits, class Allocator>
@@ -476,7 +476,7 @@ getline (istream &is, basic_string <charT, traits, Allocator>& s, charT delim)
 {
   if (is.ipfx1 ())
     {
-      _IO_size_t count = 0;
+      _IO_size_t _count = 0;
       streambuf *sb = is.rdbuf ();
       s.resize (0);
 
@@ -485,13 +485,13 @@ getline (istream &is, basic_string <charT, traits, Allocator>& s, charT delim)
 	  int ch = sb->sbumpc ();
 	  if (ch == EOF)
 	    {
-	      is.setstate (count == 0
+	      is.setstate (_count == 0
 			   ? (ios::failbit|ios::eofbit)
 			   : ios::eofbit);
 	      break;
 	    }
 
-	  ++count;
+	  ++_count;
 
 	  if (ch == delim)
 	    break;
@@ -507,7 +507,7 @@ getline (istream &is, basic_string <charT, traits, Allocator>& s, charT delim)
     }
 
   // We need to be friends with istream to do this.
-  // is._gcount = count;
+  // is._gcount = _count;
   is.isfx ();
 
   return is;

@@ -1,5 +1,6 @@
 /* Output routines for GCC for ARM.
-   Copyright (C) 1991, 93, 94, 95, 96, 97, 98, 1999 Free Software Foundation, Inc.
+   Copyright (C) 1991, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000
+   Free Software Foundation, Inc.
    Contributed by Pieter `Tiggr' Schoenmakers (rcpieter@win.tue.nl)
    and Martin Simmons (@harleqn.co.uk).
    More major hacks by Richard Earnshaw (rearnsha@arm.com).
@@ -96,15 +97,15 @@ const char * structure_size_string = NULL;
 int    arm_structure_size_boundary = 32; /* Used to be 8 */
 
 /* Bit values used to identify processor capabilities.  */
-#define FL_CO_PROC    (1 << 0)	      /* Has external co-processor bus */
-#define FL_FAST_MULT  (1 << 1)	      /* Fast multiply */
-#define FL_MODE26     (1 << 2)	      /* 26-bit mode support */
-#define FL_MODE32     (1 << 3)	      /* 32-bit mode support */
-#define FL_ARCH4      (1 << 4)	      /* Architecture rel 4 */
-#define FL_ARCH5      (1 << 5)	      /* Architecture rel 5 */
-#define FL_THUMB      (1 << 6)	      /* Thumb aware */
-#define FL_LDSCHED    (1 << 7)	      /* Load scheduling necessary */
-#define FL_STRONG     (1 << 8)	      /* StrongARM */
+#define FL_CO_PROC    0x01            /* Has external co-processor bus */
+#define FL_FAST_MULT  0x02            /* Fast multiply */
+#define FL_MODE26     0x04            /* 26-bit mode support */
+#define FL_MODE32     0x08            /* 32-bit mode support */
+#define FL_ARCH4      0x10            /* Architecture rel 4 */
+#define FL_THUMB      0x20            /* Thumb aware */
+#define FL_LDSCHED    0x40          /* Load scheduling necessary */
+#define FL_STRONG     0x80          /* StrongARM */
+
 
 /* The bits in this mask specify which instructions we are allowed to generate.  */
 static int insn_flags = 0;
@@ -122,9 +123,6 @@ int arm_fast_multiply = 0;
 
 /* Nonzero if this chip supports the ARM Architecture 4 extensions */
 int arm_arch4 = 0;
-
-/* Nonzero if this chip supports the ARM Architecture 5 extensions */
-int arm_arch5 = 0;
 
 /* Nonzero if this chip can benefit from load scheduling.  */
 int arm_ld_sched = 0;
@@ -226,8 +224,6 @@ static struct processors all_cores[] =
   {"arm810",		     FL_MODE26 | FL_MODE32 | FL_FAST_MULT | FL_ARCH4 |		  FL_LDSCHED },
   {"arm9",				 FL_MODE32 | FL_FAST_MULT | FL_ARCH4 | FL_THUMB | FL_LDSCHED },
   {"arm920",				 FL_MODE32 | FL_FAST_MULT | FL_ARCH4 |		  FL_LDSCHED },
-  {"arm920t",				 FL_MODE32 | FL_FAST_MULT | FL_ARCH4 | FL_THUMB | FL_LDSCHED },
-  {"arm9tdmi",				 FL_MODE32 | FL_FAST_MULT | FL_ARCH4 | FL_THUMB | FL_LDSCHED },
   {"strongarm",		     FL_MODE26 | FL_MODE32 | FL_FAST_MULT | FL_ARCH4	| FL_LDSCHED | FL_STRONG },
   {"strongarm110",	     FL_MODE26 | FL_MODE32 | FL_FAST_MULT | FL_ARCH4	| FL_LDSCHED | FL_STRONG },
   {"strongarm1100",	     FL_MODE26 | FL_MODE32 | FL_FAST_MULT | FL_ARCH4	| FL_LDSCHED | FL_STRONG },
@@ -247,7 +243,6 @@ static struct processors all_architectures[] =
   /* Strictly, FL_MODE26 is a permitted option for v4t, but there are no
      implementations that support it, so we will leave it out for now.  */
   { "armv4t",	 FL_CO_PROC |		  FL_MODE32 | FL_FAST_MULT | FL_ARCH4 | FL_THUMB },
-  { "armv5",	 FL_CO_PROC |		  FL_MODE32 | FL_FAST_MULT | FL_ARCH4 | FL_THUMB | FL_ARCH5 },
   { NULL, 0 }
 };
 
@@ -505,7 +500,6 @@ arm_override_options ()
   /* Initialise boolean versions of the flags, for use in the arm.md file.  */
   arm_fast_multiply = insn_flags & FL_FAST_MULT;
   arm_arch4	    = insn_flags & FL_ARCH4;
-  arm_arch5	    = insn_flags & FL_ARCH5;
 
   arm_ld_sched	    = tune_flags & FL_LDSCHED;
   arm_is_strong	    = tune_flags & FL_STRONG;
@@ -1289,14 +1283,10 @@ arm_gen_constant (code, mode, val, target, source, subtargets, generate)
 /* Canonicalize a comparison so that we are more likely to recognize it.
    This can be done for a few constant compares, where we can make the
    immediate value easier to load.  */
-#ifdef __GNUC__
 enum rtx_code
-#else
-int
-#endif
 arm_canonicalize_comparison (code, op1)
      enum rtx_code code;
-     rtx * op1;
+     rtx *op1;
 {
   unsigned HOST_WIDE_INT i = INTVAL (*op1);
 
@@ -1469,7 +1459,7 @@ legitimize_pic_address (orig, mode, reg)
 	  subregs = 1;
 	}
 
-#if defined(AOF_ASSEMBLER)
+#ifdef AOF_ASSEMBLER
       /* The AOF assembler can generate relocations for these directly, and
 	 understands that the PIC register has to be added into the offset.
 	 */
@@ -1555,7 +1545,7 @@ legitimize_pic_address (orig, mode, reg)
 static rtx pic_rtx;
 
 int
-is_pic (x)
+is_pic(x)
      rtx x;
 {
   if (x == pic_rtx)
@@ -1566,11 +1556,11 @@ is_pic (x)
 void
 arm_finalize_pic ()
 {
-#if !defined(AOF_ASSEMBLER)
+#ifndef AOF_ASSEMBLER
   rtx l1, pic_tmp, pic_tmp2, seq;
   rtx global_offset_table;
 
-  if (current_function_uses_pic_offset_table == 0 || TARGET_SINGLE_PIC_BASE)
+  if (current_function_uses_pic_offset_table == 0)
     return;
 
   if (! flag_pic)
@@ -1893,8 +1883,7 @@ arm_adjust_cost (insn, link, dep, cost)
 
 static int fpa_consts_inited = 0;
 
-char * strings_fpa[8] =
-{
+char *strings_fpa[8] = {
   "0",	 "1",	"2",   "3",
   "4",	 "5",	"0.5", "10"
 };
@@ -2419,7 +2408,7 @@ int
 symbol_mentioned_p (x)
      rtx x;
 {
-  register char * fmt;
+  register char *fmt;
   register int i;
 
   if (GET_CODE (x) == SYMBOL_REF)
@@ -2448,7 +2437,7 @@ int
 label_mentioned_p (x)
      rtx x;
 {
-  register char * fmt;
+  register char *fmt;
   register int i;
 
   if (GET_CODE (x) == LABEL_REF)
@@ -2472,11 +2461,7 @@ label_mentioned_p (x)
   return 0;
 }
 
-#ifdef __GNUC__
 enum rtx_code
-#else
-int
-#endif
 minmax_code (x)
      rtx x;
 {
@@ -2669,10 +2654,10 @@ store_multiple_operation (op, mode)
 
 int
 load_multiple_sequence (operands, nops, regs, base, load_offset)
-     rtx * operands;
+     rtx *operands;
      int nops;
-     int * regs;
-     int * base;
+     int *regs;
+     int *base;
      HOST_WIDE_INT * load_offset;
 {
   int unsorted_regs[4];
@@ -2842,7 +2827,7 @@ load_multiple_sequence (operands, nops, regs, base, load_offset)
 
 char *
 emit_ldm_seq (operands, nops)
-     rtx * operands;
+     rtx *operands;
      int nops;
 {
   int regs[4];
@@ -2902,10 +2887,10 @@ emit_ldm_seq (operands, nops)
 
 int
 store_multiple_sequence (operands, nops, regs, base, load_offset)
-     rtx * operands;
+     rtx *operands;
      int nops;
-     int * regs;
-     int * base;
+     int *regs;
+     int *base;
      HOST_WIDE_INT * load_offset;
 {
   int unsorted_regs[4];
@@ -2955,7 +2940,7 @@ store_multiple_sequence (operands, nops, regs, base, load_offset)
 	{
 	  if (i == 0)
 	    {
-	      base_reg = REGNO (reg);
+	      base_reg = REGNO(reg);
 	      unsorted_regs[0] = (GET_CODE (operands[i]) == REG
 				  ? REGNO (operands[i])
 				  : REGNO (SUBREG_REG (operands[i])));
@@ -3039,7 +3024,7 @@ store_multiple_sequence (operands, nops, regs, base, load_offset)
 
 char *
 emit_stm_seq (operands, nops)
-     rtx * operands;
+     rtx *operands;
      int nops;
 {
   int regs[4];
@@ -3231,7 +3216,7 @@ arm_gen_store_multiple (base_regno, count, to, up, write_back, unchanging_p,
 
 int
 arm_gen_movstrqi (operands)
-     rtx * operands;
+     rtx *operands;
 {
   HOST_WIDE_INT in_words_to_go, out_words_to_go, last_bytes;
   int i;
@@ -3366,7 +3351,6 @@ arm_gen_movstrqi (operands)
 	  MEM_IN_STRUCT_P (mem) = dst_in_struct_p;
 	  MEM_SCALAR_P (mem) = dst_scalar_p;
 	  emit_move_insn (mem, gen_rtx_SUBREG (QImode, part_bytes_reg, 0));
-
 	  if (--last_bytes)
 	    {
 	      tmp = gen_reg_rtx (SImode);
@@ -3388,7 +3372,6 @@ arm_gen_movstrqi (operands)
 	  MEM_IN_STRUCT_P (mem) = dst_in_struct_p;
 	  MEM_SCALAR_P (mem) = dst_scalar_p;
 	  emit_move_insn (mem, gen_rtx_SUBREG (QImode, part_bytes_reg, 0));
-
 	  if (--last_bytes)
 	    {
 	      rtx tmp = gen_reg_rtx (SImode);
@@ -3637,7 +3620,7 @@ gen_compare_reg (code, x, y)
 
 void
 arm_reload_in_hi (operands)
-     rtx * operands;
+     rtx *operands;
 {
   rtx ref = operands[1];
   rtx base, scratch;
@@ -4001,14 +3984,10 @@ add_constant (x, mode, address_only)
      enum machine_mode mode;
      int *address_only;
 {
-  int i, modesize;
+  int i;
   HOST_WIDE_INT offset;
 
-  *address_only = 0;
-  modesize = GET_MODE_SIZE (mode);
-  /* Force small modes into word sizes.  */
-  if (modesize < 4)
-    modesize = 4;
+  * address_only = 0;
 
   if (mode == SImode && GET_CODE (x) == MEM && CONSTANT_P (XEXP (x, 0))
       && CONSTANT_POOL_ADDRESS_P (XEXP (x, 0)))
@@ -4019,7 +3998,7 @@ add_constant (x, mode, address_only)
       mode = get_pool_mode (x);
       x = get_pool_constant (x);
     }
-#if !defined(AOF_ASSEMBLER)
+#ifndef AOF_ASSEMBLER
   else if (GET_CODE (x) == UNSPEC && XINT (x, 1) == 3)
     x = XVECEXP (x, 0, 0);
 #endif
@@ -4043,12 +4022,12 @@ add_constant (x, mode, address_only)
 		continue;
 	    }
 	  if (rtx_equal_p (x, pool_vector[i].value))
-	    return pool_vector[i].next_offset - modesize;
+	    return pool_vector[i].next_offset - GET_MODE_SIZE (mode);
 	}
     }
 
   /* Need a new one */
-  pool_vector[pool_size].next_offset = modesize;
+  pool_vector[pool_size].next_offset = GET_MODE_SIZE (mode);
   offset = 0;
   if (pool_size == 0)
     pool_vector_label = gen_label_rtx ();
@@ -4079,8 +4058,6 @@ dump_table (scan)
 
       switch (GET_MODE_SIZE (p->mode))
 	{
-	case 1:
-	case 2:
 	case 4:
 	  scan = emit_insn_after (gen_consttable_4 (p->value), scan);
 	  break;
@@ -4121,7 +4098,7 @@ fixit (src, mode, destreg)
 		    && ! neg_const_double_rtx_ok_for_fpu (src)));
       return symbol_mentioned_p (src);
     }
-#if !defined(AOF_ASSEMBLER)
+#ifndef AOF_ASSEMBLER
   else if (GET_CODE (src) == UNSPEC && XINT (src, 1) == 3)
     return 1;
 #endif
@@ -4394,7 +4371,7 @@ fp_immediate_constant (x)
 /* As for fp_immediate_constant, but value is passed directly, not in rtx.  */
 static char *
 fp_const_from_val (r)
-     REAL_VALUE_TYPE * r;
+     REAL_VALUE_TYPE *r;
 {
   int i;
 
@@ -4445,7 +4422,7 @@ print_multi_reg (stream, instr, base_reg, mask, hat, write_back)
 
 char *
 output_call (operands)
-     rtx * operands;
+     rtx *operands;
 {
   /* Handle calls to lr using ip (which may be clobbered in subr anyway). */
 
@@ -4467,10 +4444,10 @@ output_call (operands)
 
 static int
 eliminate_lr2ip (x)
-     rtx * x;
+     rtx *x;
 {
   int something_changed = 0;
-  rtx x0 = * x;
+  rtx x0 = *x;
   int code = GET_CODE (x0);
   register int i, j;
   register char * fmt;
@@ -4503,7 +4480,7 @@ eliminate_lr2ip (x)
 
 char *
 output_call_mem (operands)
-     rtx * operands;
+     rtx *operands;
 {
   operands[0] = copy_rtx (operands[0]); /* Be ultra careful */
   /* Handle calls using lr by using ip (which may be clobbered in subr anyway).
@@ -4533,7 +4510,7 @@ output_call_mem (operands)
 
 char *
 output_mov_long_double_fpu_from_arm (operands)
-     rtx * operands;
+     rtx *operands;
 {
   int arm_reg0 = REGNO (operands[1]);
   rtx ops[3];
@@ -4557,7 +4534,7 @@ output_mov_long_double_fpu_from_arm (operands)
 
 char *
 output_mov_long_double_arm_from_fpu (operands)
-     rtx * operands;
+     rtx *operands;
 {
   int arm_reg0 = REGNO (operands[0]);
   rtx ops[3];
@@ -4579,7 +4556,7 @@ output_mov_long_double_arm_from_fpu (operands)
    OPERANDS[1] is the source.  */
 char *
 output_mov_long_double_arm_from_arm (operands)
-     rtx * operands;
+     rtx *operands;
 {
   /* We have to be careful here because the two might overlap */
   int dest_start = REGNO (operands[0]);
@@ -4616,7 +4593,7 @@ output_mov_long_double_arm_from_arm (operands)
 
 char *
 output_mov_double_fpu_from_arm (operands)
-     rtx * operands;
+     rtx *operands;
 {
   int arm_reg0 = REGNO (operands[1]);
   rtx ops[2];
@@ -4637,7 +4614,7 @@ output_mov_double_fpu_from_arm (operands)
 
 char *
 output_mov_double_arm_from_fpu (operands)
-     rtx * operands;
+     rtx *operands;
 {
   int arm_reg0 = REGNO (operands[0]);
   rtx ops[2];
@@ -4658,7 +4635,7 @@ output_mov_double_arm_from_fpu (operands)
 
 char *
 output_move_double (operands)
-     rtx * operands;
+     rtx *operands;
 {
   enum rtx_code code0 = GET_CODE (operands[0]);
   enum rtx_code code1 = GET_CODE (operands[1]);
@@ -4890,7 +4867,7 @@ output_move_double (operands)
 
 char *
 output_mov_immediate (operands)
-     rtx * operands;
+     rtx *operands;
 {
   HOST_WIDE_INT n = INTVAL (operands[1]);
   int n_ones = 0;
@@ -4933,7 +4910,7 @@ output_mov_immediate (operands)
 
 char *
 output_add_immediate (operands)
-     rtx * operands;
+     rtx *operands;
 {
   HOST_WIDE_INT n = INTVAL (operands[2]);
 
@@ -4961,8 +4938,8 @@ output_add_immediate (operands)
 
 static char *
 output_multi_immediate (operands, instr1, instr2, immed_op, n)
-     rtx * operands;
-     char * instr1, * instr2;
+     rtx *operands;
+     char *instr1, *instr2;
      int immed_op;
      HOST_WIDE_INT n;
 {
@@ -5365,8 +5342,7 @@ output_return_instruction (operand, really_return, reverse)
   if (current_function_calls_alloca && ! really_return)
     abort ();
 
-  if (flag_pic && ! TARGET_SINGLE_PIC_BASE
-     && regs_ever_live[PIC_OFFSET_TABLE_REGNUM])
+  if (flag_pic && regs_ever_live[PIC_OFFSET_TABLE_REGNUM])
     live_regs_mask |= 1 << PIC_OFFSET_TABLE_REGNUM;
 
   frame_needed = arm_apcs_frame_needed ();
@@ -5978,8 +5954,7 @@ output_func_epilogue (f, frame_size)
       goto epilogue_done;
     }
 
-  if (flag_pic && ! TARGET_SINGLE_PIC_BASE
-      && regs_ever_live[PIC_OFFSET_TABLE_REGNUM])
+  if (flag_pic && regs_ever_live[PIC_OFFSET_TABLE_REGNUM])
     {
       live_regs_mask |= (1 << PIC_OFFSET_TABLE_REGNUM);
       floats_offset += 4;

@@ -1,22 +1,22 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/sockvalid.c,v $
- * $Date: 2000/07/15 14:52:18 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: sockvalid.c,v 1.1.1.1 2000/07/15 14:52:18 nick Exp $";
+static const char rcs_id[] = "$Id: sockvalid.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
 #endif
 
 #include <errno.h>
 #include <unixlib/fd.h>
 #include <unixlib/local.h>
-#include <sys/dev.h>
-#include <sys/unix.h>
+#include <unixlib/dev.h>
+#include <unixlib/unix.h>
 
 /* Return 0 if 'socket' is both a valid file descriptor
    and refers to a socket device.  Return -1 if not.  */

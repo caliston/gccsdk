@@ -25,7 +25,7 @@
 
 #include <libioP.h>
 
-_IO_pos_t
+_IO_off_t
 _IO_seekoff (fp, offset, dir, mode)
      _IO_FILE *fp;
      _IO_off_t offset;

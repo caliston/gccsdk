@@ -1,20 +1,20 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/umask.c,v $
- * $Date: 2000/07/15 14:52:45 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: umask.c,v 1.1.1.1 2000/07/15 14:52:45 nick Exp $";
+static const char rcs_id[] = "$Id: umask.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 #include <unixlib/types.h>
 #include <sys/stat.h>
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 
 __mode_t
 umask (__mode_t cmode)

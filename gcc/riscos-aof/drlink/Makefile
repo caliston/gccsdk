@@ -1,41 +1,57 @@
-INCLUDES = -I.
-CFLAGS = -g2 $(OPTS) $(TARGET_DEFS) -DTARGET_UNIXLIB
-CC = gcc $(CFLAGS)
+# Makefile for the ARM Object Format linker - DRLINK
+# Written by Nick Burrett <nick@dsvr.net>
 
-$(objdir)/riscos-aof/drlink/%.o: %.c
-	$(CC) -o $@ -c $< $(INCLUDES)
+ifeq (${STAGE},stage1)
+CFLAGS += -DCROSS_COMPILE
+exesfx =
+else
+CC = $(CROSS_CC)
+CFLAGS = $(CROSS_CFLAGS)
+endif
 
-OBJS =	$(objdir)/riscos-aof/drlink/Aoffiles.o \
-	$(objdir)/riscos-aof/drlink/Areas.o \
-	$(objdir)/riscos-aof/drlink/C++names.o \
-	$(objdir)/riscos-aof/drlink/Debug.o \
-	$(objdir)/riscos-aof/drlink/Drlmain.o \
-	$(objdir)/riscos-aof/drlink/Files.o \
-	$(objdir)/riscos-aof/drlink/Heap.o \
-	$(objdir)/riscos-aof/drlink/Libraries.o \
-	$(objdir)/riscos-aof/drlink/Linkdebug.o \
-	$(objdir)/riscos-aof/drlink/Linkedit.o \
-	$(objdir)/riscos-aof/drlink/Linkfiles.o \
-	$(objdir)/riscos-aof/drlink/Messages.o \
-	$(objdir)/riscos-aof/drlink/Stdcode.o \
-	$(objdir)/riscos-aof/drlink/Symbols.o
+INCLUDES = -I. -I../../
 
-all:	$(BIN)/drlink
+drlinkobjdir = $(objdir)/riscos-aof/drlink/$(STAGE)
 
-$(BIN)/drlink:	$(OBJS)
-	gcc -o $@ $(OBJS)
+$(drlinkobjdir)/%.o: %.c
+	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
 
-$(objdir)/riscos-aof/drlink/Aoffiles.o: Aoffiles.c
-$(objdir)/riscos-aof/drlink/Areas.o: Areas.c
-$(objdir)/riscos-aof/drlink/C++names.o: C++names.c
-$(objdir)/riscos-aof/drlink/Debug.o: Debug.c
-$(objdir)/riscos-aof/drlink/Drlmain.o: Drlmain.c
-$(objdir)/riscos-aof/drlink/Files.o: Files.c
-$(objdir)/riscos-aof/drlink/Heap.o: Heap.c
-$(objdir)/riscos-aof/drlink/Libraries.o: Libraries.c
-$(objdir)/riscos-aof/drlink/Linkdebug.o: Linkdebug.c
-$(objdir)/riscos-aof/drlink/Linkedit.o: Linkedit.c
-$(objdir)/riscos-aof/drlink/Linkfiles.o: Linkfiles.c
-$(objdir)/riscos-aof/drlink/Messages.o: Messages.c
-$(objdir)/riscos-aof/drlink/Stdcode.o: Stdcode.c
-$(objdir)/riscos-aof/drlink/Symbols.o: Symbols.c
+OBJS =	$(drlinkobjdir)/aoffiles.o \
+	$(drlinkobjdir)/areas.o \
+	$(drlinkobjdir)/cppnames.o \
+	$(drlinkobjdir)/debug.o \
+	$(drlinkobjdir)/drlmain.o \
+	$(drlinkobjdir)/files.o \
+	$(drlinkobjdir)/heap.o \
+	$(drlinkobjdir)/libraries.o \
+	$(drlinkobjdir)/linkdebug.o \
+	$(drlinkobjdir)/linkedit.o \
+	$(drlinkobjdir)/linkfiles.o \
+	$(drlinkobjdir)/messages.o \
+	$(drlinkobjdir)/stdcode.o \
+	$(drlinkobjdir)/symbols.o
+
+ifeq (${STAGE},stage2)
+	DEPS += $(gcc_bin_dir)/$(TRG)/o/unixlib
+endif
+
+
+all:	$(bin_dir)/drlink$(exesfx)
+
+$(bin_dir)/drlink$(exesfx): $(OBJS) $(DEPS)
+	$(CC) -o $@ $(OBJS)
+
+$(drlinkobjdir)/aoffiles.o: aoffiles.c
+$(drlinkobjdir)/areas.o: areas.c
+$(drlinkobjdir)/cppnames.o: cppnames.c
+$(drlinkobjdir)/debug.o: debug.c
+$(drlinkobjdir)/drlmain.o: drlmain.c
+$(drlinkobjdir)/files.o: files.c
+$(drlinkobjdir)/heap.o: heap.c
+$(drlinkobjdir)/libraries.o: libraries.c
+$(drlinkobjdir)/linkdebug.o: linkdebug.c
+$(drlinkobjdir)/linkedit.o: linkedit.c
+$(drlinkobjdir)/linkfiles.o: linkfiles.c
+$(drlinkobjdir)/messages.o: messages.c
+$(drlinkobjdir)/stdcode.o: stdcode.c
+$(drlinkobjdir)/symbols.o: symbols.c

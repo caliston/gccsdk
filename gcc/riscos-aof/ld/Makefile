@@ -1,19 +1,34 @@
-INCLUDES = -I. -I../../include
-CFLAGS = -O2 $(OPTS) $(TARGET_DEFS) -DHAVE_CONFIG_H
-CC = gcc $(CFLAGS)
+# Makefile for LD - frontend to DRLINK
+# Written by Nick Burrett <nick@dsvr.net>
 
-$(objdir)/riscos-aof/ld/%.o: %.c
-	$(CC) -o $@ -c $< $(INCLUDES)
+ifeq (${STAGE},stage1)
+prefix = $(unix_prefix)
+CFLAGS += -DCROSS_COMPILE
+exesfx = 
+else
+prefix = $(riscos_prefix)
+CC = $(CROSS_CC)
+CFLAGS = $(CROSS_CFLAGS)
+endif
 
-OBJS = $(objdir)/riscos-aof/ld/ld.o \
-	$(objdir)/riscos-aof/ld/rname.o
+INCLUDES = -I. -I../../ -I../../include
+CFLAGS += -DHAVE_CONFIG_H
+ldobjdir = $(objdir)/riscos-aof/ld/$(STAGE)
+OBJS = $(ldobjdir)/ld.o $(ldobjdir)/rname.o
 
-all:	$(TBIN)/ld
+ifeq (${STAGE},stage2)
+	DEPS += $(gcc_bin_dir)/$(TRG)/o/unixlib
+endif
 
-$(TBIN)/ld:	$(OBJS)
-	gcc -o $@ $(OBJS) -L$(objdir)/libiberty -liberty
+all:	$(gcc_bin_dir)/ld$(exesfx)
 
-$(objdir)/riscos-aof/ld/ld.o: ld.c
-	$(CC) -o $@ -c ld.c $(INCLUDES)	-DSTANDARD_EXEC_PREFIX=\"$(standard_exec_prefix)\"
+$(gcc_bin_dir)/ld$(exesfx):	$(OBJS) $(DEPS)
+	$(CC) -o $@ $(OBJS) -L$(objdir)/libiberty/$(STAGE) -liberty
 
-$(objdir)/riscos-aof/ld/rname.o: rname.c
+$(ldobjdir)/ld.o: ld.c ../../sdk-config.h ../../include/obstack.h \
+	../../include/demangle.h
+	$(CC) $(CFLAGS) -o $@ -c ld.c $(INCLUDES) \
+	-DSTANDARD_EXEC_PREFIX=\"$(prefix)$(gn_standard_exec_prefix)\"
+
+$(ldobjdir)/rname.o: rname.c
+	$(CC) $(CFLAGS) -o $@ -c rname.c $(INCLUDES)

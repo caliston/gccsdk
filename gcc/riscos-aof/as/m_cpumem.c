@@ -2,8 +2,13 @@
  * m_cpumem.c
  * Copyright © 1992 Niklas Röjemo
  */
-
+#include "sdk-config.h"
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "mnemonics.h"
 #include "error.h"
 #include "option.h"
@@ -351,7 +356,7 @@ m_swp (WORD cc)
     }
   else
     error (ErrorError, TRUE, "Inserting missing '['");
-  ir |= LHS_MUL (getCpuReg ());
+  ir |= DST_MUL (getCpuReg ());
   skipblanks ();
   if (inputLook () == ']')
     {

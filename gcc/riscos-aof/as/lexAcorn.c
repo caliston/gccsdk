@@ -3,12 +3,18 @@
  * Copyright © 1993 Niklas Röjemo
  */
 
+#include "sdk-config.h"
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "lex.h"
 #include "input.h"
 #include "decode.h"
 
-extern int objasm;		/* c.main */
+extern int apcs_32bit, objasm;		/* c.main */
 
 #define FINISH_STR(string,Op,Pri) \
   if(notinput(string)) goto illegal; \
@@ -26,6 +32,15 @@ lexAcornUnop (Lex * lex)
     {
     case 'c':
       FINISH_STR ("hr:", Op_chr, 10);
+    case 'd':
+      if (notinput ("ef:"))
+	goto illegal;
+      *lex = lexGetPrim ();
+      if (lex->tag != LexId)
+	goto illegal;
+      lex->LexInt.value = symbolFind (*lex) != 0;
+      lex->tag = LexBool;
+      return 1;
     case 'f':
       switch (inputGetLower ())
 	{
@@ -140,6 +155,11 @@ lexAcornPrim (Lex * lex)
 {
   switch (inputGetLower ())
     {
+    case 'c':
+      FINISH_STR_PRIM ("onfig}");
+      lex->tag = LexInt;
+      lex->LexInt.value = apcs_32bit ? 32 : 26;
+      return 1;
     case 'f':
       FINISH_STR_PRIM ("alse}");
       lex->tag = LexBool;
@@ -153,6 +173,10 @@ lexAcornPrim (Lex * lex)
       FINISH_STR_PRIM ("rue}");
       lex->tag = LexBool;
       lex->LexInt.value = TRUE;
+      return 1;
+    case 'v':
+      FINISH_STR_PRIM ("ar}");
+      lex->tag = LexStorage;
       return 1;
     default:
     illegal:if (lex);

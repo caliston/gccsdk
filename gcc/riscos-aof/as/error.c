@@ -2,14 +2,19 @@
  * error.c
  * Copyright © 1992 Niklas Röjemo
  */
-
+#include "sdk-config.h"
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "filestack.h"
 #include "error.h"
 #include "input.h"
@@ -264,10 +269,10 @@ errorLine (long int lineno, const char *file,
 	   ErrorTag e, BOOL c, const char *format,...)
 {
   char *str;
-  int t;
   va_list ap;
 
 #ifdef __riscos
+  int t;
   switch (e)
     {
     case ErrorInfo:

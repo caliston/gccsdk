@@ -1,5 +1,6 @@
 /* Top level of GNU C compiler
-   Copyright (C) 1987, 88, 89, 92-98, 1999 Free Software Foundation, Inc.
+   Copyright (C) 1987, 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
+   1999, 2000, 2001 Free Software Foundation, Inc.
 
 This file is part of GNU CC.
 
@@ -135,8 +136,6 @@ You Lose!  You must define PREFERRED_DEBUGGING_TYPE!
 #ifndef DIR_SEPARATOR
 #define DIR_SEPARATOR '/'
 #endif
-
-extern int rtx_equal_function_value_matters;
 
 #if ! (defined (VMS) || defined (OS2))
 extern char **environ;
@@ -1761,7 +1760,7 @@ v_message_with_decl (decl, warn, msgid, ap)
     {
 #ifdef ERROR_THROWBACK
       char tmp[256];
-
+      
       vsprintf (tmp, p, ap);
       strcat (msg, tmp);
 #endif
@@ -1770,7 +1769,7 @@ v_message_with_decl (decl, warn, msgid, ap)
   fputc ('\n', stderr);
 #ifdef ERROR_THROWBACK
   ERROR_THROWBACK (DECL_SOURCE_FILE (decl), DECL_SOURCE_LINE (decl),
-                   (warn) ? "warning" : NULL, msg, 0);
+		   (warn) ? "warning" : NULL, msg, 0);
 #endif
 }
 
@@ -3841,7 +3840,7 @@ rest_of_compilation (decl)
 
   /* Copy any shared structure that should not be shared.  */
 
-  unshare_all_rtl (insns);
+  unshare_all_rtl (current_function_decl, insns);
 
 #ifdef SETJMP_VIA_SAVE_AREA
   /* This must be performed before virutal register instantiation.  */
@@ -3895,12 +3894,14 @@ rest_of_compilation (decl)
 
       TIMEVAR (cse_time, tem = cse_main (insns, max_reg_num (),
 					 0, rtl_dump_file));
-      TIMEVAR (cse_time, delete_trivially_dead_insns (insns, max_reg_num ()));
-
       if (tem || optimize > 1)
 	TIMEVAR (jump_time, jump_optimize (insns, !JUMP_CROSS_JUMP,
 					   !JUMP_NOOP_MOVES,
 					   !JUMP_AFTER_REGSCAN));
+
+      /* Run this after jump optmizations remove all the unreachable code
+	 so that unreachable code will not keep values live.  */
+      TIMEVAR (cse_time, delete_trivially_dead_insns (insns, max_reg_num ()));
 
       /* Dump rtl code after cse, if we are doing that.  */
 
@@ -4708,6 +4709,7 @@ check_lang_option (option, lang_option)
 {
   lang_independent_options * indep_options;
   int    len;
+  int	 numopts;
   long    k;
   char * space;
   
@@ -4738,8 +4740,14 @@ check_lang_option (option, lang_option)
   
   switch (option[1])
     {
-    case 'f': indep_options = f_options; break;
-    case 'W': indep_options = W_options; break;
+    case 'f':
+      indep_options = f_options;
+      numopts = NUM_ELEM (f_options);
+      break;
+    case 'W':
+      indep_options = W_options;
+      numopts = NUM_ELEM (W_options);
+      break;
     default:  return 1;
     }
   
@@ -4751,7 +4759,7 @@ check_lang_option (option, lang_option)
   if (option[0] == 'n' && option[1] == 'o' && option[2] == '-')
     option += 3;
   
-  for (k = NUM_ELEM (indep_options); k--;)
+  for (k = numopts; k--;)
     {
       if (!strcmp (option, indep_options[k].string))
 	{
@@ -5469,7 +5477,7 @@ main (argc, argv)
   compile_file (filename);
 
 #ifdef ERROR_THROWBACK_FINALISE
-  ERROR_THROWBACK_FINALISE;
+ ERROR_THROWBACK_FINALISE;
 #endif
 
 #if !defined(OS2) && !defined(VMS) && (!defined(_WIN32) || defined (__CYGWIN__)) && !defined(__INTERIX)

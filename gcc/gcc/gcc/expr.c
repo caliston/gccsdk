@@ -1,5 +1,6 @@
 /* Convert tree expression to rtl instructions, for GNU compiler.
-   Copyright (C) 1988, 92-98, 1999 Free Software Foundation, Inc.
+   Copyright (C) 1988, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
+   2000, 2001 Free Software Foundation, Inc.
 
 This file is part of GNU CC.
 
@@ -191,6 +192,7 @@ static rtx expand_builtin	PROTO((tree, rtx, rtx,
 static int apply_args_size	PROTO((void));
 static int apply_result_size	PROTO((void));
 static rtx result_vector	PROTO((int, rtx));
+static rtx expand_builtin_setjmp PROTO((tree, rtx));
 static rtx expand_builtin_apply_args PROTO((void));
 static rtx expand_builtin_apply	PROTO((rtx, rtx, rtx));
 static void expand_builtin_return PROTO((rtx));
@@ -448,6 +450,9 @@ protect_from_queue (x, modify)
 				QUEUED_INSN (y));
 	      return temp;
 	    }
+	  /* Copy the address into a pseudo, so that the returned value
+	     remains correct across calls to emit_queue.  */
+	  XEXP (new, 0) = copy_to_reg (XEXP (new, 0));
 	  return new;
 	}
       /* Otherwise, recursively protect the subexpressions of all
@@ -474,9 +479,11 @@ protect_from_queue (x, modify)
 	}
       return x;
     }
-  /* If the increment has not happened, use the variable itself.  */
+  /* If the increment has not happened, use the variable itself.  Copy it
+     into a new pseudo so that the value remains correct across calls to
+     emit_queue.  */
   if (QUEUED_INSN (x) == 0)
-    return QUEUED_VAR (x);
+    return copy_to_reg (QUEUED_VAR (x));
   /* If the increment has happened and a pre-increment copy exists,
      use that copy.  */
   if (QUEUED_COPY (x) != 0)
@@ -2679,19 +2686,79 @@ emit_move_insn_1 (x, y)
 	}
       else
 	{
-	  /* Show the output dies here.  This is necessary for pseudos;
+	  rtx realpart_x, realpart_y;
+	  rtx imagpart_x, imagpart_y;
+
+	  /* If this is a complex value with each part being smaller than a
+	     word, the usual calling sequence will likely pack the pieces into
+	     a single register.  Unfortunately, SUBREG of hard registers only
+	     deals in terms of words, so we have a problem converting input
+	     arguments to the CONCAT of two registers that is used elsewhere
+	     for complex values.  If this is before reload, we can copy it into
+	     memory and reload.  FIXME, we should see about using extract and
+	     insert on integer registers, but complex short and complex char
+	     variables should be rarely used.  */
+	  if (GET_MODE_BITSIZE (mode) < 2*BITS_PER_WORD
+	      && (reload_in_progress | reload_completed) == 0)
+	    {
+	      int packed_dest_p = (REG_P (x) && REGNO (x) < FIRST_PSEUDO_REGISTER);
+	      int packed_src_p  = (REG_P (y) && REGNO (y) < FIRST_PSEUDO_REGISTER);
+
+	      if (packed_dest_p || packed_src_p)
+		{
+		  enum mode_class reg_class = ((class == MODE_COMPLEX_FLOAT)
+					       ? MODE_FLOAT : MODE_INT);
+
+		  enum machine_mode reg_mode = 
+		    mode_for_size (GET_MODE_BITSIZE (mode), reg_class, 1);
+
+		  if (reg_mode != BLKmode)
+		    {
+		      rtx mem = assign_stack_temp (reg_mode,
+						   GET_MODE_SIZE (mode), 0);
+
+		      rtx cmem = change_address (mem, mode, NULL_RTX);
+
+		      current_function_cannot_inline
+			= "function using short complex types cannot be inline";
+
+		      if (packed_dest_p)
+			{
+			  rtx sreg = gen_rtx_SUBREG (reg_mode, x, 0);
+			  emit_move_insn_1 (cmem, y);
+			  return emit_move_insn_1 (sreg, mem);
+			}
+		      else
+			{
+			  rtx sreg = gen_rtx_SUBREG (reg_mode, y, 0);
+			  emit_move_insn_1 (mem, sreg);
+			  return emit_move_insn_1 (x, cmem);
+			}
+		    }
+		}
+	    }
+
+	  realpart_x = gen_realpart (submode, x);
+	  realpart_y = gen_realpart (submode, y);
+	  imagpart_x = gen_imagpart (submode, x);
+	  imagpart_y = gen_imagpart (submode, y);
+
+	  /* Show the output dies here.  This is necessary for SUBREGs
+	     of pseudos since we cannot track their lifetimes correctly;
 	     hard regs shouldn't appear here except as return values.
 	     We never want to emit such a clobber after reload.  */
 	  if (x != y
-	      && ! (reload_in_progress || reload_completed))
+	      && ! (reload_in_progress || reload_completed)
+	      && (GET_CODE (realpart_x) == SUBREG
+		  || GET_CODE (imagpart_x) == SUBREG))
 	    {
 	      emit_insn (gen_rtx_CLOBBER (VOIDmode, x));
 	    }
 
 	  emit_insn (GEN_FCN (mov_optab->handlers[(int) submode].insn_code)
-		     (gen_realpart (submode, x), gen_realpart (submode, y)));
+		     (realpart_x, realpart_y));
 	  emit_insn (GEN_FCN (mov_optab->handlers[(int) submode].insn_code)
-		     (gen_imagpart (submode, x), gen_imagpart (submode, y)));
+		     (imagpart_x, imagpart_y));
 	}
 
       return get_last_insn ();
@@ -2703,6 +2770,8 @@ emit_move_insn_1 (x, y)
   else if (GET_MODE_SIZE (mode) > UNITS_PER_WORD)
     {
       rtx last_insn = 0;
+      rtx seq;
+      int need_clobber;
 
 #ifdef PUSH_ROUNDING
 
@@ -2715,15 +2784,9 @@ emit_move_insn_1 (x, y)
 	}
 #endif
 
-      /* Show the output dies here.  This is necessary for pseudos;
-	 hard regs shouldn't appear here except as return values.
-	 We never want to emit such a clobber after reload.  */
-      if (x != y
-	  && ! (reload_in_progress || reload_completed))
-	{
-	  emit_insn (gen_rtx_CLOBBER (VOIDmode, x));
-	}
+      start_sequence ();
 
+      need_clobber = 0;
       for (i = 0;
 	   i < (GET_MODE_SIZE (mode)  + (UNITS_PER_WORD - 1)) / UNITS_PER_WORD;
 	   i++)
@@ -2745,8 +2808,26 @@ emit_move_insn_1 (x, y)
 	  if (xpart == 0 || ypart == 0)
 	    abort ();
 
+	  need_clobber |= (GET_CODE (xpart) == SUBREG);
+
 	  last_insn = emit_move_insn (xpart, ypart);
 	}
+
+      seq = gen_sequence ();
+      end_sequence ();
+
+      /* Show the output dies here.  This is necessary for SUBREGs
+	 of pseudos since we cannot track their lifetimes correctly;
+	 hard regs shouldn't appear here except as return values.
+	 We never want to emit such a clobber after reload.  */
+      if (x != y
+	  && ! (reload_in_progress || reload_completed)
+	  && need_clobber != 0)
+	{
+	  emit_insn (gen_rtx_CLOBBER (VOIDmode, x));
+	}
+
+      emit_insn (seq);
 
       return last_insn;
     }
@@ -4586,10 +4667,10 @@ store_constructor (exp, target, cleared)
 #endif
 	    {
 #ifdef GPC
-              /* The language-specific run time library must provide
-                 a suitable `__setbits()' function whose action coincides
-                 with the values of `set_word_size', `set_alignment', and
-                 `set_words_big_endian'.  */
+	      /* The language-specific run time library must provide
+		 a suitable `__setbits()' function whose action coincides
+		 with the values of `set_word_size', `set_alignment', and
+		 `set_words_big_endian'.  */
 #endif /* GPC */
 	      emit_library_call (gen_rtx_SYMBOL_REF (Pmode, "__setbits"),
 				 0, VOIDmode, 4, XEXP (targetx, 0), Pmode,
@@ -6283,12 +6364,8 @@ expand_expr (exp, target, tmode, modifier)
 	  }
 
 	temp = gen_rtx_MEM (mode, op0);
-	/* If address was computed by addition,
-	   mark this as an element of an aggregate.  */
-	if (TREE_CODE (exp1) == PLUS_EXPR
-	    || (TREE_CODE (exp1) == SAVE_EXPR
-		&& TREE_CODE (TREE_OPERAND (exp1, 0)) == PLUS_EXPR)
-	    || AGGREGATE_TYPE_P (TREE_TYPE (exp))
+
+	if (AGGREGATE_TYPE_P (TREE_TYPE (exp))
 	    || (TREE_CODE (exp1) == ADDR_EXPR
 		&& (exp2 = TREE_OPERAND (exp1, 0))
 		&& AGGREGATE_TYPE_P (TREE_TYPE (exp2))))
@@ -7262,48 +7339,7 @@ expand_expr (exp, target, tmode, modifier)
     case FIX_ROUND_EXPR:
     case FIX_FLOOR_EXPR:
     case FIX_CEIL_EXPR:
-      {
-        /* ISO Pascal round(x):
-           if x >= 0.0 then trunc (x+0.5) else trunc (x-0.5);
-
-           Pascal round is none of the four IEEE rounding modes:
-           nearest, minus infinity, plus infinity or chop
-
-           So it is implemented with code.  */
-
-        rtx label_positive = gen_label_rtx ();
-        rtx label_done     = gen_label_rtx ();
-        rtx half;
-        enum machine_mode fmode;
-
-        if (target == NULL_RTX)
-          target = gen_reg_rtx (mode);
-
-        op0  = expand_expr (TREE_OPERAND (exp, 0), NULL_RTX, VOIDmode, 0);
-        fmode = GET_MODE (op0);
-
-        half = immed_real_const_1 (REAL_VALUE_ATOF ("0.5", fmode), fmode);
-
-        emit_cmp_insn (op0, CONST0_RTX (fmode), GE, 0, fmode, 0, 0);
-        emit_jump_insn (gen_bge (label_positive));
-
-        expand_fix (target, expand_binop (fmode, sub_optab, op0, half,
-                                          NULL_RTX, 0, OPTAB_DIRECT),
-                    0);
-        emit_queue ();
-        emit_jump_insn (gen_jump (label_done));
-        emit_barrier ();
-        emit_queue ();
-
-        emit_label (label_positive);
-        expand_fix (target, expand_binop (fmode, add_optab, op0, half,
-                                          NULL_RTX, 0, OPTAB_DIRECT),
-                    0);
-        emit_queue ();
-        emit_label (label_done);
-
-        return target;
-      }
+      abort ();			/* Not used for C.  */
 
     case FIX_TRUNC_EXPR:
       op0 = expand_expr (TREE_OPERAND (exp, 0), NULL_RTX, VOIDmode, 0);
@@ -7335,25 +7371,10 @@ expand_expr (exp, target, tmode, modifier)
     case ABS_EXPR:
       op0 = expand_expr (TREE_OPERAND (exp, 0), subtarget, VOIDmode, 0);
 
-#if 1
-/* #ifdef GPC*/
-      /* Handle complex values specially.
-         It is the mode of the operand, not the mode of the return
-	 value that is tested here. ABS(complex) does not return
-	 complex type.  */
-      {
-	enum machine_mode op0_mode =
-	  TYPE_MODE (TREE_TYPE (TREE_OPERAND (exp, 0)));
-	if (GET_MODE_CLASS (op0_mode) == MODE_COMPLEX_INT
-	    || GET_MODE_CLASS (op0_mode) == MODE_COMPLEX_FLOAT)
-	  return expand_complex_abs (op0_mode, op0, target, unsignedp);
-      }
-#else /* not GPC */
       /* Handle complex values specially.  */
       if (GET_MODE_CLASS (mode) == MODE_COMPLEX_INT
 	  || GET_MODE_CLASS (mode) == MODE_COMPLEX_FLOAT)
 	return expand_complex_abs (mode, op0, target, unsignedp);
-#endif
 
       /* Unsigned abs is simply the operand.  Testing here means we don't
 	 risk generating incorrect code below.  */
@@ -8082,7 +8103,9 @@ expand_expr (exp, target, tmode, modifier)
 	  if (ignore)
 	    return op0;
 
-	  op0 = protect_from_queue (op0, 0);
+	  /* Pass 1 for MODIFY, so that protect_from_queue doesn't get
+	     clever and returns a REG when given a MEM.  */
+	  op0 = protect_from_queue (op0, 1);
 
 	  /* We would like the object in memory.  If it is a constant,
 	     we can have it be statically allocated into memory.  For
@@ -8525,29 +8548,29 @@ expand_builtin_return_addr (fndecl_code, count, tem)
 #if defined(HAVE_BUILTIN_RETURN_ADDR_FUNC) || defined(HAVE_BUILTIN_FRAME_ADDR_FUNC)
   {
     char *func = NULL;
-
+    
     /* If HAVE_BUILTIN_RETURN_ADDR_FUNC or HAVE_BUILTIN_FRAME_ADDR_FUNC
        are defined, and evaluate to something, then call
        __builtin_return_address as a function.  */
 #ifdef HAVE_BUILTIN_RETURN_ADDR_FUNC
     if (fndecl_code == BUILT_IN_RETURN_ADDRESS
-        && HAVE_BUILTIN_RETURN_ADDR_FUNC)
+	&& HAVE_BUILTIN_RETURN_ADDR_FUNC)
       func = "__builtin_return_address";
 #endif
 #ifdef HAVE_BUILTIN_FRAME_ADDR_FUNC
     if (fndecl_code == BUILT_IN_FRAME_ADDRESS
-        && HAVE_BUILTIN_FRAME_ADDR_FUNC)
+	&& HAVE_BUILTIN_FRAME_ADDR_FUNC)
       func = "__builtin_frame_address";
 #endif
-
+    
     if (func != NULL)
       {
-        rtx function_call;
-
-        tem = gen_reg_rtx (Pmode);
-        function_call = gen_rtx (SYMBOL_REF, Pmode, func);
-        emit_library_call_value (function_call, tem, 0, Pmode, 1,
-                                 GEN_INT (count), SImode);
+	rtx function_call;
+	
+	tem = gen_reg_rtx (Pmode);
+	function_call = gen_rtx (SYMBOL_REF, Pmode, func);
+	emit_library_call_value (function_call, tem, 0, Pmode, 1,
+				 GEN_INT (count), SImode);
       }
   }
 #endif
@@ -8580,28 +8603,17 @@ expand_builtin_return_addr (fndecl_code, count, tem)
   return tem;
 }
 
-/* __builtin_setjmp is passed a pointer to an array of five words (not
-   all will be used on all machines).  It operates similarly to the C
-   library function of the same name, but is more efficient.  Much of
-   the code below (and for longjmp) is copied from the handling of
-   non-local gotos.
+/* Construct the leading half of a __builtin_setjmp call.  Control will
+   return to RECEIVER_LABEL.  This is used directly by sjlj exception
+   handling code.  */
 
-   NOTE: This is intended for use by GNAT and the exception handling
-   scheme in the compiler and will only work in the method used by
-   them.  */
-
-rtx
-expand_builtin_setjmp (buf_addr, target, first_label, next_label)
+void
+expand_builtin_setjmp_setup (buf_addr, receiver_label)
      rtx buf_addr;
-     rtx target;
-     rtx first_label, next_label;
+     rtx receiver_label;
 {
-  rtx lab1 = gen_label_rtx ();
   enum machine_mode sa_mode = STACK_SAVEAREA_MODE (SAVE_NONLOCAL);
-  enum machine_mode value_mode;
   rtx stack_save;
-
-  value_mode = TYPE_MODE (integer_type_node);
 
 #ifdef POINTERS_EXTEND_UNSIGNED
   buf_addr = convert_memory_address (Pmode, buf_addr);
@@ -8609,15 +8621,11 @@ expand_builtin_setjmp (buf_addr, target, first_label, next_label)
 
   buf_addr = force_reg (Pmode, buf_addr);
 
-  if (target == 0 || GET_CODE (target) != REG
-      || REGNO (target) < FIRST_PSEUDO_REGISTER)
-    target = gen_reg_rtx (value_mode);
-
   emit_queue ();
 
-  /* We store the frame pointer and the address of lab1 in the buffer
-     and use the rest of it for the stack save area, which is
-     machine-dependent.  */
+  /* We store the frame pointer and the address of receiver_label in
+     the buffer and use the rest of it for the stack save area, which
+     is machine-dependent.  */
 
 #ifndef BUILTIN_SETJMP_FRAME_VALUE
 #define BUILTIN_SETJMP_FRAME_VALUE virtual_stack_vars_rtx
@@ -8629,7 +8637,7 @@ expand_builtin_setjmp (buf_addr, target, first_label, next_label)
 		  (gen_rtx_MEM (Pmode,
 				plus_constant (buf_addr,
 					       GET_MODE_SIZE (Pmode)))),
-		  force_reg (Pmode, gen_rtx_LABEL_REF (Pmode, lab1)));
+		  force_reg (Pmode, gen_rtx_LABEL_REF (Pmode, receiver_label)));
 
   stack_save = gen_rtx_MEM (sa_mode,
 			    plus_constant (buf_addr,
@@ -8642,20 +8650,22 @@ expand_builtin_setjmp (buf_addr, target, first_label, next_label)
     emit_insn (gen_builtin_setjmp_setup (buf_addr));
 #endif
 
-  /* Set TARGET to zero and branch to the first-time-through label.  */
-  emit_move_insn (target, const0_rtx);
-  emit_jump_insn (gen_jump (first_label));
-  emit_barrier ();
-  emit_label (lab1);
+  /* Tell optimize_save_area_alloca that extra work is going to
+     need to go on during alloca.  */
+  current_function_calls_setjmp = 1;
 
-  /* Tell flow about the strange goings on.  Putting `lab1' on
-     `nonlocal_goto_handler_labels' to indicates that function
-     calls may traverse the arc back to this label.  */
-
+  /* Set this so all the registers get saved in our frame; we need to be
+     able to copy the saved values for any registers from frames we unwind. */
   current_function_has_nonlocal_label = 1;
-  nonlocal_goto_handler_labels =
-    gen_rtx_EXPR_LIST (VOIDmode, lab1, nonlocal_goto_handler_labels);
+}
 
+/* Construct the trailing part of a __builtin_setjmp call.
+   This is used directly by sjlj exception handling code.  */
+
+void
+expand_builtin_setjmp_receiver (receiver_label)
+      rtx receiver_label ATTRIBUTE_UNUSED;
+{
   /* Clobber the FP when we get here, so we have to make sure it's
      marked as used by this function.  */
   emit_insn (gen_rtx_USE (VOIDmode, hard_frame_pointer_rtx));
@@ -8702,7 +8712,7 @@ expand_builtin_setjmp (buf_addr, target, first_label, next_label)
 
 #ifdef HAVE_builtin_setjmp_receiver
   if (HAVE_builtin_setjmp_receiver)
-    emit_insn (gen_builtin_setjmp_receiver (lab1));
+    emit_insn (gen_builtin_setjmp_receiver (receiver_label));
   else
 #endif
 #ifdef HAVE_nonlocal_goto_receiver
@@ -8714,10 +8724,66 @@ expand_builtin_setjmp (buf_addr, target, first_label, next_label)
 	; /* Nothing */
       }
 
-  /* Set TARGET, and branch to the next-time-through label.  */
-  emit_move_insn (target, const1_rtx);
-  emit_jump_insn (gen_jump (next_label));
+  /* @@@ This is a kludge.  Not all machine descriptions define a blockage
+     insn, but we must not allow the code we just generated to be reordered
+     by scheduling.  Specifically, the update of the frame pointer must
+     happen immediately, not later.  So emit an ASM_INPUT to act as blockage
+     insn.  */
+  emit_insn (gen_rtx_ASM_INPUT (VOIDmode, ""));
+}
+
+
+/* __builtin_setjmp is passed a pointer to an array of five words (not
+   all will be used on all machines).  It operates similarly to the C
+   library function of the same name, but is more efficient.  Much of
+   the code below (and for longjmp) is copied from the handling of
+   non-local gotos.
+
+   NOTE: This is intended for use by GNAT and the exception handling
+   scheme in the compiler and will only work in the method used by
+   them.  */
+
+static rtx
+expand_builtin_setjmp (arglist, target)
+     tree arglist;
+     rtx target;
+{
+  rtx buf_addr, next_lab, cont_lab;
+
+  if (arglist == 0
+      || TREE_CODE (TREE_TYPE (TREE_VALUE (arglist))) != POINTER_TYPE)
+    return NULL_RTX;
+
+  if (target == 0 || GET_CODE (target) != REG
+      || REGNO (target) < FIRST_PSEUDO_REGISTER)
+    target = gen_reg_rtx (TYPE_MODE (integer_type_node));
+
+  buf_addr = expand_expr (TREE_VALUE (arglist), NULL_RTX, VOIDmode, 0);
+
+  next_lab = gen_label_rtx ();
+  cont_lab = gen_label_rtx ();
+
+  expand_builtin_setjmp_setup (buf_addr, next_lab);
+
+  /* Set TARGET to zero and branch to the continue label.  */
+  emit_move_insn (target, const0_rtx);
+  emit_jump_insn (gen_jump (cont_lab));
   emit_barrier ();
+  emit_label (next_lab);
+
+  expand_builtin_setjmp_receiver (next_lab);
+
+  /* Set TARGET to one.  */
+  emit_move_insn (target, const1_rtx);
+  emit_label (cont_lab);
+
+  /* Tell flow about the strange goings on.  Putting `next_lab' on
+     `nonlocal_goto_handler_labels' to indicates that function
+     calls may traverse the arc back to this label.  */
+
+  current_function_has_nonlocal_label = 1;
+  nonlocal_goto_handler_labels
+    = gen_rtx_EXPR_LIST (VOIDmode, next_lab, nonlocal_goto_handler_labels);
 
   return target;
 }
@@ -9739,18 +9805,10 @@ expand_builtin (exp, target, subtarget, mode, ignore)
 #endif
 
     case BUILT_IN_SETJMP:
-      if (arglist == 0
-	  || TREE_CODE (TREE_TYPE (TREE_VALUE (arglist))) != POINTER_TYPE)
+      target = expand_builtin_setjmp (arglist, target);
+      if (target)
+	return target;
 	break;
-      else
-	{
-	  rtx buf_addr = expand_expr (TREE_VALUE (arglist), subtarget,
-				      VOIDmode, 0);
-	  rtx lab = gen_label_rtx ();
-	  rtx ret = expand_builtin_setjmp (buf_addr, target, lab, lab);
-	  emit_label (lab);
-	  return ret;
-	}
 
       /* __builtin_longjmp is passed a pointer to an array of five words.
 	 It's similar to the C library longjmp function but works with

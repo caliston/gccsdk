@@ -1,20 +1,20 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/locale/ctypetable.c,v $
- * $Date: 2000/07/15 14:52:20 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: ctypetable.c,v 1.1.1.1 2000/07/15 14:52:20 nick Exp $";
+static const char rcs_id[] = "$Id: ctypetable.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 #include <ctype.h>
-#include <sys/os.h>
-#include <sys/swis.h>
+#include <unixlib/os.h>
+#include <swis.h>
 #include <locale.h>
 
 void __build_ctype_tables (int territory)
@@ -50,7 +50,7 @@ void __build_ctype_tables (int territory)
 	 256-bit tables into one 256-byte table.  */
       regs[0] = territory;
       regs[1] = code;
-      os_swi (Territory_CharacterPropertyTable, regs);
+      __os_swi (Territory_CharacterPropertyTable, regs);
       pos = 0;
       table = (unsigned int *)regs[0];
       y = (territory == -1) ? 4 : 8; /* See C/POSIX comment below.  */
@@ -72,10 +72,10 @@ void __build_ctype_tables (int territory)
 
   /* Create the lower-case and upper-case tables.  */
   regs[0] = territory;
-  os_swi (Territory_LowerCaseTable, regs);
+  __os_swi (Territory_LowerCaseTable, regs);
   p = (char *)regs[0];
   regs[0] = territory;
-  os_swi (Territory_UpperCaseTable, regs);
+  __os_swi (Territory_UpperCaseTable, regs);
   q = (char *)regs[0];
   /* In the C/POSIX locale, top-bit set characters aren't supported.
      The isgraph(), isalpha() etc. functions will return false.

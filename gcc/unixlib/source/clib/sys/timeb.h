@@ -1,19 +1,18 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/timeb.h,v $
- * $Date: 2000/07/15 14:52:16 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifndef __SYS_TIMEB_H
 #define __SYS_TIMEB_H 1
 
-#ifndef __UNIXLIB_TYPES_H
-#include <unixlib/types.h>
-#endif
+#define __need_time_t
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,14 +22,14 @@ extern "C" {
 
 struct timeb
   {
-    __time_t time;		/* Seconds since epoch, as from `time'.  */
+    time_t time;		/* Seconds since epoch, as from `time'.  */
     unsigned short int millitm;	/* Additional milliseconds.  */
     short int timezone;		/* Minutes west of GMT.  */
     short int dstflag;		/* Nonzero if Daylight Savings Time used.  */
   };
 
 /* Fill in TIMEBUF with information about the current time.  */
-extern int ftime (struct timeb *timebuf);
+extern int ftime (struct timeb *__timebuf);
 
 #ifdef __cplusplus
 }

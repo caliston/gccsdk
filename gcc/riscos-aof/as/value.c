@@ -3,14 +3,18 @@
  * value.c
  * Copyright © 1992 Niklas Röjemo
  */
-
+#include "sdk-config.h"
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "value.h"
 #include "code.h"
 #include "error.h"
-#include "strdup.h"
 
 /* Code demands at least one Lateinfo */
 Value valueLateToCode(int offset,LateInfo *late)

@@ -1,27 +1,34 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdio.h,v $
- * $Date: 2000/07/15 14:52:11 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/09/02 10:25:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 /* ANSI Standard 4.9: Input/Output <stdio.h>.  */
 
 #ifndef __STDIO_H
-#define __STDIO_H
 
-#ifndef __UNIXLIB_FEATURES_H
+#if !defined __need_FILE
+#define __STDIO_H
+#endif
+
 #include <unixlib/features.h>
-#endif
-#ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
-#endif
-#ifndef __STDDEF_H
+#define __need_size_t
+#define __need_NULL
 #include <stddef.h>
+
+#if !defined __FILE_defined && (defined __STDIO_H || defined __need_FILE)
+#define __FILE_defined
+typedef struct __iobuf FILE;
 #endif
+#undef __need_FILE
+
+#ifdef __STDIO_H
 
 typedef char *__va_list;
 
@@ -60,11 +67,6 @@ typedef __off_t fpos_t;
 /* Seek from end of file.  */
 #ifndef SEEK_END
 #define SEEK_END	2
-#endif
-
-#ifndef __FILE_declared
-#define __FILE_declared 1
-typedef struct __iobuf FILE;
 #endif
 
 /* The mode of file input/output. */
@@ -129,8 +131,8 @@ extern FILE *__stream_init (int __fd, FILE *__stream);
 /* Dissect the given mode string into an __io_mode.  */
 extern __io_mode __getmode (const char *__mode);
 
-extern void __stdioinit(void);	/* initialise stdin,stdout & stderr */
-extern void __stdioexit(void);	/* close streams & delete tmpfile() */
+extern void __stdioinit (void);	/* initialise stdin,stdout & stderr */
+extern void __stdioexit (void);	/* close streams & delete tmpfile() */
 
 /* Return the next character in the input buffer, keeping it in
    the input buffer.  If the buffer is empty, then fill it.  */
@@ -263,6 +265,10 @@ extern int puts (const char *__s);
 
 /* I know I said I would not do this, but ... */
 
+/* Write formatted output to s from argument list arg.  limit is the
+   maximum number of characters to produce.  */
+extern int vsnprintf (char *__s, size_t __limit, const char *__format,
+		      __va_list __arg);
 /* Write formatted output to s from argument list arg.  */
 extern int vsprintf (char *__s, const char *__format, __va_list __arg);
 /* Write formatted output to stream from arg list arg.  */
@@ -274,6 +280,9 @@ extern int vprintf (const char *__format, __va_list __arg);
 #pragma -v1
 #endif
 
+/* Write formatted output to s.  limit is the maximum number of characters
+   to produce.  */
+extern int snprintf (char *__s, size_t __limit, const char *__format, ...);
 /* Write formatted output to s.  */
 extern int sprintf (char *__s, const char *__format, ...);
 /* Write formatted output to stream.  */
@@ -395,4 +404,5 @@ extern __ssize_t getdelim (char **__lineptr, size_t *__n,
 	}
 #endif
 
-#endif
+#endif /* __STDIO_H */
+#endif /* ! __STDIO_H */

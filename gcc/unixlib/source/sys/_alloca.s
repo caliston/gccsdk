@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_alloca.s,v $
-; $Date: 2000/07/15 14:52:34 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/05/24 13:47:59 $
+; $Revision: 1.3 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ alloca		; just in case
 	ORR	a2, a2, a3
 	STR	a2, [fp, #-4]
 	ADD	a1, a1, #8
-	stackreturn	EQ, "pc"
+	stackreturn	AL, "pc"
 
 |__alloca_free|
 	LDR	a3, =|__alloca_list|	; StrongARM order
@@ -88,11 +88,11 @@ alloca		; just in case
 	B	abort		; never returns
 
 
-	AREA	|C$$data|, DATA
+	AREA	|C$$zidata|, DATA, NOINIT
 
 	EXPORT  |__alloca_list|
 |__alloca_list|
-	DCD	0
+	%	4
 
 	END
 
