@@ -1,3 +1,8 @@
+Mon Jun 10 10:56:10 2002  Maarten Bezemer  <veger2002@hotmail.com>
+
+	* stdio/tmpfile.c (tempnam): A logic error prevents `dir' being
+	used as a suitable temporary directory.
+	
 Thu Apr 18 08:39:08 2002  Alex Waugh  <alex@alexwaugh.com>
 
 	* stdio/printf.c (vsnprintf): Honour the length parameter even

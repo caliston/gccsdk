@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/tmpfile.c,v $
- * $Date: 2001/09/04 16:32:04 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2002/01/31 15:53:16 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tmpfile.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
+static const char rcs_id[] = "$Id: tmpfile.c,v 1.2.2.3 2002/01/31 15:53:16 admin Exp $";
 #endif
 
 #include <string.h>
@@ -184,7 +184,7 @@ tempnam (const char *dir, const char *prefix)
     d = NULL;
 
   /* 2. Use the 'dir' argument, if it is not a null pointer.  */
-  if (d == NULL && dir != NULL && !__isdir (dir))
+  if (d == NULL && dir != NULL && __isdir (dir))
     d = dir;
 
   /* 3. The value of the 'P_tmpdir' macro.  */
