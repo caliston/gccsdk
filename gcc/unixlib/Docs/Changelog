@@ -1,3 +1,9 @@
+Wed Aug 15 15:25:34 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* tmpfile.c (tmpfile): Fix logic error with the inlined fcntl.
+	We were previously taking the action of failure, which cannot
+	possibly happen.
+	
 Thu Aug  9 08:46:48 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* assert.c (__assert_fail): Change exp to const char*.
