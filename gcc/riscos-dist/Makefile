@@ -12,6 +12,7 @@ GCCPKG = $(pkg)/\!Boot,feb \
 	$(pkg)/\!Run,feb \
 	$(pkg)/\!Sprites,ff9 \
 	$(pkg)/\!Sprites22,ff9 \
+	$(pkg)/Readme \
 	$(pkg)/Changes \
 	$(pkg)/include \
 	$(pkg)/support \
