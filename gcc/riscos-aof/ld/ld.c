@@ -154,6 +154,15 @@ static char *stpcpy (char *s, const char *s2)
 }
 #endif
 
+static void do_unlink (void)
+{
+  if (tlink_verbose < 15)
+    {
+      unlink (ld_viafile);
+      unlink (ldout);
+    }
+}
+
 static void
 linker_initialise (void)
 {
@@ -177,7 +186,8 @@ linker_initialise (void)
   ldout = temp_filename;
   if (temp_filedesc == -1)
     {
-      fprintf (stderr, "ld: failed to create temporary filename '%s'\n", ldout);
+      fprintf (stderr, "ld: failed to create temporary filename '%s'\n",
+	       ldout);
       exit (1);
     }
   close (temp_filedesc);
@@ -189,7 +199,8 @@ linker_initialise (void)
   ld_viafile = temp_filename;
   if (temp_filedesc == -1)
     {
-      fprintf (stderr, "ld: failed to create temporary filename '%s'\n", ld_viafile);
+      fprintf (stderr, "ld: failed to create temporary filename '%s'\n",
+	       ld_viafile);
       exit (1);
     }
   close (temp_filedesc);
@@ -203,6 +214,7 @@ main (int argc, char *argv[])
 {
   const char *requested_linker;
 
+  atexit (do_unlink);
   tlink_init ();
   linker_initialise ();
 
@@ -706,7 +718,8 @@ tlink_execute (const char *prog, char **argv, char *redir, char *viafile)
   handle = fopen (viafile, "w");
   if (!handle)
     {
-      printf ("ld: failed to open '%s' for writing. Trying without\n", viafile);
+      printf ("ld: failed to open '%s' for writing. Trying without\n",
+	      viafile);
       /* Reserve lots more space for the command line.  */
       command = xrealloc (command, 4096);
     }
@@ -878,8 +891,6 @@ tlink_execute (const char *prog, char **argv, char *redir, char *viafile)
   system_result = system (command);
 #endif
 
-  if (tlink_verbose < 15)
-    unlink (viafile);
   free (command);
 
   return system_result;
@@ -1318,8 +1329,6 @@ do_tlink (const char *linker, char **ld_argv, args *object_lst)
 
   dump_file (ldout);
 
-  if (tlink_verbose < 15)
-    unlink (ldout);
   if (exit_code)
     {
       ld_error ("program %s returned exit status %d: %s", linker,
@@ -1840,6 +1849,7 @@ parse_args (int argc, char **argv)
 	case 'c':
 	  add_option ("-case");
 	  break;
+	case 'h':
 	case OPTION_HELP:
 	  ldhelp ();
 	  exit (0);
