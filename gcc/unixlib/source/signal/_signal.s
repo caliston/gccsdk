@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_signal.s,v $
-; $Date: 2001/08/08 08:53:47 $
-; $Revision: 1.4.2.2 $
+; $Date: 2001/08/15 16:22:59 $
+; $Revision: 1.4.2.3 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -143,13 +143,13 @@
 ;
 	EXPORT	|__h_sigill|
 |__h_sigill|
-	STR	lr,|__cbreg|+60
-	ADR	lr,|__cbreg|
-	STMIA	lr!,{a1-ip}		; store non-banked registers
-	STMIA	lr,{sp,lr}^		; store banked registers
-	MOV	a1,#SIGILL
-	SUB	lr,lr,#13*4		; adjust base register back
-	STR	a1,|__cba1|
+	STR	lr, |__cbreg|+60
+	ADR	lr, |__cbreg|
+	STMIA	lr!, {a1-ip}		; store non-banked registers
+	STMIA	lr, {sp, lr}^		; store banked registers
+	MOV	a1, #SIGILL
+	SUB	lr, lr, #13*4		; adjust base register back
+	STR	a1, |__cba1|
 	B	|__h_cback|
 
 ;-----------------------------------------------------------------------
@@ -160,14 +160,14 @@
 ;
 	EXPORT	|__h_sigbus|
 |__h_sigbus|
-	SUB	lr,lr,#4
-	STR	lr,|__cbreg|+60
-	ADR	lr,|__cbreg|
-	STMIA	lr!,{a1-ip}		; store non-banked registers
-	STMIA	lr,{sp,lr}^		; store banked registers
-	MOV	a1,#SIGBUS
-	SUB	lr,lr,#13*4		; adjust base register back
-	STR	a1,|__cba1|
+	SUB	lr, lr, #4
+	STR	lr, |__cbreg|+60
+	ADR	lr, |__cbreg|
+	STMIA	lr!, {a1-ip}		; store non-banked registers
+	STMIA	lr, {sp, lr}^		; store banked registers
+	MOV	a1, #SIGBUS
+	SUB	lr, lr, #13*4		; adjust base register back
+	STR	a1, |__cba1|
 	B	|__h_cback|
 
 ;-----------------------------------------------------------------------
@@ -178,14 +178,14 @@
 ;
 	EXPORT	|__h_sigsegv0|
 |__h_sigsegv0|
-	SUB	lr,lr,#4
-	STR	lr,|__cbreg|+60
-	ADR	lr,|__cbreg|
-	STMIA	lr!,{a1-ip}		; store non-banked registers
-	STMIA	lr,{sp,lr}^		; store banked registers
-	MOV	a1,#SIGSEGV
-	SUB	lr,lr,#13*4		; adjust base register back
-	STR	a1,|__cba1|
+	SUB	lr, lr, #4
+	STR	lr, |__cbreg|+60
+	ADR	lr, |__cbreg|
+	STMIA	lr!, {a1-ip}		; store non-banked registers
+	STMIA	lr, {sp, lr}^		; store banked registers
+	MOV	a1, #SIGSEGV
+	SUB	lr, lr,#13*4		; adjust base register back
+	STR	a1, |__cba1|
 	B	|__h_cback|
 
 ;-----------------------------------------------------------------------
@@ -223,11 +223,11 @@
 ; Finally, the SCL does not bother, so why should we ?
 	EXPORT	|__h_sigsegv1|
 |__h_sigsegv1|
-	SUB	lr,lr,#8
-	STR	lr,|__cbreg|+60
-	ADR	lr,|__cbreg|
-	STMIA	lr!,{a1-ip}		; store non-banked registers
-	STMIA	lr,{sp,lr}^		; store banked registers
+	SUB	lr, lr, #8
+	STR	lr, |__cbreg|+60
+	ADR	lr, |__cbreg|
+	STMIA	lr!, {a1-ip}		; store non-banked registers
+	STMIA	lr, {sp, lr}^		; store banked registers
 	MOV	a1, #SIGSEGV
 	STR	a1, |__cba1|
 	B	|__h_cback|
@@ -322,9 +322,9 @@ lb2	DCD	&FF000000 + lb2 - lb1
 	BIC	a2, a2, #&80000000
 	MOV	a2, a2, LSR #8
 	AND	a2, a2, #&FF
-	CMP	a2,#&02
-	MOVEQ	a1,#SIGFPE
-	MOVNE	a1,#SIGEMT
+	CMP	a2, #&02
+	MOVEQ	a1, #SIGFPE
+	MOVNE	a1, #SIGEMT
 	BL	raise
 	LDMEA	fp, {a1, a2, a3, a4, fp, sp, pc}^
 
@@ -450,10 +450,9 @@ Internet_Event	EQU	19
 	STMFD	sp!, {lr}
 	; Convert the internet event into a suitable signal for raising
 	CMP	a2, #1 ; Out-of-band data has arrived
-	ADREQ	a1, callback_signal
-	MOVEQ	a2, #SIGURG
-	SWIEQ	XOS_AddCallBack
-
+	MOVEQ	ip, #SIGURG
+	STREQ	ip, |__cba1|
+	MOVEQ	ip, #1 ; Callback set if R12 = 1
 	LDMFD	sp!, {pc}^
 
 ;-----------------------------------------------------------------------
@@ -726,7 +725,7 @@ itimer_exit
 |__h_sigprof_sema|
 	DCD	0
 
-	AREA	|C$$zidata|,DATA,NOINIT
+	AREA	|C$$zidata|, DATA, NOINIT
 
 ;-----------------------------------------------------------------------
 ; UnixLib's error buffer.
@@ -734,7 +733,7 @@ itimer_exit
 ;
 ; According to 1-289 the error handler must provide an error buffer of
 ; size 256 bytes, the address of which should be set along with the
-; handler address. Traditionally, errors in Risc OS require 256 bytes,
+; handler address. Traditionally, errors in RISC OS require 256 bytes,
 ; comprising 4 bytes for the number and 252 bytes for the string. See
 ; the definition of os_error and kernel_oserror for examples of this.
 ; Now, that raises a conflict with the amount of storage required for

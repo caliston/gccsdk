@@ -1,3 +1,7 @@
+Thu Aug 16 11:02:04 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
+
+	* signal/_signal.s (__h_event): Don't set our own callback.
+
 Thu Aug 16 10:17:58 2001  Alex Waugh <ajw498@ecs.soton.ac.uk>
 
 	* swis.h: Add SysLog module macros.
