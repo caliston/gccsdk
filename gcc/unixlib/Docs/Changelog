@@ -1,3 +1,8 @@
+Thu Feb  7 10:29:02 2002  Christian Ludlam  <chris@recoil.org>
+
+	* unix/dirent.c (scandir): New function.
+	* dirent.h (scandir): Fix prototype.
+
 Thu Feb  7 10:17:01 2002  Peter Naulls  <peter@chocky.org>
 
 	* alloc.c: Clean up compiler warnings.

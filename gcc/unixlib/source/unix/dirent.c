@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/dirent.c,v $
- * $Date: 2001/09/01 13:44:29 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: dirent.c,v 1.2.2.2 2001/09/01 13:44:29 admin Exp $";
+static const char rcs_id[] = "$Id: dirent.c,v 1.2.2.3 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -657,3 +657,78 @@ closedir (DIR *stream)
 
   return result;
 }
+
+
+int
+scandir (const char *dir, struct dirent ***namelist,
+            int (*select)(const struct dirent *),
+            int (*cmp)(const struct dirent **, const struct dirent **))
+{
+    DIR *dp;
+    struct dirent **v = NULL;
+    size_t vsize = 0, i;
+    struct dirent *d;
+    int save;
+
+    dp = opendir(dir);
+    if (dp == NULL)
+        return -1;
+
+    save = errno;
+    __set_errno(0);
+
+    i = 0;
+    while ((d = readdir(dp)) != NULL)
+        if (select == NULL || (*select)(d))
+        {
+            struct dirent *vnew;
+            size_t dsize;
+
+            /* Ignore errors from select or readdir */
+            __set_errno(0);
+
+            if (i == vsize)
+            {
+                struct dirent **new;
+                if (vsize == 0)
+                    vsize = 10;
+                else
+                    vsize *= 2;
+                new = (struct dirent **) realloc(v, vsize * sizeof(*v));
+                if (new == NULL)
+                    break;
+                v = new;
+            }
+
+            /* FIXME: this 256 should be a macro, but see comments in dirent.h */
+            dsize = &d->d_name[256] - (char *) d;
+            vnew = (struct dirent *) malloc(dsize);
+            if (vnew == NULL)
+                break;
+
+            v[i++] = (struct dirent *) memcpy(vnew, d, dsize);
+        }
+
+    if (errno != 0)
+    {
+        save = errno;
+        (void) closedir(dp);
+
+        while (i > 0)
+            free(v[--i]);
+        free(v);
+
+        __set_errno (save);
+        return -1;
+    }
+
+    (void) closedir(dp);
+    __set_errno(save);
+
+    /* Sort the list if we have a comparison function to sort with.  */
+    if (cmp != NULL)
+        qsort(v, i, sizeof(*v),(int (*)(const void *,const void *))cmp);
+    *namelist = v;
+    return i;
+}
+

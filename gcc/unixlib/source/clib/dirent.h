@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/dirent.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -139,16 +139,18 @@ extern int closedir (DIR *__dirp);
 /* Function to compare two `struct dirent's alphabetically.  */
 extern int alphasort (const struct dirent **__a, const struct dirent ** __b);
 
-#if 0
 /* Scan the directory dir, calling 'select' on each directory entry.
    Entries for which 'select' returns nonzero are individually malloc'd,
    sorted using qsort with 'cmp', and collected in a malloc'd array in
    *namelist.  Returns the number of entries selected, or -1 on error.  */
+
 extern int scandir (const char *__dir,
 		    struct dirent ***__namelist,
-		    int (*__select) (struct dirent *),
-		    int (*__cmp) (const ptr_t, const ptr_t));
+		    int (*__select)(const struct dirent *),
+		    int (*__cmp)(const struct dirent **,
+				 const struct dirent **));
 
+#if 0
 /* Read directory entries from fd into buf, reading at most nbytes.
    Reading starts at offset *basep, and *basep is updated with the new
    position after reading.  Returns the number of bytes read; zero when at
