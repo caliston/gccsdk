@@ -1,3 +1,8 @@
+Thu Aug 04 11:46:43 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
+
+	* time/times.c (times): Add NULL check on argument.
+	* unix/tty.c (__ttyioctl): Fix the FIXMEs in TIOCGETP and TIOCSETP.
+	
 Thu Aug 02 09:22:31 2001  Nick Burrett  <nick@dsvr.net>
 
 	* vfork.c: Unset debugging mode.
@@ -170,8 +175,8 @@ Thu Aug 17 17:17:22 2000  Nick Burrett  <nick.burrett@btinternet.com>
 	(__unixexit): More descriptive __debug statements.
 	(find_terminator): Optimise function.
 	(initialise_process_structure): Delete #if 0 code.
-	(convert_command_line): Re-work now that we've changed struct proc.  Cope
-	with an infinite command line length.
+	(convert_command_line): Re-work now that we've changed struct proc.
+	Cope with an infinite command line length.
 
 	* sys/brk.c (brk, sbrk): Add some debugging code.
 	* sys/execvp.c (execvp): Add some debugging code.

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/tty.c,v $
- * $Date: 2001/05/03 07:37:56 $
- * $Revision: 1.4 $
+ * $Date: 2001/08/02 14:57:14 $
+ * $Revision: 1.4.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tty.c,v 1.4 2001/05/03 07:37:56 admin Exp $";
+static const char rcs_id[] = "$Id: tty.c,v 1.4.2.1 2001/08/02 14:57:14 admin Exp $";
 #endif
 
 /* System V tty device driver for RISC OS.  */
@@ -988,25 +988,64 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
       {
         struct termios *term = tty->t;
         struct sgttyb *gtty = (struct sgttyb *)arg;
+	int flags = 0;
 
         gtty->sg_ispeed = term->__ispeed;
         gtty->sg_ispeed = term->__ospeed;
         gtty->sg_erase  = term->c_cc[CERASE];
         gtty->sg_kill   = term->c_cc[CKILL];
-        gtty->sg_flags  = term->c_cflag; /* FIXME Is this correct? */   
+
+	if (! (term->c_lflag & ICANON))
+	  flags |= (term->c_lflag & ISIG) ? CBREAK : RAW;
+
+	if (term->c_lflag & ECHO)
+	  flags |= ECHO;
+
+	if ((term->c_oflag & OPOST) && (term->c_oflag & ONLCR))
+	  flags |= CRMOD;
+
+	gtty->sg_flags = flags;
       }
       return 0;
       break;
     case TIOCSETP: /* Set parameters - stty */
       {
         struct termios *term = tty->t;
-        struct sgttyb *gtty = (struct sgttyb *)arg;
+        struct sgttyb *gtty = (struct sgttyb *) arg;
+	int flags = term->c_cflag;
 	
         term->__ispeed = gtty->sg_ispeed;
         term->__ospeed = gtty->sg_ispeed;
         term->c_cc[CERASE] = gtty->sg_erase;
         term->c_cc[CKILL] = gtty->sg_kill;
-        term->c_cflag = gtty->sg_flags; /* FIXME Is this correct? */   
+
+	term->c_iflag = ICRNL | IXON;
+	term->c_oflag = 0;
+	term->c_lflag = ISIG | ICANON;
+
+	if (flags & CBREAK)
+	  {
+	    term->c_iflag = 0;
+            term->c_lflag &= ~ICANON;
+          }
+	
+	if (flags & ECHO)
+	  term->c_lflag |= ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
+	
+	if (flags & CRMOD)
+	  term->c_oflag |= OPOST | ONLCR;
+
+	if (flags & RAW)
+	  {
+            term->c_iflag = 0;
+            term->c_lflag &= ~(ISIG | ICANON);
+          }
+	
+	if (!(term->c_lflag & ICANON))
+	  {
+            term->c_cc[VMIN] = 1;
+            term->c_cc[VTIME] = 0;
+          }
       }
       return 0;
       break;
