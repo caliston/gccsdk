@@ -1,3 +1,8 @@
+Fri Jul 19 14:19:48 2002  John Tytgat <John.Tytgat@aaug.net>
+
+	* index.c: #include <strings.h> so that we have header file
+	declaration all exported functions.
+
 Fri Jul 19 14:18:33 2002  John Tytgat <John.Tytgat@aaug.net>
 
 	* objs/Makefile,fe1: Fixed typo in the Norcroft compiler settings
