@@ -175,11 +175,11 @@ $(ro_gcc_bin_dir)/$(TRG)/o/libstdc++: $(STR_OBJS) $(COM_FOBJS) \
 
 
 install_headers:
-	$(insthdr) stl "*.h" stl $(ux_gccpkg)/$(gn_gplusplus_include_dir) $(ro_gccpkg)/$(gn_gplusplus_include_dir)
+	$(insthdr) stl "*.h" . $(ux_gccpkg)/$(gn_gplusplus_include_dir) $(ro_gccpkg)/$(gn_gplusplus_include_dir)
 	for hdr in algorithm bitset deque functional hash_map hash_set \
 		iterator list map memory numeric pthread_alloc queue \
 		rope set slist stack utility vector; do \
-		$(insthdr) stl "$$hdr" stl $(ux_gccpkg)/$(gn_gplusplus_include_dir) $(ro_gccpkg)/$(gn_gplusplus_include_dir); \
+		$(insthdr) stl "$$hdr" . $(ux_gccpkg)/$(gn_gplusplus_include_dir) $(ro_gccpkg)/$(gn_gplusplus_include_dir); \
 	done
 	$(insthdr) std "*.h" std $(ux_gccpkg)/$(gn_gplusplus_include_dir) $(ro_gccpkg)/$(gn_gplusplus_include_dir)
 	$(insthdr) std "*.cc" std $(ux_gccpkg)/$(gn_gplusplus_include_dir) $(ro_gccpkg)/$(gn_gplusplus_include_dir)
@@ -187,7 +187,7 @@ install_headers:
 	for hdr in cassert cctype cerrno cfloat ciso646 climits clocale \
 		cmath complex complex.h csetjmp csignal cstdarg cstddef \
 		cstdio cstdlib cstring ctime cwchar cwctype fstream iomanip \
-		iosfwd iostream stdexcept string strstream valarray; do \
+		iosfwd iostream stdexcept string sstream strstream valarray; do \
 		$(insthdr) . "$$hdr" . $(ux_gccpkg)/$(gn_gplusplus_include_dir) $(ro_gccpkg)/$(gn_gplusplus_include_dir); \
 	done
 
