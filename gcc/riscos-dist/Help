@@ -38,5 +38,17 @@ If you've used GCC before:
 
       const char *__dynamic_da_name = "Nettle Heap";
 
+ - You may have noticed that GCC now ships with a new module
+   "SharedUnixLibrary", which is currently used as a solution to the long-
+   standing "UpCall handler bug".  If you wish to distribute any UnixLib
+   programs, then you'll also need to distribute this module - probably
+   in the same way GCC does in a !System skeleton.
 
+   There is no need to RMEnsure this in your !Run file as UnixLib itself
+   ensures the module is loaded.  If you do distribute the module it is
+   highly recommended that you watch future GCC and UnixLib developments
+   as it is possible that future versions of the module and Unixlib
+   may be incompatible with the current versions.
+
+GCCSDK Developers, 2001
   
