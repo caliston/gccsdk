@@ -1,8 +1,8 @@
 # Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2002/08/18 21:22:10 $
-# $Revision: 1.2.2.15 $
+# $Date: 2002/08/19 11:50:59 $
+# $Revision: 1.2.2.16 $
 # $State: Exp $
 # $Author: admin $
 
@@ -302,7 +302,7 @@ clean:
 	-remove complex.!Stamp
 	-wipe crypt.o.* fv~r~c
 	-remove crypt.!Stamp
-	-wipe gcccompat.o.* gv~r~c
+	-wipe gcccompat.o.* fv~r~c
 	-remove gcccompat.!Stamp
 	-wipe grp.o.* fv~r~c
 	-remove grp.!stamp
