@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/tty.c,v $
- * $Date: 2001/09/03 12:21:54 $
- * $Revision: 1.4.2.5 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.4.2.6 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tty.c,v 1.4.2.5 2001/09/03 12:21:54 admin Exp $";
+static const char rcs_id[] = "$Id: tty.c,v 1.4.2.6 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 /* System V tty device driver for RISC OS.  */
@@ -499,11 +499,28 @@ ret:
       if (tty->lookahead < 0)
 	{
 	  if (nflag & F_NDELAY)
-	    c = __funcall ((*(tty->scan)), (0));
+	    {
+	      c = __funcall ((*(tty->scan)), (0));
+	      
+	      if (c < 0)
+		{
+	          if (__taskwindow)
+	            {
+                      _kernel_swi_regs regs;
+		      
+                      regs.r[0] = 6; /* Taskwindow sleep.  */
+                      regs.r[1] = 0; /* Just yield.  */
+		      
+                      _kernel_swi(OS_UpCall, &regs, &regs);
+		    }
+		  
+	          goto eol;
+		}
+            }
 	  else
-	    c = __funcall ((*(tty->in)), ());
-	  if (c < 0)
-	    goto eol;
+	    {
+	      c = __funcall ((*(tty->in)), ());
+	    }
 	}
       else
 	{
@@ -658,15 +675,30 @@ __ttyiraw (const struct __unixlib_fd *file_desc, void *buf, int nbyte,
       else
 	{
 	  if (nflag & F_NSCAN)
-	    c = __funcall ((*(tty->scan)), (0));
+            {
+	      c = __funcall ((*(tty->scan)), (0));
+	      
+	      if (c < 0)
+	        {
+	          if (__taskwindow)
+	            {
+                      _kernel_swi_regs regs;
+		      
+                      regs.r[0] = 6; /* Taskwindow sleep. */
+                      regs.r[1] = 0; /* Just yield.  */
+		      
+                      _kernel_swi(OS_UpCall, &regs, &regs);
+                    }
+		  
+	          if (i >= vm)
+	            return i;
+	          else
+	            continue;
+	        }
+            }
 	  else
-	    c = __funcall ((*(tty->in)), ());
-	  if (c < 0)
 	    {
-	      if (i >= vm)
-		return i;
-	      else
-		continue;
+	      c = __funcall ((*(tty->in)), ());
 	    }
 	}
       if (c == '\r' && iflag & IGNCR)
@@ -1000,11 +1032,7 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
       break;
     case TIOCLGET:  /* Get Local Modes */
       /* FIXME: This does nothing interesting - work in progress */
-      {
-        struct termios *term = tty->t;
-
-         *(int *)arg = 0;
-      }
+      *(int *)arg = 0;
       return 0;
       break;
     case TIOCLSET:  /* Set Local Modes */

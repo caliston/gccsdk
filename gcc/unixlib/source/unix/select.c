@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/select.c,v $
- * $Date: 2001/09/01 13:44:29 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: select.c,v 1.2.2.2 2001/09/01 13:44:29 admin Exp $";
+static const char rcs_id[] = "$Id: select.c,v 1.2.2.3 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 /* netlib/socket.c: Written by Peter Burwood, July 1997  */
@@ -139,6 +139,7 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
 
 #ifdef DEBUG
   dump_fd_set (nfds, readfds, stderr);
+  dump_fd_set (nfds, writefds, stderr);
 #endif
 
   /* Convert the individual fdsets and set highest*/
@@ -283,10 +284,10 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
 	{
 	  int regs[10];
 
-	  regs[0] = 6;	/* Sleep.  */
-	  regs[1] = 8;	/* Poll word is memory location 8
-			   This is the SWI handler, so should
-			   never be zero.  */
+	  regs[0] = 6; /* Taskwindow sleep.  */
+	  /* Yield.  This is the recommended value for taskwindow
+	     sleeping with no poll word.  */
+	  regs[1] = 0;
 
 	  __os_swi (OS_UpCall, regs);
 	}

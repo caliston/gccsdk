@@ -1,3 +1,11 @@
+Tue Sep 11 14:18:32 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
+
+	* unix/select.c (select): Use recommended setting of R1 for
+	Taskwindow sleep.#
+	* unix/tty.c (__ttyicanon): Yield in taskwindow to reduce
+	CPU use.
+	(__ttyiraw): Likewise.
+
 Tue Sep 11 14:04:13 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* alloc.c (malloc_useable_size): Don't compile.  I don't think
