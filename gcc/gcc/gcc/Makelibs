@@ -105,6 +105,9 @@ all:	$(ux_gcc_bin_dir)/$(TRG)/libgcc.o $(ro_gcc_bin_dir)/$(TRG)/o/libgcc
 
 install_headers:
 	$(insthdr) ginclude "*.h" . $(ux_gccpkg)/$(gn_gcc_include_dir) $(ro_gccpkg)/$(gn_gcc_include_dir)
+	for hdr in exception new new.h typeinfo; do \
+		$(insthdr) cp/inc "$$hdr" . $(ux_gccpkg)/$(gn_gplusplus_include_dir) $(ro_gccpkg)/$(gn_gplusplus_include_dir); \
+	done
 
 $(ux_gcc_bin_dir)/$(TRG)/libgcc.o: $(GPP_LIB) $(GCC_LIB_ULIB) \
 	$(GCC_LIB_COMMON) $(FP_BIT_DOUBLE) $(FP_BIT_SINGLE)
