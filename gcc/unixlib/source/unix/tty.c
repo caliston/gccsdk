@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/tty.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.4.2.3 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.4.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tty.c,v 1.4.2.3 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: tty.c,v 1.4.2.4 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 /* System V tty device driver for RISC OS.  */
@@ -83,13 +83,45 @@ __tty_console_gwinsz (struct winsize *win)
   int values[(sizeof (vars) - 1) / sizeof (int)];
   int regs[10];
 
-  regs[0] = (int) vars;
-  regs[1] = (int) values;
-  os_swi (OS_ReadVduVariables, regs);
-  win->ws_col = values[1] - values[0] + 1;
-  win->ws_row = values[3] - values[2] + 1;
-  win->ws_xpixel = values[5] - values[4] + 1;
-  win->ws_ypixel = values[7] - values[6] + 1;
+  if (__wimpprogram == 1)
+    {
+      char *size;
+      int rows = 24, cols = 80;
+ 
+      size = getenv ("ROWS");
+      if (size)
+        {
+          rows = atoi (size); 
+
+          if (rows <= 0)
+            rows = 24;
+        }
+
+      size = getenv ("COLUMNS");
+      if (size)
+        {
+          cols = atoi (size);
+
+          if (cols <= 0)
+            cols = 80;
+        }
+
+      win->ws_col = cols; 
+      win->ws_row = rows; 
+      win->ws_xpixel = cols * 8; 
+      win->ws_ypixel = rows * 16;
+
+    }
+  else
+    {
+      regs[0] = (int) vars;
+      regs[1] = (int) values;
+      os_swi (OS_ReadVduVariables, regs);
+      win->ws_col = values[1] - values[0] + 1;
+      win->ws_row = values[3] - values[2] + 1;
+      win->ws_xpixel = values[5] - values[4] + 1;
+      win->ws_ypixel = values[7] - values[6] + 1;
+  }
 }
 
 /* Set console window size.  */
@@ -967,20 +999,16 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
     case TIOCREMOTE: /* Remove input editing.  */
       break;
     case TIOCLGET:  /* Get Local Modes */
-      /* FIXME: This is broken.
-	 Looking in the FreeBSD kernel sources function:
-	   /usr/src/sys/kern/tty_compat.c::ttcompatsetflags()
+      /* FIXME: This does nothing interesting - work in progress */
+      {
+        struct termios *term = tty->t;
 
-	 The flags set by TIOCLGET and TIOCLSET are t_flags, which is different
-	 to the c_*flag that our tty structure supports.  So I'm not sure this
-	 can be relied upon.  I think a bit of work is involved to fix
-	 this.  */
-      *(int *)arg = tty->t->c_lflag;
+         *(int *)arg = 0;
+      }
       return 0;
       break;
     case TIOCLSET:  /* Set Local Modes */
-      /* FIXME: This is broken.  See TIOCLGET.  */
-      tty->t->c_lflag = *(int *)arg;
+      /* FIXME: This does nothing interesting - work in progress */
       return 0;
       break;
     case TIOCGETP: /* Get parameters - gtty */
@@ -1011,8 +1039,8 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
       {
         struct termios *term = tty->t;
         struct sgttyb *gtty = (struct sgttyb *) arg;
-	int flags = term->c_cflag;
-	
+        int flags = gtty->sg_flags;
+
         term->__ispeed = gtty->sg_ispeed;
         term->__ospeed = gtty->sg_ispeed;
         term->c_cc[CERASE] = gtty->sg_erase;
@@ -1053,12 +1081,12 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
         struct tchars *chars = (struct tchars *)arg;
         struct termios *term = tty->t;
 
-	chars->t_intrc  = term->c_cc[CINTR];
-	chars->t_quitc  = term->c_cc[CQUIT];
+	chars->t_intrc = term->c_cc[CINTR];
+	chars->t_quitc = term->c_cc[CQUIT];
 	chars->t_startc = term->c_cc[CSTART];
-	chars->t_stopc  = term->c_cc[CSTOP];
-	chars->t_eofc   = term->c_cc[CEOF];
-	chars->t_brkc   = term->c_cc[CBRK];
+	chars->t_stopc = term->c_cc[CSTOP];
+	chars->t_eofc = term->c_cc[CEOF];
+	chars->t_brkc = term->c_cc[CBRK];
       }
       return 0;
       break;
@@ -1081,7 +1109,7 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
         struct ltchars *chars = (struct ltchars *)arg;
         struct termios *term = tty->t;
 
-        chars->t_suspc  = term->c_cc[CSUSP];
+        chars->t_suspc = term->c_cc[CSUSP];
         chars->t_dsuspc = term->c_cc[CDSUSP];
         chars->t_rprntc = term->c_cc[CREPRINT];
         chars->t_flushc = term->c_cc[CFLUSH];

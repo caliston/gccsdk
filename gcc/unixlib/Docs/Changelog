@@ -1,3 +1,11 @@
+Mon Sep  3 13:21:31 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
+
+	* unix/tty.c (__tty_console_gwinsz): If a WIMP program, then
+	try to read terminal size from the ROWS and COLUMNS environment
+	variables.
+	(__ttyioctl): Turn TIOCLGET and TIOCLSET into dummy ioctls.
+	Fix typo in TIOCSETP to allow setting of CBREAK.
+	
 Mon Sep  3 13:07:28 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* unix/unix.c (check_io_redir): Print sensible error message
