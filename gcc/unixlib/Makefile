@@ -17,7 +17,8 @@ unixlib:
 	mkdir -p $(upath)/math/o $(upath)/math-asm/o $(upath)/signal/o
 	mkdir -p $(upath)/common/o $(upath)/gcccompat/o $(upath)/locale/o
 	mkdir -p $(upath)/netlib/o $(upath)/pwd/o $(upath)/resource/o
-	mkdir -p $(upath)/stdio/o $(upath)/scl/o $(upath)/sys/o $(upath)/time/o
+	mkdir -p $(upath)/stdio/o $(upath)/stdlib/o $(upath)/scl/o
+	mkdir -p $(upath)/string/o $(upath)/sys/o $(upath)/time/o
 	mkdir -p $(upath)/termios/o $(upath)/unix/o $(upath)/wchar/o
 	$(MAKE) -C source
 
