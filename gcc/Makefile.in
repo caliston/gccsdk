@@ -35,6 +35,7 @@ ux_gccpkg=@prefix@
 ro_gccpkg=@with_riscos_dist@/!gcc
 ro_syspkg=@with_riscos_dist@/!System
 ro_unixlibpkg=@with_riscos_dist@/!unixlib
+ro_libsclpkg=@with_riscos_dist@/!clib
 
 # Installation directory of RISC OS distribution packaged as zip files.
 ro_zippkg=@with_riscos_pkg@
@@ -107,13 +108,13 @@ export ux_gccpkg ro_gccpkg ro_syspkg ro_zippkg unix_prefix riscos_prefix
 export gn_standard_exec_prefix gn_standard_startfile_prefix
 export gn_gcc_include_dir gn_gplusplus_include_dir
 export gn_local_include_dir gn_system_include_dir gn_cross_include_dir
-export gn_gcc_bin_dir info_dir exesfx ro_unixlibpkg instsrc
+export gn_gcc_bin_dir info_dir exesfx ro_unixlibpkg ro_libsclpkg
 export ux_bin_dir ux_gcc_bin_dir ro_bin_dir ro_gcc_bin_dir
 export CC CXX
 export CROSS_CC CROSS_CXX CROSS_CFLAGS CROSS_CXXFLAGS
 export CROSS_AR CROSS_AR_FLAGS
 export VERSION TARGET_NAME CFLAGS CXXFLAGS AR AR_FLAGS
-export insthdr
+export insthdr instsrc
 
 all:	build-stg1 build-stg2 build-stg3 build-stg4 build-stg5 build-stg6 \
 	build-stg7
@@ -282,6 +283,7 @@ directories:
 	mkdir -p $(ro_zippkg)
 
 	mkdir -p $(ro_unixlibpkg)/source/clib/o
+	mkdir -p $(ro_libsclpkg)/o
 
 # Install header files for our standard C run-time libraries.
 install_headers:

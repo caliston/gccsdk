@@ -5,6 +5,7 @@
 #
 pkg=`basename $(ro_gccpkg)`
 upkg=`basename $(ro_unixlibpkg)`
+spkg=`basename $(ro_libsclpkg)`
 
 bindir=$(pkg)/bin/$(TARGET_NAME)/$(VERSION)
 libdir=$(pkg)/lib/gcc-lib/$(TARGET_NAME)/$(VERSION)
@@ -113,6 +114,8 @@ UNIXLIBSRCPKG = $(upkg)/\!Boot,feb \
 	$(upkg)/objs \
 	$(upkg)/source
 
+LIBSCLPKG = $(spkg)
+
 all:	install
 
 install:
@@ -137,6 +140,12 @@ install:
 	find $(ro_unixlibpkg) -name "CVS" -type d | xargs rm -rf
 	find $(ro_unixlibpkg) -name "*~*" -or -name "*.orig*" -or -name "*.reg*" -type f | xargs rm -rf
 
+	cp ../libscl/Boot,feb $(ro_libsclpkg)/\!Boot,feb
+	cp ../libscl/Help $(ro_libsclpkg)/\!Help
+	cp ../libscl/Run,feb $(ro_libsclpkg)/\!Run,feb
+	cp ../libscl/Sprites,ff9 $(ro_libsclpkg)/\!Sprites,ff9
+	cp ../libscl/Sprites22,ff9 $(ro_libsclpkg)/\!Sprites22,ff9
+
 # Build the seperate RISC OS GCC zip packages
 package:
 	( cd $(ro_gccpkg)/../ ; \
@@ -151,6 +160,7 @@ package:
 	rm -f $(ro_zippkg)/system.zip; \
 	rm -f $(ro_zippkg)/unixlibbin.zip; \
 	rm -f $(ro_zippkg)/unixlibsrc.zip; \
+	rm -f $(ro_zippkg)/libscl.zip; \
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/gcc.zip $(GCCPKG) ; \
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/gccdoc.zip $(GCCDOCPKG) ; \
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/cc1.zip $(CC1PKG) ; \
@@ -161,5 +171,6 @@ package:
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/utils.zip $(UTILSPKG) ; \
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/system.zip $(SYSTEMPKG) ; \
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/unixlibbin.zip $(UNIXLIBBINPKG) ; \
-	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/unixlibsrc.zip $(UNIXLIBSRCPKG) ; )
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/unixlibsrc.zip $(UNIXLIBSRCPKG) ; \
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/libscl.zip $(LIBSCLPKG) ; )
 
