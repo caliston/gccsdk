@@ -12,7 +12,6 @@ GCCPKG = $(pkg)/\!Boot,feb \
 	$(pkg)/\!Run,feb \
 	$(pkg)/\!Sprites,ff9 \
 	$(pkg)/\!Sprites22,ff9 \
-	$(pkg)/SetFTypes \
 	$(pkg)/Changes \
 	$(pkg)/include \
 	$(pkg)/support \
@@ -110,12 +109,12 @@ package:
 	rm -f $(ro_zippkg)/gpc.zip; \
 	rm -f $(ro_zippkg)/java.zip; \
 	rm -f $(ro_zippkg)/utils.zip; \
-	zip -9r $(ro_zippkg)/gcc.zip $(GCCPKG) ; \
-	zip -9r $(ro_zippkg)/gccdoc.zip $(GCCDOCPKG) ; \
-	zip -9r $(ro_zippkg)/cc1.zip $(CC1PKG) ; \
-	zip -9r $(ro_zippkg)/cc1plus.zip $(CC1PLUSPKG) ; \
-	zip -9r $(ro_zippkg)/g77.zip $(G77PKG) ; \
-	zip -9r $(ro_zippkg)/gpc.zip $(GPCPKG) ; \
-	zip -9r $(ro_zippkg)/java.zip $(JAVAPKG) ; \
-	zip -9r $(ro_zippkg)/utils.zip $(UTILSPKG) ; )
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/gcc.zip $(GCCPKG) ; \
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/gccdoc.zip $(GCCDOCPKG) ; \
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/cc1.zip $(CC1PKG) ; \
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/cc1plus.zip $(CC1PLUSPKG) ; \
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/g77.zip $(G77PKG) ; \
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/gpc.zip $(GPCPKG) ; \
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/java.zip $(JAVAPKG) ; \
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/utils.zip $(UTILSPKG) ; )
 
