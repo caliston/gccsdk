@@ -513,34 +513,6 @@ As said earlier, GCC is a compiler front end. The compilers themselves
 can be found at http://hard-mofo.dsvr.net/gcc
 
 
-Other compiler related utilities
---------------------------------
-
-Listed below is a small set of utilities you might find a useful
-complement to the GNU compilers.
-
-Drlink (an AOF linker):
-  ftp://micros.hensa.ac.uk/micros/arch/riscos/b/b071/drlink.arc
-
-UnixLib (a C library emulating BSD, System V and POSIX functions):
-  http://hard-mofo.dsvr.net/unixlib
-
-Bison (a yacc parser):
-  ftp://ftp.demon.co.uk/pub/archimedes/gnu/bison124.spk
-
-Diffutils (file difference and patch programs):
-  ftp://ftp.demon.co.uk/pub/archimedes/gnu/diffdist.spk
-
-Flex (a lexical analyser: Unix Lex equivalent):
-  ftp://ftp.demon.co.uk/pub/archimedes/gnu/flex252.spk
-
-Indent (C source code formatter):
-  ftp://ftp.demon.co.uk/pub/archimedes/gnu/indent.spk
-
-Sed (batch stream editor):
-  ftp://ftp.demon.co.uk/pub/archimedes/gnu/sed.spk
-
-
 Distribution patches
 --------------------
 
