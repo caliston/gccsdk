@@ -1,8 +1,8 @@
 # Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2002/07/19 13:12:29 $
-# $Revision: 1.2.2.10 $
+# $Date: 2002/07/19 13:16:20 $
+# $Revision: 1.2.2.11 $
 # $State: Exp $
 # $Author: admin $
 
@@ -201,8 +201,8 @@ SYS =	sys.o.alarm sys.o.brk sys.o.debug sys.o.errlist \
 SYS_ASM =	sys.o._alloca sys.o._divsi3 sys.o._divtest \
 	sys.o._exec sys.o._jmp sys.o._mem sys.o._mman sys.o._modsi3 sys.o._os \
 	sys.o._profile sys.o._sigjmp sys.o._sdiv sys.o._sdiv10 sys.o._smod \
-	sys.o._syslib sys.o._udiv sys.o._udiv10 sys.o._udivsi3 sys.o._umod \
-	sys.o._umodsi3 sys.o._vfork
+	sys.o._swi sys.o._syslib sys.o._udiv sys.o._udiv10 sys.o._udivsi3 \
+	sys.o._umod sys.o._umodsi3 sys.o._vfork
 
 TIME =	time.o.adjtime time.o.asctime time.o.broken time.o.calendconv \
 	time.o.ctime time.o.difftime time.o.ftime time.o.getitmr \
@@ -831,6 +831,7 @@ sys.o._mman:		sys.s._mman <UnixHdr$Dir>.unixlib.s.asm_dec
 sys.o._os:		sys.s._os <UnixHdr$Dir>.unixlib.s.asm_dec
 sys.o._jmp:		sys.s._jmp <UnixHdr$Dir>.unixlib.s.asm_dec
 sys.o._sigjmp:		sys.s._sigjmp <UnixHdr$Dir>.unixlib.s.asm_dec
+sys.o._swi:		sys.s._swi <UnixHdr$Dir>.unixlib.s.asm_dec
 sys.o._syslib:		sys.s._syslib <UnixHdr$Dir>.unixlib.s.asm_dec
 sys.o._vfork:		sys.s._vfork <UnixHdr$Dir>.unixlib.s.asm_dec
 
