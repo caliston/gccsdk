@@ -1,19 +1,19 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/dev.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: dev.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: dev.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 /* #define DEBUG */
-
+#define _GNU_SOURCE
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -166,8 +166,8 @@ __fsopen (struct __unixlib_fd *file_desc, const char *filename, int mode)
       if ((fflag & O_ACCMODE) == O_RDONLY && !(fflag & O_CREAT))
 	/* File doesn't exist and O_CREAT was not specified.  */
 	return (void *) __set_errno (ENOENT);
-      if (fflag & O_ACCMODE)
-	fflag |= O_CREAT;
+      /*if (fflag & O_ACCMODE)
+	fflag |= O_CREAT;*/
     }
 
   if (fflag & O_CREAT)
