@@ -127,7 +127,7 @@ local int wild_recurse(whole, wildtail) char *whole; char *wildtail;
 }
 
 int wild(p)
-char *p;
+const char *p;
 {
   char *path;
   int toret;
@@ -154,12 +154,12 @@ char *p;
 }
 
 int procname(n, caseflag)
-char *n;                /* name to process */
+const char *n;          /* name to process */
 int caseflag;           /* true to force case-sensitive match */
 /* Process a name or sh expression to operate on (or exclude).  Return
    an error code in the ZE_ class. */
 {
-  char *a;              /* path and name for recursion */
+  const char *a;        /* path and name for recursion */
   DIR *d;               /* directory stream from opendir() */
   char *e;              /* pointer to name from readd() */
   int m;                /* matched flag */
@@ -241,13 +241,13 @@ int caseflag;           /* true to force case-sensitive match */
 }
 
 char *ex2in(x, isdir, pdosflag)
-char *x;                /* external file name */
+const char *x;                /* external file name */
 int isdir;              /* input: x is a directory */
 int *pdosflag;          /* output: force MSDOS file attributes? */
 /* Convert the external file name to a zip file name, returning the malloc'ed
    string or NULL if not enough memory. */
 {
-  char *n;              /* internal file name (malloc'ed) */
+  const char *n;        /* internal file name (malloc'ed) */
   char *t;              /* shortened name */
   char *tmp;
   int dosflag;
