@@ -15,7 +15,7 @@ $(libunixobj)/%.o: %.c
 	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ -c $< $(INCLUDES) $(CFL)
 
 $(libunixobj)/%.o: %.s
-	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ -c $< $(CFL1)
+	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ -c $< $(CFL) $(CFL1)
 
 COMPLEX = $(libunixobj)/complex/cabs.o \
 	$(libunixobj)/complex/cacos.o \
