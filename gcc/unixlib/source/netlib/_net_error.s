@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/netlib/_net_error.s,v $
-; $Date: 2001/01/29 15:10:20 $
-; $Revision: 1.2 $
+; $Date: 2002/07/19 13:12:30 $
+; $Revision: 1.2.2.1 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -25,6 +25,7 @@
 	NAME	__net_error_simple_entry
 |__net_error_simple_entry|
 	MOV	lr, ip		; restore normality
+	B	|__net_error|
 ;
 ; continue through into standard net_error code
 ; standard net_error entered in SVC with BLVS immediately after SWI

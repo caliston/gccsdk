@@ -1,3 +1,10 @@
+Mon Aug  5 10:15:40 2002  Peter Naulls  <peter@chocky.org>
+
+	* netlib/_net_error.s (__net_error_simple_entry): Add branch
+	to jump over recent NAME entry.
+
+	* netlib/connect.c (connect): Update debugging code.
+	
 Mon Aug  5 10:09:40 2002  Nick Burrett  <nick@dsvr.net>
 
 	* unix/unix.c (verify_redirection): A space is not permitted between
