@@ -590,6 +590,7 @@ install_headers:
 	$(insthdr) clib "*.h" unixlib $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
 	$(insthdr) clib/arpa "*.h" unixlib/arpa $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
 	$(insthdr) clib/machine "*.h" unixlib/machine $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) clib/net "*.h" unixlib/net $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
 	$(insthdr) clib/netinet "*.h" unixlib/netinet $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
 	$(insthdr) clib/sys "*.h" unixlib/sys $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
 	$(insthdr) clib/unixlib "*.[hs]" unixlib/unixlib $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
