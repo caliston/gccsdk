@@ -1,4 +1,4 @@
-Mon Jun 10 11:01:17 2002  Peter Naulls  <peter@chocky.org>
+Mon Jun 10 11:01:17 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	* unix/unix.c (_main): Make a snapshot of `environ' as calls
 	to getenv can change its value, which is considered invalid.
@@ -13,7 +13,7 @@ Thu Apr 18 08:39:08 2002  Alex Waugh  <alex@alexwaugh.com>
 	* stdio/printf.c (vsnprintf): Honour the length parameter even
 	if it is zero.
 
-Thu Apr 18 08:32:42 2002  John Tytgat <John.Tytgat@aaug.net>
+Thu Apr 18 08:32:42 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	* clib/stddef.h: Better protection against multiple includes
 	avoiding the "repeated definition of #define macro xxx" warning
