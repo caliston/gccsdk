@@ -19,9 +19,11 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+char *riscos_to_unix (const char *, char *);
+
 /* A list of prefixes we will try to swap round.  */
 
-static char *prefixes[] =
+static const char *prefixes[] =
 {
   "f", "for", "fpp", "p", "pas", "ph", "gpi",
   "cc", "cxx", "cpp", "c++", "c", "m", "rpo",
@@ -127,7 +129,7 @@ add_directory_name (char *o, const char *i)
 }
 
 static char *
-add_directory_and_prefix (char *output, char *dir, const char *prefix)
+add_directory_and_prefix (char *output, const char *dir, const char *prefix)
 {
   /* Output in the form: 'dir.prefix' */
   strcpy (output, dir);
@@ -142,7 +144,7 @@ add_directory_and_prefix (char *output, char *dir, const char *prefix)
 static int
 is_prefix (const char *name)
 {
-  char *t1;
+  const char *t1;
   int x;
   /* If there is more than one dot left in the filename, then this
      cannot be the prefix.  */
@@ -373,7 +375,6 @@ static void test (const char *input)
 int
 main (void)
 {
-  char out[256], name[256];
   test ("machmode.def");
   test ("DeskLib:foobar.h");
   test ("IDEFS::HD.$.Work.gcc.gcc-272.config.arm.c.rname");
