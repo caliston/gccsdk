@@ -1,3 +1,8 @@
+Sat Aug 17 11:58:29 2002  Alex Waugh  <alex@alexwaugh.com>
+
+	* unix/fstat.c (fstat): Return true extent, rather than file
+	allocation size.
+
 Sat Aug 17 11:51:39 2002  Peter Naulls  <peter@chocky.org>
 
 	* unixlib/local.h (__RISCOSIFY_FILETYPE_SET): New macro.
