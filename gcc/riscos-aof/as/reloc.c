@@ -532,7 +532,7 @@ relocOutput (FILE * outfile, Symbol * area)
 {
   Reloc *relocs;
   AofReloc areloc;
-  int How, loop, ip;
+  int How, loop = 0, ip;
   for (relocs = area->area.info->relocs; relocs; relocs = relocs->more)
     {
       switch (relocs->Tag)

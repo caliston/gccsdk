@@ -120,7 +120,7 @@ CanonicaliseFile (const FILE * fh)
 static char filename[1024];
 
 char *
-CanonicaliseFile (const FILE * fh)
+CanonicaliseFile (FILE * fh)
 /* There's probably an easier way to look up the filename associated with a
  * given handle which doesn't rely on the proc filesystem... */
 {
