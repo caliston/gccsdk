@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_syslib.s,v $
-; $Date: 2001/09/06 14:52:00 $
-; $Revision: 1.3.2.7 $
+; $Date: 2001/12/19 16:52:15 $
+; $Revision: 1.3.2.8 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -14,6 +14,71 @@
 NO_MEMORY   * 0
 NO_CALLASWI * 1
 NO_SUL      * 2
+
+	AREA	|C$$data|, DATA
+
+dynamic_deletion
+	DCD	0
+	DCB	"XXXXXXXXXX"
+dynamic_area_name_end
+	DCB	"$Heap", 0
+	ALIGN
+
+	IMPORT	|Image$$RO$$Base|
+	IMPORT	|Image$$RW$$Base|
+	IMPORT	|Image$$RW$$Limit|
+	EXPORT	|__cli|		; CLI from OS_GetEnv
+	EXPORT	|__base|	; BASE (application = 0x8000)
+	EXPORT	|__lomem|	; LOMEM
+	EXPORT	|__rwlimit|
+	EXPORT	|__himem|	; HIMEM from OS_GetEnv
+	EXPORT	|__break|	; the 'break'
+	EXPORT	|__stack|	; stack limit
+	EXPORT	|__stack_limit|	; lower stack limit
+	EXPORT	|__time|	; start time - 5 byte format
+	EXPORT	|__real_break|  ; top limit of dynamic area allocated
+	EXPORT	|__fpflag|
+	EXPORT	|__taskwindow|  ; non-zero if executing in a TaskWindow
+	EXPORT	|__wimpprogram| ; non-zero if executing as a Wimp program
+	EXPORT	|__sigstk|	; stack for callback signals
+	EXPORT	|__sigstksize|	; size of callback signal stack
+	EXPORT	|__dynamic_num|
+	EXPORT	|__u|		; pointer to proc structure
+		
+	; Altering this structure will require fixing __main.
+struct_base
+|__cli|		DCD	0				; offset = 0
+|__himem|	DCD	0				; offset = 4
+|__time|	DCD	0, 0	; low word, high byte	; offset = 8
+|__stack|	DCD	0				; offset = 16
+
+|__robase|	DCD	|Image$$RO$$Base|		; offset = 20
+|__rwlimit|	DCD	|Image$$RW$$Limit|		; offset = 24
+|__base|	DCD	0				; offset = 28
+
+|__lomem|	DCD	0				; offset = 32
+|__break|	DCD	0				; offset = 36
+|__stack_limit|	DCD	0				; offset = 40
+
+|__rwbase|	DCD	|Image$$RW$$Base|		; offset = 44
+|__real_break|	DCD	0				; offset = 48
+|__fpflag|	DCD	0				; offset = 52
+
+|__taskwindow|	DCD	0				; offset = 56
+|__wimpprogram|	DCD	0				; offset = 60
+|__sigstk|	DCD	0				; offset = 64
+|__sigstksize|	DCD	4096				; offset = 68
+
+|__dynamic_num|	DCD	-1				; offset = 72
+|__u|		DCD	0				; offset = 76
+
+	AREA	|C$$zidata|, DATA, NOINIT
+
+	; This space is reserved for UnixLib to store the environment handlers
+	; of the calling application.
+	EXPORT |__calling_environment|
+|__calling_environment|
+	% 204
 
 	AREA	|C$$code|, CODE, READONLY
 
@@ -39,7 +104,9 @@ NO_SUL      * 2
 	EXPORT	|__main|
 
 |rmensure|
-	DCB "RMEnsure SharedUnixLibrary 1.00 RMLoad System:Modules.SharedULib", 0
+	DCB "RMEnsure SharedUnixLibrary 1.00 RMLoad System:Modules.SharedULib"
+	DCB 0
+	ALIGN
 
 	ENTRY
 |__main|
@@ -66,7 +133,6 @@ NO_SUL      * 2
 	; Trampolines (for the un-initiated) are little code fragments that
 	; execute in stack space.
 	MOV	sp, a2
-
 	
 	; For simplicity, the first X bytes of stack is reserved for the
 	; signal callback stack.
@@ -204,7 +270,7 @@ t01
 	SUB	a1, a1, #1	; back up to point at terminator char
 
 	; use a maximum of 10 characters from the program name
-	LDR	v5, =dynamic_area_name_end
+	LDR	v5, =|dynamic_area_name_end|
 
 	SUB	a4, a1, #10
 	CMP	a4, a2
@@ -556,72 +622,6 @@ handlers
 	LDR	a1, =struct_base
 	LDR	a1, [a1, #52]	; __fpflag
 	return	AL, pc, lr
-
-	AREA	|C$$zidata|, DATA, NOINIT
-
-	; This space is reserved for UnixLib to store the environment handlers
-	; of the calling application.
-	EXPORT |__calling_environment|
-|__calling_environment|
-	% 204
-
-	AREA	|C$$data|, DATA
-
-dynamic_deletion
-	DCD	0
-	DCB	"XXXXXXXXXX"
-dynamic_area_name_end
-	DCB	"$Heap", 0
-	ALIGN
-
-	
-	IMPORT	|Image$$RO$$Base|
-	IMPORT	|Image$$RW$$Base|
-	IMPORT	|Image$$RW$$Limit|
-	EXPORT	|__cli|		; CLI from OS_GetEnv
-	EXPORT	|__base|	; BASE (application = 0x8000)
-	EXPORT	|__lomem|	; LOMEM
-	EXPORT	|__rwlimit|
-	EXPORT	|__himem|	; HIMEM from OS_GetEnv
-	EXPORT	|__break|	; the 'break'
-	EXPORT	|__stack|	; stack limit
-	EXPORT	|__stack_limit|	; lower stack limit
-	EXPORT	|__time|	; start time - 5 byte format
-	EXPORT	|__real_break|  ; top limit of dynamic area allocated
-	EXPORT	|__fpflag|
-	EXPORT	|__taskwindow|  ; non-zero if executing in a TaskWindow
-	EXPORT	|__wimpprogram| ; non-zero if executing as a Wimp program
-	EXPORT	|__sigstk|	; stack for callback signals
-	EXPORT	|__sigstksize|	; size of callback signal stack
-	EXPORT	|__dynamic_num|
-	EXPORT	|__u|		; pointer to proc structure
-		
-	; Altering this structure will require fixing __main.
-struct_base
-|__cli|		DCD	0				; offset = 0
-|__himem|	DCD	0				; offset = 4
-|__time|	DCD	0, 0	; low word, high byte	; offset = 8
-|__stack|	DCD	0				; offset = 16
-
-|__robase|	DCD	|Image$$RO$$Base|		; offset = 20
-|__rwlimit|	DCD	|Image$$RW$$Limit|		; offset = 24
-|__base|	DCD	0				; offset = 28
-
-|__lomem|	DCD	0				; offset = 32
-|__break|	DCD	0				; offset = 36
-|__stack_limit|	DCD	0				; offset = 40
-
-|__rwbase|	DCD	|Image$$RW$$Base|		; offset = 44
-|__real_break|	DCD	0				; offset = 48
-|__fpflag|	DCD	0				; offset = 52
-
-|__taskwindow|	DCD	0				; offset = 56
-|__wimpprogram|	DCD	0				; offset = 60
-|__sigstk|	DCD	0				; offset = 64
-|__sigstksize|	DCD	4096				; offset = 68
-
-|__dynamic_num|	DCD	-1				; offset = 72
-|__u|		DCD	0				; offset = 76
 
 	END
 

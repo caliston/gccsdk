@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/printf.c,v $
- * $Date: 2001/09/02 10:18:51 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/11 14:16:00 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: printf.c,v 1.2.2.1 2001/09/02 10:18:51 admin Exp $";
+static const char rcs_id[] = "$Id: printf.c,v 1.2.2.2 2001/09/11 14:16:00 admin Exp $";
 #endif
 
 /*-
@@ -53,7 +53,7 @@ static const char rcs_id[] = "$Id: printf.c,v 1.2.2.1 2001/09/02 10:18:51 admin 
 static char sccsid[] = "@(#)vfprintf.c	8.1 (Berkeley) 6/4/93";
 #endif
 static const char rcsid[] =
-		"$Id: printf.c,v 1.2.2.1 2001/09/02 10:18:51 admin Exp $";
+		"$Id: printf.c,v 1.2.2.2 2001/09/11 14:16:00 admin Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -68,6 +68,7 @@ static const char rcsid[] =
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <stdarg.h>
 #include <wchar.h>
 
@@ -333,7 +334,6 @@ vfprintfsub(FILE *fp, size_t max, const char *fmt0, va_list ap)
 	int size;		/* size of converted field or string */
 	char *xdigs;		/* digits for [xX] conversion */
 	char buf[BUF];		/* space for %c, %[diouxX], %[eEfgG] */
-	char ox[2];		/* space for 0x hex-prefix */
 	void **argtable;	/* args, built due to positional arg */
 	void *statargtable [STATIC_ARG_TBL_SIZE];
 	int nextarg;		/* 1-based argument index */
@@ -520,7 +520,7 @@ longchar:		flags = (flags & ~LONGINT) | WCHAR;
 				mbstate_t ps = {0,0};
 
 				wintval = GETARG(wint_t);
-				size    = wcrtomb(temp, &wintval, &ps);
+				size    = wcrtomb(temp, wintval, &ps);
 				if (size == -1 || size > max) {
 				        /* invalid character - write nothing? */
 				        size = 0;
@@ -907,7 +907,7 @@ number:			if ((dprec = prec) >= 0)
 
                 if (max < 1 || (flags & STOP))
                 {
-                    ret == EOF;
+                    ret = EOF;
                     break;
                 }
 	}
