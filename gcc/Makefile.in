@@ -33,7 +33,7 @@ ux_gccpkg=@prefix@
 
 # Installation directory of RISC OS binaries i.e. the stage 2 compiler.
 ro_gccpkg=@with_riscos_dist@/!gcc
-ro_syspkg=@with_riscos_dist@/!system
+ro_syspkg=@with_riscos_dist@/!System
 
 # Installation directory of RISC OS distribution packaged as zip files.
 ro_zippkg=@with_riscos_pkg@
