@@ -8,8 +8,7 @@ pkg=`basename $(ro_gccpkg)`
 bindir=$(pkg)/bin/$(TARGET_NAME)/$(VERSION)
 libdir=$(pkg)/lib/gcc-lib/$(TARGET_NAME)/$(VERSION)
 
-GCCPKG = $(pkg)/\!Boot,feb \
-	$(pkg)/\!Run,feb \
+GCCPKG = $(pkg)/\!Run,feb \
 	$(pkg)/\!Sprites,ff9 \
 	$(pkg)/\!Sprites22,ff9 \
 	$(pkg)/\!Help \
@@ -97,7 +96,6 @@ all:	install
 install:
 	for dir in bin docs examples support sys; do \
 		cp -pR $$dir $(ro_gccpkg) ; done
-	cp Boot,feb $(ro_gccpkg)/\!Boot,feb
 	cp Run,feb $(ro_gccpkg)/\!Run,feb
 	cp Sprites,ff9 $(ro_gccpkg)/\!Sprites,ff9
 	cp Sprites22,ff9 $(ro_gccpkg)/\!Sprites22,ff9
