@@ -182,6 +182,7 @@ install_headers:
 		$(insthdr) stl "$$hdr" stl $(ux_gccpkg)/$(gn_gplusplus_include_dir) $(ro_gccpkg)/$(gn_gplusplus_include_dir); \
 	done
 	$(insthdr) std "*.h" std $(ux_gccpkg)/$(gn_gplusplus_include_dir) $(ro_gccpkg)/$(gn_gplusplus_include_dir)
+	$(insthdr) std "*.cc" std $(ux_gccpkg)/$(gn_gplusplus_include_dir) $(ro_gccpkg)/$(gn_gplusplus_include_dir)
 
 	for hdr in cassert cctype cerrno cfloat ciso646 climits clocale \
 		cmath complex complex.h csetjmp csignal cstdarg cstddef \
