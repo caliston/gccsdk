@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
-; $Source: /usr/local/cvsroot/unixlib/source/sys/s/_jmp,v $
-; $Date: 2000/12/21 15:09:13 $
-; $Revision: 1.11 $
+; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_jmp.s,v $
+; $Date: 2001/01/29 15:10:21 $
+; $Revision: 1.2 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -108,7 +108,7 @@ longjmp
 	; once by using this position in the jmp_buf as the return
 	; value for vret!!!!
 	STR	a1, [v1]
-	[	APCS32 = "no"
+	[ {config} = 26
 	LDMIA	v1, {a1, v1, v2, v3, v4, v5, v6, fp, sp, pc}^
 	|
 	LDMIA	v1, {a2, v1, v2, v3, v4, v5, v6, fp, sp, pc}

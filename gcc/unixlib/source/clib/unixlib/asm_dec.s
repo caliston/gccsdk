@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
-; $Source: /usr/local/cvsroot/unixlib/source/clib/unixlib/s/asm_dec,v $
-; $Date: 2000/12/21 15:09:13 $
-; $Revision: 1.21 $
+; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/asm_dec.s,v $
+; $Date: 2001/01/29 15:10:19 $
+; $Revision: 1.2 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -98,7 +98,7 @@ FFlag	EQU	&04000000	; FIRQ disable
 
 	MACRO
 	return	$cond, $dstreg, $srcreg
-	[	APCS32 = "no"
+	[ {config} = 26
 	MOV$cond.S	$dstreg, $srcreg
 	|
 	MOV$cond	$dstreg, $srcreg
@@ -107,7 +107,7 @@ FFlag	EQU	&04000000	; FIRQ disable
 
 	MACRO
 	stackreturn	$cond, $regs
-	[	APCS32 = "no"
+	[ {config} = 26
 	LDM$cond.FD	sp!, {$regs}^
 	|
 	LDM$cond.FD	sp!, {$regs}

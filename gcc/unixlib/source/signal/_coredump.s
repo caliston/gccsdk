@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
-; $Source: /usr/local/cvsroot/unixlib/source/signal/s/_coredump,v $
-; $Date: 2000/12/21 15:09:13 $
-; $Revision: 1.6 $
+; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_coredump.s,v $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -272,7 +272,7 @@ backtrace_reinstall_loop
 
 	LDR	ip, |__backtrace_reg_ptr|
 	MOV	a1, #1	; for the benefit of _write_corefile, which returns 1
-	[	APCS32 = "no"
+	[	{config} = 26
 	LDMIA	ip, {v4, v5, v6, pc}^
 	|
 	LDMIA	ip, {v4, v5, v6, pc}

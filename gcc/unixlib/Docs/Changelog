@@ -1,3 +1,14 @@
+Tue Aug  7 17:44:26 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* signal/_coredump.s (backtrack_reinstall_loop): Replace occurrances
+	of the check for APCS32 with {config}=26.
+	* signal/sigexec.s (__unixlib_exec_sigstack): Likewise.
+	(__unixlib_exec_sigstack_bsd): Likewise.
+	(__unixlib_exec_sig): Likewise.
+	* unixlib/asm_dec.s (MACRO return): Likewise.
+	(MACRO stackreturn): Likewise.
+	* sys/_jmp.s (__longjmp_l1): Likewise.
+
 Tue Aug  7 16:13:28 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* conform: New directory.  This is a testsuite extracted from
