@@ -1,3 +1,8 @@
+Thu Aug  9 08:46:48 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
+
+	* assert.c (__assert_fail): Change exp to const char*.
+	* assert.h (__assert_fail): Likewise.
+	
 Wed Aug  8 19:41:10 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* kernel.h (struct stack_chunk): Fix GCC warning.
