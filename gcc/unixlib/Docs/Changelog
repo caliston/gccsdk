@@ -1,3 +1,8 @@
+Mon Aug  6 09:11:55 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
+
+	* unix/unix.c (convert_command_line): Fix off-by-one error
+	when creating temporary buffer for command line args.
+
 Sat Aug 04 15:29:12 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* sys/exec.c (set_dde_cli): Don't use strchr.

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/unix/c/unix,v $
- * $Date: 2000/08/17 16:16:07 $
- * $Revision: 1.33 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix,v 1.33 2000/08/17 16:16:07 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 #include <stdlib.h>
@@ -645,7 +645,7 @@ convert_command_line (struct proc *process, const char *cli, int cli_size)
 
   /* A temporary buffer for the command line arguments, holds a
      particular argument prior to it being added to the argv array.  */
-  temp = (char *) malloc (cli_size);
+  temp = (char *) malloc (cli_size + 1);
 
   argc = 0;
   argv = (char **) malloc ((argc + 1) * sizeof (char *));
