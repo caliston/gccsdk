@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_signal.s,v $
-; $Date: 2001/09/06 14:52:00 $
-; $Revision: 1.4.2.6 $
+; $Date: 2001/09/11 14:16:00 $
+; $Revision: 1.4.2.7 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -24,7 +24,7 @@
 
 	IMPORT	errno
 	IMPORT	sys_errlist
-	IMPORT	|__uinixlib_raise_signal|
+	IMPORT	|__unixlib_raise_signal|
 
 ;-----------------------------------------------------------------------
 ; static void __raise (int signo)
@@ -82,15 +82,15 @@
 	LDR     a2, =|__ul_errbuf_errblock|
 	MOV	a3, #|__ul_errbuf__size|
 |__seterr.00|
-	LDMIA	a1!, {a4,v1-v5,ip,lr}	; yes, increment after is correct.
-	STMIB	a2!, {a4,v1-v5,ip,lr}	; yes, increment before is correct.
+	LDMIA	a1!, {a4, v1-v5, ip, lr}
+	STMIA	a2!, {a4, v1-v5, ip, lr}
 	SUBS	a3, a3, #8*4
 	BNE	|__seterr.00|
 
 	MOV	a1, #0			; ensure zero-terminated.
-	STRB	a1, [a2, #3]
+	STRB	a1, [a2, #-1]
 
-	LDMFD	sp!, {v1-v5,pc}^	
+	LDMFD	sp!, {v1-v5, pc}^	
 
 ;-----------------------------------------------------------------------
 ; _kernel_oserror *_kernel_last_oserror (void)

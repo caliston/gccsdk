@@ -1,3 +1,9 @@
+Fri Sep 21 11:11:44 2001  John Tytgat  <John.Tytgat@aaug.net>
+
+	* signal/_signal.s (__seterr): Wrote 4 bytes too far in
+	__ul_errbuf_errblock so that next zero initialised variable got
+	nuked.
+
 Fri Sep 14 15:00:02 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	This is part one of a large header file cleanup.  The patch
