@@ -497,6 +497,8 @@ static arealist *add_newarea(filelist *fp, areaentry *aep, unsigned int atattr, 
     debugsize+=aep->arsize;
   }
   else if ((atattr & ATT_CODE)!=0) {		/* Code areas */
+    got_32bitapcs = got_32bitapcs || ((atattr & ATT_32BIT)!=0);
+    got_26bitapcs = got_26bitapcs || ((atattr & ATT_32BIT)==0);
     if ((atattr & ATT_RDONLY)!=0) {
       insert_area(&rocodelist, &rocodelast, ap);
     }
