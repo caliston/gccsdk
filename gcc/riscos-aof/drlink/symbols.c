@@ -974,7 +974,10 @@ bool resolve(void) {
       if (fp->symtries.wantedsyms!=NIL) ok = check_library(fp);
       fp = fp->nextfile;
     }
-    if (numfound!=0) lastlp = lp;
+/* NAB++ */
+    /*if (numfound!=0) lastlp = lp;*/
+    if (numfound!=0 || lastlp==NIL) lastlp = lp;
+/* NAB++ */
     close_library(lp);
     lp = lp->libflink;
   }
