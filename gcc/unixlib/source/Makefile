@@ -279,6 +279,16 @@ PWD =	$(libunixobj)/pwd/fgetpwent.o \
 	$(libunixobj)/pwd/putpwent.o \
 	$(libunixobj)/pwd/pwdread.o
 
+GRP =	$(libunixobj)/grp/fgetgrent.o \
+	$(libunixobj)/grp/fgetgrentr.o \
+	$(libunixobj)/grp/getgroups.o \
+	$(libunixobj)/grp/getgrent.o \
+	$(libunixobj)/grp/getgrnam.o \
+	$(libunixobj)/grp/getgrnam_r.o \
+	$(libunixobj)/grp/getgrgid.o \
+	$(libunixobj)/grp/getgrgid_r.o \
+	$(libunixobj)/grp/grpread.o
+
 RESOURCE =	$(libunixobj)/resource/getegid.o \
 	$(libunixobj)/resource/geteuid.o \
 	$(libunixobj)/resource/getgid.o \
@@ -568,7 +578,7 @@ WCHAR = $(libunixobj)/wchar/btowc.o \
 #  wchar.o.wcstold wchar.o.wcstod wchar.o.wcstof
 
 C_OBJS = $(COMPLEX) $(MATH) $(OBJS) $(COMMON) $(LOCALE) $(NETLIB) \
-	$(PWD) $(RESOURCE) $(SIGNAL) $(STDIO) $(SYS) $(TIME) \
+	$(PWD) $(GRP) $(RESOURCE) $(SIGNAL) $(STDIO) $(SYS) $(TIME) \
 	$(TERMIOS) $(UNIX) $(WCHAR)
 
 ASM_OBJS = $(MATH_ASM) $(COMMON_ASM) $(GCCCOMPAT_ASM) $(NETLIB_ASM) \
@@ -852,6 +862,16 @@ $(libunixobj)/pwd/getpwuid.o: pwd/getpwuid.c
 $(libunixobj)/pwd/getpwuid_r.o: pwd/getpwuid_r.c
 $(libunixobj)/pwd/putpwent.o: pwd/putpwent.c
 $(libunixobj)/pwd/pwdread.o: pwd/pwdread.c
+
+$(libunixobj)/grp/fgetgrent.o: grp/fgetgrent.c
+$(libunixobj)/grp/fgetgrentr.o: grp/fgetgrentr.c
+$(libunixobj)/grp/getgroups.o: grp/getgroups.c
+$(libunixobj)/grp/getgrent.o: grp/getgrent.c
+$(libunixobj)/grp/getgrnam.o: grp/getgrnam.c
+$(libunixobj)/grp/getgrnam_r.o: grp/getgrnam_r.c
+$(libunixobj)/grp/getgrgid.o: grp/getgrgid.c
+$(libunixobj)/grp/getgrgid_r.o: grp/getgrgid_r.c
+$(libunixobj)/grp/grpread.o: grp/grpread.c
 
 $(libunixobj)/resource/getegid.o: resource/getegid.c
 $(libunixobj)/resource/geteuid.o: resource/geteuid.c

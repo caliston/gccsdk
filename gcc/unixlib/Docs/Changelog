@@ -1,3 +1,19 @@
+Tue Sep 11 14:32:08 2001  Alex Waugh  <ajw498@ecs.soton.ac.uk>
+
+	* grp.h: New header file.
+	* grp/fgetgrent.c: New file.
+	* grp/fgetgrentr.c: New file.
+	* grp/getgrent.c: New file.
+	* grp/getgrgid.c: New file.
+	* grp/getgrgid_r.c: New file.
+	* grp/getgrnam.c: New file.
+	* grp/getgrnam_r.c: New file.
+	* grp/getgroups.c: New file.
+	* grp/grpread.c: New file.
+
+	* pwd/pwdread.c (__pwdread): Make local buffer static to
+	avoid referencing problems.
+	
 Tue Sep 11 14:18:32 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* unix/select.c (select): Use recommended setting of R1 for
