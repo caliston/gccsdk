@@ -35,7 +35,7 @@ get_directory_name (const char *input, char *output)
   if (*input == '\0')
     return 0;
 
-#ifndef CROSS_COMPILE
+  //#ifndef CROSS_COMPILE
   /* RISC OS directory names are delimited by a '.'.
      We must check for a few Unix styles though.  */
   t = strchr (input, '.');
@@ -52,7 +52,7 @@ get_directory_name (const char *input, char *output)
       output[t - input] = '\0';
       return 1;
     }
-#endif
+  //#endif
   /* If we reach here, we have two possibilities:
      1. fname
      2. directory/fname
@@ -280,7 +280,6 @@ riscos_to_unix (const char *filename, char *output)
 #ifdef DEBUG
       printf ("i = '%s', tempbuf = '%s'\n", i, tempbuf);
 #endif
-#ifndef CROSS_COMPILE
       if (one_dot (i))
 	{
 	  char name[128];
@@ -313,8 +312,14 @@ riscos_to_unix (const char *filename, char *output)
 	      /* Method 3. No prefixes in the filename.
 	         tempbuf contains the first section.
 	         name contains the last bit.  */
+#ifdef CROSS_COMPILE
+	      output = add_directory_name (output, tempbuf);
+	      output[-1] = '.';
+	      output = add_directory_name (output, name);
+#else
 	      output = add_directory_name (output, tempbuf);
 	      output = add_directory_name (output, name);
+#endif
 	      /* Remove the final backslash automatically added in by
 	         add_directory_name.  */
 	      output[-1] = '\0';
@@ -322,7 +327,6 @@ riscos_to_unix (const char *filename, char *output)
 	  flag = 1;
 	}
       else
-#endif
 	{
 	  output = add_directory_name (output, tempbuf);
 	  /* Add 1 to get past dot.  */
@@ -407,6 +411,7 @@ main (void)
   test (".");
   test ("../../arm-riscos-aof/libiberty/libiberty");
   test ("../../bin/arm-riscos-aof/2_95_2/apcs26/hard/arch2/unixlib/libio");
+  test ("Internet:sys.h.time");
   return 0;
 }
 #endif
