@@ -3,7 +3,7 @@
 
 export TLIB
 
-CFLAGS += -Werror -D_GNU_SOURCE
+CFLAGS += -D_GNU_SOURCE
 
 ifeq (${STAGE},stage1)
 bin_dir=$(ux_gccpkg)/$(gn_standard_exec_prefix)
