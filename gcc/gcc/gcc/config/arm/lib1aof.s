@@ -733,7 +733,7 @@ fltdidf_norm_fin
 	CMP	a4, ip /* high */
 	CMPEQ	a3, v4 /* low */
 	/* if denominator is lower or the same as the numerator
-	/* signify an extra shift and carry on. */
+	   signify an extra shift and carry on. */
 	ADDLS	lr, lr, #1
 	BLS	|__moddi3.bit_count|
 
@@ -1738,11 +1738,7 @@ next_fp	RN	12
 
 	/* SharedCLibrary style: Current frame is outside current stack
 	   chunk, so current frame's stack is the first in this chunk
-	   and was created via stack extension.
-
-	   This means that x$stack_overflow has copied the current stack
-	   frame somewhere else and then created a new stack frame (in it's
-	   old place) which points to the 'current' frame.  */
+	   and was created via stack extension.  */
 |__builtin_frame_address.shared.c.library|
 	LDR	sc, [sc, #8] /* sc->sc_prev */
 	CMP	sc, #0 /* No previous stack chunk */
@@ -1816,7 +1812,7 @@ temp_lr	RN	2
 	   and remove the pointer to the next stack chunk in the
 	   previous stack chunk.  */
 	MOV	a1, #0
-	STR	a1, [sl, #4]	/* sc->sc_next = 0 */
+	STR	a1, [sc, #4]	/* sc->sc_next = 0 */
 	MOV	a1, sc
 	LDR	sc, [sc, #8]
 	STMFD	sp!, {sc, temp_lr, next_fp}
