@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/tmpfile.c,v $
- * $Date: 2001/08/15 14:26:00 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tmpfile.c,v 1.2.2.1 2001/08/15 14:26:00 admin Exp $";
+static const char rcs_id[] = "$Id: tmpfile.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <string.h>
@@ -36,8 +36,12 @@ static char *
 generate_temporary_filename (char *buf, const char *dir,
 			     const char *file_template)
 {
-  register char *s = buf;
+  char *s = buf;
   unsigned long idx;
+  const int maxidx = (sizeof (letters) - 1) * (sizeof (letters) - 1)
+    * (sizeof (letters) - 1) * (sizeof (letters) - 1)
+    * (sizeof (letters) - 1) * (sizeof (letters) - 1);
+  int loop = 0;
 
   /* Create a pathname, include 'dir' if not null. */
   if (dir)
@@ -57,16 +61,17 @@ generate_temporary_filename (char *buf, const char *dir,
       return NULL;
     }
 
-  idx = 1;
+  idx = __time[0] % maxidx;
   while (1)
     {
-      if (idx >= ((sizeof (letters) - 1) * (sizeof (letters) - 1)
-		  * (sizeof (letters) - 1) * (sizeof (letters) - 1)
-		  * (sizeof (letters) - 1) * (sizeof (letters) - 1)))
+      if (idx >= maxidx)
 	{
-	  /* Couldn't create a suitable temporary filename.  */
-	  break;
+	  idx = 1;
+	  loop ++;
 	}
+      if (loop >= 2)
+	/* Couldn't create a suitable temporary filename.  */
+	break;
 
       s[0] = letters[idx % (sizeof (letters) - 1)];
       s[1] = letters[(idx / (sizeof (letters) - 1)) % (sizeof (letters) - 1)];

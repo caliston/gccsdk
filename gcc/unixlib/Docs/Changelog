@@ -1,3 +1,9 @@
+Tue Jan 31 14:31:05 2002  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* stdio/tmpfile.c (generate_temporary_filename): Randomise
+	filename based on program start time.  This should help to
+	reduce application concurrency issues.
+
 Tue Jan 31 14:31:05 2002  Peter Naulls  <peter@chocky.org>
 
 	* unistd.h (symlink): Declare.
