@@ -97,11 +97,20 @@ void Ar::run ()
   switch (action)
     {
     case ActionInsert:
-    case ActionCreate:
-      if (action == ActionInsert
-	  || argList.length () == 0)
-	library->load ();
+      // Don't error if the library does not exist.  Sliently create
+      // a new one instead.
+      try
+	{
+	  library->load ();
+	}
 
+      catch (BError err)
+	{
+	  // Re-throw the error if it is one we aren't interested in.
+	  if (err.m_err != BError::FileNotFound)
+	    THROW_SPEC_ERR (BError::FileNotFound);
+	};
+    case ActionCreate:
       library->addMembers (argList);
       library->updateOflSymt ();
       library->updateOflTime ();
