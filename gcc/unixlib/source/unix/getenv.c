@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/unix/c/getenv,v $
- * $Date: 2000/08/17 16:16:07 $
- * $Revision: 1.15 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/getenv.c,v $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: getenv,v 1.15 2000/08/17 16:16:07 admin Exp $";
+static const char rcs_id[] = "$Id: getenv.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -18,7 +18,7 @@ static const char rcs_id[] = "$Id: getenv,v 1.15 2000/08/17 16:16:07 admin Exp $
 #include <unistd.h>
 #include <sys/os.h>
 #include <sys/unix.h>
-#include <sys/swis.h>
+#include <swis.h>
 
 /* #define DEBUG 1 */
 

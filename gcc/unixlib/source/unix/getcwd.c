@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/unix/c/getcwd,v $
- * $Date: 2000/08/17 16:16:07 $
- * $Revision: 1.12 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/getcwd.c,v $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: getcwd,v 1.12 2000/08/17 16:16:07 admin Exp $";
+static const char rcs_id[] = "$Id: getcwd.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -20,7 +20,7 @@ static const char rcs_id[] = "$Id: getcwd,v 1.12 2000/08/17 16:16:07 admin Exp $
 
 #include <sys/os.h>
 #include <sys/syslib.h>
-#include <sys/swis.h>
+#include <swis.h>
 #include <sys/unix.h>
 
 #include <unixlib/local.h>

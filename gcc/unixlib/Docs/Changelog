@@ -1,3 +1,47 @@
+Wed Aug  8 09:44:05 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	Work towards a drop-in replacement for the SharedCLibrary.
+	* swis.h: Renamed from sys/swis.h.
+	(_swi, _swix, _FLAGS, _IN): Moved here from sys/os.h.
+	(_INR, _OUT, _OUTR, _BLOCK, _RETURN, _C, _N, _Z): Likewise.
+	* sys/os.h: Delete definitions above.
+	* sys/swis.h: Delete file.
+	* common/fdname.c: Include swis.s, not sys/swis.h.
+	* common/riscosify.c: Likewise.
+	* common/serial.c: Likewise.
+	* locale/ctypetable.c: Likewise.
+	* locale/strcoll.c: Likewise.
+	* locale/strxfrm.c: Likewise.
+	* locale/setlocale.c: Likewise.
+	* resource/initialise.c: Likewise.
+	* stdio/rename.c: Likewise.
+	* sys/brk.c: Likewise.
+	* sys/exec.c: Likewise.
+	* sys/mman.c: Likewise.
+	* sys/vfork.c: Likewise.
+	* sys/syslib.c: Likewise.
+	* time/strftime.c: Likewise.
+	* time/stdtime.c: Likewise.
+	* time/calendconv.c: Likewise.
+	* time/broken.c: Likewise.
+	* time/setitmr.c: Likewise.
+	* time/gmtime.c: Likewise.
+	* time/localtime.c: Likewise.
+	* time/tzset.c: Likewise.
+	* time/mktime.c: Likewise.
+	* unix/dev.c: Likewise.
+	* unix/tty.c: Likewise.
+	* unix/rmdir.c: Likewise.
+	* unix/dirent.c: Likewise.
+	* unix/getcwd.c: Likewise.
+	* unix/getenv.c: Likewise.
+	* unix/pipe.c: Likewise.
+	* unix/uname.c: Likewise.
+	* unix/select.c: Likewise.
+	* unix/unix.c: Likewise.
+	* unix/setenv.c: Likewise.
+	* unix/chdir.c: Likewise.
+
 Tue Aug  7 17:44:26 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* signal/_coredump.s (backtrack_reinstall_loop): Replace occurrances

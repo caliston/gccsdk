@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/locale/c/localeconv,v $
- * $Date: 1997/10/08 12:48:10 $
- * $Revision: 1.7 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/locale/localeconv.c,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: localeconv,v 1.7 1997/10/08 12:48:10 unixlib Exp $";
+static const char rcs_id[] = "$Id: localeconv.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
 #endif
 
 /* Character localisation support. Written by Nick Burrett, 20 July 1997.  */
@@ -20,7 +20,7 @@ static const char rcs_id[] = "$Id: localeconv,v 1.7 1997/10/08 12:48:10 unixlib 
 #include <string.h>
 #include <stdlib.h>
 #include <sys/os.h>
-#include <sys/swis.h>
+#include <swis.h>
 
 /* #define DEBUG */
 

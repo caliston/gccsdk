@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/common/c/riscosify,v $
- * $Date: 2000/06/10 12:59:43 $
- * $Revision: 1.16 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/riscosify.c,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: riscosify,v 1.16 2000/06/10 12:59:43 admin Exp $";
+static const char rcs_id[] = "$Id: riscosify.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -18,8 +18,8 @@ static const char rcs_id[] = "$Id: riscosify,v 1.16 2000/06/10 12:59:43 admin Ex
 #include <string.h>
 #include <unixlib/local.h>
 #include <sys/unix.h>
-#include <sys/swis.h>
 #include <sys/os.h>
+#include <swis.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <unixlib/swiparams.h>

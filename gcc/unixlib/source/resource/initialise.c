@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/resource/c/initialise,v $
- * $Date: 2000/06/03 14:28:30 $
- * $Revision: 1.6 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/resource/initialise.c,v $
+ * $Date: 2001/01/29 15:10:20 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: initialise,v 1.6 2000/06/03 14:28:30 admin Exp $";
+static const char rcs_id[] = "$Id: initialise.c,v 1.2 2001/01/29 15:10:20 admin Exp $";
 #endif
 
 #include <sys/syslib.h>
@@ -19,7 +19,7 @@ static const char rcs_id[] = "$Id: initialise,v 1.6 2000/06/03 14:28:30 admin Ex
 #include <errno.h>
 #include <stdio.h>
 #include <limits.h>
-#include <sys/swis.h>
+#include <swis.h>
 #include <sys/types.h>
 
 /* Initialise the resource limits to calculated initial values.

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/os.h,v $
- * $Date: 2001/08/02 14:57:14 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/08/07 08:16:13 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -64,21 +64,6 @@ extern _kernel_oserror *os_fsctrl (int,const char *,char *,int);
 /* Flag RISC OS error to UNIX.  */
 extern void __seterr (const _kernel_oserror *);
 #endif
-
-extern int _swi (int __swi_no, unsigned int, ...);
-extern _kernel_oserror *_swix (int __swi_no, unsigned int, ...);
-
-#define _FLAGS     0x10 /*use with _RETURN() or _OUT()*/
-#define _IN(i)     (1U << (i))
-#define _INR(i,j)  (~0 << (i) ^ ~0 << ((j) + 1))
-#define _OUT(i)    ((i) != _FLAGS? (1U << (31 - (i))): 1U << 21)
-#define _OUTR(i,j) (~0U >> (i) ^ ~0U >> ((j) + 1))
-#define _BLOCK(i)  (1U << 11 | (unsigned) (i) << 12)
-#define _RETURN(i) ((i) != _FLAGS? (unsigned) (i) << 16: 0xFU << 16)
-#define _C         (1U << 29)
-#define _Z         (1U << 30)
-#define _N         (1U << 31)
-
 
 #ifdef __cplusplus
 	}

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/unix/c/select,v $
- * $Date: 1999/02/07 20:52:57 $
- * $Revision: 1.4 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/select.c,v $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: select,v 1.4 1999/02/07 20:52:57 unixlib Exp $";
+static const char rcs_id[] = "$Id: select.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 /* netlib/socket.c: Written by Peter Burwood, July 1997  */
@@ -20,8 +20,8 @@ static const char rcs_id[] = "$Id: select,v 1.4 1999/02/07 20:52:57 unixlib Exp 
 #include <sys/select.h>
 #include <sys/unix.h>
 #include <sys/dev.h>
-#include <sys/swis.h>
 #include <sys/os.h>
+#include <swis.h>
 #include <sys/syslib.h>
 #include <sys/time.h>
 #include <unixlib/local.h>

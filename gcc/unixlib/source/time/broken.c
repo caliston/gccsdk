@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/time/c/broken,v $
- * $Date: 2000/11/08 10:22:57 $
- * $Revision: 1.5 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/time/broken.c,v $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: broken,v 1.5 2000/11/08 10:22:57 admin Exp $";
+static const char rcs_id[] = "$Id: broken.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 /* Territory time support, written by Nick Burrett on 12 July 1997.  */
@@ -17,7 +17,7 @@ static const char rcs_id[] = "$Id: broken,v 1.5 2000/11/08 10:22:57 admin Exp $"
 #include <time.h>
 #include <locale.h>
 #include <sys/os.h>
-#include <sys/swis.h>
+#include <swis.h>
 #include <unixlib/local.h>
 
 /* Convert broken local time to 5-byte RISC OS time (UTC).  */

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/unix/c/uname,v $
- * $Date: 1997/10/09 20:00:53 $
- * $Revision: 1.10 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/uname.c,v $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: uname,v 1.10 1997/10/09 20:00:53 unixlib Exp $";
+static const char rcs_id[] = "$Id: uname.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -18,7 +18,7 @@ static const char rcs_id[] = "$Id: uname,v 1.10 1997/10/09 20:00:53 unixlib Exp 
 #include <sys/param.h>
 #include <unistd.h>
 #include <sys/os.h>
-#include <sys/swis.h>
+#include <swis.h>
 
 /* Try and extract the help version from the module help string.  */
 static void

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/locale/c/setlocale,v $
- * $Date: 1997/10/08 12:48:10 $
- * $Revision: 1.6 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/locale/setlocale.c,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: setlocale,v 1.6 1997/10/08 12:48:10 unixlib Exp $";
+static const char rcs_id[] = "$Id: setlocale.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
 #endif
 
 /* Locale support. Written by Nick Burrett, 20 July 1997.  */
@@ -20,7 +20,7 @@ static const char rcs_id[] = "$Id: setlocale,v 1.6 1997/10/08 12:48:10 unixlib E
 #include <string.h>
 #include <stddef.h>
 #include <sys/os.h>
-#include <sys/swis.h>
+#include <swis.h>
 
 /* Locale information types. These should correspond to the #defines
    in <locale.h>.  */

@@ -1,15 +1,37 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/sys/h/swis,v $
- * $Date: 1997/10/09 19:59:57 $
- * $Revision: 1.4 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/swis.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
-#ifndef __SYS_SWIS_H
-#define __SYS_SWIS_H
+#ifndef __SWIS_H
+#define __SWIS_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern int _swi (int __swi_no, unsigned int, ...);
+extern _kernel_oserror *_swix (int __swi_no, unsigned int, ...);
+
+#ifdef __cplusplus
+	}
+#endif
+
+#define _FLAGS     0x10 /*use with _RETURN() or _OUT()*/
+#define _IN(i)     (1U << (i))
+#define _INR(i,j)  (~0 << (i) ^ ~0 << ((j) + 1))
+#define _OUT(i)    ((i) != _FLAGS? (1U << (31 - (i))): 1U << 21)
+#define _OUTR(i,j) (~0U >> (i) ^ ~0U >> ((j) + 1))
+#define _BLOCK(i)  (1U << 11 | (unsigned) (i) << 12)
+#define _RETURN(i) ((i) != _FLAGS? (unsigned) (i) << 16: 0xFU << 16)
+#define _C         (1U << 29)
+#define _Z         (1U << 30)
+#define _N         (1U << 31)
 
 #define XOS_Bit                        0x020000
 
@@ -646,3 +668,4 @@
 #define OmniNFS_OmniOp                 0x04a480
 
 #endif
+

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/sys/c/mman,v $
- * $Date: 1997/12/17 22:27:08 $
- * $Revision: 1.5 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/mman.c,v $
+ * $Date: 2001/01/29 15:10:21 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: mman,v 1.5 1997/12/17 22:27:08 unixlib Exp $";
+static const char rcs_id[] = "$Id: mman.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
 /* Definitions for BSD-style memory management.  Generic/4.4 BSD version.  */
@@ -26,7 +26,7 @@ static const char rcs_id[] = "$Id: mman,v 1.5 1997/12/17 22:27:08 unixlib Exp $"
 #include <sys/os.h>
 #include <sys/syslib.h>
 #include <sys/types.h>
-#include <sys/swis.h>
+#include <swis.h>
 #include <unistd.h>
 #include <sys/unix.h>
 #include <string.h>

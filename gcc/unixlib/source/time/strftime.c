@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/time/strftime.c,v $
- * $Date: 2001/01/29 15:10:22 $
- * $Revision: 1.2 $
+ * $Date: 2001/07/24 16:13:28 $
+ * $Revision: 1.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: strftime.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
+static const char rcs_id[] = "$Id: strftime.c,v 1.3 2001/07/24 16:13:28 admin Exp $";
 #endif
 
 /* UnixLib port by Nick Burrett, 13 July 1997.  */
@@ -35,7 +35,7 @@ static const char rcs_id[] = "$Id: strftime.c,v 1.2 2001/01/29 15:10:22 admin Ex
 #include <time.h>
 #include <locale.h>
 #include <sys/os.h>
-#include <sys/swis.h>
+#include <swis.h>
 
 static char *add (const char *, char *, const char *);
 static char *conv (int, const char *, char *, const char *);

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/common/c/serial,v $
- * $Date: 2000/06/10 12:59:43 $
- * $Revision: 1.10 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/serial.c,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: serial,v 1.10 2000/06/10 12:59:43 admin Exp $";
+static const char rcs_id[] = "$Id: serial.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
 #endif
 
 #include <stddef.h>
@@ -17,7 +17,7 @@ static const char rcs_id[] = "$Id: serial,v 1.10 2000/06/10 12:59:43 admin Exp $
 #include <limits.h>
 #include <unixlib/local.h>
 #include <sys/os.h>
-#include <sys/swis.h>
+#include <swis.h>
 
 /* Generate a file serial number. This should distinguish the file from all
    other files on the same device.  DIRECTORY is either NULL and FILENAME
