@@ -1,8 +1,8 @@
 # Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2002/08/19 11:50:59 $
-# $Revision: 1.2.2.16 $
+# $Date: 2002/08/19 15:32:11 $
+# $Revision: 1.2.2.17 $
 # $State: Exp $
 # $Author: admin $
 
@@ -236,7 +236,8 @@ UNIX =	unix.o.access unix.o.alphasort unix.o.chdir unix.o.chmod \
 	unix.o.mkdir unix.o.nice unix.o.open unix.o.pathconf unix.o.pipe \
 	unix.o.poll unix.o.proc unix.o.pselect unix.o.putenv unix.o.read \
 	unix.o.readv unix.o.reopen unix.o.rmdir unix.o.select unix.o.setenv \
-	unix.o.stat unix.o.sync unix.o.sysconf unix.o.truncate unix.o.tty \
+	unix.o.stat unix.o.sync unix.o.sysconf unix.o.syslog \
+	unix.o.truncate unix.o.tty \
 	unix.o.umask unix.o.uname unix.o.unix unix.o.unlink unix.o.utime \
 	unix.o.wait unix.o.wait3 unix.o.wait4 unix.o.waitpid unix.o.write \
 	unix.o.writev
@@ -938,6 +939,7 @@ unix.o.setenv:		unix.c.setenv
 unix.o.stat:		unix.c.stat
 unix.o.sync:		unix.c.sync
 unix.o.sysconf:		unix.c.sysconf
+unix.o.syslog:		unix.c.syslog
 unix.o.truncate:	unix.c.truncate
 unix.o.tty:		unix.c.tty
 unix.o.umask:		unix.c.umask
