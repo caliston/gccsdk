@@ -1,3 +1,7 @@
+Sat Aug 17 12:02:23 2002  Nick Burrett  <nick@dsvr.net>
+
+	* netlib/h_errno.c (h_errno): Change type to int. Include netdb.h.
+
 Sat Aug 17 11:59:58 2002  Nick Burrett  <nick@dsvr.net>
 
 	* netdb.h (h_errno): Declare.
