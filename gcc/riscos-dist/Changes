@@ -1,6 +1,6 @@
 Noteworthy changes to the RISC OS GCCSDK
 
-RISC OS GCC release 2.95.4 release 2 (released XX XXXXXX 2002)
+RISC OS GCC release 2.95.4 release 2 (released 13 November 2002)
 ====================================
 
 * ar: This is an ALF implementation of the Unix archiver.  This is
@@ -21,6 +21,15 @@ RISC OS GCC release 2.95.4 release 2 (released XX XXXXXX 2002)
 * unixlib: usleep gets 1/100th sec resolution.
 
 * gcc: Support hh and icc filename extensions.
+
+* gcc: [BUG48] Tail call optimisation and chunked stacks.
+
+* gcc: [BUG88] Prevent STR code generation where the source and base
+  register are the same.
+
+* bison: [BUG26] Pack bison files in the distribution.
+
+* libscl: Support APCS-32.
 
 RISC OS GCC release 2.95.4 release 1 (released 20 December 2001)
 ====================================
