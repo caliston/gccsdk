@@ -86,6 +86,8 @@ UTILSPKG = $(pkg)/bin/bison$(exesfx) \
 	$(bindir)/apcs26/unixlib/o/libiberty \
 	$(bindir)/apcs26/unixlib/o/libmp
 
+SYSTEMPKG = `basename $(ro_syspkg)`
+
 all:	install
 
 install:
@@ -111,6 +113,7 @@ package:
 	rm -f $(ro_zippkg)/gpc.zip; \
 	rm -f $(ro_zippkg)/java.zip; \
 	rm -f $(ro_zippkg)/utils.zip; \
+	rm -f $(ro_zippkg)/system.zip; \
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/gcc.zip $(GCCPKG) ; \
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/gccdoc.zip $(GCCDOCPKG) ; \
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/cc1.zip $(CC1PKG) ; \
@@ -118,5 +121,6 @@ package:
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/g77.zip $(G77PKG) ; \
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/gpc.zip $(GPCPKG) ; \
 	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/java.zip $(JAVAPKG) ; \
-	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/utils.zip $(UTILSPKG) ; )
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/utils.zip $(UTILSPKG) ; \
+	$(ux_bin_dir)/zip -, -9r $(ro_zippkg)/system.zip $(SYSTEMPKG) ; )
 
