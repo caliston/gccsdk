@@ -1,6 +1,6 @@
 | !Run file for the GCCSDK
 | (c) Copyright Nick Burrett, 1996, 1997, 1998, 1999, 2001
-| Version 1.08 (16 August 2001)
+| Version 1.09 (21 December 2001)
 
 Set GCC$Dir <Obey$Dir>
 
@@ -18,10 +18,6 @@ Set Sys$RCLimit 65536
 
 | Place to store temporary files
 If "<UnixFS$/tmp>" = "" Then Set UnixFS$/tmp <Wimp$ScrapDir>
-
-| Our preferred linker. This will be searched for through the standard
-| search path Acorn's link program is an alternative
-Set GCC$Linker "drlink"
 
 | Ensure correct filename translation for a variety of prefixes
 Set UnixEnv$gcc$sfix "f:for:F:fpp:cc:cxx:cpp:c++:C:ii:rpo:ads:adb:ada:c:m:h:i:s:S:ali:adc:xrb:xrs:l:o:p:pas:ph:gpi:gpc:y"
