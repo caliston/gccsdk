@@ -25,6 +25,9 @@ packages installed on your system, with at *least* these software revisions.
 	gperf		version 2.7.2
 	sed		version 2.05
 
+GNU make is required for building the package as the makefiles use
+extensions not commonly found in the BSD make utility.
+
 Installation
 ------------
 
