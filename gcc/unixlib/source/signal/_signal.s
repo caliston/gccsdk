@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_signal.s,v $
-; $Date: 2002/06/10 11:38:56 $
-; $Revision: 1.4.2.10 $
+; $Date: 2002/07/19 13:12:30 $
+; $Revision: 1.4.2.11 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -288,9 +288,7 @@
 ; For non-serious errors, bit 31 = 0, raise SIGERR.
 ;
 	EXPORT	|__h_error|
-lb1	DCB	"*** UnixLib error handler ***", 0
-	ALIGN
-lb2	DCD	&FF000000 + lb2 - lb1
+	NAME	"*** UnixLib error handler ***"
 |__h_error|
 	; Entered in USR mode. Setup an APCS stack frame
 	; so we can get a proper stack backtrace in case anything

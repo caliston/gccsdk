@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_sigjmp.s,v $
-; $Date: 2001/01/29 15:10:21 $
-; $Revision: 1.2 $
+; $Date: 2002/07/19 13:12:30 $
+; $Revision: 1.2.2.1 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -17,13 +17,14 @@
 	IMPORT	setjmp
 	IMPORT	longjmp
 
+	; sigsetjmp (sigjmp_buf state, int value)
 	EXPORT	sigsetjmp
 	NAME	sigsetjmp
 sigsetjmp
 	; It's best to preserve these registers.
-	STMFD	sp!, {a1, a2, ip, lr}
+	STMFD	sp!, {a1, lr}
 	BL	|__sigsetjmp_helper|
-	LDMFD	sp!, {a1, a2, ip, lr}
+	LDMFD	sp!, {a1, lr}
 	B	setjmp
 
 	; siglongjmp (sigjmp_buf state, int value)

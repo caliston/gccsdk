@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/signal.h,v $
- * $Date: 2002/04/03 07:45:46 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2002/08/18 15:19:06 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -109,7 +109,7 @@ typedef void (*__sighandler_t)(int);
 typedef __sighandler_t sighandler_t;
 
 extern int sys_nsig;		/* = NSIG */
-extern const char *sys_siglist[NSIG];	/* signal messages */
+extern const char * const sys_siglist[NSIG];	/* signal messages */
 
 /* Fake signal functions, based on the BSD versions.  */
 
