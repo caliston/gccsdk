@@ -1,3 +1,8 @@
+Thu Aug 16 10:07:01 2001  Alex Waugh <ajw498@ecs.soton.ac.uk>
+
+	* common/unixify.c (__unixify): Ensure we allocate enough buffer
+	space for the ,xyz filetype extension.
+
 Wed Aug 15 17:22:19 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* signal/_signal.s (__seterr): Prevent corruption of v5.
