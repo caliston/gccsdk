@@ -25,8 +25,8 @@ TARGET_DEFS=@target_defs@
 # The native C and C++ compiler on the host computer
 CC=@CC@
 CXX=@CXX@
-CFLAGS=@CFLAGS@ $(TARGET_DEFS) -MMD
-CXXFLAGS=@CXXFLAGS@ $(TARGET_DEFS) -MMD
+CFLAGS=@CFLAGS@ $(TARGET_DEFS)
+CXXFLAGS=@CXXFLAGS@ $(TARGET_DEFS)
 
 # Installation directory of Unix binaries i.e. the stage 1 compiler.
 ux_gccpkg=@prefix@
@@ -83,8 +83,8 @@ info_dir = $(ro_gccpkg)/docs
 # to build the cross-libraries and cross-tools
 CROSS_CC=$(ux_gccpkg)/$(gn_standard_exec_prefix)/gcc
 CROSS_CXX=$(ux_gccpkg)/$(gn_standard_exec_prefix)/g++
-CROSS_CFLAGS=-O2 $(TARGET_DEFS)
-CROSS_CXXFLAGS=-O2 $(TARGET_DEFS)
+CROSS_CFLAGS=-O2 $(TARGET_DEFS) -mpoke-function-name
+CROSS_CXXFLAGS=-O2 $(TARGET_DEFS) -mpoke-function-name
 
 # Name of the host computers archiver.  This is only used to build
 # libiberty or linking against the cross-compiler.
@@ -156,6 +156,8 @@ build-stg2:	libiberty-stg2 libgcc unixlib gcc-stg2 \
 trg10=apcs26/unixlib
 trg11=apcs26/libscl
 
+trg15=apcs32/libscl
+
 trg20=apcs32/arch3/unixlib
 trg21=apcs32/arch4/unixlib
 
@@ -164,6 +166,8 @@ trg31=apcs32/arch4/libscl
 
 cfl10="CFL=-mapcs-26 -mcpu=arm2 -munixlib"
 cfl11="CFL=-mapcs-26 -mcpu=arm2 -mlibscl"
+
+cfl15="CFL=-mapcs-32 -mcpu=arm6 -mlibscl"
 
 cfl20="CFL=-mapcs-32 -mcpu=arm6 -munixlib"
 cfl21="CFL=-mapcs-32 -mcpu=strongarm -munixlib"
@@ -189,9 +193,9 @@ riscos-aof-stg1:
 riscos-aof-stg2:
 	$(MAKE) -C riscos-aof "STAGE=stage2" "TRG=$(trg10)"
 
-
 libscl:
 	$(MAKE) -C libscl "TRG=$(trg11)" $(cfl11)
+	$(MAKE) -C libscl "TRG=$(trg15)" $(cfl15)
 
 riscos-progs:
 	$(MAKE) -C riscos-progs "TRG=$(trg10)" $(cfl10)
@@ -241,6 +245,7 @@ directories:
 
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg10)
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg11)
+	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg15)
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg20)
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg21)
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg30)
@@ -248,6 +253,7 @@ directories:
 
 	mkdir -p $(ro_gccpkg)/$(gn_gcc_bin_dir)/$(trg10)/o
 	mkdir -p $(ro_gccpkg)/$(gn_gcc_bin_dir)/$(trg11)/o
+	mkdir -p $(ro_gccpkg)/$(gn_gcc_bin_dir)/$(trg15)/o
 	mkdir -p $(ro_gccpkg)/$(gn_gcc_bin_dir)/$(trg20)/o
 	mkdir -p $(ro_gccpkg)/$(gn_gcc_bin_dir)/$(trg21)/o
 	mkdir -p $(ro_gccpkg)/$(gn_gcc_bin_dir)/$(trg30)/o
