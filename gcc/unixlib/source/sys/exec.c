@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/exec.c,v $
- * $Date: 2001/09/14 14:01:17 $
- * $Revision: 1.2.2.9 $
+ * $Date: 2002/09/24 11:29:18 $
+ * $Revision: 1.2.2.10 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: exec.c,v 1.2.2.9 2001/09/14 14:01:17 admin Exp $";
+static const char rcs_id[] = "$Id: exec.c,v 1.2.2.10 2002/09/24 11:29:18 admin Exp $";
 #endif
 
 #include <ctype.h>
@@ -157,7 +157,7 @@ _kernel_oserror *__exerr;
 /* Execute program `execname' and pass command line arguments `argv'
    and give it the environment `envp'.  */
 int
-execve (const char *execname, char **argv, char **envp)
+execve (const char *execname, char **argv, char *const *envp)
 {
   struct proc *process = __u;
   int x, cli_length;

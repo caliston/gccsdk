@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2002/08/18 18:35:21 $
- * $Revision: 1.2.2.9 $
+ * $Date: 2002/08/19 11:51:00 $
+ * $Revision: 1.2.2.10 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -230,10 +230,10 @@ extern char **environ;
 
 /* Replace the current process, executing path with args argv and
    environment envp.  */
-extern int execve (const char *__path, char **__argv, char **__envp);
+extern int execve (const char *__path, char **__argv, char *const *__envp);
 
 /* Execute PATH with arguments ARGV and environment from `environ'.  */
-extern int execv (const char *__path, char **__argv);
+extern int execv (const char *__path, char *const *__argv);
 
 /* Execute PATH with all arguments after PATH until a NULL pointer,
    and the argument after that for environment.  */
