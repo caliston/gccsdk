@@ -7,7 +7,7 @@
 #include "Path.h"
 
 #ifndef CROSS_COMPILE
-extern "C" void OS_File(int *);
+extern "C" void *OS_File(int *);
 #endif
 
 LibDir::LibDir(Library *a_owner) : Chunk("LIB_DIRY", a_owner)

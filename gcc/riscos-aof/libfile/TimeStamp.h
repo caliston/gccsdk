@@ -9,9 +9,9 @@
 #include "Buffer.h"
 
 #ifndef CROSS_COMPILE
-extern "C" void OS_File(int *);
-extern "C" void OS_Word(int, int);
-extern "C" void OS_ConvertDataAndTime(int *);
+extern "C" void *OS_File(int *);
+extern "C" void *OS_Word(int, int);
+extern "C" void *OS_ConvertDataAndTime(int *);
 #endif
 
 class TimeStamp

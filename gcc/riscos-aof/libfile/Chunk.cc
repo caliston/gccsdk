@@ -7,7 +7,7 @@
 #include "BError.h"
 
 #ifndef CROSS_COMPILE
-extern "C" void OS_File(int *);
+extern "C" void *OS_File(int *);
 #endif
 
 Chunk::Chunk()

@@ -10,8 +10,8 @@
 #include "BError.h"
 
 #ifndef CROSS_COMPILE
-extern "C" void OS_File(int *);
-extern "C" void OS_GBPB(int *);
+extern "C" void *OS_File(int *);
+extern "C" void *OS_GBPB(int *);
 #endif
 
 Buffer::Buffer()
@@ -238,7 +238,8 @@ void Buffer::save(const BString &a_file, int a_append)
  	reg[4] = (int) m_data;
  	reg[5] = reg[4] + m_length;
 
- 	OS_File(reg);
+ 	if (OS_File(reg) != NULL)
+	  THROW_SPEC_ERR(BError::CantOpenFile);
 #endif
  }
 }
