@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2002/08/19 11:51:00 $
- * $Revision: 1.2.2.10 $
+ * $Date: 2002/09/24 12:04:04 $
+ * $Revision: 1.2.2.11 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -230,10 +230,11 @@ extern char **environ;
 
 /* Replace the current process, executing path with args argv and
    environment envp.  */
-extern int execve (const char *__path, char **__argv, char *const *__envp);
+extern int execve (const char *__path, char * const __argv[],
+		   char *const __envp[]);
 
 /* Execute PATH with arguments ARGV and environment from `environ'.  */
-extern int execv (const char *__path, char *const *__argv);
+extern int execv (const char *__path, char *const __argv[]);
 
 /* Execute PATH with all arguments after PATH until a NULL pointer,
    and the argument after that for environment.  */
@@ -245,7 +246,7 @@ extern int execl (const char *__path, const char *__arg, ...);
 
 /* Execute FILE, searching in the `PATH' environment variable if it contains
    no slashes, with arguments ARGV and environment from `environ'.  */
-extern int execvp (const char *__file, char **__argv);
+extern int execvp (const char *__file, char *const __argv[]);
 
 /* Execute FILE, searching in the `PATH' environment variable if
    it contains no slashes, with all arguments after FILE until a

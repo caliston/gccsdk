@@ -1,3 +1,10 @@
+Tue Sep 24 14:32:56 2002  Nick Burrett  <nick@dsvr.net>
+
+	* sys/exec.c (execve): Make 2nd and 3rd param char *const [].
+	* sys/execv.c (execv): Make 2nd param char *const [].
+	* sys/execvp.c (execvp): Likewise.
+	* unistd.h (execv, execve, execvp): Fix prototypes accordingly.
+
 Tue Sep 24 13:08:36 2002  Nick Burrett  <nick@dsvr.net>
 
 	* strsignal.c (strsignal): Return a char *, not const char *.

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/execvp.c,v $
- * $Date: 2001/01/29 15:10:21 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: execvp.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
+static const char rcs_id[] = "$Id: execvp.c,v 1.2.2.1 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <unistd.h>
@@ -23,7 +23,7 @@ static const char rcs_id[] = "$Id: execvp.c,v 1.2 2001/01/29 15:10:21 admin Exp 
    contains no slashes, with arguments argv and environment from
    'environ'.  */
 int
-execvp (const char *name, char **argv)
+execvp (const char *name, char *const argv[])
 {
 #ifdef DEBUG
   if (environ != NULL)
