@@ -169,7 +169,7 @@ Backus-Naur Form, the symbolic notation of grammars of computer languages.
 ``Syntax diagrams'' are a graphical variant of the Backus-Naur Form.
 
 For details about the ``bison'' language, see
-@ref{,the Bison documentation,,bison,the Bison manual}.  A short overview
+@ref{the Bison documentation,,bison,the Bison manual}.  A short overview
 how to pick up some information you might need for programming follows.
 
 Suppose you have forgotten how a variable is declared in Pascal.  After some
