@@ -85,7 +85,6 @@ extern void announce(void);
 extern void error(char *, ...);
 extern bool got_errors(void);
 #ifdef TARGET_RISCOS
-extern void start_throwback(void);
 extern void end_throwback(void);
 #endif
 

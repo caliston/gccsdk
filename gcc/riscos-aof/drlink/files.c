@@ -163,41 +163,7 @@ static bool rearrange(char *filename) {
   }
 }
 
-/*
-** 'flag_ioerror' is called when an I/O operation fails to flag the
-** error, checking for and providing any extra details that the Shared
-** C library has logged for the failure
-*/
-static void flag_ioerror(char *msg, char *file) {
-  _kernel_oserror *swierror;
-  char *longmsg;
-  int len;
-  swierror = _kernel_last_oserror();
-  if (swierror==NIL) {
-    error(msg, file);
-  }
-  else {
-    len = strlen(msg)+strlen(&swierror->errmess[0])+4;
-    longmsg = allocmem(len);
-    if (longmsg==NIL) {
-      error(msg, file);
-    }
-    else {
-      strcpy(longmsg, msg);
-      strcat(longmsg, ": %s");
-      error(longmsg, file, &swierror->errmess[0]);
-      freemem(longmsg, len);
-    }
-  }
-}
-#else
-
-static void flag_ioerror(char *msg, char *file) {
-  error(msg, file);
-}
-
 #endif
-
 
 /*
 ** 'find_size' determines the size of the file whose handle is passed to it
@@ -289,13 +255,13 @@ fileinfo examine_file(char *filename) {
   }
 #endif
   if (libfile==NIL) {
-    flag_ioerror("Error: Cannot read '%s'", filename);
+    error("Error: Cannot read '%s'", filename);
     return NOWT;
   }
   filesize = find_size(libfile);
   count = fread(&libheader, sizeof(chunkheader), 1, libfile);
   if (count!=1) {	    /* Didn't read one chunkheader */
-    flag_ioerror("Error: Cannot read '%s'", filename);
+    error("Error: Cannot read '%s'", filename);
     fclose(libfile);
     return NOWT;
   }
@@ -312,7 +278,7 @@ fileinfo examine_file(char *filename) {
   }
   count = fread(&index, sizeof(chunkindex), 1, libfile);
   if (count!=1) {
-    flag_ioerror("Error: Cannot read '%s'", filename);
+    error("Error: Cannot read '%s'", filename);
     fclose(libfile);
     return NOWT;
   }
@@ -329,7 +295,7 @@ fileinfo examine_file(char *filename) {
       else {
         count = fread(&index, sizeof(chunkindex), 1, libfile);
         if (count!=1) {
-          flag_ioerror("Error: Cannot read '%s'", filename);
+          error("Error: Cannot read '%s'", filename);
           filetype = NOWT;
         }
       }
@@ -507,9 +473,8 @@ static bool scan_chunkhdr(filelist *fp) {
 
 /*
 ** 'read_file' reads an AOF file into memory. It determines the size of
-** the file and then reads the entire file into memory using OS_File
-** calls, returning either the size of the file if it is read
-** successfully or -1 if it fails.
+** the file and then reads the entire file into memory returning either
+** the size of the file if it is read successfully or -1 if it fails.
 */
 static int read_file(char *filename) {
   int filesize;
@@ -517,8 +482,18 @@ static int read_file(char *filename) {
   size_t count;
   if (opt_verbose) error("Drlink: Reading file '%s'", filename);
   objfile = fopen(filename, "rb");
+
+#ifdef TARGET_RISCOS
+/*
+ * IF file could not be opened, assume the name is of the
+ * form 'xxx.o' and try to rearrange it and see if that file
+ * can be opened
+ */
+  if (objfile==NIL && rearrange(filename)) objfile = fopen(filename, "rb");
+#endif
+
   if (objfile==NIL) {	/* Could not open file */
-    flag_ioerror("Error: Cannot find file '%s'", filename);
+    error("Error: Cannot find file '%s'", filename);
     return -1;
   }
   filesize = find_size(objfile);
@@ -540,7 +515,7 @@ static int read_file(char *filename) {
     strcpy(objectname, filename);
   }
   else {	/* Read failed */
-    flag_ioerror("Error: Cannot read file '%s'", filename);
+    error("Error: Cannot read file '%s'", filename);
     filesize = -1;
   }
   fclose(objfile);
@@ -834,7 +809,7 @@ static bool load_textfile(char* filename, char **where, int *size) {
   size_t count;
   textfile = fopen(filename, "r");
   if (textfile==NIL) {
-    flag_ioerror("Error: Unable to read file '%s'", filename);
+    error("Error: Unable to read file '%s'", filename);
     return FALSE;
   }
   fsize = find_size(textfile);
@@ -846,7 +821,7 @@ static bool load_textfile(char* filename, char **where, int *size) {
   count = fread(p, sizeof(char), fsize, textfile);
   fclose(textfile);
   if (count!=fsize) {
-    flag_ioerror("Error: Unable to read file '%s'", filename);
+    error("Error: Unable to read file '%s'", filename);
     return FALSE;
   }
   *(p+fsize) = NULLCHAR;
@@ -932,7 +907,7 @@ filelist *read_member(libentry *lp, filelist *inwhat, symbol *forwhat) {
   if (current_lib->libase==NIL) {	/* Library is not in memory */
     result = fseek(objectfile, lp->liboffset, SEEK_SET);
     if (result!=NIL) {
-      flag_ioerror("Error: Cannot find library member '%s'", membername);
+      error("Error: Cannot find library member '%s'", membername);
       return NIL;
     }
     if ((filebase = allocmem(lp->libsize))==NIL) {
@@ -940,7 +915,7 @@ filelist *read_member(libentry *lp, filelist *inwhat, symbol *forwhat) {
     }
     count = fread(filebase, lp->libsize, 1, objectfile);
     if (count!=1) {
-      flag_ioerror("Error: Cannot read library member '%s'", membername);
+      error("Error: Cannot read library member '%s'", membername);
       return NIL;
     }
   }
@@ -1000,7 +975,7 @@ bool read_libchunkhdr(libheader *lp) {
   size_t count;
   count = fread(&header, sizeof(header), 1, objectfile);
   if (count!=1) {
-    flag_ioerror("Error: Cannot read start of library '%s'", objectname);
+    error("Error: Cannot read start of library '%s'", objectname);
     return FALSE;
   }
   chunkcount = header.numchunks;
@@ -1011,7 +986,7 @@ bool read_libchunkhdr(libheader *lp) {
   chunkhdrbase = COERCE(filebuffer, chunkindex*);
   count = fread(chunkhdrbase, size, 1, objectfile);
   if (count!=1) {
-    flag_ioerror("Error: Cannot read header from library '%s'", lp->libname);
+    error("Error: Cannot read header from library '%s'", lp->libname);
     return FALSE;
   }
   return TRUE;
@@ -1048,14 +1023,14 @@ void open_image(void) {
   regs.r[5] = imagesize;
   swierror = _kernel_swi(OS_File, &regs, &regs);
   if (swierror!=NIL) {
-    flag_ioerror("Fatal: Cannot create image file '%s'", imagename);
+    error("Fatal: Cannot create image file '%s'", imagename);
   }
   imagefile = fopen(imagename, "rb+");
 #else
   imagefile = fopen(imagename, "wb");
 #endif
   if (imagefile==NIL) {
-    flag_ioerror("Fatal: Unable to open image file '%s'", imagename);
+    error("Fatal: Unable to open image file '%s'", imagename);
   }
   image_open = TRUE;
   filebuftop = filebuffer;
@@ -1070,7 +1045,7 @@ static void write_block(void *where, int size) {
   size_t count;
   if (size!=0) {
     count = fwrite(where, size, 1, imagefile);
-    if (count!=1) flag_ioerror("Fatal: Error occured writing '%s'", imagename);
+    if (count!=1) error("Fatal: Error occured writing '%s'", imagename);
   }
 }
 
@@ -1140,7 +1115,7 @@ static void set_filetype(char *filename, int filetype) {
   regs.r[2] = TEXT;
   swierror = _kernel_swi(OS_File, &regs, &regs);
   if (swierror!=NIL) {
-    flag_ioerror("Fatal: Cannot set filetype of '%s'", filename);
+    error("Fatal: Cannot set filetype of '%s'", filename);
   }
 }
 
@@ -1152,14 +1127,14 @@ static void set_loadexec(void) {
   regs.r[2] = codebase;
   swierror = _kernel_swi(OS_File, &regs, &regs);
   if (swierror!=NIL) {
-    flag_ioerror("Fatal: Cannot alter load address of '%s'", imagename);
+    error("Fatal: Cannot alter load address of '%s'", imagename);
   }
   regs.r[0] = 3;	/* Call to reset execution address */
   regs.r[1] = COERCE(imagename, int);
   regs.r[3] = entryarea->arplace+entryoffset;
   swierror = _kernel_swi(OS_File, &regs, &regs);
   if (swierror!=NIL) {
-    flag_ioerror("Fatal: Cannot alter execution address of '%s'", imagename);
+    error("Fatal: Cannot alter execution address of '%s'", imagename);
   }
 }
 #endif
@@ -1189,7 +1164,7 @@ void reset_image(unsigned int offset) {
   filebuftop = filebuffer;
   result = fseek(imagefile, offset, SEEK_SET);
   if (result!=0) {
-    flag_ioerror("Fatal: Error occured moving to new position in '%s'", imagename);
+    error("Fatal: Error occured moving to new position in '%s'", imagename);
   }
 }
 
@@ -1207,32 +1182,19 @@ void close_symbol(void) {
 #endif
 }
 
-#ifdef TARGET_RISCOS
 /*
 ** 'check_write' ensures that the last write to the symbol file worked
 */
-void check_write(void) {
-  _kernel_oserror *swierror;
-  swierror = _kernel_last_oserror();
-  if (swierror!=NIL)  {
-    error("Fatal: Error occured writing to symbol file '%s': %s", symbolname, &swierror->errmess[0]);
-  }
-}
-
-#else
-
 void check_write(void) {
   if (ferror(symbolfile)) {
     error("Fatal: Error occured writing to symbol file '%s'", symbolname);
   }
 }
 
-#endif
-
 void open_symbol(void) {
   symbolfile = fopen(symbolname, "w");
   if (symbolfile==NIL) {
-    flag_ioerror("Fatal: Cannot create symbol listing file '%s'", symbolname);
+    error("Fatal: Cannot create symbol listing file '%s'", symbolname);
   }
   symbol_open = TRUE;
   linewidth = 0;
@@ -1293,7 +1255,7 @@ void write_symbol(symtentry *sp) {
 void open_mapfile(void) {
   mapfile = fopen(mapfilename, "w");
   if (mapfile==NIL) {
-    flag_ioerror("Fatal: Cannot create area map file '%s'", mapfilename);
+    error("Fatal: Cannot create area map file '%s'", mapfilename);
   }
   map_open = TRUE;
 }
@@ -1306,7 +1268,7 @@ void write_mapfile(char *text) {
   size_t count;
   count = fwrite(text, sizeof(char), strlen(text), mapfile);
   if (count!=strlen(text)) {
-    flag_ioerror("Fatal: Error occured writing to area map file '%s'", mapfilename);
+    error("Fatal: Error occured writing to area map file '%s'", mapfilename);
   }
 }
 

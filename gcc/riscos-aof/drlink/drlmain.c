@@ -650,10 +650,7 @@ option optionlist [] = {
     break;
 #ifdef TARGET_RISCOS
   case OPT_THROW:
-    if (!opt_throw) {	/* Only try this if throwback not in use */
-      opt_throw = TRUE;
-      start_throwback();
-    }
+    opt_throw = TRUE;
     break;
 #endif
   case OPT_VIA:

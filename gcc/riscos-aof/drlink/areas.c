@@ -653,7 +653,7 @@ void free_srchlist(void) {
 ** files
 */
 bool scan_head(filelist *fp) {
-  arealist *ap;		/* Points at arealist entry created for entry being checked */
+  arealist *ap = NULL;  /* Points at arealist entry created for entry being checked */
   objheadhdr *ahp;	/* Points at OBJ_HEAD chunk of file */
   areaentry
    *aep,			/* Points at OBJ_HEAD entry being checked */
@@ -1426,7 +1426,7 @@ static void fixup_type1(unsigned int reltypesym, unsigned int *relplace) {
 */
 static void fixup_type2(unsigned int reltypesym, unsigned int *relplace) {
   unsigned int reltype, relvalue, symtindex;
-  symtentry *sp;
+  symtentry *sp = NULL;
   arealist *ap;
   reltype = get_type2_type(reltypesym);
   if ((reltype & REL_SYM)!=0) {	/* Symbol relocation */
@@ -1584,8 +1584,8 @@ void check_entryarea(void) {
  * () to it
  */
   noheader = imagetype==RMOD 
-   || imagetype==BIN &&
-    (entryarea==rocodelist || (rodatalist==NIL && entryarea==rwcodelist)) && entryoffset==0
+   || (imagetype==BIN &&
+    (entryarea==rocodelist || (rodatalist==NIL && entryarea==rwcodelist)) && entryoffset==0)
    || opt_codebase;
 }
 
@@ -1983,6 +1983,8 @@ static void alter_reloc(relocation *rp, relaction t2type) {
     break;
   case TYPE2_AP: /* Area, PC-rel */
     flags = flags & (REL_AOFMASK | REL_PC);
+  default:
+    break;
   }
   rp->reltypesym = flags<<24 | REL_TYPE2 | sid;
 }
@@ -2034,6 +2036,8 @@ static void fixup_reloclist(arealist *ap) {
           break;
         case TYPE2_RP:	/* Cannot do relocation, but modify offset in instruction */
           alter_area_offset(rp);
+        default:
+          break;
         }
         rp++;
       }

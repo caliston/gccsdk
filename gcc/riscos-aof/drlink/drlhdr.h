@@ -18,9 +18,9 @@
 #endif
 
 #ifdef TARGET_RISCOS
-#define VERSION "0.38  23/02/02"
+#define VERSION "0.39  02/03/02"
 #else
-#define VERSION "0.3.8  23/02/02  [GCCSDK build]"
+#define VERSION "0.3.9  02/03/02  [GCCSDK build]"
 #endif
 
 /*
