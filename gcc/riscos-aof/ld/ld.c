@@ -114,7 +114,7 @@ static void append_arg (args *, int *, const char *);
 static void tlink_init (void);
 static int tlink_execute (char *prog, char **argv, char *redir, char *viafile);
 static void do_tlink (char *, char **, args *);
-static void choose_temp_base (void);
+static int choose_temp_base (void);
 static void dump_file (char *);
 static void ldversion (int);
 static void ldhelp (void);
@@ -158,6 +158,7 @@ static void
 linker_initialise (void)
 {
   FILE *temp;
+  int temp_filedesc;
 
   c_file_name = getenv ("COLLECT_GCC");
   if (c_file_name == 0)
@@ -172,28 +173,26 @@ linker_initialise (void)
   if (tlink_verbose >= 7)
     printf ("creating 1st temporary file\n");
 
-  choose_temp_base ();
+  temp_filedesc = choose_temp_base ();
   ldout = temp_filename;
-  temp = fopen (ldout, "w");
-  if (temp == NULL)
+  if (temp_filedesc == -1)
     {
       fprintf (stderr, "ld: failed to create temporary filename '%s'\n", ldout);
       exit (1);
     }
-  fclose (temp);
+  close (temp_filedesc);
 
   if (tlink_verbose >= 7)
     printf ("creating 2nd temporary file\n");
   /* Create another unique file.  */
-  choose_temp_base ();
+  temp_filedesc = choose_temp_base ();
   ld_viafile = temp_filename;
-  temp = fopen (ld_viafile, "w");
-  if (temp == NULL)
+  if (temp_filedesc == -1)
     {
       fprintf (stderr, "ld: failed to create temporary filename '%s'\n", ld_viafile);
       exit (1);
     }
-  fclose (temp);
+  close (temp_filedesc);
 
   if (tlink_verbose >= 7)
     printf ("temporary files have been created\n");
@@ -1325,7 +1324,7 @@ do_tlink (char *linker, char **ld_argv, args *object_lst)
     }
 }
 
-static void
+static int
 choose_temp_base (void)
 {
   char *base = getenv ("TMPDIR");
@@ -1353,7 +1352,7 @@ choose_temp_base (void)
     temp_filename[len++] = '/';
   strcpy (temp_filename + len, "ccXXXXXX");
 
-  mkstemp (temp_filename);
+  return mkstemp (temp_filename);
 }
 
 static void
