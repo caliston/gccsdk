@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_syslib.s,v $
-; $Date: 2001/09/05 16:28:57 $
-; $Revision: 1.3.2.6 $
+; $Date: 2001/09/06 14:52:00 $
+; $Revision: 1.3.2.7 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -11,8 +11,9 @@
 	GET	clib/unixlib/asm_dec.s
 
 	; Keep in sync with error_table.
-NO_MEMORY * 0
+NO_MEMORY   * 0
 NO_CALLASWI * 1
+NO_SUL      * 2
 
 	AREA	|C$$code|, CODE, READONLY
 
@@ -36,6 +37,9 @@ NO_CALLASWI * 1
 	IMPORT	|__alloca_list|, WEAK
 
 	EXPORT	|__main|
+
+|rmensure|
+	DCB "RMEnsure SharedUnixLibrary 1.00 RMLoad System:Modules.SharedULib", 0
 
 	ENTRY
 |__main|
@@ -120,7 +124,12 @@ NO_CALLASWI * 1
 	BNE	exit_with_error
 
 	MOV	ip, v1		; Restore ip.
-	
+
+	LDR	a1, =|rmensure|
+	SWI	XOS_CLI
+	MOVVS	a1, #NO_SUL
+	BVS	exit_with_error
+
 	; use of da's explicitly overridden if __dynamic_no_da is declared
 	LDR	a1, =|__dynamic_no_da|
 	TEQ	a1, #0
@@ -345,11 +354,14 @@ exit_with_error
 error_table
 	DCD	error_no_memory
 	DCD	error_no_callaswi
+	DCD	error_no_sharedunixlib
 
 error_no_callaswi
 	DCB	"Module CallASWI is not present.", 13, 10, 0
 error_no_memory
 	DCB	"Insufficient memory for application", 13, 10, 0
+error_no_sharedunixlib
+	DCB	"This application requires version 1.00 of the SharedUnixLibrary module", 13, 10, 0
 	ALIGN
 
 check_for_callaswi
@@ -376,6 +388,9 @@ check_for_callaswi
 |__exit|
 	MOV	v1, a1
 	BL	|__dynamic_area_exit|
+	LDR	a3, =|__sharedunixlibrary_key|
+	LDR	a3, [a3]
+	SWI	XSharedUnixLibrary_DeRegisterUpCall
 	; re-enable Escape (in case SIGINT handler fired in ttyicanon)
 	MOV	a1, #229
 	MOV	a2, #0
@@ -440,6 +455,7 @@ t05
 	IMPORT	|__ul_errbuf|
 |__env_unixlib|
 	STMFD	sp!, {a1, a2, a3, a4, v1, v2, lr}
+	SWI	XOS_IntOff
 	MOV	v1, #0
 	ADR	v2, handlers
 t06
@@ -455,6 +471,15 @@ t06
 	ADD	v1, v1, #1
 	CMP	v1, #17
 	BLT	t06
+
+	LDR	r1, =|__env_riscos|
+	SWI	XSharedUnixLibrary_RegisterUpCall
+	LDR	r0, =|__sharedunixlibrary_key|
+	STR	r2, [r0]
+	MOV	r0, #16
+	SWI	XOS_ChangeEnvironment
+
+	SWI	XOS_IntOn
 	LDMFD	sp!, {a1, a2, a3, a4, v1, v2, pc}^
 	
 handlers
@@ -474,9 +499,13 @@ handlers
 	DCD	0		; Exception registers
 	DCD	0		; Application space
 	DCD	0		; Currently active object
-	DCD	|__h_upcall|	; Up call
+	DCD	0		; UpCall
 
-	
+	EXPORT	|__sharedunixlibrary_key|
+|__sharedunixlibrary_key|
+	DCD	0
+
+
 	IMPORT	|__unixlib_raise_signal|
 	EXPORT	|x$stack_overflow|
 	EXPORT	|__rt_stkovf_split_small|

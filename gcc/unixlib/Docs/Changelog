@@ -1,3 +1,13 @@
+Wed Dec 19 16:52:09 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
+
+	Module workaround for UpCall related system lock-up.
+	* unixlib/asm_dec.s: New SWI decls.
+	* sys/_syslib.s (_main): Add SharedUnixLibrary initialisation
+	code.
+	(__exit): Add SharedUnixLibrary finialsation code.
+	(handlers): We no longer install __h_upcall.
+	* module/sul.s: New file.
+
 Tue Dec 18 11:19:01 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* unix/dev.c (__fsopen): Do not set O_CREAT if the files does

@@ -201,6 +201,8 @@ LOCALE = $(libunixobj)/locale/ctypetable.o \
 	$(libunixobj)/locale/strxfrm.o \
 	$(libunixobj)/locale/territory.o
 
+MODULE = $(libunixobj)/module/sul.o
+
 NETLIB = $(libunixobj)/netlib/accept.o \
 	$(libunixobj)/netlib/bind.o \
 	$(libunixobj)/netlib/connect.o \
@@ -371,6 +373,8 @@ STDIO = $(libunixobj)/stdio/clearerr.o \
 	$(libunixobj)/stdio/ungetc.o
 
 STDIO_ASM =	$(libunixobj)/stdio/_printf.o
+
+STDLIB = $(libunixobj)/stdlib/realpath.o
 
 SCL_ASM = $(libunixobj)/scl/_kcurskch.o \
 	$(libunixobj)/scl/_kernel.o \
@@ -577,14 +581,17 @@ WCHAR = $(libunixobj)/wchar/btowc.o \
 #  wchar.o.wcstold wchar.o.wcstod wchar.o.wcstof
 
 C_OBJS = $(COMPLEX) $(MATH) $(OBJS) $(COMMON) $(LOCALE) $(NETLIB) \
-	$(PWD) $(GRP) $(RESOURCE) $(SIGNAL) $(STDIO) $(SYS) $(TIME) \
-	$(TERMIOS) $(UNIX) $(WCHAR)
+	$(PWD) $(GRP) $(RESOURCE) $(SIGNAL) $(STDIO) $(STDLIB) $(SYS) \
+	$(TIME) $(TERMIOS) $(UNIX) $(WCHAR)
 
 ASM_OBJS = $(MATH_ASM) $(COMMON_ASM) $(GCCCOMPAT_ASM) $(NETLIB_ASM) \
 	$(SIGNAL_ASM) $(STDIO_ASM) $(SCL_ASM) $(SYS_ASM) $(TIME_ASM) \
 	$(UNIX_ASM)
 
-all:	$(ux_gcc_bin_dir)/$(TRG)/unixlib.o $(ro_gcc_bin_dir)/$(TRG)/o/unixlib
+SUL = $(ro_syspkg)/Modules/SharedULib,ffa
+
+all:	$(ux_gcc_bin_dir)/$(TRG)/unixlib.o $(ro_gcc_bin_dir)/$(TRG)/o/unixlib \
+	$(SUL)
 
 install_headers:
 	$(insthdr) clib "*.h" unixlib $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
@@ -600,6 +607,9 @@ $(ux_gcc_bin_dir)/$(TRG)/unixlib.o:	$(C_OBJS) $(ASM_OBJS)
 
 $(ro_gcc_bin_dir)/$(TRG)/o/unixlib:	$(C_OBJS) $(ASM_OBJS)
 	$(CROSS_AR) $(CROSS_AR_FLAGS) $@ $(C_OBJS) $(ASM_OBJS)
+
+$(SUL):	$(MODULE)
+	$(CROSS_CC) $(MODULE) -Xlinker -module -o $@
 
 # Static dependencies:
 $(libunixobj)/abort.o: abort.c
@@ -785,6 +795,8 @@ $(libunixobj)/math-asm/_sinh.o: math-asm/_sinh.s clib/unixlib/asm_dec.s
 $(libunixobj)/math-asm/_sqrt.o: math-asm/_sqrt.s clib/unixlib/asm_dec.s
 $(libunixobj)/math-asm/_tan.o: math-asm/_tan.s clib/unixlib/asm_dec.s
 $(libunixobj)/math-asm/_tanh.o: math-asm/_tanh.s clib/unixlib/asm_dec.s
+
+$(libunixobj)/module/sul.o: module/sul.s
 
 $(libunixobj)/netlib/accept.o: netlib/accept.c
 $(libunixobj)/netlib/bind.o: netlib/bind.c
@@ -976,6 +988,8 @@ $(libunixobj)/stdio/stdio.o: stdio/stdio.c
 $(libunixobj)/stdio/tmpfile.o: stdio/tmpfile.c
 $(libunixobj)/stdio/ungetc.o: stdio/ungetc.c
 $(libunixobj)/stdio/_printf.o: stdio/_printf.s clib/unixlib/asm_dec.s
+
+$(libunixobj)/stdlib/realpath.o: stdlib/realpath.c
 
 $(libunixobj)/sys/alarm.o: sys/alarm.c
 $(libunixobj)/sys/brk.o: sys/brk.c
