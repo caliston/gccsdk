@@ -22,6 +22,12 @@ RISC OS GCC release 2.95.2  (released xx August 2001)
 * gcc: Bug fix in Unix filename translation.  Pathnames starting with
   `../../something' would be translated to '../../'.
 
+* gcc: By default the libraries and headers for UnixLib and SharedCLib
+  are integrated into the distribution.  GCC therefore no longer relies
+  on the Unix$Path and C$Path variables.  During the link stage, it is
+  recommended that the GCC command is used, rather than calling drlink
+  directly.
+
 RISC OS GCC pre-release 3a  (released 23 November 1999)
 ==========================
 
