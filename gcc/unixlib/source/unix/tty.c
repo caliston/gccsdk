@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/tty.c,v $
- * $Date: 2001/09/04 16:32:04 $
- * $Revision: 1.4.2.6 $
+ * $Date: 2001/09/11 13:18:50 $
+ * $Revision: 1.4.2.7 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tty.c,v 1.4.2.6 2001/09/04 16:32:04 admin Exp $";
+static const char rcs_id[] = "$Id: tty.c,v 1.4.2.7 2001/09/11 13:18:50 admin Exp $";
 #endif
 
 /* System V tty device driver for RISC OS.  */
@@ -32,7 +32,7 @@ static const char rcs_id[] = "$Id: tty.c,v 1.4.2.6 2001/09/04 16:32:04 admin Exp
 #include <unixlib/dev.h>
 #include <sys/select.h>
 #include <swis.h>
-
+#include <unixlib/features.h>
 #include <unixlib/fd.h>
 
 #define IGNORE(x) x = x
@@ -87,11 +87,11 @@ __tty_console_gwinsz (struct winsize *win)
     {
       char *size;
       int rows = 24, cols = 80;
- 
+
       size = getenv ("ROWS");
       if (size)
         {
-          rows = atoi (size); 
+          rows = atoi (size);
 
           if (rows <= 0)
             rows = 24;
@@ -106,9 +106,9 @@ __tty_console_gwinsz (struct winsize *win)
             cols = 80;
         }
 
-      win->ws_col = cols; 
-      win->ws_row = rows; 
-      win->ws_xpixel = cols * 8; 
+      win->ws_col = cols;
+      win->ws_row = rows;
+      win->ws_xpixel = cols * 8;
       win->ws_ypixel = rows * 16;
 
     }
@@ -992,7 +992,7 @@ __ttyioctl (struct __unixlib_fd *file_desc, int request, void *arg)
     case TIOCSBRK: /* Set break bit.  */
 #if __FEATURE_DEV_RS423
       if (type == TTY_423 && !arg)
-	os_423break (25);
+	__os_423break (25);
 #endif
       return 0;
       break;

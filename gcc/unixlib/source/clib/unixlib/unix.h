@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/Attic/unix.h,v $
- * $Date: 2001/09/04 16:32:04 $
- * $Revision: 1.1.2.1 $
+ * $Date: 2001/09/06 14:52:00 $
+ * $Revision: 1.1.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -35,8 +35,14 @@
 #ifndef __SYS_RESOURCE_H
 #include <sys/resource.h>
 #endif
+#ifndef __SYS_TYPES_H
+#include <sys/types.h>
+#endif
 #ifndef __LIMITS_H
 #include <limits.h>
+#endif
+#ifndef __KERNEL_H
+#include <kernel.h>
 #endif
 
 #ifdef __cplusplus
@@ -269,6 +275,22 @@ extern void __runtime_features (const char *__cmdline);
 /* Print an error and exit the process.  */
 extern void
 __unixlib_fatal (const char *__message) __attribute__ ((__noreturn__));
+
+/* Initialize the signal code.  */
+extern void __unixlib_signal_initialise (struct proc *__p);
+
+/* Resource limit initialisation */
+extern void __resource_initialise (struct proc *__p);
+
+/* Initialise the UnixLib world.  */
+void __unixinit (void);
+
+void _main (void);
+
+extern const speed_t __bsd_speeds[16];
+
+/* Shared between sys/exec.c & sys/_exec.s */
+extern _kernel_oserror *__exerr;
 
 #endif  /* __UNIXLIB_INTERNALS */
 

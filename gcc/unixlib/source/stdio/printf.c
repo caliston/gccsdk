@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/printf.c,v $
- * $Date: 2001/01/29 15:10:21 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/02 10:18:51 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: printf.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
+static const char rcs_id[] = "$Id: printf.c,v 1.2.2.1 2001/09/02 10:18:51 admin Exp $";
 #endif
 
 /*-
@@ -53,7 +53,7 @@ static const char rcs_id[] = "$Id: printf.c,v 1.2 2001/01/29 15:10:21 admin Exp 
 static char sccsid[] = "@(#)vfprintf.c	8.1 (Berkeley) 6/4/93";
 #endif
 static const char rcsid[] =
-		"$Id: printf.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
+		"$Id: printf.c,v 1.2.2.1 2001/09/02 10:18:51 admin Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -77,6 +77,7 @@ static const char rcsid[] =
 
 static void __find_arguments (const char *, va_list, void ***);
 static int __grow_type_table (int, unsigned char **, int *);
+static int vfprintfsub(FILE *fp, size_t max, const char *fmt0, va_list ap);
 
 
 static size_t out_char(int c, FILE *fp, size_t limit)
@@ -302,7 +303,7 @@ pad_file (FILE * fp, char pad, int count, size_t limit)
 }
 
 
-int
+static int
 vfprintfsub(FILE *fp, size_t max, const char *fmt0, va_list ap)
 {
 	register char *fmt;	/* format string */

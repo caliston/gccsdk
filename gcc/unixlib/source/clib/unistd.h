@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/11 13:40:57 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -345,11 +345,14 @@ extern int rmdir (const char *__path);
 /* Return the login name of the user.  */
 extern char *getlogin (void);
 
-#if 0
 /* Set the foreground process group ID of FD set PGRP_ID.  */
 extern int tcsetpgrp (int __fd, __pid_t __pgrp_id);
 
+/* Return the foreground process group ID of FD.  */
+extern __pid_t tcgetpgrp (int __fd);
 
+
+#if 0
 /* Set the login name returned by `getlogin'.  */
 extern int setlogin (const char *__name);
 

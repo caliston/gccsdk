@@ -1,12 +1,13 @@
 # Project:   UnixLib 3.8
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2001/09/06 14:52:00 $
-# $Revision: 1.2.2.2 $
+# $Date: 2001/09/11 13:57:26 $
+# $Revision: 1.2.2.3 $
 # $State: Exp $
 # $Author: admin $
 
 CCfeatures =
+Predefs = -D__UNIXLIB_INTERNALS
 
 # Misc macros
 # XX = commamd
@@ -23,8 +24,7 @@ CCfeatures =
 ##   - APCS-R build : -APCS 3/26bit/fpe2
 ##   - APCS-32 build : -APCS 3/32bit/fpe3
 #CCapcsflags = -APCS 3/26bit/fpe2
-#CCflags = -depend !Depend -throwback -fcah -JUnixHdr: -wda -wp $(CCdflags) $(CCapcsflags)
-#Predefs = -D__UNIXLIB_INTERNALS
+#CCflags = -depend !Depend -throwback -fcah -JUnixHdr: -wda -wp $(CCdflags) $(Capcsflags)
 
 # GCC compiler. Comment out if you are using Acorn C
 CC = gcc
@@ -190,8 +190,7 @@ SCL_ASM = scl.o._kcurskch scl.o._kernel scl.o._kgetenv scl.o._kosargs \
 
 SYS =	sys.o.alarm sys.o.brk sys.o.child sys.o.debug sys.o.errlist \
 	sys.o.exec sys.o.execl sys.o.execle sys.o.execlp sys.o.execv \
-	sys.o.execvp sys.o.mman sys.o.os sys.o.sigsetjmp sys.o.syslib \
-	sys.o.vfork
+	sys.o.execvp sys.o.mman sys.o.sigsetjmp sys.o.vfork
 
 SYS_ASM =	sys.o._alloca sys.o._divsi3 sys.o._divtest \
 	sys.o._exec sys.o._jmp sys.o._mem sys.o._mman sys.o._modsi3 sys.o._os \
@@ -779,9 +778,7 @@ sys.o.execlp:		sys.c.execlp
 sys.o.execv:		sys.c.execv
 sys.o.execvp:		sys.c.execvp
 sys.o.mman:		sys.c.mman
-sys.o.os:		sys.c.os
 sys.o.sigsetjmp:	sys.c.sigsetjmp
-sys.o.syslib:		sys.c.syslib
 sys.o.vfork:		sys.c.vfork
 sys.o._alloca:		sys.s._alloca <UnixHdr$Dir>.unixlib.s.asm_dec
 sys.o._exec:		sys.s._exec <UnixHdr$Dir>.unixlib.s.asm_dec

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/termios/c/tcsetattr,v $
- * $Date: 1998/06/25 21:35:31 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/termios/tcsetattr.c,v $
+ * $Date: 2001/01/29 15:10:21 $
  * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tcsetattr,v 1.2 1998/06/25 21:35:31 unixlib Exp $";
+static const char rcs_id[] = "$Id: tcsetattr.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -17,8 +17,9 @@ static const char rcs_id[] = "$Id: tcsetattr,v 1.2 1998/06/25 21:35:31 unixlib E
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
+#include <unixlib/unix.h>
 
-const speed_t __bsd_speeds[] =
+const speed_t __bsd_speeds[16] =
   {
     0,
     50,
@@ -80,7 +81,7 @@ tcsetattr (int fd, int optional_actions, const struct termios *termios_p)
       return __set_errno (EINVAL);
     }
 
-  buf.sg_ispeed = buf.sg_ospeed = -1;
+  buf.sg_ispeed = buf.sg_ospeed = (char) -1;
   for (i = 0; i <= sizeof (__bsd_speeds) / sizeof (__bsd_speeds[0]); ++i)
     {
       if (__bsd_speeds[i] == termios_p->__ispeed)

@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_signal.s,v $
-; $Date: 2001/09/01 13:44:29 $
-; $Revision: 1.4.2.5 $
+; $Date: 2001/09/06 14:52:00 $
+; $Revision: 1.4.2.6 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -24,6 +24,7 @@
 
 	IMPORT	errno
 	IMPORT	sys_errlist
+	IMPORT	|__uinixlib_raise_signal|
 
 ;-----------------------------------------------------------------------
 ; static void __raise (int signo)

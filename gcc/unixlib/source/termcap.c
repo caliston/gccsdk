@@ -1,19 +1,18 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/termcap.c,v $
- * $Date: 2001/09/01 13:44:29 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/04 16:32:03 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: termcap.c,v 1.2.2.1 2001/09/01 13:44:29 admin Exp $";
+static const char rcs_id[] = "$Id: termcap.c,v 1.2.2.2 2001/09/04 16:32:03 admin Exp $";
 #endif
 
 #include <unixlib/unix.h>
-#include <sys/ioctl.h>
 
 #include <stdio.h>
 #include <string.h>

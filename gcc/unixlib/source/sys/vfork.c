@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/vfork.c,v $
- * $Date: 2001/09/01 13:44:29 $
- * $Revision: 1.2.2.6 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.7 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.6 2001/09/01 13:44:29 admin Exp $";
+static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.7 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -31,6 +31,7 @@ static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.6 2001/09/01 13:44:29 admin E
 #include <sys/wait.h>
 #include <unixlib/os.h>
 #include <swis.h>
+#include <unixlib/features.h>
 
 /* #define DEBUG 1 */
 
@@ -94,7 +95,7 @@ __vfork (void)
 
   /* Create a process ID.  It is cheaper to call clock() than __os_swi.  */
   child->ppid = __u->pid;  /* Get parent process's ID.  */
-  child->pid = clock ();  /* Child process ID.  */
+  child->pid = (pid_t) clock ();  /* Child process ID.  */
 
   /* Make sure child's PID is not the same as the parents.  */
   if (child->pid == __u->pid)

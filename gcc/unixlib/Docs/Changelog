@@ -1,3 +1,37 @@
+Tue Sep 11 15:15:37 2001  John Tytgat  <John.Tytgat@aaug.net>
+
+	* unix/write.c: Include <unixlib/features.h> for the
+	__FEATURE* #define's.
+	* sys/exec.c: Likewise.
+	* unix/tty.c: Likewise
+	(__ttyioctl): Changed os_423break() into __os_423break().
+	* sys/vfork.c: Likewise. And added explicit pid casting
+	in __vfork().
+	* time/setitmr.c (add_timer): Changed variable 'new' into 'newtime'
+	to avoid C++ keyword warnings.
+	* wchar/wcsdup.c: Likewise.
+	* unistd.h: Moved the tcsetpgrp() declaration outside the
+	#if 0'ed block.  Decl. of tcgetpgrp().
+	* unixlib/unix.h: Decl. of __bsd_speeds[], __unixinit(), _main(),
+	__exerr, __unixlib_signal_initialise(), __resource_initialise().
+	Added #include <sys/types.h>, <kernel.h>.
+	* termios/tcgetattr.c: #include unixlib/unix.h for
+	__bsd_speeds[].
+	* termios/tcsetattr.c: Likewise.
+	* termios/tcsetattr.c (tcsetattr): Explicit char casting added.
+	* stdio/printf.c: Made vfprintfsub() static.
+	* signal/_signal.s: Added IMPORT |__unixlib_raise_signal| & raise.
+	* unix/unix.c: Removed decl. of __unixlib_signal_initalise()
+	& __resource_initialise().
+	* objs/Makefile,fe1: (again) removed sys/syslib.c & sys/os.c.
+	Moved Predefs to the top as it is independent of which
+	compiler/linker is used.
+	* termcap.c: Removed #include <sys/ioctl.h> as this avoids a
+	problem in the Norcroft C compiler.  This header file will be
+	loaded indirectly by including the other header files.
+	* unixlib/local.h: Decl. of __sfixinit() & __sdirinit().
+	* unix/features.c: Moved decl. of __sfixinit() & __sdirinit()
+	
 Tue Sep 11 14:57:01 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* objs/Makefile (GRP): User group files.

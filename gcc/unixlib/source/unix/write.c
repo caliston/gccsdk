@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/write.c,v $
- * $Date: 2001/09/01 13:44:29 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: write.c,v 1.2.2.1 2001/09/01 13:44:29 admin Exp $";
+static const char rcs_id[] = "$Id: write.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -22,7 +22,7 @@ static const char rcs_id[] = "$Id: write.c,v 1.2.2.1 2001/09/01 13:44:29 admin E
 #include <sys/types.h>
 #include <unixlib/dev.h>
 #include <unixlib/unix.h>
-
+#include <unixlib/features.h>
 #include <unixlib/fd.h>
 
 #ifdef DEBUG

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/local.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/03 12:03:29 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -100,12 +100,8 @@ extern char *__net_readline (FILE *__file, char *__buffer, int __length);
 /* Initialise unix file name translation.  */
 extern void __riscosify_init (void);
 
-#if 0
-extern int __sfixadd_l (const char *__sfix, ...);
-extern int __sfixadd_v (const char *const *__sfixes);
-extern int __sfixdel_l (const char *__sfix, ...);
-extern int __sfixdel_v (const char *const *__sfixes);
-#endif
+extern void __sfixinit (const char *list);
+extern void __sdirinit (void);
 
 /* Search special suffix list for __sfix (zero char terminated).  Returns
    NULL if suffix isn't to be used for suffix swapping, ptr to suffix

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2001/09/03 12:07:43 $
- * $Revision: 1.2.2.4 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.5 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.4 2001/09/03 12:07:43 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.5 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <stdio.h>
@@ -62,13 +62,6 @@ static int convert_command_line (struct proc *process, const char *cli,
        	   	   	   	 int cli_size);
 
 static void __badr (void) __attribute__ ((__noreturn__));
-
-/* Initialize the signal code.  If declared in unixlib/unix.h
-   then we'd have to drag in a lot of headers.  */
-extern void __unixlib_signal_initialise (struct proc *__p);
-
-/* Resource limit initialisation */
-extern void __resource_initialise (struct proc *__p);
 
 /* This is the only file that need ever reference main()
    so to prevent possible compiler errors from sources that

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/features.c,v $
- * $Date: 2001/01/29 15:10:22 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: features.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
+static const char rcs_id[] = "$Id: features.c,v 1.2.2.1 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 /* #define DEBUG 1 */
@@ -90,8 +90,6 @@ static char *env (const char *program_name, const char *variable,
 
 /* Allow string to be writable by not making const.  */
 static char __sfix_default[] = "a:c:cc:f:h:i:ii:l:o:p:s:y";
-extern void __sfixinit (const char *list);
-extern void __sdirinit (void);
 
 /* We have to be careful with the string processing because not enough
    of UnixLib will have been initialised to use more powerful functions.  */
