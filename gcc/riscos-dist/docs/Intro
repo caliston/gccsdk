@@ -292,7 +292,7 @@ specified order.
 <varargs.h>, <assert.h>, <stdarg.h>
 -----------------------------------
 
-GCC supplies it's own versions of these header files since they are not
+GCC supplies its own versions of these header files since they are not
 compatible with the headers supplied with Acorn C and UnixLib.  However,
 this feature is invisible to the user.
 

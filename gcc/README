@@ -69,7 +69,7 @@ this command. Note, this currently does not work properly.
 Using it
 --------
 
-Once build, you need only add /home/riscos/cross/bin to your PATH
+Once built, you need only add /home/riscos/cross/bin to your PATH
 variable.  Then use it as you would the GCC compiler normally.
 
 
@@ -133,7 +133,7 @@ The RISC OS distribution contains the following tools:
      make - A make utility
     mkdir - A port of the Unix directory creator.
     patch - A program that can patch files when supplied with the output
-	    of diff.
+            of diff.
       sed - A batch stream editor
     touch - A port of the Unix touch command for changing file timestamps.
   rink, rinkptr, extractsym - components of Ben Summers' run-time linker.
@@ -157,27 +157,20 @@ A1. The default is for GCC to not embed function names in the program,
     Rebuild with make.
 
 
-Q2. Libfile crashes in ARM Linux, what can I do?
+Q2. What systems has GCCSDK been built on?
 
-A2. There appears to be a C++ destructor bug.  As the very last line
-    in the Librarian::run() function, in riscos-aof/libfile/Librarian.cc,
-    add "exit(0)" as a work-around.
-
-
-Q3. What systems has GCCSDK been built on?
-
-A3. Systems on which it has successfully been built upon include:
+A2. Systems on which it has successfully been built upon include:
         Debian i386/Linux,
-	RedHat i386/Linux,
-	Debian ARM/Linux,
-	FreeBSD,
-	Cygwin,
-	and others.
+        RedHat i386/Linux,
+        Debian ARM/Linux,
+        FreeBSD,
+        Cygwin,
+        and others.
 
 
-Q4. Where does the Unixlib library file end up?
+Q3. Where does the Unixlib library file end up?
 
-A4. It depends on the parameters you pass to configure.  But for the
+A3. It depends on the parameters you pass to configure.  But for the
     RISC OS distribution it could be something like:
       /usr/home/riscos/riscos-dist/bin/arm-riscos-aof/apcs26/unixlib/o/
 
@@ -185,9 +178,9 @@ A4. It depends on the parameters you pass to configure.  But for the
       /usr/home/riscos/riscos-cross/bin/arm-riscos-aof/apcs26/unixlib/unixlib.o
 
 
-Q5. My Unix variant appears to be unsupported.  How do I fix it.
+Q4. My Unix variant appears to be unsupported.  How do I fix it?
 
-A5. Fortunately this is quite easy and, in most cases, only require you to
+A4. Fortunately this is quite easy and, in most cases, only requires you to
     make changes to a few configuration files.
 
     a) Change gccsdk/configure.in to correctly detect your CPU and OS type,
@@ -198,3 +191,5 @@ A5. Fortunately this is quite easy and, in most cases, only require you to
        previously copied from an original GCC 2.95.x release.
 
     Big-endian CPUs, such as Sparc and MIPS, are currently unsupported.
+
+

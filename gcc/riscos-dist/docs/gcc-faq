@@ -260,7 +260,7 @@ Contents
   * -mpoke-function-name
    place the name of the current function before the start of the function
    to allow the post mortem debugger to print a readable backtrace.
-   Using it's opposite will reduce code size by about 3.5% for C code and
+   Using its opposite will reduce code size by about 3.5% for C code and
    about 10% for Ada code. Note, code size reductions are very dependant
    upon function sizes and function names. Reductions for other
    languages are not known, but they will be similar.
@@ -336,7 +336,7 @@ Contents
 
  4.7 Using <varargs.h>, <assert.h>, <stdarg.h>
 
-  GCC supplies it's own versions of these header files since they are not
+  GCC supplies its own versions of these header files since they are not
   compatible with the headers supplied with Norcroft C and UnixLib.  However,
   this feature is invisible to the user.
 
