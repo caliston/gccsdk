@@ -13,6 +13,7 @@ int main(int argc,char **argv)
   catch (BError err)
     {
       cerr << &err;
+      return 1;
     }
 
   return 0;
