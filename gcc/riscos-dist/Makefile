@@ -16,11 +16,13 @@ GCCPKG = $(pkg)/\!Boot,feb \
 	$(pkg)/Changes \
 	$(pkg)/include \
 	$(pkg)/support \
+	$(pkg)/bin/ar$(exesfx) \
 	$(pkg)/bin/drlink$(exesfx) \
 	$(pkg)/bin/dyn_kill,ffb \
 	$(pkg)/bin/gcc$(exesfx) \
 	$(pkg)/bin/gcov$(exesfx) \
 	$(pkg)/bin/libfile$(exesfx) \
+	$(pkg)/bin/nm$(exesfx) \
 	$(bindir)/as$(exesfx) \
 	$(bindir)/cpp$(exesfx) \
 	$(bindir)/ld$(exesfx) \
