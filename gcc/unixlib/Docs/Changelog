@@ -1,3 +1,7 @@
+Sat Jan 12 15:46:08 2002  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* stdio.h (putchar): Do not define as a macro.
+
 Thu Dec 20 09:46:26 2001  David Marston  <david@illudium.org.uk>
 
 	* module/sul.s (upcall_handler): Remove duplicate lines.

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdio.h,v $
- * $Date: 2001/09/02 10:25:17 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -248,8 +248,6 @@ extern int fputc (int __c, FILE *__stream);
 
 /* Write a character to stdout.  */
 extern int putchar (int __c);
-
-#define putchar(ch) putc(ch, stdout)
 
 /* Get a newline-terminated string of finite length from stream.  */
 extern char *fgets (char *__s, size_t __n, FILE *__stream);
