@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_signal.s,v $
-; $Date: 2001/08/15 16:22:59 $
-; $Revision: 1.4.2.3 $
+; $Date: 2001/08/16 10:05:12 $
+; $Revision: 1.4.2.4 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -77,9 +77,8 @@
 	STR	a3, [a2, #0]
 
 	; Copy the error to UnixLib's buffer.
-	LDR	a2, =|__h_errbuf|
+	LDR     a2, =|__ul_errbuf_errblock|
 	MOV	a3, #|__ul_errbuf__size|
-	;ASSERT	|__ul_errbuf__size| = 256
 |__seterr.00|
 	LDMIA	a1!, {a4,v1-v5,ip,lr}	; yes, increment after is correct.
 	STMIB	a2!, {a4,v1-v5,ip,lr}	; yes, increment before is correct.
@@ -103,7 +102,7 @@
 ;
 	EXPORT	|_kernel_last_oserror|
 |_kernel_last_oserror|
-	LDR	a1, =|__h_errbuf|
+	LDR	a1, =|__ul_errbuf_errblock|
 	LDR	a2, [a1, #0]
 	CMP	a2, #0
 	MOVNES	pc, lr
@@ -251,9 +250,6 @@
 ;	CallBack	raise a deferred signal
 ;
 
-	EXPORT	|__h_errbuf|
-|__h_errbuf|
-	DCD	0
 
 ;-----------------------------------------------------------------------
 ; Error handler (1-289).
@@ -286,7 +282,7 @@ lb1	DCB	"*** UnixLib error handler ***", 0
 lb2	DCD	&FF000000 + lb2 - lb1
 |__h_error|
 	; Entered in USR mode. Setup an APCS stack frame
-	; so we can get a proper stack backtrace incase anything
+	; so we can get a proper stack backtrace in case anything
 	; goes horribly wrong.
 	MOV	ip, sp
 	STMFD	sp!, {a1, a2, a3, a4, fp, ip, lr, pc}
@@ -296,39 +292,50 @@ lb2	DCD	&FF000000 + lb2 - lb1
 	LDR	a1, =|errno|
 	MOV	a2, #EOPSYS
 	STR	a2, [a1, #0]
-	; sys_errlist = error string
-	LDR	a3, |__h_errbuf|
+	
+	; sys_errlist[EOPSYS] = __ul_errbuf_errblock+4
 	LDR	a1, =sys_errlist
-	ADD	a2, a3, #8
+	LDR	a3, =|__ul_errbuf_errblock|
+	ADD	a2, a3, #4
 	STR	a2, [a1, #(EOPSYS:SHL:2)]
 
 	; Check the error number. Its value will determine the
 	; appropriate signal to call.
-	LDR	a2, [a3, #4]
-	; Check for a serious error.
-	TST	a2, #&80000000
+	LDR	a3, [a3, #0]
+
+	; Check bit 31 of the error number.  If it is set, then it
+	; indicates a serious error, usually a hardware exception e.g.
+	; a page-fault or a floating point exception.
+	TST	a3, #&80000000
+	; Bit 31 was not set so raise a RISC OS error.
 	MOVEQ	a1, #SIGERR
 	BLEQ	raise
 	LDMEQEA	fp, {a1, a2, a3, a4, fp, sp, pc}^
 
+	; Bit 31-was set, therefore it was a hardware error.
+	
 	; Print the error
-	ADR	a1, |__h_error_msg|
+	ADR	a1, unrecoverable_error_msg
 	SWI	XOS_Write0
-	ADD	a1, a3, #8
+	MOV	a1, a2		; Write out __ul_errbuf_errblock+4
 	SWI	XOS_Write0
 	SWI	XOS_NewLine
 
-	; Raise a signal
-	BIC	a2, a2, #&80000000
-	MOV	a2, a2, LSR #8
-	AND	a2, a2, #&FF
-	CMP	a2, #&02
-	MOVEQ	a1, #SIGFPE
-	MOVNE	a1, #SIGEMT
+	; Test the type of hardware error.  We currently aren't doing
+	; much other than saying it was a Floating Point Exception
+	; or something else.
+	; For compatability with ISO C99 we should decode the FP exception
+	; more accurately.
+	BIC	a3, a3, #&80000000
+	MOV	a3, a3, LSR #8
+	AND	a3, a3, #&FF
+	CMP	a3, #&02
+	MOVEQ	a1, #SIGFPE	;  A floating point exception
+	MOVNE	a1, #SIGEMT	;  A RISC OS exception.
 	BL	raise
 	LDMEA	fp, {a1, a2, a3, a4, fp, sp, pc}^
 
-|__h_error_msg|
+unrecoverable_error_msg
 	DCB	13, 10, "Unrecoverable error received:", 13, 10, "  ", 0
 
 ;-----------------------------------------------------------------------
@@ -352,8 +359,6 @@ lb2	DCD	&FF000000 + lb2 - lb1
 |__h_sigint|
 	; Entered in IRQ mode. Be quick by just clearing the escape
 	; flag and setting a callback.
-
-	STMFD	sp!, {a1-a3,lr}
 	TST	r11, #64		; bit 6
 	MOVNE	ip, #SIGINT
 	STRNE	ip, |__cba1|
@@ -365,7 +370,7 @@ lb2	DCD	&FF000000 + lb2 - lb1
 
 	MOVEQ	ip, #0
 	MOVNE	ip, #1
-	LDMFD   sp!, {a1-a3,pc}^
+	MOVS	pc, lr
 
 ; callback_signal. Used to raise a signal via a callback handler.
 ; Entered in SVC mode
@@ -447,13 +452,12 @@ Internet_Event	EQU	19
 	TEQ	a1, #Internet_Event
 	MOVNES	pc, lr
 
-	STMFD	sp!, {lr}
 	; Convert the internet event into a suitable signal for raising
 	CMP	a2, #1 ; Out-of-band data has arrived
 	MOVEQ	ip, #SIGURG
 	STREQ	ip, |__cba1|
 	MOVEQ	ip, #1 ; Callback set if R12 = 1
-	LDMFD	sp!, {pc}^
+	MOVS	pc, lr
 
 ;-----------------------------------------------------------------------
 ; Unused SWI handler (1-291).
@@ -492,21 +496,17 @@ Internet_Event	EQU	19
 ; When UpCall_NewApplication is received, then all handlers should be
 ; restored to their original values and return to caller, preserving
 ; registers.
-; FIXME Call restore code in USR mode (unless rewritten in assembly so
-; can be called in SVC mode). Should _exit be called to tidy things up ?
 ;
-
+	
 UpCall_NewApplication	EQU	256
 
 	EXPORT	|__h_upcall|
-	IMPORT	|__restore_calling_environment_handlers|
+	IMPORT	|__env_riscos|
 |__h_upcall|
 	; Check for the application starting UpCall
 	CMP	a1, #UpCall_NewApplication
 	MOVNES	pc, lr
-	STMFD	sp!, {a1, a2, a3, a4, lr}
-	BL	|__restore_calling_environment_handlers|
-	LDMFD	sp!, {a1, a2, a3, a4, pc}^
+	B	|__env_riscos|
 
 	EXPORT	|__h_cback|
 |__h_cback|
@@ -733,22 +733,16 @@ itimer_exit
 ;
 ; According to 1-289 the error handler must provide an error buffer of
 ; size 256 bytes, the address of which should be set along with the
-; handler address. Traditionally, errors in RISC OS require 256 bytes,
-; comprising 4 bytes for the number and 252 bytes for the string. See
-; the definition of os_error and kernel_oserror for examples of this.
-; Now, that raises a conflict with the amount of storage required for
-; the error buffer, because a 256 byte error buffer only has room for
-; 248 bytes of error string. So, we err on the side of caution and
-; declare a 260 byte area of memory for the buffer, potentially wasting
-; a whole 4 bytes. I can live with that, can you ? If you can't then the
-; code elsewhere recovers more than 4 bytes.
-; 
-
-|__ul_errbuf.pc|
-	%	4		; PC when error occurred
+; handler address.  This is wrong, it actually requires a 260 byte
+; buffer, for the error PC and the normal 256 byte RISC OS error
+; block.
+;
+	EXPORT  |__ul_errbuf|
 |__ul_errbuf|
-	%	4		; Error number provided with the error
-	%	252		; Error string, zero terminated
-|__ul_errbuf__size|	EQU	{PC} - |__ul_errbuf|
-	
+	%	4	; PC when error occurred
+|__ul_errbuf_errblock|
+	%	4	; Error number provided with the error
+	%	252	; Error string, zero terminated
+|__ul_errbuf__size|	EQU	{PC} - |__ul_errbuf_errblock|
+
 	END

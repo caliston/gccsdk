@@ -1,19 +1,19 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/common/c/funcallerr,v $
- * $Date: 1997/10/09 19:59:59 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/funcallerr.c,v $
+ * $Date: 2001/01/29 15:10:19 $
  * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: funcallerr,v 1.2 1997/10/09 19:59:59 unixlib Exp $";
+static const char rcs_id[] = "$Id: funcallerr.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
 #endif
 
 #include <signal.h>
-#include <sys/syslib.h>
+#include <sys/unix.h>
 #include <sys/os.h>
 
 int

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/time/setitmr.c,v $
- * $Date: 2001/01/29 15:10:22 $
- * $Revision: 1.2 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: setitmr.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
+static const char rcs_id[] = "$Id: setitmr.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 #include <stddef.h>
@@ -18,7 +18,6 @@ static const char rcs_id[] = "$Id: setitmr.c,v 1.2 2001/01/29 15:10:22 admin Exp
 #include <swis.h>
 #include <sys/time.h>
 #include <sys/unix.h>
-#include <sys/syslib.h>
 
 /* setitimer provides a mechanism for a process to interrupt itself at
    some future time. This is achieved by setting a timer; when the
@@ -51,7 +50,6 @@ static const char rcs_id[] = "$Id: setitmr.c,v 1.2 2001/01/29 15:10:22 admin Exp
 
    The return value is 0 on success and -1 on failure.  */
 
-#ifdef __FEATURE_ITIMERS
 typedef void (*ticker) (void);
 
 static void
@@ -79,11 +77,9 @@ add_ticker (const struct timeval *time, ticker address,
 static int
 check_ticker (const struct timeval *time)
 {
-  if (time->tv_sec > 0 || time->tv_usec > 0)
-    return 1;
-  if (time->tv_sec == 0 && time->tv_usec == 0)
-    return 2;
-  return 0;
+  return (time->tv_sec > 0 || time->tv_usec > 0) ? 1
+	  : (time->tv_sec == 0 && time->tv_usec == 0) ? 2
+	  : 0;
 }
 
 struct timer_control
@@ -98,13 +94,11 @@ static const struct timer_control timer_controls[__MAX_ITIMERS] =
   {__h_sigvtalrm_init, &__h_sigvtalrm_sema},	/* ITIMER_VIRTUAL */
   {__h_sigprof_init, &__h_sigprof_sema}		/* ITIMER_PROF */
 };
-#endif
 
 int
 setitimer (enum __itimer_which which, const struct itimerval *new_timer,
 	   struct itimerval *old_timer)
 {
-#ifdef __FEATURE_ITIMERS
   struct itimerval *itimer;
 
   /* We can't implement interval timers whilst executing in a task window
@@ -138,7 +132,4 @@ setitimer (enum __itimer_which which, const struct itimerval *new_timer,
 		       &itimer->it_interval);
 
   return 0;
-#else
-  return __set_errno (ENOSYS);
-#endif
 }

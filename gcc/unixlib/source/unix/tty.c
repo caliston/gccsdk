@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/tty.c,v $
- * $Date: 2001/08/04 10:51:25 $
- * $Revision: 1.4.2.2 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.4.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tty.c,v 1.4.2.2 2001/08/04 10:51:25 admin Exp $";
+static const char rcs_id[] = "$Id: tty.c,v 1.4.2.3 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 /* System V tty device driver for RISC OS.  */
@@ -24,7 +24,6 @@ static const char rcs_id[] = "$Id: tty.c,v 1.4.2.2 2001/08/04 10:51:25 admin Exp
 #include <unistd.h>
 
 #include <sys/ioctl.h>
-#include <sys/syslib.h>
 #include <sys/types.h>
 #include <sys/unix.h>
 #include <sys/dev.h>

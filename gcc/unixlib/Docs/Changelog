@@ -1,3 +1,76 @@
+Sat Sep  1 14:43:32 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* signal/_coredump.s (backtrace_remove_loop): Re-work restoring
+	of RISC OS environment handlers.
+	(backtrace_reinstall_loop): Likewise.
+	(__c_environment_end): Delete.
+	(AREA C$$data): Set NOINIT.
+	* signal/_signal.s (__h_upcall): Fix to work in SVC mode [from
+	Peter Naulls]
+	(__seterr): Fix [from Peter Naulls].
+	(__h_errbuf): Delete.  Change all uses to __ul_errbuf_errblock.
+	(__h_error): Add some comments.
+	(__h_sigint): No need to store tempories on stack.
+	(__h_event): Likewise.
+	(__ul_errbuf): Renamed from __ul_errbuf.pc -- makes errbuf
+	the correct size [from Peter Naulls].
+	* sys/_syslib.s (__read_environment_handler): Delete function.
+	(__write_environment_handler): Delete function.
+	(__env_riscos): New function. Replacement for
+	__restore_calling_environment_handlers.
+	(__env_read): New function.
+	(__env_unixlib): New function.
+	Set __ul_errbuf for the Error handler [from Peter Naulls].
+	(handlers): New table.
+	(__calling_environment): Define.
+	* sys/syslib.c: Delete file.
+	* sys/exec.c (execve): Inline call to __reset.
+	(__exret): Call __env_read and __env_unixlib rather than
+	__write_environment_handler.
+	
+	* sys/unix.h: Merge sys/syslib.h into here.
+	(__unixinit): Delete decl.
+	(__unixexit): Delete decl.
+	(__find_free_child): Delete decl.
+	* sys/syslib.h: Delete header file.
+	* sys/_syslib.s (__main): Merge _main from sys/syslib.c into
+	here.  Big code cleanup.  __himem was incorrectly set to __sigstksize.
+	Reference variables relative to ip, to reduce use of LTORG.
+	Incorporate the reading of UnixLib$env into here.
+	Inline check_for_callaswi.
+	(__svccli): Delete function.
+	(check_for_callaswi): Delete function.
+	(___stdioinit): Delete weak link.
+	(___stdioexit): Likewise.
+	(__u): Define.
+	* unix/unix.c: Merge sys/syslib.c into here.
+	(__atexit_function_array): New vector.
+	(__atexit_function_count): New.
+	(__unixinit): Initialise locale and stdio here.  Remove UnixLib$env
+	checks.  If child process does not inherit an environment, then
+	create a new one.
+	(__unixexit): Delete function.
+	(_main): New function.
+	(exit): Moved here from sys/syslib.c.
+	(_exit): Likewise.
+
+	* bsearch.c: Include sys/unix.h rather than sys/syslib.h.
+	* qsort.c, termcap.c: Likewise.
+	* common/funcallerr.c: Likewise.
+	* netlib/socket.c: Likewise.
+	* resource/getrlimit.c, resource/initialise.c: Likewise.
+	* resource/ulimit.c: Likewise.
+	* signal/init.c: Likewise.
+	* sys/brk.c, sys/debug.c, sys/exec.c, sys/mman.c: Likewise.
+	* sys/vfork.c: Likewise.
+	* time/getitmr.c, time/setitmr.c: Likewise.
+	* unix/close.c, unix/dirent.c, unix/getcwd.c: Likewise.
+	* unix/ioctl.c, unix/lseek.c, unix/open.c, unix/pipe.c: Likewise.
+	* unix/read.c, unix/readv.c, unix/reopen.c, unix/select.c: Likewise.
+	* unix/tty.c, unix/write.c, unix/writev.c: Likewise.
+
+	* time/setitmr.c (check_ticker): Optimise.
+	
 Thu Aug 16 11:23:16 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* sys/_syslib.s (sigstk): Delete.

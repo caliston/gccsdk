@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/vfork.c,v $
- * $Date: 2001/08/04 15:50:22 $
- * $Revision: 1.2.2.4 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.2.2.5 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.4 2001/08/04 15:50:22 admin Exp $";
+static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.5 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -26,10 +26,10 @@ static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.4 2001/08/04 15:50:22 admin E
 
 #include <sys/resource.h>
 #include <sys/unix.h>
-#include <sys/syslib.h>
 #include <sys/param.h>
 #include <sys/debug.h>
 #include <sys/wait.h>
+#include <sys/os.h>
 #include <swis.h>
 
 /* #define DEBUG 1 */

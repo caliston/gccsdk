@@ -1,22 +1,24 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2001/08/06 08:13:33 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.1 2001/08/06 08:13:33 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.2 2001/08/08 08:45:06 admin Exp $";
 #endif
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
 #include <limits.h>
+#include <locale.h>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -25,9 +27,9 @@ static const char rcs_id[] = "$Id: unix.c,v 1.2.2.1 2001/08/06 08:13:33 admin Ex
 
 #include <sys/os.h>
 #include <sys/unix.h>
-#include <sys/syslib.h>
 #include <sys/param.h>
 #include <swis.h>
+#include <sys/wait.h>
 
 #include <unixlib/fd.h>
 #include <unixlib/local.h>
@@ -42,6 +44,9 @@ static const char rcs_id[] = "$Id: unix.c,v 1.2.2.1 2001/08/06 08:13:33 admin Ex
 #undef attribute
 #define attribute(x) /* ignore */
 #endif
+
+void (*__atexit_function_array[__MAX_ATEXIT_FUNCTION_COUNT]) (void);
+int __atexit_function_count = 0;
 
 static void initialise_process_structure (struct proc *process);
 static struct proc *create_process_structure (void);
@@ -58,12 +63,19 @@ static int convert_command_line (struct proc *process, const char *cli,
 
 static void __badr (void) __attribute__ ((__noreturn__));
 
-/* Initialize the signal code.  If declared in sys/syslib.h
+/* Initialize the signal code.  If declared in sys/unix.h
    then we'd have to drag in a lot of headers.  */
 extern void __unixlib_signal_initialise (struct proc *__p);
 
 /* Resource limit initialisation */
 extern void __resource_initialise (struct proc *__p);
+
+/* This is the only file that need ever reference main()
+   so to prevent possible compiler errors from sources that
+   might include <sys/unix.h> we will have the main()
+   declaration here.  */
+extern int main (int argc, char *argv[], char **environ);
+
 
 /* Globally used panic button.  */
 void
@@ -106,7 +118,6 @@ __decstrtoui (const char *nptr, char **end)
   return result;
 }
 
-
 /* Initialise the UnixLib world.  */
 void __unixinit (void)
 {
@@ -114,7 +125,6 @@ void __unixinit (void)
   char *cli = NULL;
   extern char *__cli;
 
-  __u = (struct proc *) __intenv ("UnixLib$env");
 #ifdef DEBUG
   os_print ("-- __unixinit: __u = "); os_prhex ((unsigned int) __u);
   if (__u)
@@ -123,8 +133,6 @@ void __unixinit (void)
     }
   os_print ("\r\n");
 #endif
-  if (__u != NULL)
-    __remenv_from_os ("UnixLib$env");
 
   if (__u == NULL || __u->__magic != _PROCMAGIC)
     {
@@ -142,26 +150,36 @@ void __unixinit (void)
       initialise_process_structure (__u);
       __resource_initialise (__u);
       __unixlib_signal_initialise (__u);
+      /* Initialise ctype tables to the C locale.  */
+      __build_ctype_tables (-2);
       /* Define and initialise the Unix I/O.  */
       initialise_unix_io (__u);
-
-      /* FIXME, copy environ from parent. Consider setting
-         last_environ here if malloc'ing */
-      environ = malloc (sizeof (char *));
-      if (environ == NULL)
-	__unixlib_fatal (NULL);
-      *environ = NULL;
+      __stdioinit ();
     }
   else
     {
       __resource_initialise (__u);
       __unixlib_signal_initialise (__u);
+      /* Initialise ctype tables to the C locale.  */
+      __build_ctype_tables (-2);
+      __stdioinit ();
 
       /* Inherit environ from parent.  This is our copy, to do with as we
          like except for freeing.  */
       if (! newproc)
         environ = __u->envp;
    }
+
+  if (! environ)
+    {
+      /* If we are a new process, then we are building a new environment
+	 table here.  We can also arrive here if we are a child process
+	 and the parent process had nothing in its environment to pass on.  */
+      environ = malloc (sizeof (char *));
+      if (environ == NULL)
+	__unixlib_fatal (NULL);
+      *environ = NULL;
+    }
 
   /* Get command line.  */
   __cli_size = strlen (__cli);
@@ -218,33 +236,103 @@ void __unixinit (void)
 #ifdef DEBUG
   __debug ("__unixinit: process creation complete");
 #endif
+
+}
+
+void _main (void)
+{
+  /* Enter the user's program. For compatibility with Unix systems,
+     pass the 'environ' variable as a third argument.  */
+  main (__u->argc, __u->argv, environ);
 }
 
 void
-__unixexit (void)
+exit (int status)
 {
   int i;
-  struct __unixlib_fd *fd;
 
-#if __FEATURE_ITIMERS
-  /* Stop any interval timers that might be running.  */
-  __stop_itimers ();
-#endif
+  /* Execute atexit functions in the reverse order of their
+     registration.  */
+  i = __atexit_function_count;
+  while (i)
+    {
+      i--;
+      __funcall ((*__atexit_function_array[i]), ());
+    }
+
+  /* Close all open streams, write out buffered output data and
+     delete tmpfile() temporary files.  */
+  __stdioexit ();
+
+  /* Only return codes between 0 and 127 are valid.  128 to 255 are
+     reserved for the run-time library internals.  */
+  status = status & 0x7f;
+
+  _exit (__W_EXITCODE (status, 0));
+}
+
+/* Final process termination. 'return_code' is a 16-bit
+   encoded quantity as defined by <sys/wait.h>.  */
+void
+_exit (int return_code)
+{
+  int status;
+
+  /* Interval timers must be stopped.  */
+  if (__u)
+    __stop_itimers ();
+
+  /* Convert the 16-bit return code into an 8-bit equivalent
+     for compatibility with RISC OS.  See sys.c.vfork for
+     further information.  */
+  if (WIFSIGNALED (return_code))
+    {
+      status = WTERMSIG (return_code);
+      status |= (1 << 7);
+      if (WCOREDUMP (return_code))
+	status |= (1 << 6);
+    }
+  else
+    {
+      status = WEXITSTATUS (return_code);
+    }
+
+  /* If we aren't a child process then we can just exit the system.  */
+  if (!__u || !__u->status.has_parent || !___vret)
+    {
+      struct __unixlib_fd *fd = __u->fd;
+      int i;
+
+      /* Close all file descriptors.  */
+      if (fd)
+	for (i = 0; i < MAXFD; i++)
+	  if (fd[i].__magic == _FDMAGIC)
+	    close (i);
+
+      /* We're going back to the RISC OS world.  */
+      __env_riscos ();
 
 #ifdef DEBUG
-  __debug ("__unixexit: closing file descriptors");
+      os_print ("_exit(): Setting return code = ");
+      os_prhex (return_code);
+      os_print ("\r\n");
 #endif
-/*  os_print ("__unixexit()\n\r");
-   __display_redirection(); */
 
-  fd = __u->fd;
+      /* OS_Exit with return value 'r'.  This function never returns.  */
+      __exit (status);
+    }
 
-  /* Close all file descriptors.  */
-  if (fd)
-    for (i = 0; i < MAXFD; i++)
-      if (fd[i].__magic == _FDMAGIC)
-	close (i);
+  /* Due to the change to clock(), this is currently complete crap.  */
+
+#ifdef DEBUG
+  os_print ("_exit(): calling ___vret with return code = ");
+  os_prhex (return_code);
+  os_print ("\r\n");
+#endif
+
+  __vret (status);
 }
+
 
 int
 __alloc_file_descriptor (void)
@@ -271,7 +359,6 @@ __alloc_file_descriptor (void)
   return __set_errno (EMFILE);
 }
 
-#if __FEATURE_ITIMERS
 void
 __stop_itimers (void)
 {
@@ -293,7 +380,6 @@ __stop_itimers (void)
   setitimer (ITIMER_VIRTUAL, &new_timer, 0);
   setitimer (ITIMER_PROF, &new_timer, 0);
 }
-#endif
 
 static void
 initialise_process_structure (struct proc *process)

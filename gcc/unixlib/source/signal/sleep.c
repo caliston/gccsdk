@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/signal/c/sleep,v $
- * $Date: 2000/07/03 11:32:44 $
- * $Revision: 1.9 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/sleep.c,v $
+ * $Date: 2001/01/29 15:10:21 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: sleep,v 1.9 2000/07/03 11:32:44 admin Exp $";
+static const char rcs_id[] = "$Id: sleep.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
 /* signal.c.sleep: Written by Nick Burrett, 6 October 1996.  */
@@ -18,7 +18,7 @@ static const char rcs_id[] = "$Id: sleep,v 1.9 2000/07/03 11:32:44 admin Exp $";
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/syslib.h>
+#include <sys/unix.h>
 
 /* SIGALRM signal handler for `sleep'.  This does nothing but return,
    but SIG_IGN isn't supposed to break `pause'.  */

@@ -394,7 +394,6 @@ SYS =	$(libunixobj)/sys/alarm.o \
 	$(libunixobj)/sys/execvp.o \
 	$(libunixobj)/sys/mman.o \
 	$(libunixobj)/sys/sigsetjmp.o \
-	$(libunixobj)/sys/syslib.o \
 	$(libunixobj)/sys/vfork.o
 
 SYS_ASM =	$(libunixobj)/sys/_alloca.o \

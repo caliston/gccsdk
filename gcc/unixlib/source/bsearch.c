@@ -1,18 +1,18 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/c/bsearch,v $
- * $Date: 1997/10/19 19:19:41 $
- * $Revision: 1.5 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/bsearch.c,v $
+ * $Date: 2001/01/29 15:10:18 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: bsearch,v 1.5 1997/10/19 19:19:41 unixlib Exp $";
+static const char rcs_id[] = "$Id: bsearch.c,v 1.2 2001/01/29 15:10:18 admin Exp $";
 #endif
 
-#include <sys/syslib.h>
+#include <sys/unix.h>
 #include <stddef.h>
 #include <stdlib.h>
 

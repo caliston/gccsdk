@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/dirent.c,v $
- * $Date: 2001/01/29 15:10:22 $
- * $Revision: 1.2 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: dirent.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
+static const char rcs_id[] = "$Id: dirent.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -24,7 +24,6 @@ static const char rcs_id[] = "$Id: dirent.c,v 1.2 2001/01/29 15:10:22 admin Exp 
 #include <ctype.h>
 
 #include <sys/unix.h>
-#include <sys/syslib.h>
 #include <sys/os.h>
 #include <sys/types.h>
 #include <swis.h>

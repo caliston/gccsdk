@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/brk.c,v $
- * $Date: 2001/01/29 15:10:21 $
- * $Revision: 1.2 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -38,7 +38,7 @@
 /* sys/brk.c: Complete rewrite by Peter Burwood, June 1997  */
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: brk.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
+static const char rcs_id[] = "$Id: brk.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 #include <string.h>
@@ -46,7 +46,7 @@ static const char rcs_id[] = "$Id: brk.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #include <unistd.h>
 
 #include <sys/resource.h>
-#include <sys/syslib.h>
+#include <sys/os.h>
 #include <swis.h>
 #include <sys/types.h>
 #include <sys/unix.h>

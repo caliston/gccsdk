@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/sys/h/unix,v $
- * $Date: 2000/08/17 16:16:06 $
- * $Revision: 1.20 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/unix.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -50,14 +50,6 @@ extern "C" {
 #define attribute(x) /* ignore */
 #endif
 
-/* the 2 functions below are automatically called in normal circumstances */
-
-/* Initialise the UnixLib world */
-extern void __unixinit (void);
-/* Shutdown the UnixLib world */
-extern void __unixexit (void);
-
-
 struct __process
 {
   /* This process has a parent process.  */
@@ -83,11 +75,10 @@ struct __child_process
   __uid_t uid;
   __gid_t gid;
   __pid_t pid;
-  int	ppri, gpri, upri;
+  int ppri, gpri, upri;
   struct __process status;
   struct rusage usage;
-  /* Process context.  */
-  jmp_buf vreg;
+  jmp_buf vreg; /* Process context.  */
 };
 
 /* UnixLib 3.7b == 0xfedcfa5f.  */
@@ -127,7 +118,7 @@ struct proc
   jmp_buf vreg;  /* Process context.  */
   /* UGLY HACK: We store cli malloc pointer here prior to calling child
      process.  The malloc store is then freed in __exret.  */
-    void *cli;
+  void *cli;
 };
 
 extern struct proc *__u;	/* current process */
@@ -135,11 +126,102 @@ extern struct proc *__u;	/* current process */
 struct pipe
 {
   struct __unixlib_fd *p[2];
-  char		*file;
-  struct pipe	*next;
+  char *file;
+  struct pipe *next;
 };
 
 extern struct pipe *__pipe;	/* list of currently active pipes */
+
+
+extern int __funcall_error (const char *, int, unsigned int);
+#ifndef __PARANOID
+#define __funcall(f,p) ((f)p)
+#else
+#define __funcall(f,p) \
+  ((((void *)(f) >= __base) && (((unsigned int)(f) & ~3) == (unsigned int)(f)) \
+   ? 0 : __funcall_error(__FILE__,__LINE__,(unsigned int)(f))), (f)p)
+#endif
+
+
+/* Assembler exit.  */
+extern void __exit (int) __attribute__ ((__noreturn__));
+extern void __exit_no_code (void) __attribute__ ((__noreturn__));
+
+/* __break is initialised to __lomem & __stack to __himem - STAKSIZ;
+ * __stack is extended downwards in 512 byte chunks by x$stack_overflow()
+ * and __break is extended upwards by brk() and sbrk(). The sl
+ * register is kept equal to __stack + 256. Should x$stack_overflow()
+ * attempt to extend __stack below __break then SIGEMT is raised.
+ * Should brk() or sbrk() be asked to extend __break above __stack
+ * then they return with ENOMEM. */
+
+extern char *__cli;		/* command line from OS_GetEnv */
+extern void *__base;		/* BASE = Image$$RO$$Base */
+extern void *__lomem;		/* LOMEM = Image$$RW$$Limit */
+extern void *__himem;		/* HIMEM from OS_GetEnv */
+extern void *__rwlimit;
+
+extern void *__break;		/* end of data area */
+extern void *__real_break;	/* real end of data area */
+extern void *__stack;		/* bottom of stack */
+extern void *__stack_limit;
+extern int __codeshift;
+extern int __dynamic_num;
+extern void __dynamic_area_exit (void);
+
+extern void __munmap_all (void);	/* Deallocate all mappings.  */
+
+/* Zero if we are not executing within a TaskWindow.  Non-zero otherwise.  */
+extern int __taskwindow;
+/* Zero if we are running in command mode (not as a WIMP program).  Non-zero
+   otherwise.  */
+extern int __wimpprogram;
+
+extern unsigned int __time[2];	/* start time */
+
+#define __OS_ARTHUR	0xA0
+#define __OS_RISCOS_200 0xA1
+#define __OS_RISCOS_201 0xA2
+#define __OS_RISCOS_300 0xA3
+#define __OS_RISCOS_310 0xA4
+#define __OS_RISCOS_350	0xA5
+#define	__OS_RISCOS_360 0xA6
+#define __OS_RISCOS_370 0xA7
+#define __OS_RISCOS_400 0xA8
+
+/* setjmp() and longjmp() modify their behaviour according to __fpflag */
+
+/* FP flag reflecting Floating Point presence or not.  */
+extern int __fpflag;
+
+/* Stop the interval timers.  */
+extern void __stop_itimers (void);
+
+/* OS_ChangeEnvironment is used to set up exception handlers. These
+ * handlers use OS_CallBack to raise signals in the foreground process.
+ * RTFM (RISC OS PRM - 'The Program Environment') for more info. */
+
+/* Reset handlers, etc. back to original state.  */
+extern void __env_riscos (void);
+extern void __env_unixlib (void);
+extern void __env_read (void);
+
+/* vfork() & exec() */
+
+extern void __vret (int);	/* return from child - calls __vexit() */
+
+extern int *__vfork (void);	/* fork to child context */
+extern int *__vexit (int);	/* restore to parent context */
+
+extern void __exret (void);	/* return from __exec() - calls __vret() */
+
+extern void (*__exptr) (char *); /* pointer to __exec() routine */
+extern int __exlen;		/* length of __exec() routine */
+extern int __exshift;		/* __exec() shift */
+
+/* vfork weak link.  */
+
+extern void (*___vret) (int);
 
 /* Return unsigned int from STRING.  END, if non-null, points to character
    after number.  */
@@ -183,9 +265,6 @@ extern int __remenv_from_os (const char *__name);
 
 /* Set runtime features according to system variables.  */
 extern void __runtime_features (const char *__cli);
-
-/* Find first freely available child.  */
-extern int __find_free_child (void);
 
 /* Print an error and exit the process.  */
 extern void

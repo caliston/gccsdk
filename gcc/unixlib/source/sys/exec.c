@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/exec.c,v $
- * $Date: 2001/08/04 14:33:51 $
- * $Revision: 1.2.2.4 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.2.2.5 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: exec.c,v 1.2.2.4 2001/08/04 14:33:51 admin Exp $";
+static const char rcs_id[] = "$Id: exec.c,v 1.2.2.5 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 #include <ctype.h>
@@ -22,7 +22,7 @@ static const char rcs_id[] = "$Id: exec.c,v 1.2.2.4 2001/08/04 14:33:51 admin Ex
 #include <unistd.h>
 #include <sys/param.h>
 #include <sys/unix.h>
-#include <sys/syslib.h>
+#include <sys/os.h>
 #include <swis.h>
 #include <sys/wait.h>
 #include <unixlib/local.h>
@@ -150,6 +150,7 @@ set_dde_cli (char *cli)
   return 0;
 }
 
+/* Also referenced in sys/_exec.s.  */
 _kernel_oserror *__exerr;
 
 /* Execute program `execname' and pass command line arguments `argv'
@@ -363,7 +364,14 @@ execve (const char *execname, char **argv, char **envp)
       os_print ("-- execve: take a shortcut (not a child process)\r\n");
 #endif
       /* Shutdown unix. This is literally the point of no return.  */
-      __reset ();
+      __stop_itimers ();
+      for (x = 0; x < MAXFD; x++)
+	if (process->fd[x].__magic == _FDMAGIC)
+	  close (x);
+
+      /* Restore the RISC OS environment handlers.  This breaks us out
+	 of the UnixLib world.  */
+      __env_riscos ();
 
       /* If the cli is >= MAXPATHLEN, we will need the aid of DDE utils.  */
       if (strlen (cli) >= MAXPATHLEN && set_dde_cli (cli) < 0)
@@ -470,7 +478,7 @@ execve (const char *execname, char **argv, char **envp)
      in the new process image, unless they have the 'FD_CLOEXEC'
      flag set.  O_EXECCL is an alias for FD_CLOEXEC.  */
   for (x = 0; x < MAXFD; x++)
-    if (process->fd[x].dflag & O_EXECCL)
+    if (process->fd[x].__magic == _FDMAGIC && process->fd[x].dflag & O_EXECCL)
       close (x);
 
   process->status.has_parent = 0;
@@ -513,8 +521,11 @@ execve (const char *execname, char **argv, char **envp)
   os_nl ();
 #endif
 
-  /* Remove environment handlers.  */
-  __restore_calling_environment_handlers ();
+  /* Restore the original RISC OS environment handlers.  We need to do
+     this because we will be physically changing location in RAM.  RISC OS
+     will then have a set of invalid environment pointers which would
+     break things if something goes wrong from this stage onwards.  */
+  __env_riscos ();
 
 #ifdef DEBUG
   os_print ("-- execve: environment handlers restored\r\n");
@@ -608,7 +619,6 @@ execve (const char *execname, char **argv, char **envp)
 void
 __exret (void)
 {
-  struct env *environment;
   int i;
 
   /* Shift heap and __u pointers back down.  */
@@ -653,10 +663,13 @@ __exret (void)
       process->argv = NULL;
     }
 
-  /* Reinstall environment handlers.  */
-  environment = __c_environment;
-  for (i = 0; i < __ENVIRONMENT_HANDLERS; i++)
-    __write_environment_handler (i, environment->handlers + i);
+  /* Read the current RISC OS environment handlers.  We probably don't need
+     to do this because they should be exactly the same as when we read them
+     at UnixLib initialisation time.  */
+  __env_read ();
+
+  /* Install the UnixLib environment handlers.  */
+  __env_unixlib ();
   __remenv_from_os ("UnixLib$env");
 
 #ifdef DEBUG
