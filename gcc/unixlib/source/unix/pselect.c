@@ -1,17 +1,18 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/unix/c/pselect,v $
- * $Date: 1997/10/10 19:38:57 $
- * $Revision: 1.1 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/pselect.c,v $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: pselect,v 1.1 1997/10/10 19:38:57 unixlib Exp $";
+static const char rcs_id[] = "$Id: pselect.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
+#include <time.h>
 #include <sys/time.h>
 #include <sys/select.h>
 

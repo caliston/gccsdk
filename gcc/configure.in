@@ -109,6 +109,9 @@ case "$host" in
   *freebsd*)
 	os_type="FREEBSD"
 	;;
+  *openbsd*)
+	os_type="OPENBSD"
+	;;
   *linux*)
 	os_type="LINUX"
 	;;

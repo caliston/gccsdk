@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/time/c/strftime,v $
- * $Date: 2000/11/08 10:22:57 $
- * $Revision: 1.4 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/time/strftime.c,v $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.3.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: strftime,v 1.4 2000/11/08 10:22:57 admin Exp $";
+static const char rcs_id[] = "$Id: strftime.c,v 1.3.2.1 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 /* UnixLib port by Nick Burrett, 13 July 1997.  */
@@ -34,8 +34,8 @@ static const char rcs_id[] = "$Id: strftime,v 1.4 2000/11/08 10:22:57 admin Exp 
 #include <stdio.h>
 #include <time.h>
 #include <locale.h>
-#include <sys/os.h>
-#include <sys/swis.h>
+#include <unixlib/os.h>
+#include <swis.h>
 
 static char *add (const char *, char *, const char *);
 static char *conv (int, const char *, char *, const char *);
@@ -54,6 +54,9 @@ strftime (char *s, const size_t maxsize, const char *format, const struct tm *t)
 {
   char *p;
   char riscos_time[6];
+
+  /* According to POSIX.1 every call to stftime implies a call to tzset.  */
+  tzset ();
 
   __cvt_broken_time (t, riscos_time);
   p = fmt (((format == NULL) ? "%c" : format), t, s, s + maxsize, riscos_time);
@@ -362,7 +365,7 @@ territory_convert (char *format, const char *time, char *pt, const char *ptlim)
   regs[2] = (int)buffer;
   regs[3] = sizeof (buffer) - 1;
   regs[4] = (int)format;
-  os_swi (Territory_ConvertDateAndTime, regs);
+  __os_swi (Territory_ConvertDateAndTime, regs);
   return add (buffer, pt, ptlim);
 }
 
@@ -376,6 +379,6 @@ territory_standard (int swinum, const char *time, char *pt, const char *ptlim)
   regs[1] = (int)time;
   regs[2] = (int)buffer;
   regs[3] = sizeof (buffer) - 1;
-  os_swi (swinum, regs);
+  __os_swi (swinum, regs);
   return add (buffer, pt, ptlim);
 }
