@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/riscosify.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: riscosify.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: riscosify.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -932,6 +932,25 @@ main:
 	  next = *++in0;
 	}
 
+      /* Use MimeMap to find a filetype to match the filename
+         extension.  e.g.  file.html -> 0xfaf */
+      if ((flags & __RISCOSIFY_FILETYPE_SET) &&
+          filetype != NULL && last_dot != NULL)
+        {
+           _kernel_swi_regs regs;
+
+          regs.r[0] = MMM_TYPE_DOT_EXTN; /* Input extension */
+          regs.r[1] = (int)last_dot;
+          regs.r[2] = MMM_TYPE_RISCOS; /* Output filetype */
+
+          if (_kernel_swi(MimeMap_Translate, &regs, &regs)) {
+            /* Default to text if there's an error */
+            *filetype = 0xFFF;
+          } else {
+            *filetype = regs.r[3];
+          }
+        }
+
       /* Check if we have "blabla,xyz" as filename where `xyz' is a
          valid 12 bit hex number.  Only perform the check if
          __RISCOSIFY_FILETYPE_EXT is set and xyz != 0xfff.  However
@@ -1005,7 +1024,7 @@ main:
 	     [From the choice of filenames above guess who is writing this]
 
 	     IMHO this is naïve:
-	     0: The directory doesn't exists
+	     0: The directory doesn't exist
 	     1: Write the file out as !Perl/lib/File.pm (!Perl.lib.File/pm)
 	     2: Create the directory to house more files
 	     3: Try to read back !Perl/lib/File.pm and it's "not there"

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/features.c,v $
- * $Date: 2001/09/11 14:16:00 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2002/06/10 12:01:27 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: features.c,v 1.2.2.2 2001/09/11 14:16:00 admin Exp $";
+static const char rcs_id[] = "$Id: features.c,v 1.2.2.3 2002/06/10 12:01:27 admin Exp $";
 #endif
 
 /* #define DEBUG 1 */
@@ -114,7 +114,7 @@ void __runtime_features (const char *cli)
 
   /* Initialise runtime features to their default values before querying
      the environment variables.  */
-  __riscosify_control = 0;
+  __riscosify_control =  __RISCOSIFY_FILETYPE_SET;
   __sdirinit (); /* Initialise riscosify.  */
 
   /* Default to recognising Image filesystems as directories.  Some programs

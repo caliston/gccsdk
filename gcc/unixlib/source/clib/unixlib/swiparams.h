@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/unixlib/h/swiparams,v $
- * $Date: 2000/06/10 13:02:20 $
- * $Revision: 1.1 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/swiparams.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -49,6 +49,11 @@ extern "C" {
 #define OSFILE_OPENOUT	   (OSFIND_OPEN_OPENOUT)
 #define OSFILE_OPENUP	   (OSFIND_OPEN_OPENUP)
 #endif
+
+#define MMM_TYPE_RISCOS               0
+#define MMM_TYPE_RISCOS_STRING        1
+#define MMM_TYPE_MIME                 2
+#define MMM_TYPE_DOT_EXTN             3
 
 #endif  /* __UNIXLIB_INTERNALS */
 

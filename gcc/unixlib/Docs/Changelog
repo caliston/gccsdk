@@ -1,3 +1,17 @@
+Sat Aug 17 11:51:39 2002  Peter Naulls  <peter@chocky.org>
+
+	* unixlib/local.h (__RISCOSIFY_FILETYPE_SET): New macro.
+	(__RISCOSIFY_MASK): Alter accordingly.
+	* common/riscosify.c (__riscosify): Use the MimeMap module
+	to match the filename extension and set the filetype appropriately.
+	* unix/features.c (__runtime_features): Set riscosify default
+	to setting the filetype.
+	* unixlib/swiparams.h (MMM_TYPE_RISCOS): Define.
+	(MMM_TYPE_RISCOS_STRING): Define.
+	(MMM_TYPE_MIME): Define.
+	(MMM_TYPE_DOT_EXTN): Define.
+	* swis.h (MimeMap_Translate): Define.
+
 Mon Aug  5 10:15:40 2002  Peter Naulls  <peter@chocky.org>
 
 	* netlib/_net_error.s (__net_error_simple_entry): Add branch

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/Attic/swis.h,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.1.2.1 $
+ * $Date: 2001/08/16 09:18:13 $
+ * $Revision: 1.1.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -682,4 +682,5 @@ extern _kernel_oserror *_swix (int __swi_no, unsigned int, ...);
 #define SysLog_ReadErrorMessage        0x04c88c
 #define SysLog_LogComplete             0x04c88d
 
+#define MimeMap_Translate		0x050b00
 #endif
