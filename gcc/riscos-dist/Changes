@@ -1,4 +1,4 @@
-RISC OS GCC release 2.95.2  (released xx October 2001)
+RISC OS GCC release 2.95.4  (released xx December 2001)
 ==========================
 
 * unixlib: Allow for program independent sfix settings.
@@ -38,6 +38,8 @@ RISC OS GCC release 2.95.2  (released xx October 2001)
   rather uninformative -mstubs to -mlibscl.
 
 * as: Better support for local labels.
+
+* gcc: Upgraded to version 2.95.4.
 
 RISC OS GCC pre-release 3a  (released 23 November 1999)
 ==========================
