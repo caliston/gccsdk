@@ -1,5 +1,5 @@
 # Top-level Makefile for the GNU Compiler Collection for ARM/RISC OS
-# Copyright (c) 2000, 2001 Nick Burrett
+# Copyright (c) 2000, 2001, 2004 Nick Burrett
 # Written by Nick Burrett <nick@dsvr.net>
 
 # Set by the configure script
@@ -229,13 +229,21 @@ riscos-elf:
 # to do this (CFL1) brain damage.
 unixlib:
 	$(MAKE) -C $@ "TRG=$(trg10)" $(cfl10)
+	$(MAKE) -C $@ "TRG=$(trg20)" $(cfl20)
+	$(MAKE) -C $@ "TRG=$(trg21)" $(cfl21)
 
 riscos-libs:
 	$(MAKE) -C $@ "TRG=$(trg10)" $(cfl10)
+	$(MAKE) -C $@ "TRG=$(trg20)" $(cfl20)
+	$(MAKE) -C $@ "TRG=$(trg21)" $(cfl21)
 
 libgcc:
 	$(MAKE) -C gcc $@ "TRG=$(trg10)" $(cfl10)
 	$(MAKE) -C gcc $@ "TRG=$(trg11)" $(cfl11)
+	$(MAKE) -C gcc $@ "TRG=$(trg20)" $(cfl20)
+	$(MAKE) -C gcc $@ "TRG=$(trg21)" $(cfl21)
+	$(MAKE) -C gcc $@ "TRG=$(trg30)" $(cfl30)
+	$(MAKE) -C gcc $@ "TRG=$(trg31)" $(cfl31)
 
 libgpc libio libf2c libstdc:
 	$(MAKE) -C gcc $@ "TRG=$(trg10)" $(cfl10)
