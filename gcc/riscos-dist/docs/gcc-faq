@@ -1,11 +1,13 @@
 RISC OS-GCC FAQ
 ===============
 
-Last updated: 06.08.2001, Jochen Scharrlach (jscharrl@ba-stuttgart.de),
-                          Nick Burrett (nick@dsvr.net) and
-                          Peter Burwood (pjb@arcangel.dircon.co.uk)
+Last updated: 03 Jan.2002
 
-Availability: this FAQ is now part of the RISC OS GCC distribution.
+Authors: Jochen Scharrlach (jscharrl@ba-stuttgart.de),
+         Nick Burrett (nick@dsvr.net) and
+         Peter Burwood (pjb@arcangel.dircon.co.uk)
+
+Availability: this FAQ is now part of the RISC OS GCCSDK distribution.
 
 Throughout this document, when we refer to GCC we collectively mean
 GNU C, GNU C++, GNU Objective-C, GNU Fortran-77, GNU GNAT Ada and
@@ -155,9 +157,10 @@ Contents
 
  3.5 OSLib
 
-  Acorn's unofficial PD library. Should work with gcc, but it also needs
-  (gst)stubs. There are known problems when using C++ (OSLib uses C++
-  keywords) and you may need to use the "-ansi"-option.
+  LGPL library providing full coverage of the RISC OS API (SWIs), including
+  the Toolbox. Current versions (6.0 and later) are fully compatible with gcc C
+  and C++ together with UnixLib. 
+
 
  3.6 Toolbox
 
@@ -464,7 +467,7 @@ Contents
 
  6.3 Interactive help
 
-  * e-mail: gcc-chief@hard-mofo.dsvr.net
+  * e-mail: gcc@hard-mofo.dsvr.net
     providing support for any problems with the ARM/RISC OS GCC compiler
     for the C, C++, Objective-C, Pascal and Fortran family of languages.
     
