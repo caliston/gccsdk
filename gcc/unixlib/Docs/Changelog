@@ -1,3 +1,7 @@
+Thu Jan  2 14:40:49 2002  Nick Burrett  <nick@dsvr.net>
+
+	* inttypes.h: Fix #include typo.
+
 Wed Nov 13 11:58:00 2002  Peter Naulls  <peter@chocky.org>
 
 	* sys/socket.h (bind): Correct prototype.

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/inttypes.h,v $
- * $Date: 2002/02/07 10:19:30 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2002/08/18 15:19:05 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -12,7 +12,7 @@
 #define __INTTYPES_H 1
 
 #ifndef __UNIXLIB_FEATURES_H
-#include <unixlib/features.h.
+#include <unixlib/features.h>
 #endif
 
 /* Get the type definitions.  */
