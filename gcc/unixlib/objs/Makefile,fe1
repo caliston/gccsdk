@@ -1,8 +1,8 @@
 # Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2002/08/19 15:32:11 $
-# $Revision: 1.2.2.17 $
+# $Date: 2002/09/24 11:45:18 $
+# $Revision: 1.2.2.18 $
 # $State: Exp $
 # $Author: admin $
 
@@ -106,7 +106,8 @@ OBJS =	o.abort o.abs o.alloc o.assert o.atexit o.bsearch o.ctype \
 	o.strdup o.strichr o.stricmp o.strlen o.strncat o.strncmp \
 	o.strncpy o.strnicmp o.strpbrk o.strrchr o.strrichr o.strsep \
 	o.strsignal o.strspn o.strstr o.strtod \
-	o.strtok o.strtok_r o.strtol o.strtoul o.system o.termcap
+	o.strtok o.strtok_r o.strtol o.strtoul \
+	o.strtoll o.strtoull o.system o.termcap
 
 COMMON = common.o.attrib common.o.cvttime common.o.exist \
 	common.o.fdname common.o.funcallerr common.o.riscosify \
@@ -495,7 +496,9 @@ o.strtod:		c.strtod
 o.strtok:		c.strtok
 o.strtok_r:		c.strtok_r
 o.strtol:		c.strtol
+o.strtoll:		c.strtoll
 o.strtoul:		c.strtoul
+o.strtoull:		c.strtoull
 o.system:		c.system
 o.termcap:		c.termcap
 

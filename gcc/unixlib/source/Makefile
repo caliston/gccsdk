@@ -181,7 +181,9 @@ OBJS =	$(libunixobj)/abort.o \
 	$(libunixobj)/strtok.o \
 	$(libunixobj)/strtok_r.o \
 	$(libunixobj)/strtol.o \
+	$(libunixobj)/strtoll.o \
 	$(libunixobj)/strtoul.o \
+	$(libunixobj)/strtoull.o \
 	$(libunixobj)/system.o \
 	$(libunixobj)/termcap.o
 
@@ -726,7 +728,9 @@ $(libunixobj)/strtod.o: strtod.c
 $(libunixobj)/strtok.o: strtok.c
 $(libunixobj)/strtok_r.o: strtok_r.c
 $(libunixobj)/strtol.o: strtol.c
+$(libunixobj)/strtoll.o: strtoll.c
 $(libunixobj)/strtoul.o: strtoul.c
+$(libunixobj)/strtoull.o: strtoull.c
 $(libunixobj)/system.o: system.c
 $(libunixobj)/termcap.o: termcap.c
 
