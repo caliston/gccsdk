@@ -224,8 +224,8 @@ c-parse.c: c-parse.y
 
 # Perfect hash function generation stuff
 
-#h.c-gperf: gperf/c-parse
-#	gperf -p -j1 -i 1 -g -o -t -G -N is_reserved_word -k1,3,$$ <gperf.c-parse >h.c-gperf
+c-gperf.h: c-parse.gperf
+	gperf -p -j1 -i 1 -g -o -t -G -N is_reserved_word -k1,3,$$ < c-parse.gperf >$@
 
 # Bison object dependencies
 $(gccobjdir)/c-parse.o:	c-parse.c c-parse.c c-parse.in
@@ -321,10 +321,13 @@ $(gccobjdir)/gen/genpeep.o:	gen/genpeep.c
 
 $(gccobjdir)/gen/genattr:	$(gccobjdir)/gen/genattr.o $(GENOBJS)
 	$(LINK) $(gccobjdir)/gen/genattr.o $(GENOBJS) $(LIBS)
+
 $(gccobjdir)/gen/genattrtab:	$(gccobjdir)/gen/genattrtab.o $(GENOBJS) $(gccobjdir)/gen/rtlanal.o
 	$(LINK) $(gccobjdir)/gen/genattrtab.o $(GENOBJS) $(gccobjdir)/gen/rtlanal.o $(LIBS)
+
 $(gccobjdir)/gen/gencheck:	$(gccobjdir)/gen/gencheck.o tree.def
 	$(LINK) $(gccobjdir)/gen/gencheck.o $(LIBS)
+
 $(gccobjdir)/gen/genemit:	$(gccobjdir)/gen/genemit.o $(GENOBJS)
 	$(LINK) $(gccobjdir)/gen/genemit.o $(GENOBJS) $(LIBS)
 $(gccobjdir)/gen/gengenrtl:	$(gccobjdir)/gen/gengenrtl.o $(gccobjdir)/gen/obstack.o
@@ -349,13 +352,13 @@ $(gccobjdir)/gen/genpeep:	   $(gccobjdir)/gen/genpeep.o $(GENOBJS)
 
 insn-config.h:	$(MD) $(gccobjdir)/gen/genconfig
 	$(gccobjdir)/gen/genconfig $(MD) >$@
-insn-flags.h:	$(MD) gen/genflags
+insn-flags.h:	$(MD) $(gccobjdir)/gen/genflags
 	$(gccobjdir)/gen/genflags $(MD) >$@
-insn-codes.h:	$(MD) gen/gencodes
+insn-codes.h:	$(MD) $(gccobjdir)/gen/gencodes
 	$(gccobjdir)/gen/gencodes $(MD) >$@
-insn-attr.h:	$(MD) gen/genattr
+insn-attr.h:	$(MD) $(gccobjdir)/gen/genattr
 	$(gccobjdir)/gen/genattr $(MD) >$@
-tree-check.h:	gen/gencheck tree.def
+tree-check.h:	$(gccobjdir)/gen/gencheck tree.def
 	$(gccobjdir)/gen/gencheck >tree-check.h
 
 insn-emit.c:	$(MD) $(gccobjdir)/gen/genemit
@@ -527,3 +530,519 @@ $(gccobjdir)/cpp/cpplib.o: cpp/cpplib.c
 $(gccobjdir)/cpp/cppmain.o: cpp/cppmain.c
 $(gccobjdir)/cpp/cppspec.o: cpp/cppspec.c
 $(gccobjdir)/cpp/cppulp.o: cpp/cppulp.c 
+
+
+$(gccobjdir)/alias.o:  \
+ alias.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h expr.h insn-codes.h \
+  regs.h varray.h hard-reg-set.h flags.h output.h toplev.h \
+  ../../include/splay-tree.h
+ \
+$(gccobjdir)/aux-output.o:  \
+ aux-output.c config/arm/arm.c config.h auto-host.h gansidecl.h \
+  ../../include/ansidecl.h config/i386/xm-linux.h config/arm/riscos-aof.h \
+  config/arm/aof.h config/arm/arm.h hwint.h machmode.h machmode.def \
+  system.h ../../include/libiberty.h rtl.h rtl.def genrtl.h regs.h \
+  varray.h hard-reg-set.h real.h insn-config.h conditions.h insn-flags.h \
+  output.h insn-attr.h flags.h reload.h tree.h tree.def tree-check.h \
+  expr.h insn-codes.h toplev.h recog.h
+$(gccobjdir)/bitmap.o:  \
+ bitmap.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h flags.h \
+  ../../include/obstack.h regs.h varray.h basic-block.h bitmap.h \
+  sbitmap.h
+$(gccobjdir)/c-aux-info.o:  \
+ c-aux-info.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h toplev.h flags.h tree.h tree.def tree-check.h \
+  real.h c-tree.h
+$(gccobjdir)/c-common.o:  \
+ c-common.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h c-lex.h \
+  c-tree.h flags.h ../../include/obstack.h toplev.h output.h c-pragma.h \
+  rtl.h rtl.def genrtl.h
+$(gccobjdir)/c-convert.o:  \
+ c-convert.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def tree.h tree.def \
+  tree-check.h real.h flags.h convert.h toplev.h
+$(gccobjdir)/c-decl.o:  \
+ c-decl.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h flags.h \
+  output.h c-tree.h c-lex.h toplev.h
+$(gccobjdir)/c-iterate.o:  \
+ c-iterate.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h c-tree.h \
+  flags.h ../../include/obstack.h rtl.h rtl.def genrtl.h toplev.h expr.h \
+  insn-codes.h
+$(gccobjdir)/c-lang.o:  \
+ c-lang.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h input.h \
+  c-tree.h c-lex.h toplev.h output.h
+$(gccobjdir)/c-lex.o:  \
+ c-lex.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h tree.h tree.def \
+  tree-check.h real.h input.h output.h c-lex.h c-tree.h flags.h c-parse.h \
+  c-pragma.h toplev.h intl.h c-gperf.h
+$(gccobjdir)/c-parse.o:  \
+ c-parse.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h input.h \
+  c-lex.h c-tree.h flags.h output.h toplev.h
+$(gccobjdir)/c-pragma.o:  \
+ c-pragma.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h tree.h tree.def \
+  tree-check.h real.h except.h function.h defaults.h c-pragma.h flags.h \
+  toplev.h
+$(gccobjdir)/c-typeck.o:  \
+ c-typeck.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h c-tree.h \
+  flags.h output.h rtl.h rtl.def genrtl.h expr.h insn-codes.h toplev.h \
+  intl.h
+$(gccobjdir)/caller-save.o:  \
+ caller-save.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h insn-config.h flags.h \
+  regs.h varray.h hard-reg-set.h recog.h basic-block.h bitmap.h sbitmap.h \
+  reload.h expr.h insn-codes.h toplev.h
+$(gccobjdir)/calls.o:  \
+ calls.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h tree.h tree.def \
+  tree-check.h real.h flags.h expr.h insn-codes.h regs.h varray.h \
+  insn-flags.h toplev.h output.h
+$(gccobjdir)/combine.o:  \
+ combine.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h flags.h regs.h \
+  varray.h hard-reg-set.h basic-block.h bitmap.h sbitmap.h insn-config.h \
+  expr.h insn-codes.h insn-flags.h insn-attr.h recog.h real.h toplev.h
+$(gccobjdir)/convert.o:  \
+ convert.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def tree.h tree.def \
+  tree-check.h real.h flags.h convert.h toplev.h
+$(gccobjdir)/cse.o:  \
+ cse.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h regs.h varray.h \
+  hard-reg-set.h flags.h real.h insn-config.h recog.h expr.h insn-codes.h \
+  toplev.h output.h ../../include/splay-tree.h
+$(gccobjdir)/dbxout.o:  \
+ dbxout.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h rtl.h \
+  rtl.def genrtl.h flags.h regs.h varray.h insn-config.h reload.h \
+  defaults.h output.h dbxout.h toplev.h
+$(gccobjdir)/dwarf2out.o:  \
+ dwarf2out.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h defaults.h tree.h tree.def tree-check.h \
+  real.h flags.h rtl.h rtl.def genrtl.h hard-reg-set.h regs.h varray.h \
+  insn-config.h reload.h output.h expr.h insn-codes.h except.h dwarf2.h \
+  dwarf2out.h toplev.h dyn-string.h
+$(gccobjdir)/dyn-string.o:  \
+ dyn-string.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h dyn-string.h
+$(gccobjdir)/emit-rtl.o:  \
+ emit-rtl.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h toplev.h rtl.h rtl.def genrtl.h tree.h \
+  tree.def tree-check.h real.h flags.h except.h function.h expr.h \
+  insn-codes.h regs.h varray.h hard-reg-set.h insn-config.h recog.h \
+  ../../include/obstack.h bitmap.h
+$(gccobjdir)/except.o:  \
+ except.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def defaults.h eh-common.h \
+  system.h ../../include/libiberty.h rtl.h rtl.def genrtl.h tree.h \
+  tree.def tree-check.h real.h flags.h except.h function.h insn-flags.h \
+  expr.h insn-codes.h regs.h varray.h hard-reg-set.h insn-config.h \
+  recog.h output.h toplev.h intl.h ../../include/obstack.h
+$(gccobjdir)/explow.o:  \
+ explow.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h toplev.h rtl.h rtl.def genrtl.h tree.h \
+  tree.def tree-check.h real.h flags.h expr.h insn-codes.h hard-reg-set.h \
+  insn-config.h recog.h insn-flags.h
+$(gccobjdir)/expmed.o:  \
+ expmed.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h toplev.h rtl.h rtl.def genrtl.h tree.h \
+  tree.def tree-check.h real.h flags.h insn-flags.h insn-codes.h \
+  insn-config.h expr.h recog.h
+$(gccobjdir)/expr.o:  \
+ expr.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h tree.h tree.def \
+  tree-check.h real.h ../../include/obstack.h flags.h regs.h varray.h \
+  hard-reg-set.h except.h function.h insn-flags.h insn-codes.h \
+  insn-config.h expr.h recog.h output.h typeclass.h defaults.h toplev.h
+$(gccobjdir)/final.o:  \
+ final.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h rtl.h \
+  rtl.def genrtl.h regs.h varray.h insn-config.h insn-flags.h insn-attr.h \
+  insn-codes.h recog.h conditions.h flags.h hard-reg-set.h defaults.h \
+  output.h except.h toplev.h reload.h intl.h
+$(gccobjdir)/flow.o:  \
+ flow.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h basic-block.h bitmap.h \
+  sbitmap.h varray.h insn-config.h regs.h hard-reg-set.h flags.h output.h \
+  except.h toplev.h recog.h insn-flags.h ../../include/obstack.h
+$(gccobjdir)/fold-const.o:  \
+ fold-const.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h flags.h tree.h tree.def tree-check.h real.h \
+  rtl.h rtl.def genrtl.h toplev.h
+$(gccobjdir)/function.o:  \
+ function.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h tree.h tree.def \
+  tree-check.h real.h flags.h except.h function.h insn-flags.h expr.h \
+  insn-codes.h regs.h varray.h hard-reg-set.h insn-config.h recog.h \
+  output.h basic-block.h bitmap.h sbitmap.h ../../include/obstack.h \
+  toplev.h hash.h
+$(gccobjdir)/gcc.o:  \
+ gcc.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h ../../include/obstack.h intl.h prefix.h \
+  multilib.h specs.h cp/lang-specs.h objc/lang-specs.h f77/lang-specs.h \
+  java/lang-specs.h gpc/lang-specs.h gpc/version.h
+$(gccobjdir)/gccspec.o:  \
+ gccspec.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h
+$(gccobjdir)/gcov.o:  \
+ gcov.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h intl.h gcov-io.h
+$(gccobjdir)/gcse.o:  \
+ gcse.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h toplev.h rtl.h rtl.def genrtl.h regs.h \
+  varray.h hard-reg-set.h flags.h real.h insn-config.h recog.h \
+  basic-block.h bitmap.h sbitmap.h output.h expr.h insn-codes.h \
+  ../../include/obstack.h
+$(gccobjdir)/genrtl.o:  \
+ genrtl.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h ../../include/obstack.h rtl.h rtl.def \
+  genrtl.h
+$(gccobjdir)/getpwd.o:  \
+ getpwd.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h
+$(gccobjdir)/global.o:  \
+ global.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h hard-reg-set.h rtl.h rtl.def genrtl.h flags.h \
+  basic-block.h bitmap.h sbitmap.h varray.h regs.h insn-config.h reload.h \
+  output.h toplev.h
+$(gccobjdir)/graph.o:  \
+ graph.c gansidecl.h ../../include/ansidecl.h config/i386/xm-linux.h \
+  config/arm/riscos-aof.h config/arm/aof.h config/arm/arm.h hwint.h \
+  machmode.h machmode.def system.h ../../include/libiberty.h rtl.h \
+  rtl.def genrtl.h flags.h output.h hard-reg-set.h basic-block.h bitmap.h \
+  sbitmap.h varray.h toplev.h
+$(gccobjdir)/hash.o:  \
+ hash.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h hash.h ../../include/obstack.h toplev.h
+$(gccobjdir)/insn-attrtab.o:  \
+ insn-attrtab.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h insn-config.h recog.h \
+  regs.h varray.h real.h output.h insn-attr.h toplev.h
+$(gccobjdir)/insn-emit.o:  \
+ insn-emit.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h expr.h insn-codes.h \
+  real.h flags.h output.h insn-config.h insn-flags.h recog.h reload.h
+$(gccobjdir)/insn-extract.o:  \
+ insn-extract.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h insn-config.h recog.h \
+  toplev.h
+$(gccobjdir)/insn-opinit.o:  \
+ insn-opinit.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h flags.h insn-flags.h \
+  insn-codes.h insn-config.h recog.h expr.h reload.h
+$(gccobjdir)/insn-output.o:  \
+ insn-output.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h flags.h rtl.h rtl.def genrtl.h regs.h \
+  varray.h hard-reg-set.h real.h insn-config.h conditions.h insn-flags.h \
+  insn-attr.h insn-codes.h recog.h output.h
+$(gccobjdir)/insn-peep.o:  \
+ insn-peep.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h insn-config.h rtl.h rtl.def genrtl.h regs.h \
+  varray.h output.h real.h recog.h except.h
+$(gccobjdir)/insn-recog.o:  \
+ insn-recog.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h insn-config.h recog.h \
+  real.h output.h flags.h
+$(gccobjdir)/integrate.o:  \
+ integrate.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h tree.h tree.def \
+  tree-check.h real.h regs.h varray.h flags.h insn-config.h insn-flags.h \
+  expr.h insn-codes.h output.h recog.h integrate.h except.h function.h \
+  toplev.h intl.h ../../include/obstack.h
+$(gccobjdir)/jump.o:  \
+ jump.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h flags.h hard-reg-set.h \
+  regs.h varray.h insn-config.h insn-flags.h insn-attr.h recog.h expr.h \
+  insn-codes.h real.h except.h toplev.h
+$(gccobjdir)/lcm.o:  \
+ lcm.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h regs.h varray.h \
+  hard-reg-set.h flags.h real.h insn-config.h recog.h basic-block.h \
+  bitmap.h sbitmap.h
+$(gccobjdir)/local-alloc.o:  \
+ local-alloc.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h flags.h basic-block.h \
+  bitmap.h sbitmap.h varray.h regs.h hard-reg-set.h insn-config.h \
+  insn-attr.h recog.h output.h toplev.h
+$(gccobjdir)/loop.o:  \
+ loop.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h \
+  ../../include/obstack.h expr.h insn-codes.h insn-config.h insn-flags.h \
+  regs.h varray.h hard-reg-set.h recog.h flags.h real.h loop.h except.h \
+  toplev.h
+$(gccobjdir)/mbchar.o:  \
+ mbchar.c
+$(gccobjdir)/optabs.o:  \
+ optabs.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h toplev.h insn-config.h rtl.h rtl.def genrtl.h \
+  tree.h tree.def tree-check.h real.h flags.h insn-flags.h insn-codes.h \
+  expr.h recog.h reload.h
+$(gccobjdir)/prefix.o:  \
+ prefix.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h prefix.h
+$(gccobjdir)/print-rtl.o:  \
+ print-rtl.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h real.h flags.h \
+  basic-block.h bitmap.h sbitmap.h varray.h
+$(gccobjdir)/print-tree.o:  \
+ print-tree.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h
+$(gccobjdir)/profile.o:  \
+ profile.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h flags.h insn-flags.h \
+  insn-config.h output.h regs.h varray.h tree.h tree.def tree-check.h \
+  real.h gcov-io.h toplev.h
+$(gccobjdir)/real.o:  \
+ real.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h toplev.h
+$(gccobjdir)/recog.o:  \
+ recog.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h insn-config.h \
+  insn-attr.h insn-flags.h insn-codes.h recog.h regs.h varray.h \
+  hard-reg-set.h flags.h real.h toplev.h basic-block.h bitmap.h sbitmap.h
+ $(gccobjdir)/reg-stack.o:  \
+ reg-stack.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h rtl.h \
+  rtl.def genrtl.h insn-config.h regs.h varray.h hard-reg-set.h flags.h \
+  insn-flags.h recog.h toplev.h
+$(gccobjdir)/regclass.o:  \
+ regclass.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h hard-reg-set.h flags.h \
+  basic-block.h bitmap.h sbitmap.h varray.h regs.h insn-config.h recog.h \
+  reload.h real.h toplev.h output.h
+$(gccobjdir)/regmove.o:  \
+ regmove.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h insn-config.h recog.h \
+  output.h reload.h regs.h varray.h hard-reg-set.h flags.h expr.h \
+  insn-codes.h insn-flags.h basic-block.h bitmap.h sbitmap.h toplev.h
+$(gccobjdir)/reload.o:  \
+ reload.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h insn-config.h \
+  insn-codes.h recog.h reload.h regs.h varray.h hard-reg-set.h flags.h \
+  real.h output.h expr.h toplev.h
+$(gccobjdir)/reload1.o:  \
+ reload1.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h hard-reg-set.h rtl.h rtl.def genrtl.h \
+  ../../include/obstack.h insn-config.h insn-flags.h insn-codes.h flags.h \
+  expr.h regs.h varray.h basic-block.h bitmap.h sbitmap.h reload.h \
+  recog.h output.h real.h toplev.h
+$(gccobjdir)/reorg.o:  \
+ reorg.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h toplev.h rtl.h rtl.def genrtl.h expr.h \
+  insn-codes.h insn-config.h conditions.h hard-reg-set.h basic-block.h \
+  bitmap.h sbitmap.h varray.h regs.h insn-flags.h recog.h flags.h \
+  output.h ../../include/obstack.h insn-attr.h resource.h
+$(gccobjdir)/rtl.o:  \
+ rtl.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h real.h bitmap.h \
+  ../../include/obstack.h
+$(gccobjdir)/rtlanal.o:  \
+ rtlanal.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h
+$(gccobjdir)/sbitmap.o:  \
+ sbitmap.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h flags.h basic-block.h \
+  bitmap.h sbitmap.h varray.h
+$(gccobjdir)/sched.o:  \
+ sched.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h toplev.h rtl.h rtl.def genrtl.h basic-block.h \
+  bitmap.h sbitmap.h varray.h regs.h hard-reg-set.h flags.h insn-config.h \
+  insn-attr.h recog.h
+$(gccobjdir)/stmt.o:  \
+ stmt.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h tree.h tree.def \
+  tree-check.h real.h flags.h except.h function.h insn-flags.h \
+  insn-config.h insn-codes.h expr.h hard-reg-set.h \
+  ../../include/obstack.h loop.h varray.h recog.h toplev.h output.h
+$(gccobjdir)/stor-layout.o:  \
+ stor-layout.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h tree.h tree.def tree-check.h real.h rtl.h \
+  rtl.def genrtl.h flags.h except.h function.h expr.h insn-codes.h \
+  toplev.h
+$(gccobjdir)/stupid.o:  \
+ stupid.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h hard-reg-set.h \
+  basic-block.h bitmap.h sbitmap.h varray.h regs.h insn-config.h reload.h \
+  flags.h toplev.h
+$(gccobjdir)/toplev.o:  \
+ toplev.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h input.h tree.h tree.def tree-check.h real.h \
+  rtl.h rtl.def genrtl.h flags.h insn-attr.h insn-codes.h insn-config.h \
+  recog.h defaults.h output.h except.h toplev.h expr.h basic-block.h \
+  bitmap.h sbitmap.h varray.h intl.h options.h cp/lang-options.h \
+  f77/lang-options.h java/lang-options.h gpc/lang-options.h \
+  gpc/gcc-version.h
+$(gccobjdir)/tree.o:  \
+ tree.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h flags.h tree.h tree.def tree-check.h real.h \
+  except.h function.h ../../include/obstack.h toplev.h
+$(gccobjdir)/unroll.o:  \
+ unroll.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h insn-config.h \
+  integrate.h varray.h regs.h recog.h flags.h expr.h insn-codes.h loop.h \
+  toplev.h
+$(gccobjdir)/varasm.o:  \
+ varasm.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h tree.h tree.def \
+  tree-check.h real.h flags.h except.h function.h expr.h insn-codes.h \
+  output.h hard-reg-set.h regs.h varray.h defaults.h toplev.h dbxout.h \
+  sdbout.h ../../include/obstack.h c-pragma.h
+$(gccobjdir)/varray.o:  \
+ varray.c config.h auto-host.h gansidecl.h ../../include/ansidecl.h \
+  config/i386/xm-linux.h config/arm/riscos-aof.h config/arm/aof.h \
+  config/arm/arm.h hwint.h machmode.h machmode.def system.h \
+  ../../include/libiberty.h rtl.h rtl.def genrtl.h tree.h tree.def \
+  tree-check.h real.h bitmap.h varray.h
+$(gccobjdir)/version.o:  version.c

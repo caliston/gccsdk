@@ -1,5 +1,5 @@
 # Makefile for the GNU Java compiler for ARM/RISC OS
-# Copyright (c) 1997, 1998, 1999, 2000 Nick Burrett
+# Copyright (c) 1997, 1998, 1999, 2000, 2001 Nick Burrett
 # Written by Nick Burrett <nick@dsvr.net>
 
 # Defs for GCC
@@ -185,3 +185,189 @@ $(gccobjdir)/java/typeck.o: typeck.c
 $(gccobjdir)/java/verify.o: verify.c
 $(gccobjdir)/java/xref.o: xref.c
 $(gccobjdir)/java/zextract.o: zextract.c 
+
+$(gccobjdir)/java/buffer.o:  \
+ buffer.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h buffer.h
+$(gccobjdir)/java/check-init.o:  \
+ check-init.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h java-tree.h ../java-tree.def ../toplev.h
+$(gccobjdir)/java/class.o:  \
+ class.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h ../rtl.h ../rtl.def ../genrtl.h ../flags.h java-tree.h \
+  ../java-tree.def jcf.h javaop.h ../../../include/obstack.h ../toplev.h \
+  ../output.h parse.h lex.h
+$(gccobjdir)/java/constants.o:  \
+ constants.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h jcf.h javaop.h ../tree.h ../tree.def \
+  ../tree-check.h ../real.h java-tree.h ../java-tree.def ../toplev.h
+$(gccobjdir)/java/decl.o:  \
+ decl.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h java-tree.h ../java-tree.def jcf.h javaop.h ../toplev.h \
+  ../except.h
+$(gccobjdir)/java/except.o:  \
+ except.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h ../rtl.h ../rtl.def ../genrtl.h java-tree.h ../java-tree.def \
+  javaop.h java-opcodes.h ../javaop.def jcf.h ../except.h java-except.h \
+  ../eh-common.h ../toplev.h
+$(gccobjdir)/java/expr.o:  \
+ expr.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h ../rtl.h ../rtl.def ../genrtl.h ../flags.h ../expr.h \
+  ../insn-codes.h java-tree.h ../java-tree.def javaop.h java-opcodes.h \
+  ../javaop.def jcf.h java-except.h parse.h lex.h ../toplev.h ../except.h
+$(gccobjdir)/java/gjavah.o:  \
+ gjavah.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h jcf.h javaop.h ../tree.h ../tree.def \
+  ../tree-check.h ../real.h java-tree.h ../java-tree.def java-opcodes.h \
+  ../javaop.def jcf-reader.c zipfile.h
+$(gccobjdir)/java/jcf-depend.o:  \
+ jcf-depend.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h jcf.h javaop.h
+$(gccobjdir)/java/jcf-dump.o:  \
+ jcf-dump.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h jcf.h javaop.h ../tree.h ../tree.def \
+  ../tree-check.h ../real.h java-tree.h ../java-tree.def jcf-reader.c \
+  zipfile.h ../javaop.def
+$(gccobjdir)/java/jcf-io.o:  \
+ jcf-io.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h jcf.h javaop.h ../tree.h ../tree.def \
+  ../tree-check.h ../real.h java-tree.h ../java-tree.def zipfile.h
+$(gccobjdir)/java/jcf-parse.o:  \
+ jcf-parse.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h ../../../include/obstack.h ../flags.h java-except.h \
+  ../input.h java-tree.h ../java-tree.def ../toplev.h parse.h lex.h jcf.h \
+  javaop.h jcf-reader.c zipfile.h
+$(gccobjdir)/java/jcf-path.o:  \
+ jcf-path.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h jcf.h javaop.h
+$(gccobjdir)/java/jcf-write.o:  \
+ jcf-write.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h jcf.h javaop.h ../tree.h ../tree.def \
+  ../tree-check.h ../real.h java-tree.h ../java-tree.def \
+  ../../../include/obstack.h ../rtl.h ../rtl.def ../genrtl.h ../flags.h \
+  java-opcodes.h ../javaop.def parse.h lex.h buffer.h ../toplev.h
+$(gccobjdir)/java/jv-scan.o:  \
+ jv-scan.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../../../include/obstack.h parse.h lex.h
+$(gccobjdir)/java/jvgenmain.o:  \
+ jvgenmain.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../../../include/obstack.h jcf.h javaop.h \
+  ../tree.h ../tree.def ../tree-check.h ../real.h java-tree.h \
+  ../java-tree.def
+$(gccobjdir)/java/lang.o:  \
+ lang.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h ../input.h java-tree.h ../java-tree.def jcf.h javaop.h \
+  ../toplev.h ../flags.h xref.h
+$(gccobjdir)/java/mangle.o:  \
+ mangle.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h jcf.h javaop.h ../tree.h ../tree.def \
+  ../tree-check.h ../real.h java-tree.h ../java-tree.def \
+  ../../../include/obstack.h ../toplev.h
+$(gccobjdir)/java/parse-scan.o:  \
+ parse-scan.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../../../include/obstack.h ../toplev.h \
+  lex.h parse.h lex.c keyword.h
+$(gccobjdir)/java/parse.o:  \
+ parse.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h ../rtl.h ../rtl.def ../genrtl.h ../../../include/obstack.h \
+  ../toplev.h ../flags.h java-tree.h ../java-tree.def jcf.h javaop.h \
+  lex.h parse.h zipfile.h convert.h buffer.h xref.h ../except.h lex.c \
+  keyword.h
+$(gccobjdir)/java/typeck.o:  \
+ typeck.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h ../../../include/obstack.h ../flags.h java-tree.h \
+  ../java-tree.def jcf.h javaop.h convert.h ../toplev.h
+$(gccobjdir)/java/verify.o:  \
+ verify.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h java-tree.h ../java-tree.def javaop.h java-opcodes.h \
+  ../javaop.def jcf.h java-except.h ../toplev.h
+$(gccobjdir)/java/xref.o:  \
+ xref.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h java-tree.h ../java-tree.def xref.h jcf.h javaop.h parse.h \
+  lex.h ../../../include/obstack.h
+$(gccobjdir)/java/zextract.o:  \
+ zextract.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h zipfile.h

@@ -1,5 +1,5 @@
 # Makefile for the GNU Objective-C compiler for ARM/RISC OS
-# Copyright (c) 1997, 1998, 1999, 2000 Nick Burrett
+# Copyright (c) 1997, 1998, 1999, 2000, 2001 Nick Burrett
 # Written by Nick Burrett <nick@dsvr.net>
 
 # Defs for GCC
@@ -119,3 +119,22 @@ objc-parse.c: objc-parse.y
 # Dependencies
 $(gccobjdir)/objc/objc-act.c: objc-act.c
 $(gccobjdir)/objc/objc-parse.c: objc-parse.c objc-parse.y
+
+
+$(gccobjdir)/objc/objc-act.o:  \
+ objc-act.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h ../c-tree.h ../c-lex.h ../flags.h objc-act.h objc-tree.def \
+  ../input.h ../except.h ../function.h ../output.h ../toplev.h \
+  ../../../include/obstack.h ../rtl.h ../rtl.def ../genrtl.h ../c-parse.h
+$(gccobjdir)/objc/objc-parse.o:  \
+ objc-parse.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../tree.h ../tree.def ../tree-check.h \
+  ../real.h ../input.h ../c-lex.h ../c-tree.h ../flags.h ../output.h \
+  ../toplev.h objc-act.h objc-tree.def

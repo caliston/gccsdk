@@ -250,3 +250,423 @@ $(gccobjdir)/f77/top.o: top.c
 $(gccobjdir)/f77/type.o: type.c
 $(gccobjdir)/f77/version.o: version.c
 $(gccobjdir)/f77/where.o: where.c
+
+
+$(gccobjdir)/f77/bad.o:  \
+ bad.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h bad.h \
+  bad.def where.h glimits.j ../glimits.h top.h malloc.h flags.j \
+  ../flags.h com.h com-rt.def tree.j ../tree.h ../tree.def \
+  ../tree-check.h ../real.h bld.h bld-op.def bit.h info.h info-b.def \
+  info-k.def info-w.def target.h lex.h type.h intrin.h intrin.def lab.h \
+  symbol.h symbol.def equiv.h storag.h global.h name.h toplev.j \
+  ../toplev.h
+$(gccobjdir)/f77/bit.o:  \
+ bit.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h glimits.j \
+  ../glimits.h bit.h malloc.h
+$(gccobjdir)/f77/bld.o:  \
+ bld.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h bld.h \
+  bld-op.def bit.h malloc.h com.h com-rt.def tree.j ../tree.h ../tree.def \
+  ../tree-check.h ../real.h info.h info-b.def info-k.def info-w.def \
+  target.h bad.h bad.def where.h glimits.j ../glimits.h top.h lex.h \
+  type.h lab.h storag.h symbol.h symbol.def equiv.h global.h name.h \
+  intrin.h intrin.def
+$(gccobjdir)/f77/com.o:  \
+ com.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h flags.j \
+  ../flags.h rtl.j ../rtl.h ../rtl.def ../genrtl.h toplev.j ../toplev.h \
+  tree.j ../tree.h ../tree.def ../tree-check.h ../real.h output.j \
+  ../output.h convert.j ../convert.h com.h com-rt.def bld.h bld-op.def \
+  bit.h malloc.h info.h info-b.def info-k.def info-w.def target.h bad.h \
+  bad.def where.h glimits.j ../glimits.h top.h lex.h type.h intrin.h \
+  intrin.def lab.h symbol.h symbol.def equiv.h storag.h global.h name.h \
+  expr.h implic.h src.h st.h
+$(gccobjdir)/f77/data.o:  \
+ data.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h data.h \
+  bld.h bld-op.def bit.h malloc.h com.h com-rt.def tree.j ../tree.h \
+  ../tree.def ../tree-check.h ../real.h info.h info-b.def info-k.def \
+  info-w.def target.h bad.h bad.def where.h glimits.j ../glimits.h top.h \
+  lex.h type.h lab.h storag.h symbol.h symbol.def equiv.h global.h name.h \
+  intrin.h intrin.def expr.h st.h
+$(gccobjdir)/f77/equiv.o:  \
+ equiv.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h equiv.h \
+  bld.h bld-op.def bit.h malloc.h com.h com-rt.def tree.j ../tree.h \
+  ../tree.def ../tree-check.h ../real.h info.h info-b.def info-k.def \
+  info-w.def target.h bad.h bad.def where.h glimits.j ../glimits.h top.h \
+  lex.h type.h lab.h storag.h symbol.h symbol.def global.h name.h \
+  intrin.h intrin.def data.h
+$(gccobjdir)/f77/expr.o:  \
+ expr.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h expr.h \
+  bld.h bld-op.def bit.h malloc.h com.h com-rt.def tree.j ../tree.h \
+  ../tree.def ../tree-check.h ../real.h info.h info-b.def info-k.def \
+  info-w.def target.h bad.h bad.def where.h glimits.j ../glimits.h top.h \
+  lex.h type.h lab.h storag.h symbol.h symbol.def equiv.h global.h name.h \
+  intrin.h intrin.def implic.h src.h st.h str.h str-1t.h str-fo.h \
+  str-io.h str-nq.h str-ot.h str-op.h str-2t.h
+$(gccobjdir)/f77/fini.o:  \
+ fini.c proj.h hconfig.j ../hconfig.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h malloc.h
+$(gccobjdir)/f77/g77.o:  \
+ ../gcc.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h ../../../include/obstack.h ../intl.h \
+  ../prefix.h ../multilib.h ../specs.h ../cp/lang-specs.h \
+  ../objc/lang-specs.h ../f77/lang-specs.h ../java/lang-specs.h \
+  ../gpc/lang-specs.h ../gpc/version.h
+$(gccobjdir)/f77/g77spec.o:  \
+ g77spec.c ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def ../system.h \
+  ../../../include/libiberty.h
+$(gccobjdir)/f77/global.o:  \
+ global.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h global.h \
+  info.h info-b.def info-k.def info-w.def target.h tree.j ../tree.h \
+  ../tree.def ../tree-check.h ../real.h bad.h bad.def where.h glimits.j \
+  ../glimits.h top.h malloc.h lex.h type.h name.h symbol.h symbol.def \
+  bld.h bld-op.def bit.h com.h com-rt.def lab.h storag.h intrin.h \
+  intrin.def equiv.h
+$(gccobjdir)/f77/implic.o:  \
+ implic.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h implic.h \
+  info.h info-b.def info-k.def info-w.def target.h tree.j ../tree.h \
+  ../tree.def ../tree-check.h ../real.h bad.h bad.def where.h glimits.j \
+  ../glimits.h top.h malloc.h lex.h type.h symbol.h symbol.def bld.h \
+  bld-op.def bit.h com.h com-rt.def lab.h storag.h intrin.h intrin.def \
+  equiv.h global.h name.h src.h
+$(gccobjdir)/f77/info.o:  \
+ info.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h info.h \
+  info-b.def info-k.def info-w.def target.h tree.j ../tree.h ../tree.def \
+  ../tree-check.h ../real.h bad.h bad.def where.h glimits.j ../glimits.h \
+  top.h malloc.h lex.h type.h
+$(gccobjdir)/f77/intrin.o:  \
+ intrin.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h intrin.h \
+  intrin.def bld.h bld-op.def bit.h malloc.h com.h com-rt.def tree.j \
+  ../tree.h ../tree.def ../tree-check.h ../real.h info.h info-b.def \
+  info-k.def info-w.def target.h bad.h bad.def where.h glimits.j \
+  ../glimits.h top.h lex.h type.h lab.h storag.h symbol.h symbol.def \
+  equiv.h global.h name.h expr.h src.h
+$(gccobjdir)/f77/lab.o:  \
+ lab.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h lab.h com.h \
+  com-rt.def tree.j ../tree.h ../tree.def ../tree-check.h ../real.h bld.h \
+  bld-op.def bit.h malloc.h info.h info-b.def info-k.def info-w.def \
+  target.h bad.h bad.def where.h glimits.j ../glimits.h top.h lex.h \
+  type.h intrin.h intrin.def symbol.h symbol.def equiv.h storag.h \
+  global.h name.h
+$(gccobjdir)/f77/lex.o:  \
+ lex.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h top.h \
+  malloc.h where.h glimits.j ../glimits.h bad.h bad.def com.h com-rt.def \
+  tree.j ../tree.h ../tree.def ../tree-check.h ../real.h bld.h bld-op.def \
+  bit.h info.h info-b.def info-k.def info-w.def target.h lex.h type.h \
+  intrin.h intrin.def lab.h symbol.h symbol.def equiv.h storag.h global.h \
+  name.h src.h flags.j ../flags.h input.j ../input.h toplev.j ../toplev.h \
+  output.j ../output.h
+$(gccobjdir)/f77/malloc.o:  \
+ malloc.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h malloc.h
+$(gccobjdir)/f77/name.o:  \
+ name.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h bad.h \
+  bad.def where.h glimits.j ../glimits.h top.h malloc.h name.h global.h \
+  info.h info-b.def info-k.def info-w.def target.h tree.j ../tree.h \
+  ../tree.def ../tree-check.h ../real.h lex.h type.h symbol.h symbol.def \
+  bld.h bld-op.def bit.h com.h com-rt.def lab.h storag.h intrin.h \
+  intrin.def equiv.h src.h
+$(gccobjdir)/f77/parse.o:  \
+ parse.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h top.h \
+  malloc.h where.h glimits.j ../glimits.h com.h com-rt.def tree.j \
+  ../tree.h ../tree.def ../tree-check.h ../real.h bld.h bld-op.def bit.h \
+  info.h info-b.def info-k.def info-w.def target.h bad.h bad.def lex.h \
+  type.h intrin.h intrin.def lab.h symbol.h symbol.def equiv.h storag.h \
+  global.h name.h version.h flags.j ../flags.h
+$(gccobjdir)/f77/proj.o:  \
+ proj.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h glimits.j \
+  ../glimits.h
+$(gccobjdir)/f77/src.o:  \
+ src.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h src.h bad.h \
+  bad.def where.h glimits.j ../glimits.h top.h malloc.h
+$(gccobjdir)/f77/st.o:  \
+ st.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h st.h bad.h \
+  bad.def where.h glimits.j ../glimits.h top.h malloc.h lex.h symbol.h \
+  symbol.def bld.h bld-op.def bit.h com.h com-rt.def tree.j ../tree.h \
+  ../tree.def ../tree-check.h ../real.h info.h info-b.def info-k.def \
+  info-w.def target.h type.h lab.h storag.h intrin.h intrin.def equiv.h \
+  global.h name.h sta.h str.h str-1t.h str-fo.h str-io.h str-nq.h \
+  str-ot.h str-op.h str-2t.h stb.h expr.h stp.h stt.h stc.h std.h stv.h \
+  stw.h ste.h sts.h stu.h
+$(gccobjdir)/f77/sta.o:  \
+ sta.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h sta.h bad.h \
+  bad.def where.h glimits.j ../glimits.h top.h malloc.h lex.h str.h \
+  str-1t.h str-fo.h str-io.h str-nq.h str-ot.h str-op.h str-2t.h symbol.h \
+  symbol.def bld.h bld-op.def bit.h com.h com-rt.def tree.j ../tree.h \
+  ../tree.def ../tree-check.h ../real.h info.h info-b.def info-k.def \
+  info-w.def target.h type.h lab.h storag.h intrin.h intrin.def equiv.h \
+  global.h name.h implic.h stb.h expr.h stp.h stt.h stc.h std.h stv.h \
+  stw.h
+$(gccobjdir)/f77/stb.o:  \
+ stb.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h stb.h bad.h \
+  bad.def where.h glimits.j ../glimits.h top.h malloc.h expr.h bld.h \
+  bld-op.def bit.h com.h com-rt.def tree.j ../tree.h ../tree.def \
+  ../tree-check.h ../real.h info.h info-b.def info-k.def info-w.def \
+  target.h lex.h type.h lab.h storag.h symbol.h symbol.def equiv.h \
+  global.h name.h intrin.h intrin.def stp.h stt.h str.h str-1t.h str-fo.h \
+  str-io.h str-nq.h str-ot.h str-op.h str-2t.h src.h sta.h stc.h
+$(gccobjdir)/f77/stc.o:  \
+ stc.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h stc.h bad.h \
+  bad.def where.h glimits.j ../glimits.h top.h malloc.h bld.h bld-op.def \
+  bit.h com.h com-rt.def tree.j ../tree.h ../tree.def ../tree-check.h \
+  ../real.h info.h info-b.def info-k.def info-w.def target.h lex.h type.h \
+  lab.h storag.h symbol.h symbol.def equiv.h global.h name.h intrin.h \
+  intrin.def expr.h stp.h stt.h str.h str-1t.h str-fo.h str-io.h str-nq.h \
+  str-ot.h str-op.h str-2t.h data.h implic.h src.h sta.h std.h stv.h \
+  stw.h
+$(gccobjdir)/f77/std.o:  \
+ std.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h std.h bld.h \
+  bld-op.def bit.h malloc.h com.h com-rt.def tree.j ../tree.h ../tree.def \
+  ../tree-check.h ../real.h info.h info-b.def info-k.def info-w.def \
+  target.h bad.h bad.def where.h glimits.j ../glimits.h top.h lex.h \
+  type.h lab.h storag.h symbol.h symbol.def equiv.h global.h name.h \
+  intrin.h intrin.def stp.h stt.h str.h str-1t.h str-fo.h str-io.h \
+  str-nq.h str-ot.h str-op.h str-2t.h stv.h stw.h sta.h ste.h sts.h
+$(gccobjdir)/f77/ste.o:  \
+ ste.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h rtl.j \
+  ../rtl.h ../rtl.def ../genrtl.h toplev.j ../toplev.h ste.h bld.h \
+  bld-op.def bit.h malloc.h com.h com-rt.def tree.j ../tree.h ../tree.def \
+  ../tree-check.h ../real.h info.h info-b.def info-k.def info-w.def \
+  target.h bad.h bad.def where.h glimits.j ../glimits.h top.h lex.h \
+  type.h lab.h storag.h symbol.h symbol.def equiv.h global.h name.h \
+  intrin.h intrin.def stp.h stt.h str.h str-1t.h str-fo.h str-io.h \
+  str-nq.h str-ot.h str-op.h str-2t.h sts.h stv.h stw.h expr.h sta.h
+$(gccobjdir)/f77/storag.o:  \
+ storag.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h storag.h \
+  bld.h bld-op.def bit.h malloc.h com.h com-rt.def tree.j ../tree.h \
+  ../tree.def ../tree-check.h ../real.h info.h info-b.def info-k.def \
+  info-w.def target.h bad.h bad.def where.h glimits.j ../glimits.h top.h \
+  lex.h type.h lab.h symbol.h symbol.def equiv.h global.h name.h intrin.h \
+  intrin.def data.h
+$(gccobjdir)/f77/stp.o:  \
+ stp.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h stp.h bld.h \
+  bld-op.def bit.h malloc.h com.h com-rt.def tree.j ../tree.h ../tree.def \
+  ../tree-check.h ../real.h info.h info-b.def info-k.def info-w.def \
+  target.h bad.h bad.def where.h glimits.j ../glimits.h top.h lex.h \
+  type.h lab.h storag.h symbol.h symbol.def equiv.h global.h name.h \
+  intrin.h intrin.def stt.h
+$(gccobjdir)/f77/str.o:  \
+ str.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h src.h bad.h \
+  bad.def where.h glimits.j ../glimits.h top.h malloc.h str.h lex.h \
+  str-1t.h str-fo.h str-io.h str-nq.h str-ot.h str-op.h str-2t.h str-1t.j \
+  str-fo.j str-io.j str-nq.j str-op.j str-ot.j str-2t.j
+$(gccobjdir)/f77/sts.o:  \
+ sts.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h sts.h \
+  malloc.h com.h com-rt.def tree.j ../tree.h ../tree.def ../tree-check.h \
+  ../real.h bld.h bld-op.def bit.h info.h info-b.def info-k.def \
+  info-w.def target.h bad.h bad.def where.h glimits.j ../glimits.h top.h \
+  lex.h type.h intrin.h intrin.def lab.h symbol.h symbol.def equiv.h \
+  storag.h global.h name.h
+$(gccobjdir)/f77/stt.o:  \
+ stt.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h stt.h top.h \
+  malloc.h where.h glimits.j ../glimits.h bld.h bld-op.def bit.h com.h \
+  com-rt.def tree.j ../tree.h ../tree.def ../tree-check.h ../real.h \
+  info.h info-b.def info-k.def info-w.def target.h bad.h bad.def lex.h \
+  type.h lab.h storag.h symbol.h symbol.def equiv.h global.h name.h \
+  intrin.h intrin.def stp.h expr.h sta.h str.h str-1t.h str-fo.h str-io.h \
+  str-nq.h str-ot.h str-op.h str-2t.h
+$(gccobjdir)/f77/stu.o:  \
+ stu.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h bld.h \
+  bld-op.def bit.h malloc.h com.h com-rt.def tree.j ../tree.h ../tree.def \
+  ../tree-check.h ../real.h info.h info-b.def info-k.def info-w.def \
+  target.h bad.h bad.def where.h glimits.j ../glimits.h top.h lex.h \
+  type.h lab.h storag.h symbol.h symbol.def equiv.h global.h name.h \
+  intrin.h intrin.def implic.h stu.h sta.h str.h str-1t.h str-fo.h \
+  str-io.h str-nq.h str-ot.h str-op.h str-2t.h
+$(gccobjdir)/f77/stv.o:  \
+ stv.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h stv.h lab.h \
+  com.h com-rt.def tree.j ../tree.h ../tree.def ../tree-check.h ../real.h \
+  bld.h bld-op.def bit.h malloc.h info.h info-b.def info-k.def info-w.def \
+  target.h bad.h bad.def where.h glimits.j ../glimits.h top.h lex.h \
+  type.h intrin.h intrin.def symbol.h symbol.def equiv.h storag.h \
+  global.h name.h
+$(gccobjdir)/f77/stw.o:  \
+ stw.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h stw.h bld.h \
+  bld-op.def bit.h malloc.h com.h com-rt.def tree.j ../tree.h ../tree.def \
+  ../tree-check.h ../real.h info.h info-b.def info-k.def info-w.def \
+  target.h bad.h bad.def where.h glimits.j ../glimits.h top.h lex.h \
+  type.h lab.h storag.h symbol.h symbol.def equiv.h global.h name.h \
+  intrin.h intrin.def stv.h sta.h str.h str-1t.h str-fo.h str-io.h \
+  str-nq.h str-ot.h str-op.h str-2t.h
+$(gccobjdir)/f77/symbol.o:  \
+ symbol.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h symbol.h \
+  symbol.def bld.h bld-op.def bit.h malloc.h com.h com-rt.def tree.j \
+  ../tree.h ../tree.def ../tree-check.h ../real.h info.h info-b.def \
+  info-k.def info-w.def target.h bad.h bad.def where.h glimits.j \
+  ../glimits.h top.h lex.h type.h lab.h storag.h intrin.h intrin.def \
+  equiv.h global.h name.h src.h st.h
+$(gccobjdir)/f77/target.o:  \
+ target.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h glimits.j \
+  ../glimits.h target.h tree.j ../tree.h ../tree.def ../tree-check.h \
+  ../real.h bad.h bad.def where.h top.h malloc.h info.h info-b.def \
+  info-k.def info-w.def type.h lex.h
+$(gccobjdir)/f77/top.o:  \
+ top.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h top.h \
+  malloc.h where.h glimits.j ../glimits.h bad.h bad.def bit.h bld.h \
+  bld-op.def com.h com-rt.def tree.j ../tree.h ../tree.def \
+  ../tree-check.h ../real.h info.h info-b.def info-k.def info-w.def \
+  target.h lex.h type.h lab.h storag.h symbol.h symbol.def equiv.h \
+  global.h name.h intrin.h intrin.def data.h expr.h implic.h src.h st.h \
+  flags.j ../flags.h toplev.j ../toplev.h
+$(gccobjdir)/f77/type.o:  \
+ type.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h type.h \
+  malloc.h
+$(gccobjdir)/f77/version.o:  \
+ version.c
+$(gccobjdir)/f77/where.o:  \
+ where.c proj.h config.j ../config.h ../auto-host.h ../gansidecl.h \
+  ../../../include/ansidecl.h ../config/i386/xm-linux.h \
+  ../config/arm/riscos-aof.h ../config/arm/aof.h ../config/arm/arm.h \
+  ../hwint.h ../machmode.h ../machmode.def system.j ../system.h \
+  ../../../include/libiberty.h assert.j /usr/include/assert.h where.h \
+  glimits.j ../glimits.h top.h malloc.h lex.h
