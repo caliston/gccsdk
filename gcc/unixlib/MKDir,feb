@@ -25,6 +25,8 @@ cdir <obey$dir>.objs.scl
 cdir <obey$dir>.objs.scl.o
 cdir <obey$dir>.objs.signal
 cdir <obey$dir>.objs.signal.o
+cdir <obey$dir>.objs.stat
+cdir <obey$dir>.objs.stat.o
 cdir <obey$dir>.objs.stdio
 cdir <obey$dir>.objs.stdio.o
 cdir <obey$dir>.objs.stdlib

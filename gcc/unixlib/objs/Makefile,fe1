@@ -1,8 +1,8 @@
 # Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2002/03/30 09:40:18 $
-# $Revision: 1.2.2.7 $
+# $Date: 2002/06/12 13:33:54 $
+# $Revision: 1.2.2.8 $
 # $State: Exp $
 # $Author: admin $
 
@@ -170,6 +170,7 @@ SIGNAL =	signal.o.init signal.o.kill signal.o.pause \
 
 SIGNAL_ASM =	signal.o.sigexec signal.o._coredump signal.o._signal
 
+STAT = stat.o.mknod stat.o.mkfifo
 
 STDIO =	stdio.o.clearerr stdio.o.fclose stdio.o.feof stdio.o.ferror \
 	stdio.o.fflush stdio.o.fgets stdio.o.filbuf stdio.o.fileno \
@@ -217,15 +218,16 @@ TERMIOS =	 termios.o.cfgetispee termios.o.cfgetospee \
 
 TIME_ASM =	time.o._clock
 
-UNISTD =	unistd.o.chroot unistd.o.getpass
+UNISTD =	unistd.o.chown unistd.o.chroot unistd.o.fchown \
+	unistd.o.getpass unistd.o.link unistd.o.readlink unistd.o.symlink
 
 UNIX =	unix.o.access unix.o.alphasort unix.o.chdir unix.o.chmod \
-	unix.o.chown unix.o.close unix.o.creat unix.o.getdtables unix.o.dev \
-	unix.o.dirent unix.o.dup unix.o.dup2 unix.o.fchmod unix.o.fchown \
+	unix.o.close unix.o.creat unix.o.getdtables unix.o.dev \
+	unix.o.dirent unix.o.dup unix.o.dup2 unix.o.fchmod \
 	unix.o.features unix.o.fnmatch unix.o.fcntl unix.o.fstat \
 	unix.o.getcwd unix.o.getdomain unix.o.getenv unix.o.gethostnam \
 	unix.o.getopt unix.o.getsubopt unix.o.glob unix.o.ioctl \
-	unix.o.isatty unix.o.ispipe unix.o.link unix.o.lseek unix.o.lstat \
+	unix.o.isatty unix.o.ispipe unix.o.lseek unix.o.lstat \
 	unix.o.mkdir unix.o.nice unix.o.open unix.o.pathconf unix.o.pipe \
 	unix.o.poll unix.o.proc unix.o.pselect unix.o.putenv unix.o.read \
 	unix.o.readv unix.o.reopen unix.o.rmdir unix.o.select unix.o.setenv \
@@ -256,7 +258,7 @@ WCHAR = wchar.o.btowc wchar.o.mblen wchar.o.mbrlen wchar.o.mbrtowc \
 STAMP =	!Stamp common.!Stamp complex.!Stamp gcccompat.!Stamp \
 	grp.!Stamp locale.!Stamp math.!Stamp math-asm.!Stamp \
 	netlib.!Stamp pwd.!Stamp resource.!Stamp signal.!Stamp \
-	scl.!Stamp stdio.!Stamp stdlib.!Stamp sys.!Stamp \
+	scl.!Stamp stat.!Stamp stdio.!Stamp stdlib.!Stamp sys.!Stamp \
 	termios.!Stamp time.!Stamp unistd.!Stamp unix.!Stamp \
 	wchar.!Stamp
 
@@ -264,8 +266,8 @@ STAMP =	!Stamp common.!Stamp complex.!Stamp gcccompat.!Stamp \
 UnixLib:   $(STAMP)
 	$(AR) $(ARflags) -o $@ o.* common.o.* complex.o.* gcccompat.o.* \
 	grp.o.* locale.o.* math.o.* math-asm.o.* netlib.o.* pwd.o.* \
-	resource.o.* scl.o.* signal.o.* stdio.o.* stdlib.o.* sys.o.* \
-	termios.o.* time.o.* unistd.o.* unix.o.* wchar.o.*
+	resource.o.* scl.o.* signal.o.* stat.o.* stdio.o.* stdlib.o.* \
+	sys.o.* termios.o.* time.o.* unistd.o.* unix.o.* wchar.o.*
 
 test:	test.link
 
@@ -311,6 +313,8 @@ clean:
 	-remove scl.!stamp
 	-wipe signal.o.* fv~r~c
 	-remove signal.!stamp
+	-wipe stat.o.* fv~r~c
+	-remove stat.!stamp
 	-wipe stdio.o.* fv~r~c
 	-remove stdio.!stamp
 	-wipe stdlib.o.* fv~r~c
@@ -385,6 +389,10 @@ scl.!Stamp:	$(SCL_ASM)
 signal.!Stamp:	$(SIGNAL) $(SIGNAL_ASM)
 	-remove signal.!Stamp
 	-create signal.!Stamp 0
+
+stat.!Stamp:	$(STAT)
+	-remove stat.!Stamp
+	-create stat.!Stamp 0
 
 stdio.!Stamp:	$(STDIO) $(STDIO_ASM)
 	-remove stdio.!Stamp
@@ -749,6 +757,9 @@ signal.o.sigexec:	signal.s.sigexec <UnixHdr$Dir>.unixlib.s.asm_dec
 signal.o._coredump:	signal.s._coredump <UnixHdr$Dir>.unixlib.s.asm_dec
 signal.o._signal:	signal.s._signal <UnixHdr$Dir>.unixlib.s.asm_dec
 
+stat.o.mknod:		stat.c.mknod
+stat.o.mkfifo:		stat.c.mkfifo
+
 stdio.o.clearerr:	stdio.c.clearerr
 stdio.o.fclose:		stdio.c.fclose
 stdio.o.feof:		stdio.c.feof
@@ -847,14 +858,18 @@ time.o.tzset:		time.c.tzset
 time.o.utimes:		time.c.utimes
 time.o._clock:		time.s._clock <UnixHdr$Dir>.unixlib.s.asm_dec
 
+unistd.o.chown:		unistd.c.chown
 unistd.o.chroot:	unistd.c.chroot
+unistd.o.fchown:	unistd.c.fchown
 unistd.o.getpass:	unistd.c.getpass
+unistd.o.link:		unistd.c.link
+unistd.o.readlink:	unistd.c.readlink
+unistd.o.symlink:	unistd.c.symlink
 
 unix.o.access:		unix.c.access
 unix.o.alphasort:	unix.c.alphasort
 unix.o.chdir:		unix.c.chdir
 unix.o.chmod:		unix.c.chmod
-unix.o.chown:		unix.c.chown
 unix.o.close:		unix.c.close
 unix.o.creat:		unix.c.creat
 unix.o.dev:		unix.c.dev
@@ -862,7 +877,6 @@ unix.o.dirent:		unix.c.dirent
 unix.o.dup:		unix.c.dup
 unix.o.dup2:		unix.c.dup2
 unix.o.fchmod:		unix.c.fchmod
-unix.o.fchown:		unix.c.fchown
 unix.o.features:	unix.c.features
 unix.o.fnmatch:		unix.c.fnmatch
 unix.o.fcntl:		unix.c.fcntl
@@ -876,7 +890,6 @@ unix.o.getsubopt:	unix.c.getsubopt
 unix.o.ioctl:		unix.c.ioctl
 unix.o.isatty:		unix.c.isatty
 unix.o.ispipe:		unix.c.ispipe
-unix.o.link:		unix.c.link
 unix.o.lseek:		unix.c.lseek
 unix.o.lstat:		unix.c.lstat
 unix.o.mkdir:		unix.c.mkdir

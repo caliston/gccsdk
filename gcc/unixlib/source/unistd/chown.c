@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/unix/c/chown,v $
- * $Date: 1997/10/19 21:50:52 $
- * $Revision: 1.7 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/chown.c,v $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: chown,v 1.7 1997/10/19 21:50:52 unixlib Exp $";
+static const char rcs_id[] = "$Id: chown.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -24,6 +24,5 @@ chown (const char *file, uid_t owner, gid_t group)
   IGNORE (file);
   IGNORE (owner);
   IGNORE (group);
-  /* FIXME Should we say ENOSYS ?  */
-  return 0;
+  return __set_errno (ENOSYS);
 }

@@ -1,3 +1,17 @@
+Sat Jun 15 13:56:57 2002  Nick Burrett  <nick@dsvr.net>
+
+	* stat/mknod.c: New file.
+	* stat/mkfifo.c: New file.
+	* sys/stat.h (mknod). Add prototype.
+	(mkfifo): Add prototype.
+	
+	* unistd/chown.c: Move here from directory unix to reduce number of
+	files in the directory.
+	* unistd/fchown.c: Likewise.
+	* unistd/link.c: Likewise.
+	* unistd/readlink.c: New file. Function split from link.c
+	* unistd/symlink.c: Likewise.
+	
 Wed Jun 12 15:34:06 2002  Nick Burrett  <nick@dsvr.net>
 
 	* stdlib/rand.c (srand): Call rand, not lrand.

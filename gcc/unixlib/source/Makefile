@@ -6,7 +6,14 @@
 #
 
 # Defs for GCC
-CROSS_CFLAGS += -D__UNIXLIB_INTERNALS -pedantic -Wall -Wno-long-long
+WARNINGS = -pedantic -Wall -Wundef -Wpointer-arith \
+          -Wcast-align -Wwrite-strings -Wstrict-prototypes \
+          -Wmissing-prototypes -Wmissing-declarations -Wnested-externs \
+          -Winline -Wno-unused -Wno-long-long -W -Wcast-qual -Wshadow
+
+CROSS_CFLAGS += -D__UNIXLIB_INTERNALS $(WARNINGS) 
+
+#CROSS_CFLAGS += -D__UNIXLIB_INTERNALS -pedantic -Wall -Wno-long-long
 INCLUDES = -isystem clib
 
 libunixobj=$(objdir)/unixlib/$(TRG)
@@ -403,6 +410,9 @@ SCL_ASM = $(libunixobj)/scl/_kcurskch.o \
 	$(libunixobj)/scl/_ksetenv.o \
 	$(libunixobj)/scl/_kswi_c.o
 
+STAT =	$(libunixobj)/stat/mknod.o \
+	$(libunixobj)/stat/mkfifo.o
+
 SYS =	$(libunixobj)/sys/alarm.o \
 	$(libunixobj)/sys/brk.o \
 	$(libunixobj)/sys/debug.o \
@@ -479,14 +489,18 @@ TERMIOS =	$(libunixobj)/termios/cfgetispee.o \
 	$(libunixobj)/termios/tcsetattr.o \
 	$(libunixobj)/termios/tcsetpgrp.o
 
-UNISTD =	$(libunixobj)/unistd/chroot.o \
-	$(libunixobj)/unistd/getpass.o
+UNISTD =	$(libunixobj)/unistd/chown.o \
+	$(libunixobj)/unistd/chroot.o \
+	$(libunixobj)/unistd/fchown.o \
+	$(libunixobj)/unistd/getpass.o \
+	$(libunixobj)/unistd/link.o \
+	$(libunixobj)/unistd/readlink.o \
+	$(libunixobj)/unistd/symlink.o
 
 UNIX =	$(libunixobj)/unix/access.o \
 	$(libunixobj)/unix/alphasort.o \
 	$(libunixobj)/unix/chdir.o \
 	$(libunixobj)/unix/chmod.o \
-	$(libunixobj)/unix/chown.o \
 	$(libunixobj)/unix/close.o \
 	$(libunixobj)/unix/creat.o \
 	$(libunixobj)/unix/getdtables.o \
@@ -495,7 +509,6 @@ UNIX =	$(libunixobj)/unix/access.o \
 	$(libunixobj)/unix/dup.o \
 	$(libunixobj)/unix/dup2.o \
 	$(libunixobj)/unix/fchmod.o \
-	$(libunixobj)/unix/fchown.o \
 	$(libunixobj)/unix/features.o \
 	$(libunixobj)/unix/fnmatch.o \
 	$(libunixobj)/unix/fcntl.o \
@@ -510,7 +523,6 @@ UNIX =	$(libunixobj)/unix/access.o \
 	$(libunixobj)/unix/ioctl.o \
 	$(libunixobj)/unix/isatty.o \
 	$(libunixobj)/unix/ispipe.o \
-	$(libunixobj)/unix/link.o \
 	$(libunixobj)/unix/lseek.o \
 	$(libunixobj)/unix/lstat.o \
 	$(libunixobj)/unix/mkdir.o \
@@ -594,8 +606,8 @@ WCHAR = $(libunixobj)/wchar/btowc.o \
 #  wchar.o.wcstold wchar.o.wcstod wchar.o.wcstof
 
 C_OBJS = $(COMPLEX) $(MATH) $(OBJS) $(COMMON) $(LOCALE) $(NETLIB) \
-	$(PWD) $(GRP) $(RESOURCE) $(SIGNAL) $(STDIO) $(STDLIB) $(SYS) \
-	$(TIME) $(TERMIOS) $(UNISTD) $(UNIX) $(WCHAR)
+	$(PWD) $(GRP) $(RESOURCE) $(SIGNAL) $(STAT) $(STDIO) \
+	$(STDLIB) $(SYS) $(TIME) $(TERMIOS) $(UNISTD) $(UNIX) $(WCHAR)
 
 ASM_OBJS = $(MATH_ASM) $(COMMON_ASM) $(GCCCOMPAT_ASM) $(NETLIB_ASM) \
 	$(SIGNAL_ASM) $(STDIO_ASM) $(SCL_ASM) $(SYS_ASM) $(TIME_ASM) \
@@ -618,7 +630,7 @@ install_headers:
 install_source:
 	$(instsrc) . "*.[chs]" source $(ro_unixlibpkg)
 	for dir in common complex gcccompat grp locale math math-asm \
-		module netlib pwd resource scl signal stdio stdlib sys \
+		module netlib pwd resource scl signal stat stdio stdlib sys \
 		 termios time unistd unix wchar clib clib/arpa \
 		 clib/machine clib/net clib/netinet clib/sys clib/unixlib; do \
 	  $(instsrc) $$dir "*.[chs]" source/$$dir $(ro_unixlibpkg) ; done
@@ -969,6 +981,9 @@ $(libunixobj)/signal/sigexec.o: signal/sigexec.s clib/unixlib/asm_dec.s
 $(libunixobj)/signal/_coredump.o: signal/_coredump.s clib/unixlib/asm_dec.s
 $(libunixobj)/signal/_signal.o: signal/_signal.s clib/unixlib/asm_dec.s
 
+$(libunixobj)/stat/mknod.o: stat/mknod.c
+$(libunixobj)/stat/mkfifo.o: stat/mkfifo.c
+
 $(libunixobj)/stdio/clearerr.o: stdio/clearerr.c
 $(libunixobj)/stdio/fclose.o: stdio/fclose.c
 $(libunixobj)/stdio/feof.o: stdio/feof.c
@@ -1097,14 +1112,18 @@ $(libunixobj)/time/tzset.o: time/tzset.c
 $(libunixobj)/time/utimes.o: time/utimes.c
 $(libunixobj)/time/_clock.o: time/_clock.s clib/unixlib/asm_dec.s
 
+$(libunixobj)/unistd/chown.o: unistd/chown.c
 $(libunixobj)/unistd/chroot.o: unistd/chroot.c
 $(libunixobj)/unistd/getpass.o: unistd/getpass.c
+$(libunixobj)/unistd/fchown.o: unistd/fchown.c
+$(libunixobj)/unistd/link.o: unistd/link.c
+$(libunixobj)/unistd/readlink.o: unistd/readlink.c
+$(libunixobj)/unistd/symlink.o: unistd/symlink.c
 
 $(libunixobj)/unix/access.o: unix/access.c
 $(libunixobj)/unix/alphasort.o: unix/alphasort.c
 $(libunixobj)/unix/chdir.o: unix/chdir.c
 $(libunixobj)/unix/chmod.o: unix/chmod.c
-$(libunixobj)/unix/chown.o: unix/chown.c
 $(libunixobj)/unix/close.o: unix/close.c
 $(libunixobj)/unix/creat.o: unix/creat.c
 $(libunixobj)/unix/dev.o: unix/dev.c
@@ -1112,7 +1131,6 @@ $(libunixobj)/unix/dirent.o: unix/dirent.c
 $(libunixobj)/unix/dup.o: unix/dup.c
 $(libunixobj)/unix/dup2.o: unix/dup2.c
 $(libunixobj)/unix/fchmod.o: unix/fchmod.c
-$(libunixobj)/unix/fchown.o: unix/fchown.c
 $(libunixobj)/unix/features.o: unix/features.c
 $(libunixobj)/unix/fnmatch.o: unix/fnmatch.c
 $(libunixobj)/unix/fcntl.o: unix/fcntl.c
@@ -1128,7 +1146,6 @@ $(libunixobj)/unix/glob.c: unix/glob.c
 $(libunixobj)/unix/ioctl.o: unix/ioctl.c
 $(libunixobj)/unix/isatty.o: unix/isatty.c
 $(libunixobj)/unix/ispipe.o: unix/ispipe.c
-$(libunixobj)/unix/link.o: unix/link.c
 $(libunixobj)/unix/lseek.o: unix/lseek.c
 $(libunixobj)/unix/lstat.o: unix/lstat.c
 $(libunixobj)/unix/mkdir.o: unix/mkdir.c
