@@ -1,3 +1,9 @@
+Mon Sep  3 13:07:28 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
+
+	* unix/unix.c (check_io_redir): Print sensible error message
+	upon I/O redirection failure.
+	(convert_command_line): Null terminate command line.
+	
 Mon Sep  3 13:01:42 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* sys/termios.h: New header.

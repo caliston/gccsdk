@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.2 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.3 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 #include <stdio.h>
@@ -366,7 +366,7 @@ __stop_itimers (void)
 
   /* Interval timers are not implemented in task windows nor in WIMP
      programs so we don't need to stop them.   Note that when
-     __taskwindow == 1 => __wimpprogram == 1 but not necessairy vice-
+     __taskwindow == 1 => __wimpprogram == 1 but not necessarily vice-
      versa so the test on __wimpprogram is enough.  */
   if (__wimpprogram)
     return;
@@ -577,7 +577,12 @@ static void check_io_redir (const char *p, int fd, int mode)
 
       fd = __open (fd, ptr, mode, 0666);
       if (fd < 0)
-	 __unixlib_fatal (NULL);
+        {
+           char failure[300];
+
+           sprintf (failure, "cannot open %s for I/O redirection", ptr);
+           __unixlib_fatal (failure);
+        }
 
       if (((mode & O_WRONLY) || (mode & O_RDWR)) && ! (mode & O_TRUNC))
         /* Seek to the end of the file, because we are appending.  */
@@ -734,7 +739,7 @@ convert_command_line (struct proc *process, const char *cli, int cli_size)
   temp = (char *) malloc (cli_size + 1);
 
   argc = 0;
-  argv = (char **) malloc ((argc + 1) * sizeof (char *));
+  argv = (char **) malloc ((argc + 2) * sizeof (char *));
   while (*cli)
     {
       /* Skip any white space.  */
@@ -842,13 +847,13 @@ convert_command_line (struct proc *process, const char *cli, int cli_size)
       if (p != temp)
         {
           argc ++;
-          if (argv == NULL)
-            argv = (char **) malloc (sizeof (char *));
-          else
-            argv = (char **) realloc (argv, argc * sizeof (char *));
+          argv = (char **) realloc (argv, (argc + 1) * sizeof (char *));
           argv[argc - 1] = strdup (temp);
         }
   }
+
+  /* Set the last item to NULL */
+  argv[argc] = NULL;
 
   free (temp);
   process->argc = argc;
