@@ -30,6 +30,7 @@ $(objtarget)/%.o: %.c
 
 
 OBJS = $(objtarget)/choose-temp.o $(objtarget)/cplus-dem.o \
+	$(objtarget)/fnmatch.o \
 	$(objtarget)/getopt.o $(objtarget)/getopt1.o \
 	$(objtarget)/obstack.o $(objtarget)/mkstemps.o \
 	$(objtarget)/pexecute.o $(objtarget)/splay-tree.o \
@@ -64,6 +65,7 @@ endif
 
 $(objtarget)/choose-temp.o: choose-temp.c
 $(objtarget)/cplus-dem.o: cplus-dem.c
+$(objtarget)/fnmatch.o: fnmatch.c
 $(objtarget)/getopt.o: getopt.c
 $(objtarget)/getopt1.o: getopt1.c
 $(objtarget)/mkstemps.o: mkstemps.c
