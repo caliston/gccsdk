@@ -14,6 +14,14 @@ RISC OS GCC release 2.95.2  (released xx August 2001)
 
 * gcc: Remove weak symbol use that was enabled in pre-release 3.
 
+* gcc: Changed compiler executable directory from arm-riscos to
+  arm-acorn-riscos.
+
+* gcc: Minor code generation optimisation for small C++ functions.
+
+* gcc: Bug fix in Unix filename translation.  Pathnames starting with
+  `../../something' would be translated to '../../'.
+
 RISC OS GCC pre-release 3a  (released 23 November 1999)
 ==========================
 
