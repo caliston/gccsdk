@@ -253,7 +253,7 @@ directories:
 	mkdir -p $(ro_gccpkg)/$(gn_gcc_bin_dir)
 	mkdir -p $(ro_gccpkg)/$(gn_gcc_include_dir)/h
 	mkdir -p $(ro_gccpkg)/$(gn_gplusplus_include_dir)/h
-	mkdir -p $(ro_gccpkg)/$(gn_cross_include_dir)/h
+	mkdir -p $(ro_gccpkg)/$(gn_cross_include_dir)
 
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg10)
 	mkdir -p $(ux_gccpkg)/$(gn_gcc_bin_dir)/$(trg11)
