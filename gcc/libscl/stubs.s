@@ -308,6 +308,10 @@ SharedCLibrary_LibInitAPCS_32	EQU &80683
 	MOV	r6, r6, asr #10 	; convert bytes to KB
 	MOV	r6, r6, lsl #16 	; put in upper 16bits
 
+	TEQ	r0, r0			; Set Z flag
+	TEQ	pc, pc			; EQ if in 32-bit mode
+	ORREQ	r6, r6, #1
+
 	[ {config} = 26
 	SWI	SharedCLibrary_LibInitAPCS_R
 	MOV	r6, r6, lsl #16 	; safety catch for ancient Shared C Lib modules
@@ -390,7 +394,7 @@ language_name
 	LDR	r0, c_run		; get our main()
 	CMP	r0, #0			; was there one?
 	ADRNE	r0, c_next		; yup, so point to hook to it
-	LDMFD	sp!, {pc}^
+	LDMFD	sp!, {pc}
 
 	DCB     "___init",0
 	ALIGN
@@ -403,7 +407,7 @@ c_next
 	BL	|_kernel_command_string|; get r0=command string
 	LDR	r1, c_run		; get ptr to main() function
 	BL	|_main|			; call clib to enter it.  SHOULD never return from here.
-	LDMFD   fp, {fp, sp, pc}^
+	LDMFD   fp, {fp, sp, pc}
 
 stub_data
 	DCD	|Stub$$Data|
@@ -474,6 +478,8 @@ kernel_vectors
 |_kernel_raise_error|           MOV     pc,#0
 
 kernel_vectors_end
+
+kernel_vectors_space	% kernel_vectors_end - kernel_vectors
 
 clib_vectors
 
@@ -670,7 +676,7 @@ clib_vectors
 |_swix|                         MOV     pc,#0
 
 clib_vectors_end
-
+clib_vectors_space	% clib_vectors_end - clib_vectors
 
 	AREA	|Stub$$Data|, DATA
 kernel_statics	% &31c
