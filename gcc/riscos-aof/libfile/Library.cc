@@ -264,7 +264,7 @@ void Library::extractMembers(const List<BString> &a_wildMembers, const BString &
  	 			fullPath = *member;
 
  	 		// Save file
- 	 		cerr << "Pfad: " << fullPath << endl;
+ 	 		// cerr << "Pfad: " << fullPath << endl;
  	 		data->createPath(fullPath);
  	 		data->save(fullPath, dirEntry->m_time);
  	 	}
