@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/sys/c/exec,v $
- * $Date: 2000/08/17 16:16:06 $
- * $Revision: 1.32 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/exec.c,v $
+ * $Date: 2001/01/29 15:10:21 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: exec,v 1.32 2000/08/17 16:16:06 admin Exp $";
+static const char rcs_id[] = "$Id: exec.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
 #include <ctype.h>
@@ -365,6 +365,10 @@ execve (const char *execname, char **argv, char **envp)
       free (process->argv);
     }
 
+#ifdef DEBUG
+  os_print ("-- execve: re-create proc->envp and proc->argv\r\n");
+#endif
+
   /* Count new environment variable vector length.  */
   for (x = 0; envp[x]; x++)
     ;
@@ -390,6 +394,11 @@ execve (const char *execname, char **argv, char **envp)
 
   process->argc = 0;
   process->argv = NULL;
+
+#ifdef DEBUG
+  os_print ("-- execve: proc->envc="); os_prhex ((int) process->envc); os_nl();
+  os_print ("-- execve: proc->argc="); os_prhex ((int) process->argc); os_nl();
+#endif
 
   /* If the cli is >= MAXPATHLEN, we will need the aid of DDE utils.  */
   if (strlen (cli) >= MAXPATHLEN && set_dde_cli (cli) < 0)
@@ -461,10 +470,12 @@ execve (const char *execname, char **argv, char **envp)
 
 	 Pointers located between __lomem and __break (i.e. the data
 	 section of a program) will be relocated using 'variable'.  */
-      for (i = 0; i <= process->envc; i++)
-	ushift (process->envp[i], variable, code);
       if (process->envp)
-        ushift (process->envp, variable, code);
+	{
+	  for (i = 0; i <= process->envc; i++)
+	    ushift (process->envp[i], variable, code);
+	  ushift (process->envp, variable, code);
+	}
       for (i = 0; i < MAXTTY; i++)
 	{
 	  if (process->tty[i].out)
@@ -576,9 +587,11 @@ __exret (void)
 	    dshift (process->tty[i].ptr, variable, code);
 	}
       if (process->envp)
-        dshift (process->envp, variable, code);
-      for (i = 0; i <= process->envc; i++)
-	dshift (process->envp[i], variable, code);
+	{
+	  dshift (process->envp, variable, code);
+	  for (i = 0; i <= process->envc; i++)
+	    dshift (process->envp[i], variable, code);
+	}
       process->argv = NULL;
     }
 

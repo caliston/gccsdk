@@ -1,3 +1,8 @@
+Tue Jul 31 12:32:14 2001  Nick Burrett  <nick@dsvr.net>
+
+	* exec.c (execve): ushift envp only if it already exists.
+	(__exret): dshift envp only if it exists.
+
 Tue Jul 24 17:11:43 2001  Nick Burrett  <nick@dsvr.net>
 
 	* time/strftime.c (strftime): Call tzset -- reverts John Tytgat's
