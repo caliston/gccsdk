@@ -217,7 +217,7 @@ main (int argc, char *argv[])
 #ifdef STANDARD_EXEC_PREFIX
   requested_linker = STANDARD_EXEC_PREFIX "drlink";
 #else
-  requested_linked = "drlink";
+  requested_linker = "drlink";
 #endif
 #else /* CROSS_COMPILE */
   requested_linker = getenv ("GCC$Linker");
@@ -707,7 +707,13 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
 
   if (argv[0])
     {
+#ifdef CROSS_COMPILE
       s = stpcpy (command, argv[0]);
+#else
+      temp = __riscosify (argv[0], 0, __RISCOSIFY_DONT_TRUNCATE,
+			  filename, sizeof (filename), NULL);
+      s = stpcpy (command, filename);
+#endif
       if (tlink_verbose >= 5)
 	fprintf (stderr, "*%s", argv[0]);
     }
@@ -847,6 +853,7 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
     printf ("Command line to execute: '%s'\n", command);
 
 #ifdef __riscos
+  printf ("__vfork model\n");
   pid = vfork ();
   if (pid == (pid_t) 0)
     {
@@ -856,13 +863,18 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
   else if (pid < (pid_t) 0)
     /* The fork failed.  */
     system_result = -1;
-  else if (waitpid (pid, &system_result, 0) != pid)
-    system_result = -1;
+  else
+    {
+      /* Parent process.  */
+      if (waitpid (pid, &system_result, 0) != pid)
+	system_result = -1;
+    }
 #else
   system_result = system (command);
 #endif
 
-  unlink (viafile);
+  if (tlink_verbose < 15)
+    unlink (viafile);
   free (command);
 
   return system_result;
@@ -1300,10 +1312,13 @@ do_tlink (char *linker, char **ld_argv, args *object_lst)
     }
 
   dump_file (ldout);
-  unlink (ldout);
+
+  if (tlink_verbose < 15)
+    unlink (ldout);
   if (exit_code)
     {
-      ld_error ("program %s returned exit status %d", linker, exit_code);
+      ld_error ("program %s returned exit status %d: %s", linker,
+		exit_code, (exit_code == 33) ? strerror (errno) : "");
       exit (exit_code);
     }
 }
