@@ -17,10 +17,22 @@
 
 Ar::Ar (int argc, char **argv)
 {
+  char *argv1 = NULL;
+
+  if (argc >= 2)
+    {
+      argv1 = new char[strlen (argv[1]) + 2];
+      argv1[0] = '-';
+      strcpy (argv1 + 1, argv[1]);
+      argv[1] = argv1;
+    }
   m_argParser = new ArgParser (argc, argv);
 
   if (! m_argParser)
     THROW_SPEC_ERR (BError::NewFailed);
+  
+  if (argc>=2)
+    delete argv1;
 }
 
 Ar::~Ar ()
@@ -31,11 +43,11 @@ void Ar::run ()
 {
   BString libFile, destDir;
   List<BString> argList, memberName, tmpList;
- int listSymbols = 0;
- int listLib = 0;
- int nullStamps = 0;
- Action action = ActionNone;
-
+  int listSymbols = 0;
+  int listLib = 0;
+  int nullStamps = 0;
+  Action action = ActionNone;
+  
   if (m_argParser->getOption ("-h")
       || m_argParser->getOption ("-?"))
     {
