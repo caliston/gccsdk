@@ -1,3 +1,37 @@
+Fri Jul 19 14:13:45 2002  John Tytgat <John.Tytgat@aaug.net>
+
+	* objs/Makefile,fe1: Removed o.rand
+	* scl/_kernel.s: declared AREA readonly. Updated comments.
+	* common/_exist.s: Embedding function names
+	* gcccompat/_divdi3.s, _moddi3.s, _udivdi3.s, _umoddi3.s:
+	  Likewise.
+	* math-asm/_acos.s, _asin.s, _atan.s, _atan2.s, _ceil.s
+	  _copysign.s, _cos.s, _cosh.s, _exp.s, _fabs.s, _fclrexcpt.s
+	  _fegetenv.s, _fegetrnd.s, _feholdexc.s, _fesetenv.s, _fesetroun.s
+	  _finite.s, _floor.s, _fraiseexc.s, _fsetexcpt.s, _ftstexcpt.s
+	  _hypot.s, _isinf.s, _isnan.s, _ldexp.s, _log.s, _log10.s, _modf1.s
+	  _pow.s, _signbit.s, _sin.s, _sincos.s, _sinh.s, _sqrt.s, _tan.s
+	  _tanh.s: Likewise.
+	* netlib/_accept.s, _bind.s, _connect.s, _getpeerna.s
+	  _getsockna.s, _getsockop.s, _gettsize.s, _hostbyadd.s, _hostbynam.s
+	  _listen.s, _net_error.s, _readv.s, _recv.s, _recvfrom.s, _recvmsg.s
+	  _sclose.s, _select.s, _send.s, _sendmsg.s, _sendto.s, _sendtosm.s
+	  _setsockop.s, _shutdown.s, _sioctl.s, _socket.s, _sockstat.s
+	  _sread.s, _swrite.s, _writev.s, htonl.s, htons.s, ntohl.s
+	  ntohs.s: Likewise.
+	* scl/_kcurskch.s, _kernel.s, _kgetenv.s, _kosargs.s
+	  _kosbget.s, _kosbput.s, _kosbyte.s, _koscli.s, _kosfile.s
+	  _kosfind.s, _kosgbpb.s, _kosrdch.s, _kosword.s, _koswrch.s
+	  _ksetenv.s, _kswi_c.s: Likewise.
+	* signal/_coredump.s, _signal.s, sigexec.s, printf.s:
+	  Likewise.
+	* sys/_alloca.s, _divsi3.s, _divtest.s, _jmp.s, _mem.s
+	  _mman.s, _modsi3.s, _os.s, _profile.s, _sdiv.s, _sdiv10.s
+	  _sigjmp.s, _smod.s, _swi.s, _syslib.s, _udiv.s, _udiv10.s
+	  _udivsi3.s, _umod.s, _umodsi3.s, _vfork.s: Likewise.
+	* time/_clock.s: Likewise.
+	* unix/getpagesiz.s: Likewise.
+
 Sat Jun 15 13:56:57 2002  Nick Burrett  <nick@dsvr.net>
 
 	* stat/mknod.c: New file.

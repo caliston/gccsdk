@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_divtest.s,v $
-; $Date: 2001/01/29 15:10:21 $
-; $Revision: 1.2 $
+; $Date: 2001/09/11 13:05:55 $
+; $Revision: 1.2.2.1 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -12,10 +12,11 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	EXPORT	|x$divtest|
-	EXPORT	|__rt_divtest|
 	IMPORT	raise
 
+	EXPORT	|__rt_divtest|
+	EXPORT	|x$divtest|
+	NAME	__rt_divtest
 |__rt_divtest|
 |x$divtest|
 	CMP	a1, #0

@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_udiv10.s,v $
-; $Date: 2001/01/29 15:10:21 $
-; $Revision: 1.2 $
+; $Date: 2001/09/11 13:05:55 $
+; $Revision: 1.2.2.1 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -14,7 +14,7 @@
 
 	EXPORT	|_kernel_udiv10|
 	EXPORT	|__rt_udiv10|
-
+	NAME	__rt_udiv10
 |_kernel_udiv10|
 |__rt_udiv10|
 	MOV	a2, a1

@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_smod.s,v $
-; $Date: 2001/01/29 15:10:21 $
-; $Revision: 1.2 $
+; $Date: 2001/09/11 13:05:55 $
+; $Revision: 1.2.2.1 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -18,8 +18,7 @@ divisor RN 0
 	EXPORT	|x$remainder|
 	EXPORT	|_kernel_srem|
 	EXPORT	|__rt_srem|
-
-
+	NAME	__rt_srem
 |_kernel_srem|
 |x$remainder|
 |__rt_srem|

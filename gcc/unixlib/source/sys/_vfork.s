@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_vfork.s,v $
-; $Date: 2001/08/02 13:27:19 $
-; $Revision: 1.2.2.1 $
+; $Date: 2001/09/11 13:05:55 $
+; $Revision: 1.2.2.2 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -21,7 +21,6 @@
 	IMPORT	longjmp
 
 	EXPORT	vfork
-
 	NAME	vfork
 vfork
 	STMFD	sp!, {v1, lr}
@@ -75,4 +74,3 @@ vfork
 	%	4
 
 	END
-

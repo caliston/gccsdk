@@ -1,8 +1,8 @@
 # Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2002/06/12 13:33:54 $
-# $Revision: 1.2.2.8 $
+# $Date: 2002/06/15 12:59:11 $
+# $Revision: 1.2.2.9 $
 # $State: Exp $
 # $Author: admin $
 
@@ -101,7 +101,7 @@ MATH_ASM = math-asm.o._acos math-asm.o._asin math-asm.o._atan \
 
 OBJS =	o.abort o.abs o.alloc o.assert o.atexit o.bsearch o.ctype \
 	o.ctypeproc o.div o.errno o.fcrypt o.index o.memccpy o.memchr \
-	o.memcmp o.memcpy o.memset o.psignal o.qsort o.rand \
+	o.memcmp o.memcpy o.memset o.psignal o.qsort \
 	o.stpcpy o.stpncpy o.strcat o.strchr o.strcmp o.strcpy o.strcspn \
 	o.strdup o.strichr o.stricmp o.strlen o.strncat o.strncmp \
 	o.strncpy o.strnicmp o.strpbrk o.strrchr o.strrichr o.strsep \

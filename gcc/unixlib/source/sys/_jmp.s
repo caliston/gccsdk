@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_jmp.s,v $
-; $Date: 2001/09/05 16:28:57 $
-; $Revision: 1.2.2.2 $
+; $Date: 2002/03/30 10:03:28 $
+; $Revision: 1.2.2.3 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -18,6 +18,7 @@
 	IMPORT	|_exit|
 
 	EXPORT	setjmp
+	NAME	setjmp
 setjmp
 	; record the current allocation pointer for use with longjmp
 	; Note, alloca_list is a weak symbol so may not be set
@@ -52,6 +53,7 @@ setjmp
 	return	AL, pc, lr
 
 	EXPORT	longjmp
+	NAME	longjmp
 longjmp
 	; free allocations that occurred after the setjmp. This must be
 	; done before any registers, including the fp registers, are
@@ -94,7 +96,7 @@ longjmp
 	LDFE	f5, [v1], #12
 	LDFE	f6, [v1], #12
 	LDFE	f7, [v1], #12
-	|	
+	|
 	LFMNE	f4, 4, [v1], #48
 	]
 |__longjmp_l1|
