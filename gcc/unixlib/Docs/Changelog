@@ -1,3 +1,10 @@
+Mon Jun 10 19:08:39 2002  Peter Naulls  <peter@chocky.org>
+
+	* locale.h (LC_MESSAGES): Define.
+	* locale/localeconv.c (localeconv): Use malloc'ed strings rather
+	than statics.
+	* locale/setlocale.c (locale_names): Add LC_MESSAGES.
+
 Mon Jun 10 17:31:46 2002  Nick Burrett  <nick@dsvr.net>
 
 	* common/stat.c (__feature_imagefs_is_file): Remove extern decl.

@@ -1,10 +1,10 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/h/locale,v $
- * $Date: 1997/10/08 12:48:09 $
- * $Revision: 1.4 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/locale.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -25,14 +25,16 @@ extern "C" {
 /* Classification and conversion of characters, multibyte and
    wide characters.  */
 #define LC_CTYPE 1
+/* Localisable natural-language messages.  */
+#define LC_MESSAGES 2
 /* Formatting of monetary values.  */
-#define LC_MONETARY 2
+#define LC_MONETARY 3
 /* Formatting of numeric values that are not monetary. */
-#define LC_NUMERIC 3
+#define LC_NUMERIC 4
 /* Formatting of data and time values.  */
-#define LC_TIME 4
+#define LC_TIME 5
 /* Entire locale.  */
-#define LC_ALL 5
+#define LC_ALL 6
 
 /* Sets the current locale for category 'category' to 'locale'.
 
