@@ -208,7 +208,7 @@ riscos-elf:
 # The ballache of having to keep support with Objasm forces us
 # to do this (CFL1) brain damage.
 unixlib:
-	$(MAKE) -C $@ "TRG=$(trg10)" $(cfl10) "CFL1=-Wa,-DAPCS32=no -Wa,-DARMFPE=2"
+	$(MAKE) -C $@ "TRG=$(trg10)" $(cfl10) "CFL1=-Wa,-DARMFPE=2"
 
 riscos-libs:
 	$(MAKE) -C $@ "TRG=$(trg10)" $(cfl10)
