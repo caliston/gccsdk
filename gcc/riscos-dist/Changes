@@ -1,4 +1,4 @@
-RISC OS GCC release 2.95.2  (released xx August 2001)
+RISC OS GCC release 2.95.2  (released xx October 2001)
 ==========================
 
 * unixlib: Allow for program independent sfix settings.
@@ -11,6 +11,11 @@ RISC OS GCC release 2.95.2  (released xx August 2001)
 
 * unixlib: Fix longstanding bug that causes programs to hard-lock a
   computer whilst using the network stack.
+
+* unixlib: Support for DoggySoft's Syslog module.
+
+* unixlib: Header file re-arrangements so that UnixLib can be used
+  as a drop-in compile time replacement for the SharedCLibrary.
 
 * gcc: Remove weak symbol use that was enabled in pre-release 3.
 
@@ -31,6 +36,8 @@ RISC OS GCC release 2.95.2  (released xx August 2001)
 * gcc: The option specifying that source code should be built and linked
   against the SharedCLibrary rather than UnixLib has changed from the
   rather uninformative -mstubs to -mlibscl.
+
+* as: Better support for local labels.
 
 RISC OS GCC pre-release 3a  (released 23 November 1999)
 ==========================
