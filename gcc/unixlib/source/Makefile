@@ -508,6 +508,7 @@ UNIX =	$(libunixobj)/unix/access.o \
 	$(libunixobj)/unix/stat.o \
 	$(libunixobj)/unix/sync.o \
 	$(libunixobj)/unix/sysconf.o \
+	$(libunixobj)/unix/syslog.o \
 	$(libunixobj)/unix/truncate.o \
 	$(libunixobj)/unix/tty.o \
 	$(libunixobj)/unix/umask.o \
@@ -1086,6 +1087,7 @@ $(libunixobj)/unix/setenv.o: unix/setenv.c
 $(libunixobj)/unix/stat.o: unix/stat.c
 $(libunixobj)/unix/sync.o: unix/sync.c
 $(libunixobj)/unix/sysconf.o: unix/sysconf.c
+$(libunixobj)/unix/syslog.o: unix/syslog.c
 $(libunixobj)/unix/truncate.o: unix/truncate.c
 $(libunixobj)/unix/tty.o: unix/tty.c
 $(libunixobj)/unix/umask.o: unix/umask.c

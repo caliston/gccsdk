@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/swis.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/Attic/swis.h,v $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.1.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -667,5 +667,19 @@ extern _kernel_oserror *_swix (int __swi_no, unsigned int, ...);
 
 #define OmniNFS_OmniOp                 0x04a480
 
-#endif
+#define SysLog_LogMessage              0x04c880
+#define SysLog_GetLogLevel             0x04c881
+#define SysLog_FlushLog                0x04c882
+#define SysLog_SetLogLevel             0x04c883
+#define SysLog_LogUnstamped            0x04c884
+#define SysLog_Indent                  0x04c885
+#define SysLog_UnIndent                0x04c886
+#define SysLog_NoIndent                0x04c887
+#define SysLog_OpenSessionLog          0x04c888
+#define SysLog_CloseSessionLog         0x04c889
+#define SysLog_LogData                 0x04c88a
+#define SysLog_LogFormatted            0x04c88b
+#define SysLog_ReadErrorMessage        0x04c88c
+#define SysLog_LogComplete             0x04c88d
 
+#endif

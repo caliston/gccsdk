@@ -1,3 +1,13 @@
+Thu Aug 16 10:17:58 2001  Alex Waugh <ajw498@ecs.soton.ac.uk>
+
+	* swis.h: Add SysLog module macros.
+	* unix/syslog.c (LogFile): Delete.
+	(connected): Delete.
+	(__progname): Delete.
+	(vsyslog): Use Doggysoft's SysLog module.
+	(openlog): Remove old socket code.
+	(closelog): Likewise.
+	
 Thu Aug 16 10:07:01 2001  Alex Waugh <ajw498@ecs.soton.ac.uk>
 
 	* common/unixify.c (__unixify): Ensure we allocate enough buffer
