@@ -1554,10 +1554,10 @@ add_library_file (const char *library)
 {
   llist *list = libraries;
 
-  if (strcmp (library, "m") == 0)
+  if (strcmp (library, "m") == 0 || strcmp (library, "c") == 0)
     {
       if (tlink_verbose >= 2)
-	printf ("Library libm was specified. Ignoring it\n");
+	printf ("Library lib%s was specified. Ignoring it\n", library);
       return;
     }
 
