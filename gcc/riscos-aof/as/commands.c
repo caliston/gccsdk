@@ -396,7 +396,11 @@ c_get (void)
 #ifdef __riscos__
   dependPut (" ", filename, "");
 #endif
+#ifdef CROSS_COMPILE
+  inputName = getfp;
+#else
   inputName = CanonicaliseFile (getfp);
+#endif
   asmfile = getfp;
   if (verbose)
     fprintf (stderr, "Including file %s\n", filename);
@@ -437,7 +441,11 @@ c_lnk (void)
   skiprest ();
   inputFinish ();
   inputLineNo = 0;
+#ifdef CROSS_COMPILE
+  inputName = lnkfp;
+#else
   inputName = CanonicaliseFile (lnkfp);
+#endif
   if_depth = 0;
   asmfile = lnkfp;
   if (verbose)
