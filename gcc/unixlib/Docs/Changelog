@@ -1,3 +1,11 @@
+Mon Feb 11 13:15:03 2002  Alex Waugh  <alex@alexwaugh.com>
+
+	* strtol.c (strtol): Correctly detect when the string supplied
+	contains a leading +, - or 0x but no actual number.
+	* strtoll.c (strtoll): Likewise.
+	* strtoul.c (strtoul): Likewise.
+	* strtoull.c (strtoull): Likewise.
+	
 Mon Feb 11 13:10:28 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	* stdio/printf.c (vfprintfsub): Incorrect argument for `wcrtomb'.
