@@ -1,5 +1,22 @@
-RISC OS GCC release 2.95.4  (released 20 December 2001)
-==========================
+Noteworthy changes to the RISC OS GCCSDK
+
+
+RISC OS GCC release 2.95.4 release 2 (released XX XXXXXX XXXX)
+====================================
+
+* ar: This is an ALF implementation of the Unix archiver.  This is
+  simply a front end onto libfile but takes compatible arguments.
+
+* nm: Based on decaof, this program is an AOF version of the Unix
+  program to list symbols in object files.
+
+* as: Fix broken co-processor mnemonic support.
+
+* drlink: Upgrade from 0.3.4 to 0.3.8.
+  
+
+RISC OS GCC release 2.95.4 release 1 (released 20 December 2001)
+====================================
 
 * unixlib: Allow for program independent sfix settings.
 
