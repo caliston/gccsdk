@@ -1,3 +1,11 @@
+Mon Aug  5 10:07:11 2002  Peter Naulls  <peter@chocky.org>
+
+	* pwd/pwdread.c (__pwddefault): Fix logic inversion of pwd_inited
+	comparison.
+
+	* unix/fcntl.c (fcntl): Third argument to _sioctl is an address to
+	an argument.
+	
 Wed Jul 31 15:16:14 2002  Nick Burrett  <nick@dsvr.net>
 
 	* unix/unix.c (check_io_redir): Cope with [fd]>>.

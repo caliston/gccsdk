@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/fcntl.c,v $
- * $Date: 2002/01/12 16:09:28 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2002/07/26 09:34:41 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: fcntl.c,v 1.2.2.2 2002/01/12 16:09:28 admin Exp $";
+static const char rcs_id[] = "$Id: fcntl.c,v 1.2.2.3 2002/07/26 09:34:41 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -86,13 +86,17 @@ fcntl (int fd, int cmd, ...)
 
         if (file_desc->device == DEV_SOCKET)
           {
-            if ((file_desc->fflag ^ newfflag) & O_NONBLOCK)
-              _sioctl((int)file_desc->handle, FIONBIO,
-		      (void *)((newfflag & O_NONBLOCK) ? 1 : 0));
-
-            if ((file_desc->fflag ^ newfflag) & O_ASYNC)
-              _sioctl((int)file_desc->handle, FIOASYNC,
-		      (void *)((newfflag & O_ASYNC) ? 1 : 0));
+             if ((file_desc->fflag ^ newfflag) & O_NONBLOCK)
+	       {
+		 int arg = (newfflag & O_NONBLOCK) ? 1 : 0;
+		 _sioctl((int)file_desc->handle, FIONBIO, &arg);
+	       }
+ 
+             if ((file_desc->fflag ^ newfflag) & O_ASYNC)
+	       {
+		 int arg = (newfflag & O_ASYNC) ? 1 : 0;
+		 _sioctl((int)file_desc->handle, FIOASYNC, &arg);
+	       }
           }
 
         file_desc->fflag = (file_desc->fflag & ~modify) | (newfflag & modify);

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/pwd/pwdread.c,v $
- * $Date: 2001/09/11 13:32:33 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2002/06/10 11:42:49 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: pwdread.c,v 1.2.2.1 2001/09/11 13:32:33 admin Exp $";
+static const char rcs_id[] = "$Id: pwdread.c,v 1.2.2.2 2002/06/10 11:42:49 admin Exp $";
 #endif
 
 /* pwd.c.pwdread. Internal password-file reading functions.
@@ -95,10 +95,10 @@ __pwdread (FILE * stream, struct passwd *ppwd)
 struct passwd *
 __pwddefault (void)
 {
-  static int pwd_inited;
+  static int pwd_inited = 0;
   static struct passwd pwd;
 
-  if (pwd_inited != 0)
+  if (pwd_inited == 0)
     {
       pwd.pw_name   = strdup("unixlib");
       pwd.pw_passwd = strdup("");
