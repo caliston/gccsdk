@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/stat.c,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: stat.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
+static const char rcs_id[] = "$Id: stat.c,v 1.2.2.1 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <time.h>
@@ -17,6 +17,8 @@ static const char rcs_id[] = "$Id: stat.c,v 1.2 2001/01/29 15:10:19 admin Exp $"
 #include <sys/stat.h>
 #include <unixlib/types.h>
 #include <unixlib/local.h>
+
+extern int __feature_imagefs_is_file;
 
 void
 __stat (int *regs, struct stat *buf)
@@ -72,7 +74,8 @@ __stat (int *regs, struct stat *buf)
 	/* Who said that we were a real Unix dir?  */
 	buf->st_nlink = 1;
 	/* Get round a filing system bug (as above).  */
-	mode |= S_IFDIR | S_IRWXU;
+	mode |= S_IRWXU;
+	mode |= (__feature_imagefs_is_file) ? S_IFREG : S_IFDIR;
 	/* Fudge directory size (as above).  */
 	if ((size_t) regs[4] > 32768)
 	  regs[4] = 0;
