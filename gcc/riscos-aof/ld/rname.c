@@ -16,9 +16,12 @@
 #include <string.h>
 #include <ctype.h>
 
+char *riscos_to_unix (const char *, char *);
+
+
 /* A list of prefixes we will try and swap round.  */
 
-static char *prefixes[] =
+static const char *prefixes[] =
 {
   "f", "for", "fpp", "p", "pas", "ph", "gpi",
   "cc", "cxx", "cpp", "c++", "c", "m", "rpo",

@@ -71,7 +71,7 @@ Boston, MA 02111-1307, USA.  */
 
 static char *ldout;	  /* pathname for linker errors */
 static char *ld_viafile;  /* pathname for linker -via <file> object list  */
-static char *c_file_name; /* pathname of gcc.  */
+static const char *c_file_name; /* pathname of gcc.  */
 static struct obstack temporary_obstack;
 static struct obstack permanent_obstack;
 static char *temporary_firstobj;
@@ -112,8 +112,8 @@ static void llist_add (llist **list, const char *name);
 static void llist_free (llist *list);
 static void append_arg (args *, int *, const char *);
 static void tlink_init (void);
-static int tlink_execute (char *prog, char **argv, char *redir, char *viafile);
-static void do_tlink (char *, char **, args *);
+static int tlink_execute (const char *prog, char **argv, char *redir, char *viafile);
+static void do_tlink (const char *, char **, args *);
 static int choose_temp_base (void);
 static void dump_file (char *);
 static void ldversion (int);
@@ -124,10 +124,10 @@ extern char *riscos_to_unix (const char *, char *);
 
 /* Same as `malloc' but report error if no memory available.  */
 
-char *
+static void *
 xmalloc (unsigned size)
 {
-  register char *value = (char *) malloc (size);
+  void *value = malloc (size);
   if (value == 0)
     ld_error ("virtual memory exhausted");
   return value;
@@ -135,10 +135,10 @@ xmalloc (unsigned size)
 
 /* Same as `realloc' but report error if no memory available.  */
 
-char *
+static void *
 xrealloc (char *ptr, int size)
 {
-  char *result = (char *) realloc (ptr, size);
+  void *result = realloc (ptr, size);
   if (!result)
     ld_error ("virtual memory exhausted");
   return result;
@@ -201,7 +201,7 @@ linker_initialise (void)
 int
 main (int argc, char *argv[])
 {
-  char *requested_linker;
+  const char *requested_linker;
 
   tlink_init ();
   linker_initialise ();
@@ -209,23 +209,26 @@ main (int argc, char *argv[])
   if (tlink_verbose > 0)
     ldversion (0);
 
-#ifdef CROSS_COMPILE
-#ifdef STANDARD_EXEC_PREFIX
-  requested_linker = STANDARD_EXEC_PREFIX "drlink";
-#else
-  requested_linker = "drlink";
+#ifndef STANDARD_EXEC_PREFIX
+#define STANDARD_EXEC_PREFIX ""
 #endif
+
+#ifdef CROSS_COMPILE
+  requested_linker = STANDARD_EXEC_PREFIX "drlink";
 #else /* CROSS_COMPILE */
   requested_linker = getenv ("GCC$Linker");
 
   /* No linker has been specified, try finding one on the Run$Path.  */
   if (requested_linker == NULL || *requested_linker == '\0')
     {
-#ifdef STANDARD_EXEC_PREFIX
+      /* This is to force people to use the correct version of
+         drlink i.e. the one distributed with the GCCSDK.
+
+	 In the long term, it makes it easier to support the SDK because
+	 little changes in parts of UnixLib, such as struct proc, can
+	 make it difficult for `ld' to spawn `drlink'.  Therefore by
+	 having this restriction we can make sure it never happens.  */
       requested_linker = STANDARD_EXEC_PREFIX "drlink";
-#else
-      requested_linker = "drlink";
-#endif
     }
 #endif /* CROSS_COMPILE */
 
@@ -679,12 +682,13 @@ tlink_init (void)
 }
 
 static int
-tlink_execute (char *prog, char **argv, char *redir, char *viafile)
+tlink_execute (const char *prog, char **argv, char *redir, char *viafile)
 {
   char *command, *temp;
   char **p_argv, *str, *s = NULL, filename[256];
   FILE *handle;
-  int system_result, command_size;
+  int system_result;
+  unsigned int command_size;
 #ifdef __riscos__
   pid_t pid;
 #endif
@@ -1288,7 +1292,7 @@ scan_linker_output (char *fname)
 
 
 void
-do_tlink (char *linker, char **ld_argv, args *object_lst)
+do_tlink (const char *linker, char **ld_argv, args *object_lst)
 {
   int exit_code = tlink_execute (linker, ld_argv, ldout, ld_viafile);
 
@@ -1327,7 +1331,7 @@ do_tlink (char *linker, char **ld_argv, args *object_lst)
 static int
 choose_temp_base (void)
 {
-  char *base = getenv ("TMPDIR");
+  const char *base = getenv ("TMPDIR");
   int len;
 
   if (base == (char *)0)
@@ -1336,7 +1340,7 @@ choose_temp_base (void)
       if (access (P_tmpdir, R_OK | W_OK) == 0)
 	base = P_tmpdir;
 #endif
-      if (base == (char *)0)
+      if (base == NULL)
 	{
 	  if (access ("/usr/tmp", R_OK | W_OK) == 0)
 	    base = "/usr/tmp/";
@@ -1427,7 +1431,7 @@ static void ldversion (int noisy)
     fprintf (stdout, "\n");
 }
 
-static void out (char *s)
+static void out (const char *s)
 {
   fprintf (stdout, "%s\n", s);
 }
