@@ -1,3 +1,8 @@
+Mon Aug  5 10:09:40 2002  Nick Burrett  <nick@dsvr.net>
+
+	* unix/unix.c (verify_redirection): A space is not permitted between
+	a file descriptor number and a redirection operator.
+
 Mon Aug  5 10:07:11 2002  Peter Naulls  <peter@chocky.org>
 
 	* pwd/pwdread.c (__pwddefault): Fix logic inversion of pwd_inited

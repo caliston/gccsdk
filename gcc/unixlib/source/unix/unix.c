@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2002/06/10 11:32:51 $
- * $Revision: 1.2.2.11 $
+ * $Date: 2002/07/31 14:15:34 $
+ * $Revision: 1.2.2.12 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.11 2002/06/10 11:32:51 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.12 2002/07/31 14:15:34 admin Exp $";
 #endif
 
 #include <stdio.h>
@@ -689,9 +689,6 @@ verify_redirection (const char *redir)
   if (isdigit (redir[x]))
     {
       while (redir[x] && isdigit (redir[x]))
-	x++;
-
-      while (redir[x] && redir[x] == ' ')
 	x++;
       
       if (redir[x] == '<' || redir[x] == '>')
