@@ -227,7 +227,7 @@ $(gccobjdir)/%.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
 
 
-all: c cp f77 objc docs  $(softlinks)
+all: c cp f77 docs  $(softlinks)
 # cp f77 gpc objc java docs
 
 .PHONY: c
