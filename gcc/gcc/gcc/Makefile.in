@@ -215,7 +215,7 @@ endif
 # Make Bison sources
 
 c-parse.y:	c-parse.in
-	sed -e "/^ifobjc$/,/^end ifobjc$/d" -e "/^ifc$/d" -e "/^end ifc$/d" $? > c-parse.y
+	sed -e "/^ifobjc$$/,/^end ifobjc$$/d" -e "/^ifc$$/d" -e "/^end ifc$$/d" $? > c-parse.y
 
 # Bison sources
 # There's no point having a suffix thing for these becuase
