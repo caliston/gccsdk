@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/netlib/connect.c,v $
- * $Date: 2001/09/04 16:32:04 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2002/08/05 09:12:59 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -10,7 +10,7 @@
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: connect.c,v 1.2.2.1 2001/09/04 16:32:04 admin Exp $";
+static const char rcs_id[] = "$Id: connect.c,v 1.2.2.2 2002/08/05 09:12:59 admin Exp $";
 #endif
 
 #include <unixlib/unix.h>
@@ -19,7 +19,7 @@ static const char rcs_id[] = "$Id: connect.c,v 1.2.2.1 2001/09/04 16:32:04 admin
 #include <unixlib/local.h>
 
 int
-connect (int s, const struct sockaddr *name, int namelen)
+connect (int s, const struct sockaddr *name, socklen_t namelen)
 {
   if (__socket_valid (s) == -1)
     return -1;

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/sys/c/execl,v $
- * $Date: 2000/08/17 16:16:06 $
- * $Revision: 1.3 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/execl.c,v $
+ * $Date: 2001/01/29 15:10:21 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: execl,v 1.3 2000/08/17 16:16:06 admin Exp $";
+static const char rcs_id[] = "$Id: execl.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
 #include <stdarg.h>
@@ -24,14 +24,14 @@ static const char rcs_id[] = "$Id: execl,v 1.3 2000/08/17 16:16:06 admin Exp $";
 int
 execl (const char *path, const char *arg, ...)
 {
-  const char **argv;
+  char **argv;
   unsigned int i, n;
   va_list args;
 
   va_start (args, arg);
 
   n = 8;
-  argv = (const char **) malloc (n * sizeof (const char *));
+  argv = malloc (n * sizeof (const char *));
   if (argv == NULL)
     return __set_errno (E2BIG);
   argv[0] = arg;
@@ -41,7 +41,7 @@ execl (const char *path, const char *arg, ...)
       if (i == n)
         {
           n *= 2;
-          argv = (const char **) realloc (argv, n * sizeof (char *));
+          argv = realloc (argv, n * sizeof (char *));
           if (argv == NULL)
             return __set_errno (E2BIG);
         }
@@ -49,7 +49,7 @@ execl (const char *path, const char *arg, ...)
     }
 
   va_end (args);
-  i = execve (path, (char **) argv, (char **) environ);
+  i = execve (path, argv, environ);
   free (argv);
   return i;
 }

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/netlib/accept.c,v $
- * $Date: 2001/01/29 15:10:20 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: accept.c,v 1.2 2001/01/29 15:10:20 admin Exp $";
+static const char rcs_id[] = "$Id: accept.c,v 1.2.2.1 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -25,7 +25,7 @@ static const char rcs_id[] = "$Id: accept.c,v 1.2 2001/01/29 15:10:20 admin Exp 
 #endif
 
 int
-accept (int s, struct sockaddr *name, int *namelen)
+accept (int s, struct sockaddr *name, socklen_t *namelen)
 {
   struct __unixlib_fd *file_desc;
   int nfd;

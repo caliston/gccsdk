@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/netlib/getsocknam.c,v $
- * $Date: 2001/01/29 15:10:20 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -10,7 +10,7 @@
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: getsocknam.c,v 1.2 2001/01/29 15:10:20 admin Exp $";
+static const char rcs_id[] = "$Id: getsocknam.c,v 1.2.2.1 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <unixlib/unix.h>
@@ -19,7 +19,7 @@ static const char rcs_id[] = "$Id: getsocknam.c,v 1.2 2001/01/29 15:10:20 admin 
 #include <unixlib/local.h>
 
 int
-getsockname (int s, struct sockaddr *name, int *namelen)
+getsockname (int s, struct sockaddr *name, socklen_t *namelen)
 {
   if (__socket_valid (s) == -1)
     return -1;

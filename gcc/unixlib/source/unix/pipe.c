@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/pipe.c,v $
- * $Date: 2001/09/01 13:44:29 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: pipe.c,v 1.2.2.2 2001/09/01 13:44:29 admin Exp $";
+static const char rcs_id[] = "$Id: pipe.c,v 1.2.2.3 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <unixlib/features.h>
@@ -69,7 +69,7 @@ pipe (int *p)
       }
     while (i != 0);
 
-    strcpy (stpcpy (file, "/pipe/"), s);
+    strcpy (stpcpy (file, "/tmp/pipe"), s);
   }
 
   file_desc_0->fflag = O_RDWR | O_CREAT | O_TRUNC | O_PIPE;

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/tty.c,v $
- * $Date: 2002/03/30 10:11:38 $
- * $Revision: 1.4.2.12 $
+ * $Date: 2002/08/18 15:19:05 $
+ * $Revision: 1.4.2.13 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tty.c,v 1.4.2.12 2002/03/30 10:11:38 admin Exp $";
+static const char rcs_id[] = "$Id: tty.c,v 1.4.2.13 2002/08/18 15:19:05 admin Exp $";
 #endif
 
 /* System V tty device driver for RISC OS.  */
@@ -107,15 +107,15 @@ __tty_console_gwinsz (struct winsize *win)
   if (__wimpprogram == 1)
     {
       char *size;
-      int rows = 24, cols = 80;
+      int lines = 24, cols = 80;
 
-      size = getenv ("ROWS");
+      size = getenv ("LINES");
       if (size)
         {
-          rows = atoi (size);
+          lines = atoi (size);
 
-          if (rows <= 0)
-            rows = 24;
+          if (lines <= 0)
+            lines = 24;
         }
 
       size = getenv ("COLUMNS");
@@ -128,9 +128,9 @@ __tty_console_gwinsz (struct winsize *win)
         }
 
       win->ws_col = cols;
-      win->ws_row = rows;
+      win->ws_row = lines;
       win->ws_xpixel = cols * 8;
-      win->ws_ypixel = rows * 16;
+      win->ws_ypixel = lines * 16;
 
     }
   else

@@ -1,3 +1,30 @@
+Wed Nov 13 11:58:00 2002  Peter Naulls  <peter@chocky.org>
+
+	* sys/socket.h (bind): Correct prototype.
+	(accept, connect, recvfrom, getsockname, getpeername): Likewise.
+	(_bind, _accept, _connect, _recvfrom, _getsockname): Likewise.
+	(_getpeername): Likewise.
+	* netlib/accept.c: Likewise.
+	* netlib/bind.c: Likewise.
+	* netlib/connect.c: Likewise.
+	* netlib/getsocknam.c: Likewise.
+	* netlib/getsockopt.c: Likewise.
+	* netlib/recvfrom.c: Likewise.
+	* netlib/setsockopt.c: Likewise.
+
+	* stdio/popen.c (pclose): Correct type usage. 
+	* sys/execl.c (execl): Likewise.
+
+	* unix/dev.c (__piperead): Fix pipe code to actually work.
+	(__pipewrite): Don't seek on pipes.
+	(__pipeselect): Likewise.
+	* unix/pipe.c (pipe): Put temporary pipe files into /tmp/pipe.
+
+	* unix/select.c (select): Fix broken comparison.
+
+	* unix/tty.c (__tty_console_gwinsz): Change variable naming
+	to better suit terminal handling.
+
 Wed Nov 13 10:55:36 2002  Stefan Bellon  <sbellon@sbellon.de>
 
 	* stdint.h: Norcroft version 5.50 supports long long.
