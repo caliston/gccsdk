@@ -1,8 +1,8 @@
 # Project:   UnixLib 3.8
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2001/05/09 08:15:45 $
-# $Revision: 1.2 $
+# $Date: 2001/09/05 16:28:57 $
+# $Revision: 1.2.2.1 $
 # $State: Exp $
 # $Author: admin $
 
@@ -156,13 +156,13 @@ RESOURCE =	resource.o.getegid resource.o.geteuid resource.o.getgid \
 	resource.o.ulimit
 
 SIGNAL =	signal.o.init signal.o.kill signal.o.pause \
-	signal.o.post signal.o.raise signal.o.setup signal.o.sigaction \
+	signal.o.post signal.o.raise signal.o.sigaction \
 	signal.o.sigaddset signal.o.sigaltstk signal.o.sigblock \
 	signal.o.sigdelset signal.o.siginfo signal.o.sigismembe \
 	signal.o.signal signal.o.signame signal.o.sigpause \
 	signal.o.sigpending signal.o.sigprocmsk signal.o.sigsetmask \
 	signal.o.sigsets signal.o.sigstack signal.o.sigsuspend \
-	signal.o.sigwakeup signal.o.sleep
+	signal.o.sleep
 
 SIGNAL_ASM =	signal.o.sigexec signal.o._coredump signal.o._signal
 

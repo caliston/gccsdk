@@ -1,3 +1,32 @@
+Thu Sep  6 15:51:33 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* objs/Makefile,fe1 (SIGNAL): Remove o.setup and o.sigwakeup.
+	* unixlib/sigstate.h (__unixlib_sig_init): Delete decl.
+	(__unixlib_internal_post_signal): Delete decl.
+	(__unixlib_setup_sighandler): Delete decl.
+	(__h_sigill, __h_sigbus, __h_sigsegv0): Delete decl.
+	(__h_sigfpe, __h_error, __h_sigint, __h_event): Delete decl.
+	(__h_sigsys, __h_upcall, __h_sigalrm): Delete decl.
+	(__h_sigvtalrm, __h_sigprof, __h_cback): Delete decl.
+	(__h_exit, __cbreg, __h_errbuf, sigwakeup): Delete decl.
+	* unixlib/unix.h (__runtime_features): Fix proto.
+	* signal/_signal.s (__raise): Call __unixlib_raise_signal direct.
+	(__h_error, __h_cback): Likewise.
+	(callback_signal): Delete function.
+	* signal/init.c (__unixlib_signal_initialise): Merge
+	__unixlib_default_sigaction into here.
+	* signal/post.c (__unixlib_default_sigaction): Delete funciton.
+	(post_signal): Renaed from __unixlib_internal_post_signal.
+	Make static.  Minor code cleanup.
+	(sigsetup): New function.  This was __unixlib_setup_sighandler.
+	* signal/setup.c: Delete file. Moved into post.c.
+	* signal/sigwakeup.c: Delete file.  Nothing used it.
+	* signal/signame.c (sys_siglist): Add comma after SIGTRAP [from
+	Ian Jeffray].  Change message for SIGSYS to Unknown SWI.
+	* signal/_syslib.s (__main): Don't change __stack_limit/__rwlimit
+	after dynamic area setup [from Ian Jeffray].
+	Fix inverse-logic bug when deleting UnixLib$env [from Ian Jeffray].
+	
 Wed Sep  5 17:32:19 2001  Alex Waugh  <ajw498@ecs.soton.ac.uk>
 
 	* unix/syslog.c (vsyslog): Bug fix.

@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_signal.s,v $
-; $Date: 2001/08/16 10:05:12 $
-; $Revision: 1.4.2.4 $
+; $Date: 2001/09/01 13:44:29 $
+; $Revision: 1.4.2.5 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -22,7 +22,6 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	IMPORT	raise
 	IMPORT	errno
 	IMPORT	sys_errlist
 
@@ -51,7 +50,9 @@
 	STMFD	sp!, {a2, a3, a4, ip}	; create signal frame
 	ADD	fp, sp, #12
 	MOV	v1, sp
-	BL	raise
+	MOV	a2, a1
+	MOV	a1, #0
+	BL	|__unixlib_raise_signal|
 	ADD	sp, v1, #16		; skip signal frame
 	LDMFD	sp, {a1,a2,a3,a4,v1,v2,v3,v4,v5,v6,sl,fp,ip,sp,pc}^
 
@@ -330,9 +331,10 @@ lb2	DCD	&FF000000 + lb2 - lb1
 	MOV	a3, a3, LSR #8
 	AND	a3, a3, #&FF
 	CMP	a3, #&02
-	MOVEQ	a1, #SIGFPE	;  A floating point exception
-	MOVNE	a1, #SIGEMT	;  A RISC OS exception.
-	BL	raise
+	MOVEQ	a2, #SIGFPE	;  A floating point exception
+	MOVNE	a2, #SIGEMT	;  A RISC OS exception.
+	MOV	a1, #0
+	BL	|__unixlib_raise_signal|
 	LDMEA	fp, {a1, a2, a3, a4, fp, sp, pc}^
 
 unrecoverable_error_msg
@@ -371,61 +373,6 @@ unrecoverable_error_msg
 	MOVEQ	ip, #0
 	MOVNE	ip, #1
 	MOVS	pc, lr
-
-; callback_signal. Used to raise a signal via a callback handler.
-; Entered in SVC mode
-; On entry
-;	ip = signal number
-; On exit
-;	All registers preserved
-
-	IMPORT	|__sigstk|
-	IMPORT	|__sigstksize|
-callback_signal
-	; Entered in SVC mode.  r12 contains the signal number to be
-	; raised.
-	STMFD	sp!, {r0-r12, lr}
-	; Check we're not already in a callback.  Prevents re-entrancy
-	; issues.
-	ADR	a1, |__cbflg|
-	LDR	a2, [a1, #0]
-	TST	a2, #4		; __cbflg bit 2
-	LDMEQFD	sp!, {r0-r12, pc}^
-	ORR	a2, a2, #4	;  set that we are now in a callback
-	STR	a2, [a1, #0]
-	; Change to USR mode
-	TEQP	pc, #0
-	MOV	a1, a1
-
-	; Preserve the old stack
-	MOV	v1, sp
-
-	; Signal number
-	MOV	a1, r12
-
-	; Setup signal stack, with a fresh APCS-compliant stack frame
-	; Don't assume anything about the stack state in USR mode.  Use
-	; our own instead.
-	LDR	sp, =|__sigstk|
-	LDR	sl, =|__sigstksize|
-	SUB	sl, sp, sl
-	MOV	fp, #0
-
-	; Raise the signal
-	BL	raise
-
-	; Restore the old stack
-	MOV	sp, v1
-	
-	; Go back into SVC mode and return.
-	SWI	OS_EnterOS
-
-	; We are no longer processing a callback
-	ADR	a1, __cbflg
-	LDR	a2, [a1, #0]
-	BIC	a2, a2, #4	; __cbflg bit 2
-	STR	a2, [a1, #0]
-	LDMFD	sp!, {r0-r12, pc}^
 
 ;-----------------------------------------------------------------------
 ; Event handler (1-290).
@@ -550,9 +497,10 @@ UpCall_NewApplication	EQU	256
 	MOVNE	a1,#&7e
 	SWINE	XOS_Byte		; This calls our escape handler
 
-	LDR	a1,|__cba1|
+	MOV	a1, #0
+	LDR	a2,|__cba1|
 	MOV	v1,sp
-	BL	raise
+	BL	|__unixlib_raise_signal|
 	ADD	sp,v1,#16		; skip signal frame
 	LDMFD	sp,{a1,a2,a3,a4,v1,v2,v3,v4,v5,v6,sl,fp,ip,sp,lr,pc}^
 

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/unix.h,v $
- * $Date: 2001/09/01 13:44:29 $
- * $Revision: 1.2.2.1 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/Attic/unix.h,v $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.1.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -264,7 +264,7 @@ extern int __intenv (const char *__name);
 extern int __remenv_from_os (const char *__name);
 
 /* Set runtime features according to system variables.  */
-extern void __runtime_features (const char *__cli);
+extern void __runtime_features (const char *__cmdline);
 
 /* Print an error and exit the process.  */
 extern void

@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_syslib.s,v $
-; $Date: 2001/09/02 14:04:55 $
-; $Revision: 1.3.2.5 $
+; $Date: 2001/09/05 16:28:57 $
+; $Revision: 1.3.2.6 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -81,6 +81,8 @@ NO_CALLASWI * 1
 
 	STR	sl, [ip, #16]	; __stack = bottom of stack
 
+	; For a description of the memory layout of a UnixLib application
+	; see sys/brk.c.
 	LDR	a1, [ip, #20]	; __robase
 	LDR	a2, [ip, #24]	; __rwlimit
 
@@ -245,11 +247,7 @@ da_found
 	ADD	a1, v6, a4
 	STR	a4, [ip, #32]	; __lomem = start of dynamic area
 	STR	a1, [ip, #36]	; __break = end of used part of DA
-	STR	a1, [ip, #40]	; __stack_limit = end of used part of DA
 	STR	a1, [ip, #48]	; __real_break = end of used part of DA
-
-	LDR	a1, [ip, #40]	; __stack_limit
-	STR	a1, [ip, #24]	; __rwlimit = __stack_limit
 
 
 	; if current size == passed in size, then delete DA at exit
@@ -311,11 +309,11 @@ no_dynamic_area
 	SWI	XOS_ReadVarVal
 	LDR	a1, [ip, #76]	; If __u is non-zero, then variable existed
 	CMP	a1, #0		; so delete it.
-	ADREQ	a1, env		; Environment variable name
-	MVNEQ	a3, #0		; Set negative to delete variable
-	MOVEQ	a4, #0		; context pointer (0 = first call)
-	MOVEQ	v1, #1		; variable type is number
-	SWIEQ	XOS_SetVarVal
+	ADRNE	a1, env		; Environment variable name
+	MVNNE	a3, #0		; Set negative to delete variable
+	MOVNE	a4, #0		; context pointer (0 = first call)
+	MOVNE	v1, #1		; variable type is number
+	SWINE	XOS_SetVarVal
 	
 	; Read the current RISC OS environment handler state
 	BL	|__env_read|

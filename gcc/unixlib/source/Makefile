@@ -304,7 +304,6 @@ SIGNAL =	$(libunixobj)/signal/init.o \
 	$(libunixobj)/signal/pause.o \
 	$(libunixobj)/signal/post.o \
 	$(libunixobj)/signal/raise.o \
-	$(libunixobj)/signal/setup.o \
 	$(libunixobj)/signal/sigaction.o \
 	$(libunixobj)/signal/sigaddset.o \
 	$(libunixobj)/signal/sigaltstk.o \
@@ -321,7 +320,6 @@ SIGNAL =	$(libunixobj)/signal/init.o \
 	$(libunixobj)/signal/sigsets.o \
 	$(libunixobj)/signal/sigstack.o \
 	$(libunixobj)/signal/sigsuspend.o \
-	$(libunixobj)/signal/sigwakeup.o \
 	$(libunixobj)/signal/sleep.o
 
 SIGNAL_ASM =	$(libunixobj)/signal/sigexec.o \
