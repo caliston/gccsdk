@@ -1,3 +1,8 @@
+Sat Sep 28 16:00:00 2002  Peter Naulls  <peter@chocky.org>
+
+	* unix/unix.c (convert_command_line): Fix argument could error
+	when faced with arguments like "2> stderr".
+
 Tue Sep 24 14:32:56 2002  Nick Burrett  <nick@dsvr.net>
 
 	* sys/exec.c (execve): Make 2nd and 3rd param char *const [].

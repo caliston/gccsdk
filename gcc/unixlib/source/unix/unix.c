@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2002/07/31 14:15:34 $
- * $Revision: 1.2.2.12 $
+ * $Date: 2002/08/05 09:06:40 $
+ * $Revision: 1.2.2.13 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.12 2002/07/31 14:15:34 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.13 2002/08/05 09:06:40 admin Exp $";
 #endif
 
 #include <stdio.h>
@@ -806,6 +806,9 @@ convert_command_line (struct proc *process, const char *cli, int cli_size)
 	      /* Just incrementing cli by one here converts a <> filename
 		 into a > filename.  We're not interested in the re-direction
 		 stuff anyway.  */
+	      while (*cli && isdigit (*cli))
+		cli++;
+
 	      if (cli[0] == '<' && cli[1] == '>')
 		cli++;
 
