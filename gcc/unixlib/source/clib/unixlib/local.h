@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/local.h,v $
- * $Date: 2002/08/17 10:52:33 $
- * $Revision: 1.2.2.4 $
+ * $Date: 2002/08/18 15:19:06 $
+ * $Revision: 1.2.2.5 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -188,6 +188,11 @@ extern char *__riscosify (const char *__name, int __create_dir,
 extern char *__riscosify_std (const char *__name, int __create_dir,
 			      char *__buffer, size_t __buf_len,
 			      int *__filetype);
+
+/* Gets the __riscosify_control value which can be defined by
+   the global variable __riscosify_control in the user program.
+   Returns 0 (= default value) when not defined.  */
+extern int __get_riscosify_control (void);
 
 /* Convert `__name' into a Unix style pathname and store in `buffer'.
    If buffer is non-null then it is at least buf_len long.  If buffer

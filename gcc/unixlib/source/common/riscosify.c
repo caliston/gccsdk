@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/riscosify.c,v $
- * $Date: 2001/09/04 16:32:04 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2002/08/17 10:52:33 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: riscosify.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
+static const char rcs_id[] = "$Id: riscosify.c,v 1.2.2.3 2002/08/17 10:52:33 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -299,7 +299,7 @@ char *
 __riscosify_std (const char *name, int create_dir,
 		char *buffer, size_t buf_len, int *filetype)
 {
-  return __riscosify (name, create_dir, __riscosify_control, buffer,
+  return __riscosify (name, create_dir, __get_riscosify_control (), buffer,
   		      buf_len, filetype);
 }
 

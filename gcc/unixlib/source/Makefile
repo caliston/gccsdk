@@ -193,7 +193,8 @@ COMMON = $(libunixobj)/common/attrib.o \
 	$(libunixobj)/common/uname.o \
 	$(libunixobj)/common/unixify.o
 
-COMMON_ASM =	$(libunixobj)/common/_exist.o
+COMMON_ASM =	$(libunixobj)/common/_exist.o \
+	$(libunixobj)/common/_riscosify.o
 
 GCCCOMPAT_ASM = $(libunixobj)/gcccompat/_udivdi3.o \
 	$(libunixobj)/gcccompat/_umoddi3.o \
@@ -737,6 +738,7 @@ $(libunixobj)/common/stat.o: common/stat.c
 $(libunixobj)/common/uname.o: common/uname.c
 $(libunixobj)/common/unixify.o: common/unixify.c
 $(libunixobj)/common/_exist.o: common/_exist.s
+$(libunixobj)/common/_riscosify.o: common/_riscosify.s
 
 $(libunixobj)/complex/cabs.o: complex/cabs.c
 $(libunixobj)/complex/cacos.o: complex/cacos.c

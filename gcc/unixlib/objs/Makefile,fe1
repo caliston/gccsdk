@@ -1,8 +1,8 @@
 # Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2002/08/05 08:46:05 $
-# $Revision: 1.2.2.12 $
+# $Date: 2002/08/18 18:35:21 $
+# $Revision: 1.2.2.13 $
 # $State: Exp $
 # $Author: admin $
 
@@ -113,7 +113,7 @@ COMMON = common.o.attrib common.o.cvttime common.o.exist \
 	common.o.riscosifyc common.o.serial common.o.sockvalid \
 	common.o.stat common.o.uname common.o.unixify
 
-COMMON_ASM =	common.o._exist
+COMMON_ASM =	common.o._exist common.o._riscosify
 
 GCCCOMPAT_ASM = gcccompat.o._udivdi3 gcccompat.o._umoddi3 \
 	gcccompat.o._divdi3 gcccompat.o._moddi3
@@ -501,6 +501,7 @@ common.o.stat:		common.c.stat
 common.o.uname:		common.c.uname
 common.o.unixify:	common.c.unixify
 common.o._exist:	common.s._exist
+common.o._riscosify:	common.s._riscosify
 
 complex.o.cabs:		complex.c.cabs
 complex.o.cacos:	complex.c.cacos

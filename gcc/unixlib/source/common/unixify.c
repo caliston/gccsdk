@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/unixify.c,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/08/16 09:08:25 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -18,7 +18,8 @@
 char *__unixify_std (const char *name, char *buffer, size_t buflen,
      		     int filetype)
 {
-  return __unixify (name, __riscosify_control, buffer, buflen, filetype);
+  return __unixify (name, __get_riscosify_control (), buffer, buflen,
+		    filetype);
 }
 
 /* Convert RO_PATH into a Unix style pathname and store in BUFFER. If BUFFER

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/dev.c,v $
- * $Date: 2002/06/10 16:32:14 $
- * $Revision: 1.2.2.7 $
+ * $Date: 2002/06/10 18:14:38 $
+ * $Revision: 1.2.2.8 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: dev.c,v 1.2.2.7 2002/06/10 16:32:14 admin Exp $";
+static const char rcs_id[] = "$Id: dev.c,v 1.2.2.8 2002/06/10 18:14:38 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -120,7 +120,7 @@ __fsopen (struct __unixlib_fd *file_desc, const char *filename, int mode)
 
   end_of_filename = __riscosify (filename,
 				 fflag & (O_CREAT | O_WRONLY | O_RDWR),
-				 __riscosify_control, file,
+				 __get_riscosify_control (), file,
 				 sizeof (file) - 2, &sftype);
   if (end_of_filename == NULL)
     return (void *) __set_errno (ENAMETOOLONG);
