@@ -1,3 +1,8 @@
+Tue Aug  7 16:13:28 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* conform: New directory.  This is a testsuite extracted from
+	glibc 2.2.3 that tests the conformancy of C library headers.
+	
 Tue Aug  7 10:07:03 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* sys/_swi.s (__swihack): New.  Missing from initial checkin.
