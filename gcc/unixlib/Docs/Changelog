@@ -1,3 +1,8 @@
+Mon Jun 10 11:01:17 2002  Peter Naulls  <peter@chocky.org>
+
+	* unix/unix.c (_main): Make a snapshot of `environ' as calls
+	to getenv can change its value, which is considered invalid.
+
 Mon Jun 10 10:56:10 2002  Maarten Bezemer  <veger2002@hotmail.com>
 
 	* stdio/tmpfile.c (tempnam): A logic error prevents `dir' being

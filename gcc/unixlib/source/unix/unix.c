@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2002/01/31 14:32:04 $
- * $Revision: 1.2.2.8 $
+ * $Date: 2002/04/02 19:02:48 $
+ * $Revision: 1.2.2.9 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.8 2002/01/31 14:32:04 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.9 2002/04/02 19:02:48 admin Exp $";
 #endif
 
 #include <stdio.h>
@@ -236,8 +236,25 @@ void __unixinit (void)
 void _main (void)
 {
   /* Enter the user's program. For compatibility with Unix systems,
-     pass the 'environ' variable as a third argument.  */
-  main (__u->argc, __u->argv, environ);
+     pass the 'environ' variable as a third argument.
+
+     Make a snapshot of the current environment.  This is necessary
+     as doing e.g. a getenv() can update *environ so that this main()
+     program is wrongly looking at a free'ed environ ptr array.  */
+  int env_var_index;
+  char **snapshot_environ;
+  for (env_var_index = 0; environ[env_var_index] != NULL; ++env_var_index)
+    ;
+  snapshot_environ = (char **) malloc((env_var_index + 1) * sizeof (char *));
+  if (snapshot_environ == NULL)
+    __unixlib_fatal (NULL);
+  while (env_var_index >= 0)
+    {
+      snapshot_environ[env_var_index] = environ[env_var_index];
+      --env_var_index;
+    }
+  
+  main (__u->argc, __u->argv, snapshot_environ);
 }
 
 void
