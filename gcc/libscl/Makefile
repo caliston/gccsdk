@@ -29,7 +29,7 @@ mkdirs:
 
 install_headers:
 	$(insthdr) . "*.h" libscl $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
-	$(insthdr) sys "*.h" libscl $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
+	$(insthdr) sys "*.h" libscl/sys $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
 
 $(ux_gcc_bin_dir)/$(TRG)/libscl.o:	$(LIBC)
 	$(CROSS_AR) $(CROSS_AR_FLAGS) $@ $(LIBC)
