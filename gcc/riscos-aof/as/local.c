@@ -4,6 +4,7 @@
  */
 #include "sdk-config.h"
 #include <string.h>
+#include <stdlib.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #elif HAVE_INTTYPES_H
@@ -15,6 +16,7 @@
 #include "asm.h"
 #include "input.h"
 #include "variables.h"
+#include "os.h"
 
 typedef struct localPos
   {

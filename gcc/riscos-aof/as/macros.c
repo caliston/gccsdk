@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "variables.h"
+#include "os.h"
 
 #define MACRO_LIMIT 16
 #define MACRO_DEPTH 10

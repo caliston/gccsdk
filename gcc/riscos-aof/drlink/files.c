@@ -580,6 +580,8 @@ bool process_file(char *filename, unsigned int filesize) {
       ok = TRUE;
     }
     break;
+  default:
+    break;  
   }
   return ok;
 }
@@ -956,7 +958,8 @@ filelist *read_member(libentry *lp, filelist *inwhat, symbol *forwhat) {
     break;
   case LIBRARY:
     error("Error: '%s' is a library. Nested libraries are not supported", membername);
-    break;
+  default:
+    break;  
   }
   return fp;
 }
@@ -980,6 +983,7 @@ bool extract_member(chunkindex *cp) {
     break;
   case LIBRARY:
     error("Error: '%s' is a library. Nested libraries are not supported", objectname);
+  default:
     break;
   }
   filebase = oldbase;

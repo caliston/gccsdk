@@ -15,6 +15,7 @@
 #include "value.h"
 #include "code.h"
 #include "error.h"
+#include "os.h"
 
 /* Code demands at least one Lateinfo */
 Value valueLateToCode(int offset,LateInfo *late)

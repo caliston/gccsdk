@@ -209,6 +209,8 @@ static void check_symedit(symtentry *symtp) {
         else {
           error("Warning: Symbol '%s' in '%s' is already a 'global' symbol", symtp->symtname, ep->edtfile);
         }
+      default:
+        break;  
       }
     }
     ep = ep->edtnext;

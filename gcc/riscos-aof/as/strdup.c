@@ -8,6 +8,7 @@
 #include "os.h"
 #include "error.h"
 
+#ifndef strndup
 char *
 strndup (const char *str, int len)
 {
@@ -21,3 +22,4 @@ strndup (const char *str, int len)
     }
   return c;
 }
+#endif

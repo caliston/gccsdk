@@ -185,7 +185,7 @@ static char *get_text(void) {
   do {
     if (option) *cp = tolower(*cp);
     cp++;
-  } while (cp!=cvptrend && ((terminator=='"' && *cp!='"') || (terminator==' ' & *cp>' ')));
+  } while (cp!=cvptrend && ((terminator=='"' && *cp!='"') || (terminator==' ' && *cp>' ')));
   if (terminator=='"' && cp==cvptrend) {	/* " missing */
     error("Error: Unmatched '\"' found");
     cvptr = cp;
@@ -695,6 +695,8 @@ option optionlist [] = {
     break;
   case NOSUPPORT:
     error("Fatal: 'link' option '%s' is not supported", op);
+  default:
+    break;  
   }
   return ok;
 }
@@ -736,6 +738,8 @@ static bool scan_cmdline(void) {
   case AOF:
     if (imagename==NIL) imagename = "aof";
     opt_nounused = FALSE;
+  default:
+    break;  
   }
   if (imagename==NIL) imagename = "!RunImage";
   opt_verbose = opt_verbose && !opt_quiet;

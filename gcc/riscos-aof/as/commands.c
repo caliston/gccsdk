@@ -15,6 +15,7 @@
 #endif
 
 #include "commands.h"
+#include "depend.h"
 #include "error.h"
 #include "input.h"
 #include "output.h"

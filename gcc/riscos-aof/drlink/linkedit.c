@@ -251,6 +251,8 @@ static bool parse_command(void) {
     break;
   case EDT_ENTRY:
     new_entry = p;
+  default:
+    break;  
   }
   return TRUE;
 }

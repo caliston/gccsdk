@@ -4,7 +4,9 @@
 #include <getopt.h>
 #include "libiberty.h"
 
+#ifndef LITTLE_ENDIAN
 #define LITTLE_ENDIAN 1
+#endif
 #define NM_VERSION "1.00"
 
 static void nm_help (void);
@@ -252,7 +254,7 @@ free_chunk_memory (char *ptr)
 struct chunkent *
 read_chunkents (FILE *ifp, struct chunkhdr *hdr)
 {
-  register i;
+  register int i;
 
   if (ents)
     free (ents);
@@ -292,7 +294,7 @@ read_stringtab (FILE *ifp, struct chunkent *strent)
 struct symbol *
 read_symboltab (FILE *ifp, struct chunkent *syment, int numsyms)
 {
-  register i;
+  register int i;
 
   if (symptr)
     free (symptr);
@@ -331,7 +333,7 @@ read_ident (FILE *ifp, struct chunkent *ident)
 struct aofhdr *
 read_aofhdr (FILE *ifp, struct chunkent *hdrent)
 {
-  register i;
+  register int i;
   struct areahdr *areahdr;
 
   if (aofhdr)
@@ -403,9 +405,9 @@ int decode (const char *aof_file)
   FILE *handle;
   struct chunkhdr *hdr;
   struct chunkent *ents, *ent;
-  struct aofhdr *aofhdr;
-  struct symbol *symboltab;
-  char *stringtab;
+  struct aofhdr *aofhdr = NULL;
+  struct symbol *symboltab = NULL;
+  char *stringtab = NULL;
   long area_offset;
   long symboltab_size;
 

@@ -25,7 +25,6 @@ Boston, MA 02111-1307, USA.  */
    define CROSS_COMPILE.  */
 
 #include "sdk-config.h"
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -354,11 +353,13 @@ hash_table_init (struct hash_table *table,
 
 /* Free a hash table.  */
 
+#if 0
 static void
 hash_table_free (struct hash_table *table)
 {
   obstack_free (&table->memory, (void *) NULL);
 }
+#endif
 
 /* Look up a string in a hash table.  */
 
@@ -447,6 +448,7 @@ hash_newfunc (struct hash_entry *entry, struct hash_table *table, const char *st
 
 /* Traverse a hash table.  */
 
+#if 0
 static void
 hash_traverse (struct hash_table *table,
 	       boolean (*func) (struct hash_entry *, void *),
@@ -465,6 +467,7 @@ hash_traverse (struct hash_table *table,
 	}
     }
 }
+#endif
 
 typedef struct symbol_hash_entry
 {
@@ -680,10 +683,12 @@ static int
 tlink_execute (char *prog, char **argv, char *redir, char *viafile)
 {
   char *command, *temp;
-  char **p_argv, *str, *s, filename[256];
+  char **p_argv, *str, *s = NULL, filename[256];
   FILE *handle;
   int system_result, command_size;
+#ifdef __riscos__
   pid_t pid;
+#endif
 
   /* Reserve some space for the command line.  */
   command_size = 512;
@@ -850,7 +855,7 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
   if (tlink_verbose >= 3)
     printf ("Command line to execute: '%s'\n", command);
 
-#ifdef __riscos
+#ifdef __riscos__
   pid = vfork ();
   if (pid == (pid_t) 0)
     {
@@ -1348,7 +1353,7 @@ choose_temp_base (void)
     temp_filename[len++] = '/';
   strcpy (temp_filename + len, "ccXXXXXX");
 
-  mktemp (temp_filename);
+  mkstemp (temp_filename);
 }
 
 static void
@@ -1564,8 +1569,6 @@ add_library_file (const char *library)
 static int check_and_add_library (const char *file_name)
 {
   char converted[256], *temp;
-  int regs[6];
-  struct stat f;
 
 #ifdef CROSS_COMPILE
   temp = strcpy (converted, file_name);
@@ -1605,7 +1608,7 @@ static void parse_library (const char *library)
           && list->name[i] != '/')
         strcat (file_name, "/");
 
-#ifdef CROSS_COMPILE 
+#ifdef CROSS_COMPILE
       strcat (file_name, "lib"); 
       strcat (file_name, library); 
       strcat (file_name, ".a"); 
@@ -1682,7 +1685,9 @@ add_library_search_path (const char *path)
 
 static void add_input_file (const char *fname)
 {
+#ifndef CROSS_COMPILE
   char tmp[256];
+#endif
 
   if (tlink_verbose >= 4)
     printf ("adding object file %s\n", fname);
