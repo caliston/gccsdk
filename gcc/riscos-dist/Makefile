@@ -41,12 +41,12 @@ GCCDOCPKG = $(pkg)/docs/COPYING \
 CC1PKG = $(pkg)/bin/g++$(exesfx) \
 	$(bindir)/cc1$(exesfx) \
 	$(libdir)/include/h \
+
+CC1PLUSPKG = $(bindir)/cc1plus$(exesfx) \
+	$(libdir)/include/g++-3 \
 	$(bindir)/apcs26/unixlib/o/libiostream \
 	$(bindir)/apcs26/unixlib/o/libio \
 	$(bindir)/apcs26/unixlib/o/libstdc++
-
-CC1PLUSPKG = $(bindir)/cc1plus$(exesfx) \
-	$(libdir)/include/g++-3
 
 G77PKG = $(pkg)/bin/g77$(exesfx) \
 	$(bindir)/f771$(exesfx) \
