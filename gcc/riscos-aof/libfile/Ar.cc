@@ -62,6 +62,12 @@ void Ar::run ()
   if (m_argParser->getOption ("-V"))
     version ();
 
+#ifdef CROSS_COMPILE
+  destDir = "./";
+#else
+  destDir = "@.";
+#endif
+
   // Delete modules from the archive
   if (m_argParser->getOption ("-d"))
     action = ActionDelete;
@@ -73,7 +79,7 @@ void Ar::run ()
 
   // Extract members from the archive
   if (m_argParser->getOption ("-x"))
-    action = ActionExtract;
+    action = (argList.length () == 0) ? ActionExtractAll : ActionExtract;
 
   if (m_argParser->getOption ("-c"))
     action = ActionCreate;
@@ -112,14 +118,19 @@ void Ar::run ()
 	};
     case ActionCreate:
       library->addMembers (argList);
-      library->updateOflSymt ();
       library->updateOflTime ();
+      library->updateOflSymt ();
       library->save ();
       break;
 
     case ActionExtract:
       library->load ();
       library->extractMembers (argList, destDir);
+      break;
+
+    case ActionExtractAll:
+      library->load();
+      library->extractAllMembers (destDir);
       break;
 
     case ActionExtractDelete:
@@ -129,8 +140,8 @@ void Ar::run ()
 	library->extractMembers (argList, destDir);
 
       library->deleteMembers (argList);
-      library->updateOflSymt ();
       library->updateOflTime ();
+      library->updateOflSymt ();
       library->save ();
       break;
 
