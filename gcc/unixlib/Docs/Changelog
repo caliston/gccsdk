@@ -1,3 +1,15 @@
+Tue Jan 31 14:31:05 2002  Peter Naulls  <peter@chocky.org>
+
+	* unistd.h (symlink): Declare.
+	(readlink): Declare.
+	* unix/link.c (symlink): New function.
+	(readlink): New function.
+	* unix/glob.c (glob3): Fix warnings.
+	* unix/open.c (ttyname): Return pointer to a static buffer.
+	* unix/syslog.c (vsyslov): Call `write' rather than `writev'.
+	* unix/unix.c (__unixinit): Fix warnings.
+	(initialise_unix_io): Make tty const.
+
 Tue Jan 15 13:20:42 2002  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* stdio.h (_IOMAGIC): Change to 0xfe000000 in order to reduce

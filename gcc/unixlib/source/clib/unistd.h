@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2001/09/11 14:16:00 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -376,6 +376,12 @@ extern int ispipe (int __fd);
 
 /* Make a link to from named to.  */
 extern int link (const char *__from, const char *__to);
+
+/* Make a symbolic to from named to.  */
+extern int symlink (const char *__from, const char *__to);
+
+/* Read vaue of a symbolic link.  */
+extern int readlink (const char *__path, char *__buf, size_t __butsiz);
 
 /* Remove the line name.  */
 extern int unlink (const char *__name);

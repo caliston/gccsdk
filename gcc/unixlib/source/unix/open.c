@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/open.c,v $
- * $Date: 2001/09/01 13:44:29 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: open.c,v 1.2.2.1 2001/09/01 13:44:29 admin Exp $";
+static const char rcs_id[] = "$Id: open.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <stdarg.h>
@@ -46,6 +46,8 @@ static const struct sfile __sfile[] =
 char *
 ttyname (int fd)
 {
+  static char name[10];
+
   if (BADF (fd))
     {
       (void) __set_errno (EBADF);
@@ -53,7 +55,7 @@ ttyname (int fd)
     }
 
   if (__u->fd[fd].device == DEV_TTY)
-    return "/dev/tty";
+    return strcpy (name, "/dev/tty");
 
   return NULL;
 }

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2001/09/11 14:16:00 $
- * $Revision: 1.2.2.6 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.7 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.6 2001/09/11 14:16:00 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.7 2001/09/14 14:01:17 admin Exp $";
 #endif
 
 #include <stdio.h>
@@ -111,12 +111,13 @@ __decstrtoui (const char *nptr, char **end)
   return result;
 }
 
+extern char *__cli;
+
 /* Initialise the UnixLib world.  */
 void __unixinit (void)
 {
   int i, __cli_size, cli_size = 0, newproc = 0, regs[10];
   char *cli = NULL;
-  extern char *__cli;
 
 #ifdef DEBUG
   __os_print ("-- __unixinit: __u = "); __os_prhex ((unsigned int) __u);
@@ -419,7 +420,7 @@ static void
 initialise_unix_io (struct proc *process)
 {
   int i;
-  char *tty;
+  const char *tty;
 
   /* Set all file descriptors to unallocated status.  */
   for (i = 0; i < MAXFD; i++)
@@ -675,7 +676,7 @@ verify_redirection (const char *redir)
      is a space before this chevron, then it *must* be referring
      to a re-direction operator.
 
-     An array index of -1 is safe here, becuase its impossible for
+     An array index of -1 is safe here, because it is impossible for
      a right chevron to appear at the start of the command line
      (unless you are the idiot who regularly uses > for a filename). */
   if (redir[0] == '>' && redir[-1] == ' ')

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/syslog.c,v $
- * $Date: 2001/09/05 16:32:59 $
- * $Revision: 1.2.2.3 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: syslog.c,v 1.2.2.3 2001/09/05 16:32:59 admin Exp $";
+static const char rcs_id[] = "$Id: syslog.c,v 1.2.2.4 2001/09/14 14:01:17 admin Exp $";
 #endif
 
 /*
@@ -48,7 +48,6 @@ static const char rcs_id[] = "$Id: syslog.c,v 1.2.2.3 2001/09/05 16:32:59 admin 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/syslog.h>
-#include <sys/uio.h>
 #include <unixlib/unix.h>
 #include <unixlib/os.h>
 #include <swis.h>
@@ -166,15 +165,8 @@ vsyslog (int pri, const char *fmt, va_list ap)
   /* Output to stderr if requested. */
   if (LogStat & LOG_PERROR)
     {
-      struct iovec iov[2];
-      register struct iovec *v = iov;
-
-      v->iov_base = stdp;
-      v->iov_len = cnt - (stdp - tbuf);
-      ++v;
-      v->iov_base = "\n";
-      v->iov_len = 1;
-      (void) writev (STDERR_FILENO, iov, 2);
+      write (STDERR_FILENO, stdp, cnt - (stdp - tbuf));
+      write (STDERR_FILENO, (const void *) "\n", 1);
     }
 
   /* Ignore errors, syslog module is probably not loaded */
