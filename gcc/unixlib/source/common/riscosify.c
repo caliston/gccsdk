@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/riscosify.c,v $
- * $Date: 2002/08/17 10:52:33 $
- * $Revision: 1.2.2.3 $
+ * $Date: 2002/08/18 19:57:19 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: riscosify.c,v 1.2.2.3 2002/08/17 10:52:33 admin Exp $";
+static const char rcs_id[] = "$Id: riscosify.c,v 1.2.2.4 2002/08/18 19:57:19 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -1081,7 +1081,7 @@ main:
       to_copy = truncate[__RISCOSIFY_TRUNCATE_VALUE(flags)];
 
       name--; /* Copying from name - 1.  */
-      if (to_copy < last_dot - name)
+      if (to_copy < (size_t) (last_dot - name))
 	drop_vowels = flags & __RISCOSIFY_DROP_VOWEL;
       else
 	to_copy = last_dot - name;

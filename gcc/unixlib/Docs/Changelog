@@ -1,3 +1,17 @@
+Tue Sep 24 12:28:40 2002  Peter Naulls  <peter@chocky.org>
+
+	* netinet/in.h (struct ip_opts): Rename ip_opts to Ip_opts to
+	workaround C++ incompatibility.
+
+	* alloc.c (mmap_chunk): Fix alignment warning.
+	* strcmp.c (strcmp): Retain type consistency.
+	* netdb.h (gethostbyname2): Add prototype.
+	* common/riscosify.c (__riscosify): Fix signed/unsigned comparison.
+	* math/expm1.c (expm1): Fix warnings about uninitialised variables.
+	* stdio/scanf.c (vfscanf): Fix function type usage.
+	* stdio/tmpfile.c (generate_temporary_filename): Fix type consistency.
+	* sys/exec.c (execve): Avoid alignment warning.
+
 Mon Aug 19 12:50:40 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	* objs/Makefile,fe1: module 'string' dependency was wrong; Made

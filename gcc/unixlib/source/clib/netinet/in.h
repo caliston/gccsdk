@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/netinet/in.h,v $
- * $Date: 2001/07/23 15:37:49 $
- * $Revision: 1.3 $
+ * $Date: 2002/08/18 15:19:06 $
+ * $Revision: 1.3.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -236,7 +236,11 @@ struct sockaddr_in6
 struct ip_opts
 {
   struct in_addr ip_dst;	/* First hop; zero without source route.  */
+#if defined(__cplusplus)
+  char Ip_opts[40];		/* Cannot have same name as class */
+#else
   char ip_opts[40];		/* Actually variable in size.  */
+#endif  
 };
 
 /* Argument structure for IP_ADD_MEMBERSHIP and IP_DROP_MEMBERSHIP.  */

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/netdb.h,v $
- * $Date: 2002/08/17 11:00:22 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2002/08/18 15:19:06 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -45,9 +45,12 @@ extern int sethostent (int __stayopen);
 extern struct hostent *gethostent (void);
 extern int endhostent (void);
 extern struct hostent *gethostbyname (const char *__name);
+extern struct hostent *gethostbyname2 (const char *__name, int __af);
 extern struct hostent *_gethostbyname (const char *__name);
-extern struct hostent *gethostbyaddr (const char *__addr, int __len, int __type);
-extern struct hostent *_gethostbyaddr (const char *__addr, int __len, int __type);
+extern struct hostent *gethostbyaddr (const char *__addr, int __len,
+				      int __type);
+extern struct hostent *_gethostbyaddr (const char *__addr, int __len,
+				       int __type);
 
 
 /* Structure describing a network entry.  */

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/tmpfile.c,v $
- * $Date: 2002/01/31 15:53:16 $
- * $Revision: 1.2.2.3 $
+ * $Date: 2002/06/10 09:57:12 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tmpfile.c,v 1.2.2.3 2002/01/31 15:53:16 admin Exp $";
+static const char rcs_id[] = "$Id: tmpfile.c,v 1.2.2.4 2002/06/10 09:57:12 admin Exp $";
 #endif
 
 #include <string.h>
@@ -38,7 +38,7 @@ generate_temporary_filename (char *buf, const char *dir,
 {
   char *s = buf;
   unsigned long idx;
-  const int maxidx = (sizeof (letters) - 1) * (sizeof (letters) - 1)
+  const unsigned int maxidx = (sizeof (letters) - 1) * (sizeof (letters) - 1)
     * (sizeof (letters) - 1) * (sizeof (letters) - 1)
     * (sizeof (letters) - 1) * (sizeof (letters) - 1);
   int loop = 0;
