@@ -1,7 +1,6 @@
 Noteworthy changes to the RISC OS GCCSDK
 
-
-RISC OS GCC release 2.95.4 release 2 (released XX XXXXXX XXXX)
+RISC OS GCC release 2.95.4 release 2 (released XX XXXXXX 2002)
 ====================================
 
 * ar: This is an ALF implementation of the Unix archiver.  This is
@@ -12,8 +11,16 @@ RISC OS GCC release 2.95.4 release 2 (released XX XXXXXX XXXX)
 
 * as: Fix broken co-processor mnemonic support.
 
-* drlink: Upgrade from 0.3.4 to 0.3.8.
-  
+* drlink: Upgrade from 0.3.4 to 0.3.9.
+
+* unixlib: Fix a command line argument bug when using file-descriptor
+  based re-direction.
+
+* unixlib: Logic for isprint was wrong.
+
+* unixlib: usleep gets 1/100th sec resolution.
+
+* gcc: Support hh and icc filename extensions.
 
 RISC OS GCC release 2.95.4 release 1 (released 20 December 2001)
 ====================================
