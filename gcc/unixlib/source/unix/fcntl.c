@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/fcntl.c,v $
- * $Date: 2001/01/29 15:10:22 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: fcntl.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
+static const char rcs_id[] = "$Id: fcntl.c,v 1.2.2.1 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -74,9 +74,14 @@ fcntl (int fd, int cmd, ...)
       return file_desc->fflag;
 
     case F_SETFL:
-      va_start (ap, cmd);
-      file_desc->fflag = va_arg (ap, int);
-      va_end (ap);
+      {
+	int modify = O_APPEND | O_NONBLOCK | O_ASYNC;
+
+	va_start (ap, cmd);
+        file_desc->fflag =
+          (file_desc->fflag & ~modify) | (va_arg (ap, int) & modify);
+	va_end (ap);
+      }
       return 0;
 
     case F_GETUNL:

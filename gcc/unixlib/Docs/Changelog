@@ -1,3 +1,8 @@
+Sat Jan 12 16:09:05 2002  Peter Naulls  <peter@chocky.org>
+
+	* unix/fcntl.c (fcntl): Restrict flags that can be altered
+	by F_SETFL.
+	
 Sat Jan 12 16:06:35 2002  Peter Naulls  <peter@chocky.org>
 
 	* termios/tcsetattr.c (tcsetattr): Mask out hardware state.
