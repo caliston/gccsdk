@@ -72,6 +72,7 @@ extern char *arm_condition_codes[];
 
 /* This is needed by the tail-calling peepholes */
 extern int frame_pointer_needed;
+extern int lr_save_eliminated;
 
 
 /* Just in case configure has failed to define anything. */
