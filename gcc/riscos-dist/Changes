@@ -1,4 +1,4 @@
-RISC OS GCC release 2.95.4  (released xx December 2001)
+RISC OS GCC release 2.95.4  (released 20 December 2001)
 ==========================
 
 * unixlib: Allow for program independent sfix settings.
