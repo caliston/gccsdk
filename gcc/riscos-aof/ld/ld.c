@@ -1459,7 +1459,7 @@ static void ldhelp (void)
 
   out ("The following Drlink linker commands are recognised:");
   out ("  -acornmap, -area[map] <file>, -aif, -aof, -bin, -case");
-  out ("  -leave[weak], -map, -no[unused], -output, -qui[et]");
+  out ("  -leave[weak], -map, -m[odule], -no[unused], -output, -qui[et]");
   out ("  -res[can], -throwback, -via <file>, -verbose\n");
 
 #ifndef CROSS_COMPILE
@@ -1695,7 +1695,7 @@ static void add_output_file (const char *fname)
   strcpy (tmp, fname);
   len = strlen (tmp);
   /* If the filetype suffix already exists then don't add it again.  */
-  if (len < 4 || (strcmp (tmp + len - 4, ",ff8") && len < 252))
+  if (len < 4 || (tmp[len - 4] != ',' && len < 252))
     strcat (tmp, ",ff8");
 #else
   const char *tmp = fname;
@@ -1752,6 +1752,7 @@ parse_args (int argc, char **argv)
 #define OPTION_AOF			160
 #define OPTION_BIN			161
 #define OPTION_QUIET			162
+#define OPTION_MODULE			163
 
   static struct option longopts[] = {
     {"acornmap", no_argument, NULL, OPTION_MAP},
@@ -1765,6 +1766,7 @@ parse_args (int argc, char **argv)
     {"leave", no_argument, NULL, OPTION_LEAVEWEAK},
     {"leaveweak", no_argument, NULL, OPTION_LEAVEWEAK},
     {"map", no_argument, NULL, OPTION_MAP},
+    {"module", no_argument, NULL, OPTION_MODULE},
     {"no", no_argument, NULL, OPTION_NOUNUSED},
     {"nounused", no_argument, NULL, OPTION_NOUNUSED},
     {"nounusedareas", no_argument, NULL, OPTION_NOUNUSED},
@@ -1830,6 +1832,9 @@ parse_args (int argc, char **argv)
 	  break;
 	case OPTION_MAP:
 	  add_option ("-map");
+	  break;
+	case OPTION_MODULE:
+	  add_option ("-module");
 	  break;
 	case OPTION_NOUNUSED:
 	  add_option ("-nounused");
