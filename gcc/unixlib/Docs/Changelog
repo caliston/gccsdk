@@ -1,3 +1,15 @@
+Sun Sep  2 11:18:36 2001  Christian Ludlam <chris@recoil.org>
+
+	* stdio/printf.c (out_char): New function.
+	(out_write): New function.
+	(WIDESTRING): Define.
+	(WCHAR): Define.
+	(STOP): Define.
+	(vprintfsub): Renamed from vfprintf.  Support wide characters.
+	(vfprintf): New function.
+	(vsprintf): New function.
+	(snprintf): New function.
+
 Sun Sep  2 11:07:47 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* sys/_syslib.s (__main): Let user specify their own name for
