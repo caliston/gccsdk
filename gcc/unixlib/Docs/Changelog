@@ -1,3 +1,10 @@
+Fri Sep 21 11:20:47 2001  John Tytgat  <John.Tytgat@aaug.net>
+
+	* complex.h (cacos): Add missing underscore to _Complex.
+	* unixlib/features.h: Add "#undef __attribute__" for
+	Norcroft compatibility otherwise it complains about redefinition
+	with different value.
+
 Fri Sep 21 11:11:44 2001  John Tytgat  <John.Tytgat@aaug.net>
 
 	* signal/_signal.s (__seterr): Wrote 4 bytes too far in

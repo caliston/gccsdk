@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/complex.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -47,7 +47,7 @@ extern "C" {
 /* Trigonometric functions.  */
 
 /* Arc cosine of Z.  */
-extern _Complex double cacos (double complex __z);
+extern _Complex double cacos (double _complex __z);
 extern _Complex float cacosf (float _Complex __z);
 extern _Complex long double cacosl (long double _Complex __z);
 
