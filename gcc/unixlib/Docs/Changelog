@@ -1,3 +1,7 @@
+Thu Dec 20 09:46:26 2001  David Marston  <david@illudium.org.uk>
+
+	* module/sul.s (upcall_handler): Remove duplicate lines.
+
 Wed Dec 19 16:52:09 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	Module workaround for UpCall related system lock-up.

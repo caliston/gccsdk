@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
-; $Source$
-; $Date$
-; $Revision$
-; $State$
-; $Author$
+; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/module/Attic/sul.s,v $
+; $Date: 2001/12/19 16:52:15 $
+; $Revision: 1.1.2.1 $
+; $State: Exp $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -97,14 +97,6 @@ error   EQU     0x0081a400 ; SharedUnixLibrary Error block
 	LDMFD   sp!, {r0-r3, lr}  ; Restore SVC_R14 and registers
 
 	MOV     pc, r12           ; Jump to application handler
-
-	MOV     r12, r3
-	LDMEQFD sp!, {r0-r3, pc}^ ; So exit handler
-
-	LDMFD   sp!, {r0-r3, lr}  ; Restore SVC_R14 and registers
-
-	MOV     pc, r12           ; Jump to application handler
-
 
 	; Register an application with the module.
 	;
