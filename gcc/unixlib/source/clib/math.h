@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/h/math,v $
- * $Date: 2000/06/03 14:28:30 $
- * $Revision: 1.11 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/math.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -84,12 +84,12 @@ extern double atanh (double x) __attribute__ ((__const__));
 extern double exp (double x) __attribute__ ((__const__));
 
 /* Break value into a normalized fracton and an integral power of 2.  */
-extern double frexp (double value, int *exp);
+extern double frexp (double value, int *__exp);
 
 /* x times (two to the exp power).  */
-extern double ldexp (double x, int exp) __attribute__ ((__const__));
+extern double ldexp (double x, int __exp) __attribute__ ((__const__));
 /* scalb is the BSD name for ldexp.  */
-extern double scalb (double x, int exp) __attribute__ ((__const__));
+extern double scalb (double x, int __exp) __attribute__ ((__const__));
 
 /* Natural logarithm of x.  */
 extern double log (double x) __attribute__ ((__const__));

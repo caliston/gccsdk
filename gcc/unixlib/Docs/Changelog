@@ -1,3 +1,8 @@
+Wed Aug  8 19:41:10 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
+
+	* kernel.h (struct stack_chunk): Fix GCC warning.
+	* math.h (double, ldexp, scalb): Likewise.
+	
 Wed Aug  8 09:52:58 2001  Peter Burwood  <pjb@arcangel.dircon.co.uk>
 			  Nick Burrett  <nick.burrett@btinternet.com>
 
