@@ -1,3 +1,17 @@
+Tue Sep 11 17:53:37 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* errno.h (EAGAIN): Renumber from 82 to 11 to bring inline
+	with the Acorn Internet module.
+	(EREFUSED): New Acorn Internet misspelling.
+	(ENOSYS): Renumbered from 78 to 87.
+	(ENOSR, ENOMSG, EBSDMSG, EIDRM, EDEADLK, ENOLCK, ENOMSG): Define.
+	(ELIBVER, ELIBLIM, ELIBNOENT, ELIBNOEXEC): Define.
+	* sys/errlist.c (sys_errlist): Fixup.
+
+	* sys/ioctl.h (FIOSLEEPTW): Define.
+	* termios/tcsetattr.c (tcsetattr): Use NOFLSH, ECHO, TOSTOP.
+	* termios/tcgetattr.c (tcgetattr): Likewise.
+	
 Tue Sep 11 16:44:59 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* net/if.h: New file.  Renamed from sys/if.h.

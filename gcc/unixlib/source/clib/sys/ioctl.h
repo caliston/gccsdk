@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/ioctl.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/11 15:07:33 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -222,6 +222,7 @@ struct ttysize
 #define FIOGETOWN       _IOR('f', 123, int)     /* get owner */
 #define FIODTYPE        _IOR('f', 122, int)     /* get d_flags type part */
 #define FIOGETLBA       _IOR('f', 121, int)     /* get start blk # */
+#define FIOSLEEPTW      _IOW('f', 121, int)     /* Set/clear OS_Upcall 6 use */
 
 
 

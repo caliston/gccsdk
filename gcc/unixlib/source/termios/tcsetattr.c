@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/termios/tcsetattr.c,v $
- * $Date: 2001/01/29 15:10:21 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/11 14:16:00 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tcsetattr.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
+static const char rcs_id[] = "$Id: tcsetattr.c,v 1.2.2.1 2001/09/11 14:16:00 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -101,7 +101,7 @@ tcsetattr (int fd, int optional_actions, const struct termios *termios_p)
   else
     local &= ~LPASS8;
 #endif
-  if (termios_p->c_lflag & _NOFLSH)
+  if (termios_p->c_lflag & NOFLSH)
     local |= LNOFLSH;
   else
     local &= ~LNOFLSH;
@@ -136,7 +136,7 @@ tcsetattr (int fd, int optional_actions, const struct termios *termios_p)
   else
     buf.sg_flags |= EVENP;
 
-  if (termios_p->c_lflag & _ECHO)
+  if (termios_p->c_lflag & ECHO)
     buf.sg_flags |= ECHO;
   else
     buf.sg_flags &= ~ECHO;
@@ -148,7 +148,7 @@ tcsetattr (int fd, int optional_actions, const struct termios *termios_p)
     local |= LCRTKIL;
   else
     local &= ~LCRTKIL;
-  if (termios_p->c_lflag & _TOSTOP)
+  if (termios_p->c_lflag & TOSTOP)
     local |= LTOSTOP;
   else
     local &= ~LTOSTOP;
