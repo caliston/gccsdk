@@ -774,22 +774,20 @@ bool scan_head(filelist *fp) {
         }
       }
     }
-    if (ok) {
-      if (ap!=NIL) {
-	aep->arlast.arlptr = ap;
-	add_srchlist(ap);
-	if (firstarea==NIL) firstarea = ap;
+    if (ap!=NIL) {
+      aep->arlast.arlptr = ap;
+      add_srchlist(ap);
+      if (firstarea==NIL) firstarea = ap;
+    }
+    if (areaco==entryareanum) {
+      if (entryarea!=NIL) {
+        error("Error: Program has multiple entry points");
       }
-      if (areaco==entryareanum) {
-	if (entryarea!=NIL) {
-	  error("Error: Program has multiple entry points");
-	}
-	else {
-	  if ((atattr & ATT_CODE)==0) {
-	    error("Warning: Entry point for program in '%s' is in a data area, not code", fp->chfilename);
-	  }
-	  entryarea = ap;
-	}
+      else {
+        if ((atattr & ATT_CODE)==0) {
+          error("Warning: Entry point for program in '%s' is in a data area, not code", fp->chfilename);
+        }
+        entryarea = ap;
       }
     }
     aep++;
@@ -1467,9 +1465,35 @@ static void fixup_type2(unsigned int reltypesym, unsigned int *relplace) {
     }
   }
   if ((reltype & REL_PC)!=0) {	/* PC-relative relocation */
-    if ((reltype & REL_BASED)!=0) {	/* PC-relative and based. Defined, but I don't know what it means */
-      error("Error: PC-relative based relocations (found in area '%s' in '%s') are not supported",
+    /* From Linker document :
+     *
+     * If R is 1, B is usually 0.  A B value of 1 is used to denote that the
+     * inter-link-unit value of a branch destination is to be used, rather than
+     * the more usual intra-link-unit value.
+     */
+    if ((reltype & REL_BASED)!=0) {	/* PC-relative and based - relocate using the inter-link-unit, not intra-link unit */
+      /* We need to check that the destination is a leaf or not.
+       * If it is a leaf, then we branch to its start; otherwise we branch to
+       * start + 4 :
+       *  Bit 11 is the Simple Leaf Function attribute which is meaningful
+       *  only if this symbol defines the entry point of a sufficiently
+       *  simple leaf function (a leaf function is one which calls no other
+       *  function).  For a reentrant leaf function it denotes that the
+       *  function's inter-link-unit entry point is the same as its
+       *  intra-link-unit entry point.
+       */
+      printf("PC-relative and based in area '%s' in '%s' to offset &%x\n", current_area->arname, current_file->chfilename, relvalue);
+      if ((reltype & REL_SYM) == 0) {
+        /* I don't know what to do if it's not symbol based; I can't look at
+         * the symbol to check how to re-link it; this is (AFAICT) undefined.
+         */
+        error("Error: PC-relative, reentrant linkage of non-symbol data in area '%s' in '%s'",
        current_area->arname, current_file->chfilename);
+        return;
+      }
+      if ((sp->symtattr & SYM_LEAF) == 0)
+        relvalue+=4; /* Use inter-link entry point */
+      fixup_pcrelative(relplace, TYPE_2, relvalue);
     }
     else {
       fixup_pcrelative(relplace, TYPE_2, relvalue);
@@ -1551,12 +1575,18 @@ void check_entryarea(void) {
     entryoffset = 0;
     error("Warning: Program has no entry point. Default of first executable instruction assumed");
   }
-  noheader = imagetype==RMOD
-             || (imagetype==BIN && entryarea==rocodelist)
-	     || (rodatalist==NIL
-		 && rwcodelist==entryarea
-		 && entryoffset==0)
-             || opt_codebase;
+  
+/*
+ * NB sent me a diff where the following statement was changed. It
+ * is a few years since I wrote this code so I cannot remember the
+ * precise details of what it was trying to achieve but this version
+ * looks correct to me. I've changed it slightly by adding extra
+ * () to it
+ */
+  noheader = imagetype==RMOD 
+   || imagetype==BIN &&
+    (entryarea==rocodelist || (rodatalist==NIL && entryarea==rwcodelist)) && entryoffset==0
+   || opt_codebase;
 }
 
 /*
@@ -1663,8 +1693,14 @@ static void write_relocinfo(void) {
 */
 
 /*
-** 'alter_area_offset' is called to change the offset within an
-** instruction (or word of data) used in a type-2 relocation.
+** 'alter_area_offset' is called to change the offset within an instruction
+** (or word of data) used in a type-2 relocation. Note that this code has been
+** modified to handle the case where a type-2 relocation that refers to code
+** has the 'relocate word' attribute. With AOF 3, it should have a 'code'
+** attribute but it looks as if earlier versions of AOF did not make the
+** distinction. What is used to decide whether we are dealing with code or
+** data is the type of relocation. If it is PC-relative then it is assumed
+** to refer to code.
 */
 static void alter_area_offset(relocation *rp) {
   unsigned int inst, reltype, offset;
@@ -1679,7 +1715,7 @@ static void alter_area_offset(relocation *rp) {
   reltype = get_type2_type(rp->reltypesym);	/* Assume type-2 relocation */
   relplace = COERCE(COERCE(areastart, char *)+offset, unsigned int *);
   inst = *relplace;
-  if ((reltype & FTMASK)==REL_SEQ) {	/* Relocate instructions */
+  if ((reltype & FTMASK)==REL_SEQ || (reltype & (FTMASK|REL_PC))==(REL_WORD|REL_PC)) {	/* Relocate instructions */
     if ((inst & INSTMASK)==IN_LDRSTR) {	/* LDR/STR */
       addr = inst & IN_OFFMASK;
       if ((inst & IN_POSOFF)==0) addr = -addr;
@@ -1688,7 +1724,7 @@ static void alter_area_offset(relocation *rp) {
         flag_badreloc(relplace);
       }
       else {
-        *relplace = (inst & LDST_MASK) | (addr<0 ? -addr : (addr | IN_POSOFF));
+        *relplace = (inst & LDST_MASK) | (addr<0 ? -addr : addr | IN_POSOFF);
       }
     }
     else if ((inst & INSTMASK)==IN_DATAPRO) {		/* Data processing instruction */

@@ -76,7 +76,7 @@ static bool scan_cmdline(void);
 int main(int argc, char *argv[]) {
   time_t startime;
   int elapsed;
-
+  
   errors = 0;
   if (startup()) {
     startime = clock();
@@ -99,6 +99,7 @@ int main(int argc, char *argv[]) {
   }
   return (errors==0 ? EXIT_OK : EXIT_ERROR);
 }
+
 
 static void print_help(void) {
   announce();
@@ -184,7 +185,7 @@ static char *get_text(void) {
   do {
     if (option) *cp = tolower(*cp);
     cp++;
-  } while (cp!=cvptrend && ((terminator=='"' && *cp!='"') || (terminator==' ' && *cp>' ')));
+  } while (cp!=cvptrend && ((terminator=='"' && *cp!='"') || (terminator==' ' & *cp>' ')));
   if (terminator=='"' && cp==cvptrend) {	/* " missing */
     error("Error: Unmatched '\"' found");
     cvptr = cp;

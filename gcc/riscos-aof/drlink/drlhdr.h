@@ -12,18 +12,15 @@
 
 /* First, say which environment the program is being compiled to run under */
 
-#ifdef CROSS_COMPILE
-#define TARGET_UNIX
-#else
+#ifndef CROSS_COMPILE
 #define TARGET_RISCOS
+#define IGNORE_CASE
 #endif
 
-#define IGNORE_CASE
-
 #ifdef TARGET_RISCOS
-#define VERSION "0.37  07/02/98  [GCCSDK build]"
+#define VERSION "0.38  23/02/02"
 #else
-#define VERSION "0.3.7  07/02/98  [GCCSDK build]"
+#define VERSION "0.3.8  23/02/02  [GCCSDK build]"
 #endif
 
 /*

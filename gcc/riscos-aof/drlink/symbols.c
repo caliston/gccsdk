@@ -325,16 +325,21 @@ static bool add_symbol(symtentry *symtp) {
     *table = p;
   }
   else if ((p->symtptr->symtattr & SYM_STRONG)==(attr & SYM_STRONG)) {	/* Duplicate symbol */
-    if (p->symtptr->symtarea.areaptr!=symtp->symtarea.areaptr) {	/* Not common def either */
-      if (link_state==LIB_SEARCH) {
-        error("Error: '%s' in '%s(%s)' duplicates a symbol already read",
-         decode_name(name), current_lib->libname, objectname);
-      }
-      else {
-        error("Error: '%s' in '%s' duplicates a symbol already read", decode_name(name), objectname);
-      }
-      return FALSE;
+    arealist *cp = p->symtptr->symtarea.areaptr;
+    if ((ap->aratattr & (ATT_COMDEF|ATT_COMMON))!=0	/* Symbol's area is common block */
+     && (cp->aratattr & (ATT_COMDEF|ATT_COMMON))!=0	/* Dup symbol's area is common block too */
+     && strcmp(ap->arname, cp->arname)==0		/* Common block names are the same */
+     && symtp->symtvalue==p->symtptr->symtvalue) {		/* Symbol values are the same */
+      return TRUE;					/* No problem */
     }
+    if (link_state==LIB_SEARCH)
+      error("Error: '%s' in '%s(%s)' duplicates a symbol already read in '%s'",
+       decode_name(name), current_lib->libname, objectname, cp->arfileptr->chfilename);
+    else {
+      error("Error: '%s' in '%s' duplicates a symbol already read in '%s'", 
+       decode_name(name), objectname, cp->arfileptr->chfilename);
+    }
+    return FALSE;
   }
   else {	/* New symbol of different 'strength' to existing definition */
     if ((attr & SYM_STRONG)!=0) {	/* New symbol is strong; old one is non-strong */
@@ -974,10 +979,7 @@ bool resolve(void) {
       if (fp->symtries.wantedsyms!=NIL) ok = check_library(fp);
       fp = fp->nextfile;
     }
-/* NAB++ */
-    /*if (numfound!=0) lastlp = lp;*/
     if (numfound!=0 || lastlp==NIL) lastlp = lp;
-/* NAB++ */
     close_library(lp);
     lp = lp->libflink;
   }
