@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/locale/ctypetable.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: ctypetable.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: ctypetable.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 #include <ctype.h>
@@ -35,7 +35,9 @@ void __build_ctype_tables (int territory)
   for (x = 0; x <= 255; x++)
     {
       __ctype[x] = 0;
-      __ctype_lower[x] = __ctype_upper[x] = 0;
+      /* In the C/POSIX locate, tolower(top bit set char)
+	 should return the character unchanged.  */
+      __ctype_lower[x] = __ctype_upper[x] = x;
     }
 
   /* Support EOF.  This is not a bug, the arrays must

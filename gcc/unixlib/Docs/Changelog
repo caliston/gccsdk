@@ -1,3 +1,11 @@
+Sat Jan 12 16:15:07 2002  Alex Waugh  <alex@alexwaugh.com>
+
+	* locale/ctypetable.c (__build_ctype_tables): Correctly
+	initialise __ctype_lower and upper for C/POSIX locale.
+
+	* unix/dev.c (__fsopen): When opening a file O_RDWR, return
+	ENOENT when file does not exist.
+	
 Sat Jan 12 16:09:05 2002  Peter Naulls  <peter@chocky.org>
 
 	* unix/fcntl.c (fcntl): Restrict flags that can be altered
