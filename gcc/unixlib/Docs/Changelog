@@ -1,3 +1,7 @@
+Tue Sep 11 16:44:59 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* net/if.h: New file.  Renamed from sys/if.h.
+	
 Tue Sep 11 16:07:13 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* termios.h: Re-synced with FreeBSD 4.3.
