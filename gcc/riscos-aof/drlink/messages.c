@@ -47,7 +47,7 @@ static bool first_error = TRUE;	/* TRUE before first time Throwback is used */
  * reported via 'throwback' to start the throwback session. It
  * returns TRUE if this worked otherwise it returns FALSE
  */
-static bool start_throwback(char *filename) {
+static bool start_throwback(const char *filename) {
   _kernel_swi_regs regs;
   _kernel_oserror *swierror;
   swierror = _kernel_swi(DDEUtils_ThrowbackStart, &regs, &regs);
@@ -90,7 +90,7 @@ void end_throwback(void) {
 */
 static void throwback_message(char *text) {
   int errlevel;
-  char *filename;
+  const char *filename;
   _kernel_oserror *swierror;
   _kernel_swi_regs regs;
   filename = imagename;
@@ -141,7 +141,7 @@ static void throwback_message(char *text) {
 ** the 'throwback' option is used, error messages are sent to a
 ** 'throwback' window otherwise they are just printed.
 */
-void error(char *msg, ...) {
+void error(const char *msg, ...) {
   char *p1, *p2, *p3, *p4;
   va_list parms;
   va_start(parms, msg);

@@ -31,7 +31,7 @@
 #define TRUE 1
 #define NIL 0
 #define NULLCHAR 0
-#define COERCE(x,t) (t)(x)
+#define COERCE(x,t) ((t)(void *)(x))
 
 #define FNAMELEN 500		/* Maximum filename length */
 #define LEAFLEN 100		/* Maximum leaf name length */

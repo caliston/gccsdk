@@ -388,7 +388,11 @@ static bool get_option(char *tp) {
     OPT_WORKS
   } actions;
 
-typedef struct {char *optname; unsigned char optlen; actions optaction;} option;
+typedef struct {
+  const char *optname;
+  unsigned char optlen;
+  actions optaction;
+} option;
 
 option optionlist [] = {
 /* areamap */	{"area", 4, OPT_MAPFILE},
@@ -439,7 +443,7 @@ option optionlist [] = {
 /* workspace */	{"w", 1, OPT_WORKS},
 /* xref */	{"x", 1, IGNORED}};
 
-  int n;
+  unsigned int n;
   unsigned int value;
   bool ok;
   char *op;

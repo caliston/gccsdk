@@ -69,7 +69,9 @@ FILE
 
 char
    *symbolname,				/* Pointer to name of symbol file */
-   *mapfilename,			/* Pointer to name of map file */
+   *mapfilename;			/* Pointer to name of map file */
+
+const char
    *imagename;				/* Pointer to name of linker output file */
 
 bool
@@ -243,7 +245,7 @@ static fileinfo find_filetype(void) {
 */
 fileinfo examine_file(char *filename) {
   FILE *libfile;
-  int filesize, n;
+  unsigned int filesize, n;
   size_t count;
   fileinfo filetype;
   chunkheader libheader;
@@ -425,7 +427,7 @@ void check_debuglist(void) {
 ** returns 'TRUE' if it is okay, otherwise it returns 'FALSE'.
 */
 static bool scan_chunkhdr(filelist *fp) {
-  int i;
+  unsigned int i;
   unsigned int start, size;
   chunkindex *cp;
   cp = chunkhdrbase;
@@ -536,7 +538,7 @@ static int read_file(char *filename) {
 ** The proc returns 'TRUE' if all this worked otherwise it
 ** returns 'FALSE'
 */
-bool process_file(char *filename, unsigned int filesize) {
+static bool process_file(char *filename, unsigned int filesize) {
   filelist *fp;
   bool ok;
   ok = FALSE;
@@ -566,7 +568,7 @@ bool process_file(char *filename, unsigned int filesize) {
 ** been loaded. It returns 'TRUE' if it has not.
 */
 static bool unread(char *filename) {
-  int hashval;
+  unsigned int hashval;
   filelist *fp;
   fp = aofilelist;
   hashval = hash(filename);
@@ -803,7 +805,7 @@ void tidy_files(void) {
 ** returns FALSE.
 */
 static bool load_textfile(char* filename, char **where, int *size) {
-  int fsize;
+  unsigned int fsize;
   char *p;
   FILE *textfile;
   size_t count;
@@ -875,7 +877,7 @@ bool load_editfile(char *name) {
 ** 'loadaddr'. It returns 'true' if this went okay otherwise it
 ** returns 'false'
 */
-bool read_chunk(char *chunkid, int chunkaddr, int chunksize, void *loadaddr) {
+bool read_chunk(const char *chunkid, int chunkaddr, int chunksize, void *loadaddr) {
   int result;
   result = fseek(objectfile, chunkaddr, SEEK_SET);
   if (result!=0) {
@@ -971,7 +973,7 @@ bool extract_member(chunkindex *cp) {
 ** allocating memory needlessly.
 */
 bool read_libchunkhdr(libheader *lp) {
-  int size;
+  unsigned int size;
   size_t count;
   count = fread(&header, sizeof(header), 1, objectfile);
   if (count!=1) {
@@ -1059,7 +1061,7 @@ static void write_block(void *where, int size) {
 ** worked as the only errors are fatal ones where the linker gives
 ** up on the spot.
 */
-void write_image(void *areaddr, int areasize) {
+void write_image(void *areaddr, unsigned int areasize) {
   if (filebuftop+areasize>=filebufend) {	/* No room in staging buffer */
     write_block(filebuffer, filebuftop-filebuffer);
     filebuftop = filebuffer;
@@ -1078,7 +1080,7 @@ void write_image(void *areaddr, int areasize) {
 ** image file. This is only used when creating partially-linked
 ** AOF files
 */
-void write_string(char *p) {
+void write_string(const char *p) {
   int len;
   len = strlen(p)+sizeof(char);
   if (filebuftop+len>=filebufend) {	/* No room in staging buffer */
@@ -1093,7 +1095,7 @@ void write_string(char *p) {
 ** 'write_zeroes' writes the specified number of zeroes to the
 ** image file
 */
-void write_zeroes(int count) {
+void write_zeroes(unsigned int count) {
   unsigned int zeroblock[] = {0,0,0,0,0,0,0,0};
   while (count>=sizeof(zeroblock)) {
     write_image(&zeroblock, sizeof(zeroblock));
@@ -1185,7 +1187,7 @@ void close_symbol(void) {
 /*
 ** 'check_write' ensures that the last write to the symbol file worked
 */
-void check_write(void) {
+static void check_write(void) {
   if (ferror(symbolfile)) {
     error("Fatal: Error occured writing to symbol file '%s'", symbolname);
   }

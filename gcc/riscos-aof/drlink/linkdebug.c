@@ -17,7 +17,7 @@
 void list_areas(arealist *list) {
   arearef *rp;
   while (list!=NIL) {
-    printf("Area entry at %08p, areaname='%s', hash=%x, base entry at %p, file entry at %p, AT=%x\n",
+    printf("Area entry at %p, areaname='%s', hash=%x, base entry at %p, file entry at %p, AT=%x\n",
      list, list->arname, list->arhash, list->arbase, list->arfileptr, list->aratattr);
     printf("  OBJ_AREA at %p, size=%x, relocations at %p, number=%d, area address=%x",
      list->arobjdata, list->arobjsize, list->areldata, list->arnumrelocs, list->arplace);
@@ -31,7 +31,7 @@ void list_areas(arealist *list) {
     else {
       printf(", References:\n  ");
       while (rp!=NIL) {
-        printf("  %08p=%d", rp->arefarea, rp->arefcount);
+        printf("  %p=%d", rp->arefarea, rp->arefcount);
         rp = rp->arefnext;
       }
       printf("\n");
@@ -59,7 +59,7 @@ void list_symbols(symbol *list) {
   symtentry *sp;
   while (list!=NIL) {
     sp = list->symtptr;
-    printf("    Symbol at %08p, symt at %08p, name='%s', hash=%x, attributes=%x, value=%x",
+    printf("    Symbol at %p, symt at %p, name='%s', hash=%x, attributes=%x, value=%x",
      list, sp, sp->symtname, list->symhash, sp->symtattr, sp->symtvalue);
     if (sp->symtarea.areaptr!=NIL) {
       printf(", area at %p", sp->symtarea.areaptr);
@@ -71,15 +71,15 @@ void list_symbols(symbol *list) {
 
 void list_symtable(symbol *table[], unsigned int stsize) {
   symbol *list;
-  int n, low;
-  printf("  Symbol table at %08p\n", table);
+  unsigned int n, low;
+  printf("  Symbol table at %p\n", table);
   n = 0;
   do {
     low = n;
     while ((list = table[n])==NIL && n<stsize) n+=1;
     if (n!=low) printf("  Index=%2d..%-2d, no entries\n", low, n-1);
     if (n<stsize) {
-      printf("  Index=%2d, symbol list starts at %08p\n", n, list);
+      printf("  Index=%2d, symbol list starts at %p\n", n, list);
       list_symbols(list);
       n+=1;
     }
@@ -88,7 +88,7 @@ void list_symtable(symbol *table[], unsigned int stsize) {
 
 void list_libentries(libentry *list) {
   while (list!=NIL) {
-    printf("    Lib entry at %08p, name='%s', hash=%x, member name='%s', offset in library=%x, size=%x\n",
+    printf("    Lib entry at %p, name='%s', hash=%x, member name='%s', offset in library=%x, size=%x\n",
      list, list->libname, list->libhash, list->libmember, list->liboffset, list->libsize);
     list = list->libflink;
   }
@@ -97,13 +97,13 @@ void list_libentries(libentry *list) {
 void list_libtable(libtable *table) {
   libentry *list;
   int n;
-  printf("  Library symbol table at %08p\n", table);
+  printf("  Library symbol table at %p\n", table);
   for (n = 0; n<MAXENTRIES; n++) {
     if ((list = *table[n])==NIL) {
       printf("  Index=%2d, no entries\n", n);
     }
     else {
-      printf("  Index=%2d, symbol list starts at %08p\n", n, list);
+      printf("  Index=%2d, symbol list starts at %p\n", n, list);
       list_libentries(list);
     }
   }
@@ -111,7 +111,7 @@ void list_libtable(libtable *table) {
 
 void list_filelist(filelist *list) {
   while (list!=NIL) {
-    printf("File def at %08p, name='%s', file size=%x\n",
+    printf("File def at %p, name='%s', file size=%x\n",
      list, list->chfilename, list->chfilesize);
     printf("  OBJ_HEAD is at %p, size=%x,   OBJ_SYMT is at %p, size=%x\n",
      list->objheadptr, list->objheadsize, list->objsymtptr, list->objsymtsize);
@@ -126,7 +126,7 @@ void list_filelist(filelist *list) {
 
 void list_liblist(libheader *list) {
   while (list!=NIL) {
-    printf("Library def at %08p, name='%s', loaded at %08p, library size=%x\n",
+    printf("Library def at %p, name='%s', loaded at %p, library size=%x\n",
      list, list->libname, list->libase, list->libextent);
     list = list->libflink;
   }

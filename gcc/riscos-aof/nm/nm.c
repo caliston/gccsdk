@@ -115,7 +115,7 @@ struct symbol
 /*
  * check for EOF or write/read errors on stream.
  */
-Ferror
+static Ferror
 check_stream (FILE *fp)
 {
   int ret = FNOERR;
@@ -132,7 +132,7 @@ check_stream (FILE *fp)
 /*
  * read a byte from the input stream.
  */
-unsigned char
+static unsigned char
 read_byte (FILE *ifp)
 {
   return (unsigned char) getc (ifp);
@@ -141,7 +141,7 @@ read_byte (FILE *ifp)
 /*
  * read a little-endian 2-byte halfword from the input stream.
  */
-unsigned short
+static unsigned short
 read_halfword (FILE *ifp)
 {
   union
@@ -163,7 +163,7 @@ read_halfword (FILE *ifp)
 /*
  * read a little-endian 4-byte word from the input stream.
  */
-unsigned long
+static unsigned long
 read_word (FILE *ifp)
 {
   union
@@ -187,7 +187,7 @@ read_word (FILE *ifp)
 /*
  * read in the chunk header
  */
-struct chunkhdr *
+static struct chunkhdr *
 read_chunkhdr (FILE *ifp)
 {
   static struct chunkhdr hdr;
@@ -212,7 +212,7 @@ static struct aofhdr *aofhdr = NULL;	/* AOF header */
 /*
  * free the memory used by a chunk
  */
-int
+static int
 free_chunk_memory (char *ptr)
 {
   if (!ptr)
@@ -251,10 +251,10 @@ free_chunk_memory (char *ptr)
 /*
  * read in the chunk entries
  */
-struct chunkent *
+static struct chunkent *
 read_chunkents (FILE *ifp, struct chunkhdr *hdr)
 {
-  register int i;
+  register unsigned int i;
 
   if (ents)
     free (ents);
@@ -275,14 +275,14 @@ read_chunkents (FILE *ifp, struct chunkhdr *hdr)
 /*
  * read in the string table
  */
-char *
+static char *
 read_stringtab (FILE *ifp, struct chunkent *strent)
 {
   if (strptr)
     free (strptr);
   strptr = xmalloc (strent->size);
   fseek (ifp, strent->offset, 0);
-  *(unsigned long *) strptr = read_word (ifp);	/* size in 1st word */
+  *(unsigned long *)(void *)strptr = read_word (ifp);	/* size in 1st word */
   fread (strptr + 4, 1, (int) strent->size - 4, ifp);
 
   return (check_stream (ifp) != FRWERR ? strptr : NULL);
@@ -291,7 +291,7 @@ read_stringtab (FILE *ifp, struct chunkent *strent)
 /*
  * read in the symbol table
  */
-struct symbol *
+static struct symbol *
 read_symboltab (FILE *ifp, struct chunkent *syment, int numsyms)
 {
   register int i;
@@ -315,7 +315,7 @@ read_symboltab (FILE *ifp, struct chunkent *syment, int numsyms)
 /*
  * read in the identification chunk
  */
-char *
+static char *
 read_ident (FILE *ifp, struct chunkent *ident)
 {
   if (idptr)
@@ -330,10 +330,10 @@ read_ident (FILE *ifp, struct chunkent *ident)
 /*
  * read in the AOF header
  */
-struct aofhdr *
+static struct aofhdr *
 read_aofhdr (FILE *ifp, struct chunkent *hdrent)
 {
-  register int i;
+  register unsigned int i;
   struct areahdr *areahdr;
 
   if (aofhdr)
@@ -363,7 +363,7 @@ read_aofhdr (FILE *ifp, struct chunkent *hdrent)
 /*
  * read in a relocation directive
  */
-struct reloc *
+static struct reloc *
 read_reloc (FILE *ifp)
 {
   static struct reloc reloc;
@@ -380,7 +380,7 @@ read_reloc (FILE *ifp)
 static char *
 string (const char *stringtab, unsigned long offset)
 {
-  if (!stringtab || offset < 4 || offset >= *(unsigned long *) stringtab)
+  if (!stringtab || offset < 4 || offset >= *(unsigned long *)(void *)stringtab)
     return (NULL);
   return ((char *) (stringtab + offset));
 }
@@ -388,10 +388,10 @@ string (const char *stringtab, unsigned long offset)
 /*
  * locate a chunk entry by chunk ID
  */
-struct chunkent *
+static struct chunkent *
 find_ent (struct chunkhdr *hdr, struct chunkent *ents, const char *name)
 {
-  int i;
+  unsigned int i;
 
   for (i = 0; i < hdr->numchunks; i++)
     if (memcmp (ents[i].chunkid, name, 8) == 0)
@@ -400,7 +400,8 @@ find_ent (struct chunkhdr *hdr, struct chunkent *ents, const char *name)
 }
 
 /* Return -1 on error. 0 on success.  */
-int decode (const char *aof_file)
+static int
+decode (const char *aof_file)
 {
   FILE *handle;
   struct chunkhdr *hdr;
@@ -505,7 +506,7 @@ int decode (const char *aof_file)
   /* Print the symbol table.  */
   if (aofhdr->numsyms)
     {
-      int i, flags;
+      unsigned int i, flags;
 
       for (i = 0; i < aofhdr->numsyms; i++)
 	{

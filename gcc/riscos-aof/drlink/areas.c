@@ -161,7 +161,7 @@ static arealist
   *areablock;			/* Memory allocated to hold arealist structures */
 
 typedef struct arealimits {
-    char *areaname;		/* Ptr to name of area */
+    const char *areaname;	/* Ptr to name of area */
     int areahash;		/* Hashed area name */
     symtentry *areabase;	/* Pointer to SYMT entry of area's 'base' symbol */
     symtentry *arealimit;	/* Pointer to SYMT entry of area's 'limit' symbol */
@@ -315,7 +315,7 @@ static arealist *check_commonref(filelist *fp, areaentry *aep, unsigned int atat
   return ap;
 }
 
-static char *make_name(char *s1, char *s2) {
+static char *make_name(const char *s1, const char *s2) {
   char *p;
   if ((p = allocmem(strlen(s1)+strlen(s2)+sizeof(char)))==NIL) {
     error("Fatal: Out of memory in 'make_name'");
@@ -333,7 +333,7 @@ static char *make_name(char *s1, char *s2) {
 static void list_attributes(arealist *ap) {
   char text[MSGBUFLEN];
   unsigned int attr, count, n;
-  struct {unsigned int atmask; char *atname;} attributes[] = {
+  struct {unsigned int atmask; const char *atname;} attributes[] = {
     {ATT_ABSOL,  "Absolute"},
     {ATT_CODE,   "Code"}   ,
     {ATT_COMDEF, "Common definition"},
@@ -389,7 +389,7 @@ static void list_attributes(arealist *ap) {
 static void insert_area(arealist **list, arealist **lastentry, arealist *newarea) {
   int compres, lastres;
   arealist *ap, *lastarea;
-  char *name;
+  const char *name;
   arealimits *lp;
   lastarea = NIL;
   name = newarea->arname;
@@ -538,7 +538,7 @@ static arealist *add_newarea(filelist *fp, areaentry *aep, unsigned int atattr, 
 ** block that is referenced only by an entry in the OBJ_SYMT chunk with the
 ** 'common' attribute set. It returns a pointer to the structure created
 */
-static arealist *add_commonarea(char *name, unsigned int size) {
+static arealist *add_commonarea(const char *name, unsigned int size) {
   arealist *ap;
   ap = allocmem(sizeof(arealist));
   if (ap==NIL) error("Fatal: Out of memory in 'add_commonarea'");
@@ -840,7 +840,7 @@ void check_strongrefs(filelist *fp) {
   relocation *rp;		/* Points at entry in relocation part of OBJ_AREA chunk */
   symtentry *stp;		/* Points at entry in OBJ_SYMT chunk */
   symbol *sp;
-  int refcount, i, j, reltype;
+  unsigned int refcount, i, j, reltype;
   refcount = 0;
   ap = &fp->objheadptr->firstarea;
   rp = COERCE(fp->objareaptr, relocation*);
@@ -1072,7 +1072,7 @@ void find_unused(void) {
 static void fillin_limits(arealist *firstarea, arealist *lastarea) {
   arealimits *p;
   int hashval;
-  char *name;
+  const char *name;
   hashval = firstarea->arhash;
   name = firstarea->arname;
   p = arlimlist;
@@ -1673,7 +1673,7 @@ static void write_reloc(arealist *ap) {
 ** 'write_areareloc' builds and writes the relocation information for
 ** each area in the area list passed to it
 */
-void write_areareloc(arealist *ap) {
+static void write_areareloc(arealist *ap) {
   while (ap!=NIL) {
     if (ap->arnumrelocs!=0) write_reloc(ap);
     ap = ap->arflink;
@@ -2133,7 +2133,7 @@ void create_image(void) {
 ** 'print_arealist' is called to list the areas in an image file of a
 ** particular type, that is, read-only code, read/write code and so forth
 */
-static void print_arealist(char *areaclass, arealist *ap) {
+static void print_arealist(const char *areaclass, arealist *ap) {
   unsigned int offset;
   char text[MSGBUFLEN];
   offset = (imagetype==RMOD ? progbase : 0);
@@ -2178,7 +2178,7 @@ void print_areamap(void) {
 ** from the image file as there were no references to them
 */
 static void list_unused(arealist *ap, bool findsymbol) {
-  char *symname;
+  const char *symname;
   char text[MSGBUFLEN];
   while (ap!=NIL) {
     if (ap->arefcount==0) {
