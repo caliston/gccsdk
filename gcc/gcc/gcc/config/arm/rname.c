@@ -1,5 +1,5 @@
 /* RISC OS to Unix format file name conversion.
-   (c) Copyright 1996, 2000, Nick Burrett.
+   (c) Copyright 1996, 2000, 2002 Nick Burrett.
 
    This source provides one function:
       char *riscos_to_unix (const char *riscos, char *unix)
@@ -9,7 +9,9 @@
    from the function.  The user must have previously declared
    a suitably sized buffer for the Unix format filename.
 
-   Last modified: 27 December 2000 <nick@dsvr.net>  */
+   Last modified: 02 April 2002 <nick@dsvr.net>  */
+
+/* The master file resides at gccsdk/gcc/gcc/config/arm/rname.c */
 
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -23,7 +25,7 @@ static char *prefixes[] =
 {
   "f", "for", "fpp", "p", "pas", "ph", "gpi",
   "cc", "cxx", "cpp", "c++", "c", "m", "rpo",
-  "i", "ii", "h", "i", "s", "l", "o", "y",
+  "i", "ii", "icc", "h", "hh", "i", "s", "l", "o", "y",
   "ads", "adb", "ada", "ali", "adc", "xrb", "xrs", 0
 };
 
