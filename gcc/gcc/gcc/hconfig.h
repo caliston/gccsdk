@@ -18,6 +18,8 @@
 #include "config/i386/xm-cygwin.h"
 #elif HOST_I386_FREEBSD
 #include "config/i386/xm-freebsd.h"
+#elif HOST_I386_OPENBSD
+#include "config/i386/xm-openbsd.h"
 #elif HOST_I386_LINUX
 #include "config/i386/xm-linux.h"
 #elif HOST_MIPS_IRIX
