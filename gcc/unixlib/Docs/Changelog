@@ -1,3 +1,17 @@
+Wed Apr 03 08:45:18 2002  Peter Naulls  <peter@chocky.org>
+
+	* memcmp.c (memcmp): Fix compiler warnings.
+	* sys/debug.c (__debugval): Likewise.
+	* strncmp.c (strncmp): Likewise.
+	* errno.h (sys_errlist): Constify.
+	* signal.h (sys_siglist): Constify.
+	* stdio.h (sys_errlist): Constify.
+	* time.h (tm_zone): Constify.
+	* signal/signame.c (sys_siglist): Constify.
+	* sys/errlist.c (sys_errlist): Constify.
+	* uname.c (__uname): Return pointer to empty buffer in read/write
+	space.
+	
 Tue Apr 02 20:01:07 2002  Nick Burrett  <nick@dsvr.net>
 
 	* unix/unix.c (verify_redirection): Add logic to cope with

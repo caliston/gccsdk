@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/time.h,v $
- * $Date: 2001/07/23 15:37:49 $
- * $Revision: 1.3 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.3.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -104,7 +104,7 @@ struct tm
   int tm_yday;	/* day of year (0 - 365) */
   int tm_isdst;	/* 1 - DST in effect,0 - not,-1 - not known */
   int tm_gmtoff;	/* offset east of UTC (GMT) in seconds */
-  char *tm_zone;	/* abbreviation of timezone name */
+  const char *tm_zone;	/* abbreviation of timezone name */
 };
 
 /* Convert the broken-down time value into a string in a standard

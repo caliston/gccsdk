@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/errno.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/11 16:53:58 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -22,7 +22,7 @@ extern int errno;
 #define __errno errno
 #endif
 
-extern char *sys_errlist[];
+extern const char *sys_errlist[];
 extern int sys_nerr;
 
 #define EPERM           1 /* Operation not permitted.  */

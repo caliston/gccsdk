@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/signame.c,v $
- * $Date: 2001/01/29 15:10:21 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/06 14:52:00 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: signame.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
+static const char rcs_id[] = "$Id: signame.c,v 1.2.2.1 2001/09/06 14:52:00 admin Exp $";
 #endif
 
 /* signame.c: Define signals for sys_siglist.  */
@@ -19,7 +19,7 @@ static const char rcs_id[] = "$Id: signame.c,v 1.2 2001/01/29 15:10:21 admin Exp
 
 int sys_nsig = NSIG;
 
-char *sys_siglist[NSIG] =
+const char *sys_siglist[NSIG] =
 {
   "Signal 0"		       /* 0. NULL SIGNAL */,
   "Hangup"		       /* 1. SIGHUP */,

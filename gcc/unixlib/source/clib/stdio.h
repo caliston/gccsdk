@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdio.h,v $
- * $Date: 2002/01/12 16:32:02 $
- * $Revision: 1.2.2.4 $
+ * $Date: 2002/01/15 13:21:19 $
+ * $Revision: 1.2.2.5 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -354,7 +354,7 @@ extern void setlinebuf (FILE *__stream);
 
 extern int sys_nerr;
 /* This is also defined in <errno.h> */
-extern char *sys_errlist[];
+extern const char *sys_errlist[];
 
 /* POSIX enhancements.  */
 
