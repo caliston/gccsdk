@@ -86,7 +86,9 @@ UTILSPKG = $(pkg)/bin/bison$(exesfx) \
 	$(pkg)/bin/touch$(exesfx) \
 	$(bindir)/apcs26/unixlib/o/libfl \
 	$(bindir)/apcs26/unixlib/o/libiberty \
-	$(bindir)/apcs26/unixlib/o/libmp
+	$(bindir)/apcs26/unixlib/o/libmp \
+	$(pkg)/sys/bison/simple \
+	$(pkg)/sys/bison/hairy
 
 SYSTEMPKG = `basename $(ro_syspkg)`
 
