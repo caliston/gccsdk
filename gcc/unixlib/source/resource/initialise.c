@@ -1,20 +1,20 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/resource/initialise.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: initialise.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: initialise.c,v 1.2.2.2 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 #include <sys/resource.h>
-#include <sys/os.h>
-#include <sys/unix.h>
+#include <unixlib/os.h>
+#include <unixlib/unix.h>
 #include <errno.h>
 #include <stdio.h>
 #include <limits.h>
@@ -58,7 +58,7 @@ __resource_initialise (struct proc *p)
   else
     {
       regs[0] = __dynamic_num;
-      if (os_swi (OS_ReadDynamicArea, regs))
+      if (__os_swi (OS_ReadDynamicArea, regs))
 	p->limit[RLIMIT_DATA].rlim_max = (u_char *) __break - (u_char *) __lomem;
       else
 	p->limit[RLIMIT_DATA].rlim_max = regs[2];
@@ -93,7 +93,7 @@ __resource_initialise (struct proc *p)
       /* Area 6 is the free pool for RISC OS 3.5+ and setting bit 7 gets
          the maximum size.  */
       regs[0] = 6 + 128;
-      if (os_swi (OS_ReadDynamicArea, regs))
+      if (__os_swi (OS_ReadDynamicArea, regs))
 	p->limit[RLIMIT_RSS].rlim_max += (u_char *) __break - (u_char *) __lomem;
       else
 	/* rlim_max is all of physical memory ?  */

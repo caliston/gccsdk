@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/post.c,v $
- * $Date: 2001/01/29 15:10:20 $
- * $Revision: 1.2 $
+ * $Date: 2001/08/02 13:27:19 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: post.c,v 1.2 2001/01/29 15:10:20 admin Exp $";
+static const char rcs_id[] = "$Id: post.c,v 1.2.2.1 2001/08/02 13:27:19 admin Exp $";
 #endif
 
 /* signal.c.post: Written by Nick Burrett, 27 August 1996.  */
@@ -20,8 +20,8 @@ static const char rcs_id[] = "$Id: post.c,v 1.2 2001/01/29 15:10:20 admin Exp $"
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <sys/os.h>
-#include <sys/unix.h>
+#include <unixlib/os.h>
+#include <unixlib/unix.h>
 #include <unixlib/sigstate.h>
 
 /* #define DEBUG 1 */
@@ -59,9 +59,9 @@ __unixlib_internal_post_signal (struct unixlib_sigstate *ss, int signo)
 
 post_signal:
 #ifdef DEBUG
-  os_print ("__unixlib_internal_post_signal: sigstate = ");
-  os_prhex ((int) ss); os_print (", signo = ");
-  os_prdec (signo); os_print ("\r\n");
+  __os_print ("__unixlib_internal_post_signal: sigstate = ");
+  __os_prhex ((int) ss); __os_print (", signo = ");
+  __os_prdec (signo); __os_print ("\r\n");
 #endif
 
   signal_mask = sigmask (signo);
@@ -81,8 +81,8 @@ post_signal:
 
       handler = ss->actions[signo].sa_handler;
 #ifdef DEBUG
-      os_print ("__unixlib_internal_post_signal: handler = ");
-      os_prhex ((int) handler); os_print ("\r\n");
+      __os_print ("__unixlib_internal_post_signal: handler = ");
+      __os_prhex ((int) handler); __os_print ("\r\n");
 #endif
 
       if (handler == SIG_DFL)
@@ -155,8 +155,8 @@ post_signal:
     }
 
 #ifdef DEBUG
-  os_print ("__unixlib_internal_post_signal: act = ");
-  os_prdec (act); os_print ("\r\n");
+  __os_print ("__unixlib_internal_post_signal: act = ");
+  __os_prdec (act); __os_print ("\r\n");
 #endif
 
   if (__u->orphaned && act == stop &&
@@ -182,7 +182,7 @@ post_signal:
     {
     case stop:
 #ifdef DEBUG
-      os_print ("__unixlib_internal_post_signal: stop\r\n");
+      __os_print ("__unixlib_internal_post_signal: stop\r\n");
 #endif
       if (!__u->status.stopped)
 	{
@@ -195,7 +195,7 @@ post_signal:
 
     case ignore:
 #ifdef DEBUG
-      os_print ("__unixlib_internal_post_signal: ignore\r\n");
+      __os_print ("__unixlib_internal_post_signal: ignore\r\n");
 #endif
       /* Nobody cares about this signal.  */
       break;
@@ -210,7 +210,7 @@ post_signal:
 	/* Do a core dump if desired. Only set the wait status bit saying
 	   we in fact dumped core if the operation was actually successful.  */
 #ifdef DEBUG
-	os_print ("__unixlib_internal_post_signal: term/core\r\n");
+	__os_print ("__unixlib_internal_post_signal: term/core\r\n");
 #endif
 	if (act == term)
 	  __write_termination (signo);
@@ -229,7 +229,7 @@ post_signal:
 	sigset_t blocked;
 	int flags;
 #ifdef DEBUG
-	os_print ("__unixlib_internal_post_signal: handle\r\n");
+	__os_print ("__unixlib_internal_post_signal: handle\r\n");
 #endif
 	/* We're going to handle this signal now, so remove it from
 	   the pending list.  */
@@ -269,7 +269,7 @@ post_signal:
 
 post_pending:
 #ifdef DEBUG
-  os_print ("__unixlib_internal_post_signal: Deliver pending signals\r\n");
+  __os_print ("__unixlib_internal_post_signal: Deliver pending signals\r\n");
 #endif
   if (!__u->stopped && (pending = ss->pending & ~ss->blocked))
     {
@@ -283,7 +283,7 @@ post_pending:
 
   ss->currently_handling = 0;
 #ifdef DEBUG
-  os_print ("__unixlib_internal_post_signal: pending signals delivered\r\n");
+  __os_print ("__unixlib_internal_post_signal: pending signals delivered\r\n");
 #endif
   /* No more signals pending.  */
   __u->sleeping = 0; /* inline version of sigwakeup (); */
@@ -310,9 +310,9 @@ __unixlib_raise_signal (struct unixlib_sigstate *ss, int signo)
 #ifdef DEBUG
   else
     {
-      os_print ("\n\r__unixlib_raise_signal: signal ");
-      os_print (sys_siglist[signo]);
-      os_print (" is pending for delivery\r\n");
+      __os_print ("\n\r__unixlib_raise_signal: signal ");
+      __os_print (sys_siglist[signo]);
+      __os_print (" is pending for delivery\r\n");
     }
 #endif
 }

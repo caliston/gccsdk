@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/time/calendconv.c,v $
- * $Date: 2001/07/23 15:37:49 $
- * $Revision: 1.3 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.3.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: calendconv.c,v 1.3 2001/07/23 15:37:49 admin Exp $";
+static const char rcs_id[] = "$Id: calendconv.c,v 1.3.2.1 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 /* Territory time support, written by Nick Burrett on 13 July 1997.  */
@@ -17,7 +17,7 @@ static const char rcs_id[] = "$Id: calendconv.c,v 1.3 2001/07/23 15:37:49 admin 
 #include <time.h>
 #include <locale.h>
 #include <string.h>
-#include <sys/os.h>
+#include <unixlib/os.h>
 #include <swis.h>
 #include <unixlib/local.h>
 
@@ -47,7 +47,7 @@ __calendar_convert (int swinum, const time_t *tp)
   regs[0] = __locale_territory[LC_TIME];
   regs[1] = (int)riscos_time;
   regs[2] = (int)ordinals_buffer;
-  os_swi (swinum, regs);
+  __os_swi (swinum, regs);
   __tz->tm_sec = ordinals_buffer[1];
   __tz->tm_min = ordinals_buffer[2];
   __tz->tm_hour = ordinals_buffer[3];

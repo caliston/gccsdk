@@ -1,20 +1,20 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/signal/c/sigwakeup,v $
- * $Date: 1997/10/09 20:00:31 $
- * $Revision: 1.5 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/sigwakeup.c,v $
+ * $Date: 2001/01/29 15:10:21 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: sigwakeup,v 1.5 1997/10/09 20:00:31 unixlib Exp $";
+static const char rcs_id[] = "$Id: sigwakeup.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
 /* Written by Nick Burrett, 26 August 1996.  */
 
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 
 /* Wake a task up.  */
 void

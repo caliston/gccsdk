@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/signal/c/setup,v $
- * $Date: 2000/06/03 14:46:10 $
- * $Revision: 1.8 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/setup.c,v $
+ * $Date: 2001/01/29 15:10:20 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: setup,v 1.8 2000/06/03 14:46:10 admin Exp $";
+static const char rcs_id[] = "$Id: setup.c,v 1.2 2001/01/29 15:10:20 admin Exp $";
 #endif
 
 /* signal.c.setup: Written by Nick Burrett, 1 September 1996.  */
@@ -21,7 +21,7 @@ static const char rcs_id[] = "$Id: setup,v 1.8 2000/06/03 14:46:10 admin Exp $";
 /* #define DEBUG */
 
 #ifdef DEBUG
-#include <sys/os.h>
+#include <unixlib/os.h>
 #endif
 
 /* This function chooses a suitable execution environment
@@ -38,9 +38,9 @@ __unixlib_setup_sighandler (struct unixlib_sigstate *ss,
   int system_stack;
 
 #ifdef DEBUG
-  os_print ("__unixlib_setup_sighandler: signo = ");
-  os_prdec (signo); os_print (", handler = "); os_prhex ((int) handler);
-  os_print ("\r\n");
+  __os_print ("__unixlib_setup_sighandler: signo = ");
+  __os_prdec (signo); __os_print (", handler = "); __os_prhex ((int) handler);
+  __os_print ("\r\n");
 #endif
   system_stack = ((ss->signalstack.ss_flags & SA_DISABLE)
 		  || ss->signalstack.ss_size == 0
@@ -51,11 +51,11 @@ __unixlib_setup_sighandler (struct unixlib_sigstate *ss,
   if ((flags & SA_ONSTACK) && system_stack)
     {
 #ifdef DEBUG
-      os_print ("__unixlib_setup_sighandler: bad system stack\r\n");
-      os_print ("   ss_size = "); os_prdec ((int) ss->signalstack.ss_size);
-      os_print (", ss_sp = "); os_prdec ((int) ss->signalstack.ss_sp);
-      os_print (", ss_flags = "); os_prdec ((int) ss->signalstack.ss_flags);
-      os_print ("\r\n");
+      __os_print ("__unixlib_setup_sighandler: bad system stack\r\n");
+      __os_print ("   ss_size = "); __os_prdec ((int) ss->signalstack.ss_size);
+      __os_print (", ss_sp = "); __os_prdec ((int) ss->signalstack.ss_sp);
+      __os_print (", ss_flags = "); __os_prdec ((int) ss->signalstack.ss_flags);
+      __os_print ("\r\n");
 #endif
       return 1;
     }
@@ -68,7 +68,7 @@ __unixlib_setup_sighandler (struct unixlib_sigstate *ss,
   if (system_stack)
     {
 #ifdef DEBUG
-      os_print (" unixlib_setup_sighandler: executing off normal stack\r\n");
+      __os_print (" unixlib_setup_sighandler: executing off normal stack\r\n");
 #endif
       __unixlib_exec_sig (handler, signo);
       return 0;
@@ -83,14 +83,14 @@ __unixlib_setup_sighandler (struct unixlib_sigstate *ss,
   if (ss->signalstack.ss_size == -1)
     {
 #ifdef DEBUG
-      os_print (" unixlib_setup_sighandler: executing off BSD stack\r\n");
+      __os_print (" unixlib_setup_sighandler: executing off BSD stack\r\n");
 #endif
       __unixlib_exec_sigstack_bsd (ss->signalstack.ss_sp, handler, signo);
     }
   else
     {
 #ifdef DEBUG
-      os_print (" unixlib_setup_sighandler: executing off POSIX stack\r\n");
+      __os_print (" unixlib_setup_sighandler: executing off POSIX stack\r\n");
 #endif
       __unixlib_exec_sigstack (ss->signalstack.ss_sp, ss->signalstack.ss_size,
 			       handler, signo);

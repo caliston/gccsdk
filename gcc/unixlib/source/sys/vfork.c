@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/vfork.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.2.2.5 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.6 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.5 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.6 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -25,11 +25,11 @@ static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.5 2001/08/08 08:45:06 admin E
 #include <unistd.h>
 
 #include <sys/resource.h>
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 #include <sys/param.h>
 #include <sys/debug.h>
 #include <sys/wait.h>
-#include <sys/os.h>
+#include <unixlib/os.h>
 #include <swis.h>
 
 /* #define DEBUG 1 */
@@ -92,7 +92,7 @@ __vfork (void)
   /* Initialise structure.  */
   memset (child, 0, sizeof (struct proc));
 
-  /* Create a process ID.  It is cheaper to call clock() than os_swi.  */
+  /* Create a process ID.  It is cheaper to call clock() than __os_swi.  */
   child->ppid = __u->pid;  /* Get parent process's ID.  */
   child->pid = clock ();  /* Child process ID.  */
 
@@ -216,11 +216,11 @@ __vexit (int e)
 
 #ifdef DEBUG
   __debug ("__vexit: child process structure");
-  os_print ("__vexit() e = "); os_prdec (e); os_print ("\r\n");
-  os_print ("return code:"); os_prdec (p->status.return_code); os_print ("\r\n");
-  os_print ("signal exit:"); os_prdec (p->status.signal_exit); os_print ("\r\n");
-  os_print ("signal:"); os_prdec (p->status.signal); os_print ("\r\n");
-  os_print ("core dumped:"); os_prdec (p->status.core_dump); os_print ("\r\n");
+  __os_print ("__vexit() e = "); __os_prdec (e); __os_print ("\r\n");
+  __os_print ("return code:"); __os_prdec (p->status.return_code); __os_print ("\r\n");
+  __os_print ("signal exit:"); __os_prdec (p->status.signal_exit); __os_print ("\r\n");
+  __os_print ("signal:"); __os_prdec (p->status.signal); __os_print ("\r\n");
+  __os_print ("core dumped:"); __os_prdec (p->status.core_dump); __os_print ("\r\n");
 #endif
 
   /* Close the file descriptors we used.  */
@@ -229,7 +229,7 @@ __vexit (int e)
       close (x);
 
 #ifdef DEBUG
-  os_print ("__vexit: child died, now becoming parent process\r\n");
+  __os_print ("__vexit: child died, now becoming parent process\r\n");
 #endif
   /* Become the parent process.  */
   __u = p->pproc;
@@ -256,11 +256,11 @@ __vexit (int e)
   /* Raise SIGCHLD because the child process has now terminated
      or stopped.  The default action is to ignore this.  */
 #ifdef DEBUG
-  os_print ("__vexit: raising SIGCHLD\r\n");
+  __os_print ("__vexit: raising SIGCHLD\r\n");
 #endif
   raise (SIGCHLD);
 #ifdef DEBUG
-  os_print ("__vexit: raising SIGCHLD completed\r\n");
+  __os_print ("__vexit: raising SIGCHLD completed\r\n");
 #endif
   return __u->child[0].vreg;
 }

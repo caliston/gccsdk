@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/pipe.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: pipe.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: pipe.c,v 1.2.2.2 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 #include <unixlib/features.h>
@@ -19,10 +19,10 @@ static const char rcs_id[] = "$Id: pipe.c,v 1.2.2.1 2001/08/08 08:45:06 admin Ex
 #include <unistd.h>
 #include <errno.h>
 
-#include <sys/os.h>
-#include <sys/dev.h>
+#include <unixlib/os.h>
+#include <unixlib/dev.h>
 #include <swis.h>
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 
 #include <unixlib/fd.h>
 
@@ -99,7 +99,7 @@ pipe (int *p)
     regs[2] = 4;
     regs[3] = 0;
     regs[4] = 1;
-    os_swi (OS_SetVarVal, regs);
+    __os_swi (OS_SetVarVal, regs);
   }
 
   /* Set one file descriptor for read only and the other

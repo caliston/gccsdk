@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/tmpfile.c,v $
- * $Date: 2001/01/29 15:10:21 $
- * $Revision: 1.2 $
+ * $Date: 2001/08/15 14:26:00 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tmpfile.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
+static const char rcs_id[] = "$Id: tmpfile.c,v 1.2.2.1 2001/08/15 14:26:00 admin Exp $";
 #endif
 
 #include <string.h>
@@ -22,7 +22,7 @@ static const char rcs_id[] = "$Id: tmpfile.c,v 1.2 2001/01/29 15:10:21 admin Exp
 #include <unistd.h>
 
 #include <unixlib/local.h>
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 
 __STDIOLIB__
 

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/exec.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.2.2.5 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.6 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: exec.c,v 1.2.2.5 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: exec.c,v 1.2.2.6 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 #include <ctype.h>
@@ -21,8 +21,8 @@ static const char rcs_id[] = "$Id: exec.c,v 1.2.2.5 2001/08/08 08:45:06 admin Ex
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/param.h>
-#include <sys/unix.h>
-#include <sys/os.h>
+#include <unixlib/unix.h>
+#include <unixlib/os.h>
 #include <swis.h>
 #include <sys/wait.h>
 #include <unixlib/local.h>
@@ -31,7 +31,7 @@ static const char rcs_id[] = "$Id: exec.c,v 1.2.2.5 2001/08/08 08:45:06 admin Ex
 
 #ifdef DEBUG
 #include <sys/debug.h>
-#include <sys/os.h>
+#include <unixlib/os.h>
 #include <stdio.h>
 #endif
 
@@ -41,12 +41,12 @@ static const char rcs_id[] = "$Id: exec.c,v 1.2.2.5 2001/08/08 08:45:06 admin Ex
 /* type cast version of ushift.  */
 #define ushift2(p,v,c,t) ((p) = (t)__ushift((unsigned char *)p,v,c,"(" #p ")"))
 #define showmove(s,n,p,r) \
-  (os_print(s "("), os_print(n), os_prhex((int)p), os_print(") -> "), \
-   os_prhex((int)r), os_nl())
+  (__os_print(s "("), __os_print(n), __os_prhex((int)p), __os_print(") -> "), \
+   __os_prhex((int)r), __os_nl())
 #undef memcpy
 #define memcpy(d,s,n) \
-  (os_print("memcpy("), os_prhex((int)(d)), os_print(","), os_prhex((int)(s)), \
-   os_print(","), os_prhex((int)(n)), os_print(")"), os_nl(), (memcpy)(d,s,n))
+  (__os_print("memcpy("), __os_prhex((int)(d)), __os_print(","), __os_prhex((int)(s)), \
+   __os_print(","), __os_prhex((int)(n)), __os_print(")"), __os_nl(), (memcpy)(d,s,n))
 
 /* Relocate a pointer.
    `p' - pointer to relocate.
@@ -136,16 +136,16 @@ set_dde_cli (char *cli)
 
   /* Set the command line size within DDE utils.  */
   regs[0] = strlen (temp + 1) + 1;
-  if (os_swi (DDEUtils_SetCLSize, regs))
+  if (__os_swi (DDEUtils_SetCLSize, regs))
     /* We're buggered if DDE utils isn't on this system.  */
     return __set_errno (E2BIG);
 
   regs[0] = (int) temp + 1;
-  os_swi (DDEUtils_SetCL, regs);
+  __os_swi (DDEUtils_SetCL, regs);
 
   *temp = '\0';		/* terminate cli.  */
 #ifdef DEBUG
-  os_print ("DDE utils set up\n\r");
+  __os_print ("DDE utils set up\n\r");
 #endif
   return 0;
 }
@@ -171,19 +171,19 @@ execve (const char *execname, char **argv, char **envp)
     return __set_errno (EINVAL);
 
 #ifdef DEBUG
-  os_print ("-- execve: function arguments\r\n");
-  os_print ("      execname: '"); os_print (execname); os_print ("'\r\n");
+  __os_print ("-- execve: function arguments\r\n");
+  __os_print ("      execname: '"); __os_print (execname); __os_print ("'\r\n");
   x = -1;
   while (argv[++x])
     {
-      os_print ("      argv["); os_prdec (x); os_print ("]: ");
-      os_print (argv[x]); os_print ("\r\n");
+      __os_print ("      argv["); __os_prdec (x); __os_print ("]: ");
+      __os_print (argv[x]); __os_print ("\r\n");
     }
   x = -1;
   while (envp[++x])
     {
-      os_print ("      envp["); os_prdec (x); os_print ("]: ");
-      os_print (envp[x]); os_print ("\r\n");
+      __os_print ("      envp["); __os_prdec (x); __os_print ("]: ");
+      __os_print (envp[x]); __os_print ("\r\n");
     }
 
   __debug ("-- execve: process structure");
@@ -230,8 +230,8 @@ execve (const char *execname, char **argv, char **envp)
 	  nasty_hack = x;
 
 #ifdef DEBUG
-	  os_print ("-- execve: pathname: '");
-	  os_print (temp); os_print ("'\r\n");
+	  __os_print ("-- execve: pathname: '");
+	  __os_print (temp); __os_print ("'\r\n");
 #endif
 
 	  program_name = __riscosify_std (temp, 0, pathname,
@@ -247,8 +247,8 @@ execve (const char *execname, char **argv, char **envp)
     }
 
 #ifdef DEBUG
-  os_print ("-- execve: program_name: "); os_print (program_name);
-  os_print ("\r\n");
+  __os_print ("-- execve: program_name: "); __os_print (program_name);
+  __os_print ("\r\n");
 #endif
 
 #if __FEATURE_ITIMERS
@@ -258,7 +258,7 @@ execve (const char *execname, char **argv, char **envp)
 #endif
 
 #ifdef DEBUG
-  os_print ("-- execve: building command line\r\n");
+  __os_print ("-- execve: building command line\r\n");
 #endif
 
   /* Calculate the length of the command line.  We need to do this
@@ -296,8 +296,8 @@ execve (const char *execname, char **argv, char **envp)
     }
 
 #ifdef DEBUG
-  os_print ("-- execve: cli_length = "); os_prdec (cli_length);
-  os_print ("\r\n");
+  __os_print ("-- execve: cli_length = "); __os_prdec (cli_length);
+  __os_print ("\r\n");
 #endif
 
   /* Hmmm.  This malloc *must not* be in a dynamic area.  */
@@ -354,14 +354,14 @@ execve (const char *execname, char **argv, char **envp)
   command_line[-1] = '\0';
 
 #ifdef DEBUG
-  os_print ("-- execve: cli: "); os_print (cli); os_print ("\r\n");
+  __os_print ("-- execve: cli: "); __os_print (cli); __os_print ("\r\n");
 #endif
 
   /* This `if' will never return.  */
   if (! process->status.has_parent)
     {
 #ifdef DEBUG
-      os_print ("-- execve: take a shortcut (not a child process)\r\n");
+      __os_print ("-- execve: take a shortcut (not a child process)\r\n");
 #endif
       /* Shutdown unix. This is literally the point of no return.  */
       __stop_itimers ();
@@ -396,7 +396,7 @@ execve (const char *execname, char **argv, char **envp)
 	 int regs[10];
 
 	 regs[0] = 0;
-	 os_swi (DDEUtils_SetCLSize, regs);
+	 __os_swi (DDEUtils_SetCLSize, regs);
       }
       __exit_no_code ();
       /* NOTREACHED */
@@ -404,7 +404,7 @@ execve (const char *execname, char **argv, char **envp)
 
   /* If we arrive here, we have a parent process.  */
 #ifdef DEBUG
-  os_print ("-- execve: copy argv and envp (we are a child proc)\r\n");
+  __os_print ("-- execve: copy argv and envp (we are a child proc)\r\n");
 #endif
   /* We enter here if exec was called after a vfork, which is
      usually the case.  */
@@ -414,8 +414,8 @@ execve (const char *execname, char **argv, char **envp)
      However, we do create the process's environment vectors.
      From now on, this is the point of no return.  */
 #ifdef DEBUG
-  os_print ("-- execve: proc->envp="); os_prhex ((int) process->envp); os_nl ();
-  os_print ("-- execve: proc->argv="); os_prhex ((int) process->argv); os_nl ();
+  __os_print ("-- execve: proc->envp="); __os_prhex ((int) process->envp); __os_nl ();
+  __os_print ("-- execve: proc->argv="); __os_prhex ((int) process->argv); __os_nl ();
 #endif
 
   if (process->envp)
@@ -434,7 +434,7 @@ execve (const char *execname, char **argv, char **envp)
     }
 
 #ifdef DEBUG
-  os_print ("-- execve: re-create proc->envp and proc->argv\r\n");
+  __os_print ("-- execve: re-create proc->envp and proc->argv\r\n");
 #endif
 
   /* Count new environment variable vector length.  */
@@ -466,8 +466,8 @@ execve (const char *execname, char **argv, char **envp)
   process->argv = NULL;
 
 #ifdef DEBUG
-  os_print ("-- execve: proc->envc="); os_prhex ((int) process->envc); os_nl();
-  os_print ("-- execve: proc->argc="); os_prhex ((int) process->argc); os_nl();
+  __os_print ("-- execve: proc->envc="); __os_prhex ((int) process->envc); __os_nl();
+  __os_print ("-- execve: proc->argc="); __os_prhex ((int) process->argc); __os_nl();
 #endif
 
   /* If the cli is >= MAXPATHLEN, we will need the aid of DDE utils.  */
@@ -485,9 +485,9 @@ execve (const char *execname, char **argv, char **envp)
 
 #ifdef DEBUG
   __debug ("-- execve: process after new argv and envp setup");
-  os_print ("__rwlimit: "); os_prhex ((unsigned int) __rwlimit); os_nl ();
-  os_print ("__stack_limit: "); os_prhex ((unsigned int) __stack_limit);
-  os_nl ();
+  __os_print ("__rwlimit: "); __os_prhex ((unsigned int) __rwlimit); __os_nl ();
+  __os_print ("__stack_limit: "); __os_prhex ((unsigned int) __stack_limit);
+  __os_nl ();
 #endif
 
   /* Force a malloc trim to reduce memory usage.  malloc() must not be
@@ -515,10 +515,10 @@ execve (const char *execname, char **argv, char **envp)
     return __set_errno (ENOMEM);
 
 #ifdef DEBUG
-  os_print ("__exlen: "); os_prhex ((unsigned int) __exlen);
-  os_print ("__codeshift: "); os_prhex ((unsigned int) __codeshift);
-  os_print ("__exshift: "); os_prhex ((unsigned int) __exshift);
-  os_nl ();
+  __os_print ("__exlen: "); __os_prhex ((unsigned int) __exlen);
+  __os_print ("__codeshift: "); __os_prhex ((unsigned int) __codeshift);
+  __os_print ("__exshift: "); __os_prhex ((unsigned int) __exshift);
+  __os_nl ();
 #endif
 
   /* Restore the original RISC OS environment handlers.  We need to do
@@ -528,7 +528,7 @@ execve (const char *execname, char **argv, char **envp)
   __env_riscos ();
 
 #ifdef DEBUG
-  os_print ("-- execve: environment handlers restored\r\n");
+  __os_print ("-- execve: environment handlers restored\r\n");
 #endif
 
   /* Shift __u pointers if necessary.  */
@@ -586,7 +586,7 @@ execve (const char *execname, char **argv, char **envp)
     regs[2] = 4;
     regs[3] = 0;
     regs[4] = 1;
-    os_swi (OS_SetVarVal, regs);
+    __os_swi (OS_SetVarVal, regs);
   }
 
   /* copy up m/code routine and heap */
@@ -601,7 +601,7 @@ execve (const char *execname, char **argv, char **envp)
       regs[0] = 1;
       regs[1] = (int) __exec;
       regs[2] = regs[1] + __exlen - 4;
-      os_swi (OS_SynchroniseCodeAreas, regs);
+      __os_swi (OS_SynchroniseCodeAreas, regs);
     }
   if (__exshift)
     memcpy ((char *) __lomem + __exshift, (char *) __lomem,
@@ -609,7 +609,7 @@ execve (const char *execname, char **argv, char **envp)
 
   /* Finally call the program.  */
 #ifdef DEBUG
-  os_print ("-- execve: about to call:"); os_print (cli); os_nl ();
+  __os_print ("-- execve: about to call:"); __os_print (cli); __os_nl ();
 #endif
   __funcall ((*__exec), (cli));
   /* This is never reached.  */
@@ -687,7 +687,7 @@ __exret (void)
     i = __intenv ("Sys$ReturnCode");
 
 #ifdef DEBUG
-  os_print ("-- __exret: return code="); os_prdec (i); os_nl ();
+  __os_print ("-- __exret: return code="); __os_prdec (i); __os_nl ();
 #endif
 
   if (___vret)

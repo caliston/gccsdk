@@ -1,10 +1,10 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/sys/h/time,v $
- * $Date: 1997/10/09 19:59:57 $
- * $Revision: 1.7 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/time.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -78,7 +78,7 @@ enum __itimer_which
     /* Timers run when the process is executing and when
        the system is executing on behalf of the process.  */
     ITIMER_PROF = 2,
-    /* Used in <sys/unix.h>.  */
+    /* Used in <unixlib/unix.h>.  */
     __MAX_ITIMERS = 3
   };
 

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/select.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: select.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: select.c,v 1.2.2.2 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 /* netlib/socket.c: Written by Peter Burwood, July 1997  */
@@ -18,9 +18,9 @@ static const char rcs_id[] = "$Id: select.c,v 1.2.2.1 2001/08/08 08:45:06 admin 
 #include <string.h>
 #include <time.h>
 #include <sys/select.h>
-#include <sys/unix.h>
-#include <sys/dev.h>
-#include <sys/os.h>
+#include <unixlib/unix.h>
+#include <unixlib/dev.h>
+#include <unixlib/os.h>
 #include <swis.h>
 #include <sys/time.h>
 #include <unixlib/local.h>
@@ -197,12 +197,12 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
 	  if (read_p || write_p || except_p)
 	    {
 #ifdef DEBUG
-	      os_print ("/");
+	      __os_print ("/");
 #endif
 	      result = __funcall ((*(__dev[file_desc->device].select)),
 				  (file_desc, fd, read_p, write_p, except_p));
 #ifdef DEBUG
-	      os_print ("\\");
+	      __os_print ("\\");
 #endif
 	      if (result < 0)
 		return -1;
@@ -212,7 +212,7 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
 	}
 
 #ifdef DEBUG
-      os_nl();
+      __os_nl();
 #endif
 
       /* Copy these so that we don't corrupt the orginals.  */
@@ -249,7 +249,7 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
       if (live_fds)
 	{
 #ifdef DEBUG
-	  os_print ("Select is live\n\r");
+	  __os_print ("Select is live\n\r");
 #endif
 	  break;	/* Something is live. Break and return.  */
 	}
@@ -262,7 +262,7 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
 	  if (remain < 0)
 	    {
 #ifdef DEBUG
-	      os_print ("Select timeout\n\r");
+	      __os_print ("Select timeout\n\r");
 #endif
 	      /* Timeout.  */
 	      timeout->tv_sec = timeout->tv_usec = 0;
@@ -274,9 +274,9 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
 #ifdef DEBUG
       else
 	{
-	  os_print ("No timeout\n\r");
+	  __os_print ("No timeout\n\r");
 	}
-      os_print ("Loop\n\r");
+      __os_print ("Loop\n\r");
 #endif
 
       if (__taskwindow)
@@ -288,7 +288,7 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
 			   This is the SWI handler, so should
 			   never be zero.  */
 
-	  os_swi (OS_UpCall, regs);
+	  __os_swi (OS_UpCall, regs);
 	}
     }
 

@@ -1,18 +1,18 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/qsort.c,v $
- * $Date: 2001/01/29 15:10:18 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: qsort.c,v 1.2 2001/01/29 15:10:18 admin Exp $";
+static const char rcs_id[] = "$Id: qsort.c,v 1.2.2.1 2001/09/01 13:44:29 admin Exp $";
 #endif
 
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 
 #include <stddef.h>
 #include <stdlib.h>

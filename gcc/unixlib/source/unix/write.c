@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/write.c,v $
- * $Date: 2001/01/29 15:10:22 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: write.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
+static const char rcs_id[] = "$Id: write.c,v 1.2.2.1 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -20,13 +20,13 @@ static const char rcs_id[] = "$Id: write.c,v 1.2 2001/01/29 15:10:22 admin Exp $
 #include <signal.h>
 
 #include <sys/types.h>
-#include <sys/dev.h>
-#include <sys/unix.h>
+#include <unixlib/dev.h>
+#include <unixlib/unix.h>
 
 #include <unixlib/fd.h>
 
 #ifdef DEBUG
-#include <sys/os.h>
+#include <unixlib/os.h>
 #endif
 
 ssize_t
@@ -36,8 +36,8 @@ write (int fd, const void *buf, size_t nbytes)
   ssize_t status;
 
 #ifdef DEBUG
-  os_print ("write(fd="); os_prdec (fd);
-  os_print (", nbytes="); os_prdec (nbytes); os_print (")\r\n");
+  __os_print ("write(fd="); __os_prdec (fd);
+  __os_print (", nbytes="); __os_prdec (nbytes); __os_print (")\r\n");
 #endif
 
   if (nbytes == 0)
@@ -53,7 +53,7 @@ write (int fd, const void *buf, size_t nbytes)
   if ((file_desc->fflag & O_ACCMODE) == O_RDONLY)
     {
 #ifdef DEBUG
-      os_print ("write(): not open for writing\r\n");
+      __os_print ("write(): not open for writing\r\n");
 #endif
       return __set_errno (EBADF);
     }

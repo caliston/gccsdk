@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/uname.c,v $
- * $Date: 2001/01/29 15:10:22 $
- * $Revision: 1.2 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: uname.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
+static const char rcs_id[] = "$Id: uname.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -17,7 +17,7 @@ static const char rcs_id[] = "$Id: uname.c,v 1.2 2001/01/29 15:10:22 admin Exp $
 #include <sys/utsname.h>
 #include <sys/param.h>
 #include <unistd.h>
-#include <sys/os.h>
+#include <unixlib/os.h>
 #include <swis.h>
 
 /* Try and extract the help version from the module help string.  */
@@ -81,7 +81,7 @@ uname (struct utsname *name)
      This has a module version number the same as the OS version.  */
   regs[0] = 18;
   regs[1] = (int)"UtilityModule";
-  if (os_swi (OS_Module, regs) != NULL)
+  if (__os_swi (OS_Module, regs) != NULL)
     regs[3] = 0;
 
   /* Release level of the operating system.  */
@@ -94,7 +94,7 @@ uname (struct utsname *name)
      OS_Module will return this value in regs[1].  */
   regs[0] = 18;
   regs[1] = (int)"ROMPatches";
-  if (os_swi (OS_Module, regs) != NULL)
+  if (__os_swi (OS_Module, regs) != NULL)
     {
       /* ROMPatches doesn't exist.  */
       regs[3] = 0;

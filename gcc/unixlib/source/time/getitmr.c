@@ -1,21 +1,21 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/time/getitmr.c,v $
- * $Date: 2001/01/29 15:10:22 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: getitmr.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
+static const char rcs_id[] = "$Id: getitmr.c,v 1.2.2.1 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 #include <stddef.h>
 #include <errno.h>
 #include <sys/time.h>
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 
 /* The `getitimer' function stores information about the timer
    specified by 'which' in the structure pointed at by 'value'

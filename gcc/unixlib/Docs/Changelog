@@ -1,3 +1,13 @@
+Tue Sep  4 17:31:42 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	Emphasise that these header files are private to UnixLib.
+	* unixlib/dev.h: Renamed from sys/dev.h.
+	* unixlib/os.h: Renamed from sys/os.h.  Change all functions to
+	be prepended with a double-underscore.
+	* unixlib/unix.h: Renamed from sys/unix.h.
+
+	Fixup all source files for the above change.
+	
 Mon Sep  3 13:21:31 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* unix/tty.c (__tty_console_gwinsz): If a WIMP program, then
@@ -38,7 +48,7 @@ Sun Sep  2 11:25:00 2001  Nick Burrett  <nick.burrett@btinternet.com>
 Sun Sep  2 11:18:36 2001  Christian Ludlam <chris@recoil.org>
 
 	* stdio/printf.c (out_char): New function.
-	(out_write): New function.
+	(out_write): New function.ls 
 	(WIDESTRING): Define.
 	(WCHAR): Define.
 	(STOP): Define.

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2001/09/01 13:44:29 $
- * $Revision: 1.2.2.3 $
+ * $Date: 2001/09/03 12:07:43 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.3 2001/09/01 13:44:29 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.4 2001/09/03 12:07:43 admin Exp $";
 #endif
 
 #include <stdio.h>
@@ -25,8 +25,8 @@ static const char rcs_id[] = "$Id: unix.c,v 1.2.2.3 2001/09/01 13:44:29 admin Ex
 #include <termios.h>
 #include <time.h>
 
-#include <sys/os.h>
-#include <sys/unix.h>
+#include <unixlib/os.h>
+#include <unixlib/unix.h>
 #include <sys/param.h>
 #include <swis.h>
 #include <sys/wait.h>
@@ -63,7 +63,7 @@ static int convert_command_line (struct proc *process, const char *cli,
 
 static void __badr (void) __attribute__ ((__noreturn__));
 
-/* Initialize the signal code.  If declared in sys/unix.h
+/* Initialize the signal code.  If declared in unixlib/unix.h
    then we'd have to drag in a lot of headers.  */
 extern void __unixlib_signal_initialise (struct proc *__p);
 
@@ -72,7 +72,7 @@ extern void __resource_initialise (struct proc *__p);
 
 /* This is the only file that need ever reference main()
    so to prevent possible compiler errors from sources that
-   might include <sys/unix.h> we will have the main()
+   might include <unixlib/unix.h> we will have the main()
    declaration here.  */
 extern int main (int argc, char *argv[], char **environ);
 
@@ -83,9 +83,9 @@ __unixlib_fatal (const char *message)
 {
   if (message == NULL)
     message = sys_errlist[errno];
-  os_nl ();
-  os_print (message);
-  os_nl ();
+  __os_nl ();
+  __os_print (message);
+  __os_nl ();
   _exit (1);
 }
 
@@ -126,18 +126,18 @@ void __unixinit (void)
   extern char *__cli;
 
 #ifdef DEBUG
-  os_print ("-- __unixinit: __u = "); os_prhex ((unsigned int) __u);
+  __os_print ("-- __unixinit: __u = "); __os_prhex ((unsigned int) __u);
   if (__u)
     {
-      os_print (", __u->magic="); os_prhex ((unsigned int) __u->__magic);
+      __os_print (", __u->magic="); __os_prhex ((unsigned int) __u->__magic);
     }
-  os_print ("\r\n");
+  __os_print ("\r\n");
 #endif
 
   if (__u == NULL || __u->__magic != _PROCMAGIC)
     {
 #ifdef DEBUG
-      os_print ("-- __unixinit: new process\r\n");
+      __os_print ("-- __unixinit: new process\r\n");
 #endif
 
       /* Flag that we are a new process.  */
@@ -185,12 +185,12 @@ void __unixinit (void)
   __cli_size = strlen (__cli);
 
 #ifdef DEBUG
-  os_print ("-- __unixinit: getting cli: __cli = ");
-  os_print (__cli); os_print ("\r\n");
+  __os_print ("-- __unixinit: getting cli: __cli = ");
+  __os_print (__cli); __os_print ("\r\n");
 #endif
 
   /* Get extra command line from DDEUtils.  */
-  if (os_swi (DDEUtils_GetCLSize, regs))
+  if (__os_swi (DDEUtils_GetCLSize, regs))
     regs[0] = 0;
 
   cli_size = __cli_size + regs[0];
@@ -204,14 +204,14 @@ void __unixinit (void)
           /* Append DDEUtils command line.  */
           cli[__cli_size] = ' ';
           regs[0] = (int) cli + __cli_size + 1;
-          os_swi (DDEUtils_GetCl, regs);
+          __os_swi (DDEUtils_GetCl, regs);
         }
     }
 
   /* Set command line length to zero otherwise the next process
      will also get it.  */
   regs[0] = 0;
-  os_swi (DDEUtils_SetCLSize, regs);
+  __os_swi (DDEUtils_SetCLSize, regs);
 
   if (cli == NULL)
     __unixlib_fatal ("command line too long (not enough memory)");
@@ -220,8 +220,8 @@ void __unixinit (void)
   __runtime_features (cli);
 
 #ifdef DEBUG
-  os_print ("-- __unixinit: create argv: cli_size = ");
-  os_prdec (cli_size); os_print ("\r\n");
+  __os_print ("-- __unixinit: create argv: cli_size = ");
+  __os_prdec (cli_size); __os_print ("\r\n");
 #endif
   /* Parse the command line, looking for I/O redirection.  */
   get_io_redir (cli);
@@ -313,9 +313,9 @@ _exit (int return_code)
       __env_riscos ();
 
 #ifdef DEBUG
-      os_print ("_exit(): Setting return code = ");
-      os_prhex (return_code);
-      os_print ("\r\n");
+      __os_print ("_exit(): Setting return code = ");
+      __os_prhex (return_code);
+      __os_print ("\r\n");
 #endif
 
       /* OS_Exit with return value 'r'.  This function never returns.  */
@@ -325,9 +325,9 @@ _exit (int return_code)
   /* Due to the change to clock(), this is currently complete crap.  */
 
 #ifdef DEBUG
-  os_print ("_exit(): calling ___vret with return code = ");
-  os_prhex (return_code);
-  os_print ("\r\n");
+  __os_print ("_exit(): calling ___vret with return code = ");
+  __os_prhex (return_code);
+  __os_print ("\r\n");
 #endif
 
   __vret (status);
@@ -348,9 +348,9 @@ __alloc_file_descriptor (void)
     if (fd[i].__magic != _FDMAGIC)
       {
 #ifdef DEBUG
-        os_print ("__alloc_file_descriptor: found free descriptor ");
-        os_prhex (i);
-        os_nl ();
+        __os_print ("__alloc_file_descriptor: found free descriptor ");
+        __os_prhex (i);
+        __os_nl ();
 #endif
         return i;
       }
@@ -548,8 +548,8 @@ static void check_io_redir (const char *p, int fd, int mode)
     fd = get_fd_redirection (p);
 
 #ifdef DEBUG
-  os_print ("-- check_io_redir: redirecting fd ");
-  os_prdec (fd); os_print ("\r\n");
+  __os_print ("-- check_io_redir: redirecting fd ");
+  __os_prdec (fd); __os_print ("\r\n");
 #endif
 
   /* Skip any whitespace that precedes the filename e.g '< filename'.  */
@@ -562,8 +562,8 @@ static void check_io_redir (const char *p, int fd, int mode)
   /* Zero terminate the filename.  */
   fn[space - p] = '\0';
 #ifdef DEBUG
-  os_print ("-- check_io_redir: filename = '");
-  os_print (fn); os_print ("'\r\n");
+  __os_print ("-- check_io_redir: filename = '");
+  __os_print (fn); __os_print ("'\r\n");
 #endif
 
   /* Check the >& construct.  */
@@ -597,7 +597,7 @@ static void get_io_redir (const char *cli)
 
   /* By default, we redirect file descriptor 0 (stdin).  */
 #ifdef DEBUG
-  os_print ("-- get_io_redir: checking <\r\n");
+  __os_print ("-- get_io_redir: checking <\r\n");
 #endif
   while ((p = find_redirection_type (p, '<')))
     {
@@ -611,7 +611,7 @@ static void get_io_redir (const char *cli)
   /* By default, we redirect file descriptor 1 (stdout).  */
   mode = O_WRONLY | O_CREAT;
 #ifdef DEBUG
-  os_print ("-- get_io_redir: checking >\r\n");
+  __os_print ("-- get_io_redir: checking >\r\n");
 #endif
   while ((p = find_redirection_type (p, '>')))
     {
@@ -632,9 +632,9 @@ static int
 verify_redirection (const char *redir)
 {
 #if 0 /*def DEBUG*/
-  os_print ("-- verify_redirection: ");
-  os_print (redir);
-  os_print ("\r\n");
+  __os_print ("-- verify_redirection: ");
+  __os_print (redir);
+  __os_print ("\r\n");
 #endif
 
   /* So we've found a re-direction operator.  We must watch out

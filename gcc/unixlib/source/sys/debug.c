@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/debug.c,v $
- * $Date: 2001/08/02 13:27:19 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: debug.c,v 1.2.2.1 2001/08/02 13:27:19 admin Exp $";
+static const char rcs_id[] = "$Id: debug.c,v 1.2.2.2 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 #ifndef DEBUG
@@ -20,9 +20,9 @@ static const char rcs_id[] = "$Id: debug.c,v 1.2.2.1 2001/08/02 13:27:19 admin E
 
 #include <string.h>
 
-#include <sys/dev.h>
-#include <sys/os.h>
-#include <sys/unix.h>
+#include <unixlib/dev.h>
+#include <unixlib/os.h>
+#include <unixlib/unix.h>
 #include <sys/debug.h>
 #include <unixlib/local.h>
 
@@ -34,17 +34,17 @@ __debugval (char *s, int i)
   char *p = "        ";
   int x;
 
-  os_print (s);
+  __os_print (s);
   x = (strlen (s) & 7);
   x = x ? x : 8;
-  os_print (p + x);
-  os_prhex (i);
+  __os_print (p + x);
+  __os_prhex (i);
 }
 
 static void
 __debugnl (void)
 {
-  os_print ("\r\n");
+  __os_print ("\r\n");
 }
 
 #define NL() __debugnl()
@@ -57,9 +57,9 @@ __debug (const char *s)
   int i;
 
   NL ();
-  os_print ("# ");
+  __os_print ("# ");
   if (s)
-    os_print (s);
+    __os_print (s);
   NL ();
   VAL ("__base: ", (int) __base);
   VAL (" __lomem: ", (int) __lomem);
@@ -82,8 +82,8 @@ __debug (const char *s)
         VAL ("argv[", (int) (__u->argv + i));
         VAL (" ", i);
         VAL (" ]:", (int) __u->argv[i]);
-        os_print (" ");
-        os_print (__u->argv[i]);
+        __os_print (" ");
+        __os_print (__u->argv[i]);
         NL ();
       }
   if (__u->envp)
@@ -92,8 +92,8 @@ __debug (const char *s)
         VAL ("envp[", (int) (__u->envp + i));
         VAL (" ", i);
         VAL (" ]:", (int) __u->envp[i]);
-        os_print (" ");
-        os_print (__u->envp[i]);
+        __os_print (" ");
+        __os_print (__u->envp[i]);
         NL ();
       }
   f = __u->fd;
@@ -112,8 +112,8 @@ __debug (const char *s)
 	  if ((int) f[i].handle != 0 && f[i].device == DEV_RISCOS
 	      && __fd_to_name ((int) f[i].handle, fname, sizeof (fname)))
 	    {
-	      os_print ("filename:");
-	      os_print (fname);
+	      __os_print ("filename:");
+	      __os_print (fname);
 	      NL ();
 	    }
 	}

@@ -1,20 +1,20 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/fdname.c,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/08/08 08:45:06 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: fdname.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
+static const char rcs_id[] = "$Id: fdname.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
 #endif
 
 #include <stdlib.h>
 #include <unixlib/local.h>
-#include <sys/os.h>
+#include <unixlib/os.h>
 #include <swis.h>
 #include <errno.h>
 
@@ -46,7 +46,7 @@ __fd_to_name (int riscos_fd, char *buf, size_t buflen)
       regs[2] = 0;
       regs[5] = 0;
 
-      err = os_swi (OS_Args, regs);
+      err = __os_swi (OS_Args, regs);
       if (err)
 	__seterr (err);		/* Do not return here, fall through.  */
       else
@@ -62,7 +62,7 @@ __fd_to_name (int riscos_fd, char *buf, size_t buflen)
   regs[2] = (int) buf;
 
   /* Finally, get the filename into the buffer.  */
-  if (buf != NULL && (err = os_swi (OS_Args, regs)) != NULL)
+  if (buf != NULL && (err = __os_swi (OS_Args, regs)) != NULL)
     {
       __seterr (err);
       if (buflen == 0)

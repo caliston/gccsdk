@@ -1,23 +1,23 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/time/setitmr.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: setitmr.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: setitmr.c,v 1.2.2.2 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 #include <stddef.h>
 #include <errno.h>
-#include <sys/os.h>
+#include <unixlib/os.h>
 #include <swis.h>
 #include <sys/time.h>
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 
 /* setitimer provides a mechanism for a process to interrupt itself at
    some future time. This is achieved by setting a timer; when the
@@ -59,7 +59,7 @@ remove_ticker (ticker address, const struct timeval *old)
 
   regs[0] = (int) address;
   regs[1] = (int) old;
-  os_swi (OS_RemoveTickerEvent, regs);
+  __os_swi (OS_RemoveTickerEvent, regs);
 }
 
 static int
@@ -71,7 +71,7 @@ add_ticker (const struct timeval *time, ticker address,
   regs[0] = (int) (time->tv_sec * 100) + (time->tv_usec + 9999) / 10000;
   regs[1] = (int) address;
   regs[2] = (int) new;
-  return os_swi (OS_CallAfter, regs) ? -1 : 0;
+  return __os_swi (OS_CallAfter, regs) ? -1 : 0;
 }
 
 static int
@@ -111,7 +111,7 @@ setitimer (enum __itimer_which which, const struct itimerval *new_timer,
   if ((unsigned) which >= __MAX_ITIMERS)
     return __set_errno (EINVAL);
 
-  /* __u is current process <sys/unix.h>.  */
+  /* __u is current process <unixlib/unix.h>.  */
   itimer = &__u->itimers[which];
   if (old_timer)
     *old_timer = *itimer;

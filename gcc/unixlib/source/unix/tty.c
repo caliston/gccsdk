@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/tty.c,v $
- * $Date: 2001/09/01 13:44:29 $
- * $Revision: 1.4.2.4 $
+ * $Date: 2001/09/03 12:21:54 $
+ * $Revision: 1.4.2.5 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tty.c,v 1.4.2.4 2001/09/01 13:44:29 admin Exp $";
+static const char rcs_id[] = "$Id: tty.c,v 1.4.2.5 2001/09/03 12:21:54 admin Exp $";
 #endif
 
 /* System V tty device driver for RISC OS.  */
@@ -25,11 +25,11 @@ static const char rcs_id[] = "$Id: tty.c,v 1.4.2.4 2001/09/01 13:44:29 admin Exp
 
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <sys/unix.h>
-#include <sys/dev.h>
+#include <unixlib/unix.h>
+#include <unixlib/dev.h>
 #include <sys/tty.h>
-#include <sys/os.h>
-#include <sys/dev.h>
+#include <unixlib/os.h>
+#include <unixlib/dev.h>
 #include <sys/select.h>
 #include <swis.h>
 
@@ -116,7 +116,7 @@ __tty_console_gwinsz (struct winsize *win)
     {
       regs[0] = (int) vars;
       regs[1] = (int) values;
-      os_swi (OS_ReadVduVariables, regs);
+      __os_swi (OS_ReadVduVariables, regs);
       win->ws_col = values[1] - values[0] + 1;
       win->ws_row = values[3] - values[2] + 1;
       win->ws_xpixel = values[5] - values[4] + 1;
@@ -136,29 +136,29 @@ __tty_console_swinsz (struct winsize *win)
 
   regs[0] = (int) vars;
   regs[1] = (int) values;
-  os_swi (OS_ReadVduVariables, regs);
-  os_vdu (28);
-  os_vdu (values[0]);
-  os_vdu (values[1] + win->ws_row - 1);
-  os_vdu (values[0] + win->ws_col - 1);
-  os_vdu (values[1]);
-  os_vdu (24);
+  __os_swi (OS_ReadVduVariables, regs);
+  __os_vdu (28);
+  __os_vdu (values[0]);
+  __os_vdu (values[1] + win->ws_row - 1);
+  __os_vdu (values[0] + win->ws_col - 1);
+  __os_vdu (values[1]);
+  __os_vdu (24);
   j = values[2];
   j <<= values[4];
-  os_vdu (j & 0xff);
-  os_vdu (j >> 8);
+  __os_vdu (j & 0xff);
+  __os_vdu (j >> 8);
   j = values[3] - (win->ws_ypixel - 1);
   j <<= values[5];
-  os_vdu (j & 0xff);
-  os_vdu (j >> 8);
+  __os_vdu (j & 0xff);
+  __os_vdu (j >> 8);
   j = values[2] + win->ws_xpixel - 1;
   j <<= values[4];
-  os_vdu (j & 0xff);
-  os_vdu (j >> 8);
+  __os_vdu (j & 0xff);
+  __os_vdu (j >> 8);
   j = values[3];
   j <<= values[5];
-  os_vdu (j & 0xff);
-  os_vdu (j >> 8);
+  __os_vdu (j & 0xff);
+  __os_vdu (j >> 8);
 #ifdef SIGWINCH
   /* Raise the 'Window size change' signal to notify any applications
      that might be interested.  */
@@ -240,12 +240,12 @@ __tty_423_sterm (struct termios *term)
   regs[0] = 5;
   regs[1] = convert_baud_rate (term->__ispeed);
   if (regs[1] != 0)
-    os_swi (OS_SerialOp, regs);
+    __os_swi (OS_SerialOp, regs);
 
   regs[0] = 6;
   regs[1] = convert_baud_rate (term->__ospeed);
   if (regs[1] != 0)
-    os_swi (OS_SerialOp, regs);
+    __os_swi (OS_SerialOp, regs);
 
   /* Get the control mode.  */
   cflag = term->c_cflag;
@@ -273,7 +273,7 @@ __tty_423_sterm (struct termios *term)
     }
   regs[0] = 1;
   regs[1] = control;
-  os_swi (OS_SerialOp, regs);
+  __os_swi (OS_SerialOp, regs);
 }
 #endif
 
@@ -351,11 +351,11 @@ __ttyopen (struct __unixlib_fd *file_desc, const char *file, int mode)
       __tty_console_gterm (term);
       __tty_console_gwinsz (tty->w);
       /* Set function pointers used for low level operations.  */
-      tty->out = os_vdu;
-      tty->in = os_get;
-      tty->scan = os_inkey;
-      tty->init = os_console;
-      tty->flush = os_keyflush;
+      tty->out = __os_vdu;
+      tty->in = __os_get;
+      tty->scan = __os_inkey;
+      tty->init = __os_console;
+      tty->flush = __os_keyflush;
     }
 #if __FEATURE_DEV_RS423
   else if (type == TTY_423)
@@ -364,11 +364,11 @@ __ttyopen (struct __unixlib_fd *file_desc, const char *file, int mode)
       win->ws_col = 80;
       win->ws_row = 25;
       win->ws_xpixel = win->ws_ypixel = 0;
-      tty->out = os_423vdu;
-      tty->in = os_423get;
-      tty->scan = os_423inkey;
-      tty->init = os_423;
-      tty->flush = os_423flush;
+      tty->out = __os_423vdu;
+      tty->in = __os_423get;
+      tty->scan = __os_423inkey;
+      tty->init = __os_423;
+      tty->flush = __os_423flush;
     }
 #endif
 

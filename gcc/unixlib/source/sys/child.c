@@ -1,18 +1,18 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/sys/c/child,v $
- * $Date: 1997/10/09 20:00:39 $
- * $Revision: 1.4 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/child.c,v $
+ * $Date: 2001/01/29 15:10:21 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: child,v 1.4 1997/10/09 20:00:39 unixlib Exp $";
+static const char rcs_id[] = "$Id: child.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 #include <sys/wait.h>
 
 /* This is a utility function used by fork and vfork. It

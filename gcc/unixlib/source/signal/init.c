@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/init.c,v $
- * $Date: 2001/01/29 15:10:20 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: init.c,v 1.2 2001/01/29 15:10:20 admin Exp $";
+static const char rcs_id[] = "$Id: init.c,v 1.2.2.1 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 /* Initialise the UnixLib stack handlers.
@@ -18,15 +18,15 @@ static const char rcs_id[] = "$Id: init.c,v 1.2 2001/01/29 15:10:20 admin Exp $"
 #include <stdlib.h>
 #include <signal.h>
 #include <unixlib/sigstate.h>
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 #include <unistd.h>
-#include <sys/os.h>
+#include <unixlib/os.h>
 
 void
 __unixlib_signal_initialise (struct proc *p)
 {
 #ifdef DEBUG
-  os_print ("__unixlib_signal_initialise\r\n");
+  __os_print ("__unixlib_signal_initialise\r\n");
 #endif
 
   /* Initialise signal handlers.  */

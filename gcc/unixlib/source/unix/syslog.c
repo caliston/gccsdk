@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/syslog.c,v $
- * $Date: 2001/01/29 15:10:22 $
- * $Revision: 1.2 $
+ * $Date: 2001/08/16 09:18:13 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: syslog.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
+static const char rcs_id[] = "$Id: syslog.c,v 1.2.2.1 2001/08/16 09:18:13 admin Exp $";
 #endif
 
 /*
@@ -49,8 +49,8 @@ static const char rcs_id[] = "$Id: syslog.c,v 1.2 2001/01/29 15:10:22 admin Exp 
 #include <sys/socket.h>
 #include <sys/syslog.h>
 #include <sys/uio.h>
-#include <sys/unix.h>
-#include <sys/os.h>
+#include <unixlib/unix.h>
+#include <unixlib/os.h>
 #include <swis.h>
 #include <netdb.h>
 
@@ -176,7 +176,7 @@ vsyslog (int pri, const char *fmt, va_list ap)
   regs[0] = (int) LogTag;
   regs[1] = (int) msg;
   regs[2] = LOG_PRI (pri);
-  os_swi (SysLog_LogMessage, regs);
+  __os_swi (SysLog_LogMessage, regs);
 
   /*
    * Output the message to the console; don't worry about blocking,

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/dirent.c,v $
- * $Date: 2001/08/08 08:45:06 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: dirent.c,v 1.2.2.1 2001/08/08 08:45:06 admin Exp $";
+static const char rcs_id[] = "$Id: dirent.c,v 1.2.2.2 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -23,8 +23,8 @@ static const char rcs_id[] = "$Id: dirent.c,v 1.2.2.1 2001/08/08 08:45:06 admin 
 #include <unistd.h>
 #include <ctype.h>
 
-#include <sys/unix.h>
-#include <sys/os.h>
+#include <unixlib/unix.h>
+#include <unixlib/os.h>
 #include <sys/types.h>
 #include <swis.h>
 
@@ -109,7 +109,7 @@ newstream (const char *name, __off_t offset)
   regs[0] = 37;
   regs[1] = (int) name;
   regs[2] = regs[3] = regs[4] = regs[5] = 0;
-  err = os_swi (OS_FSControl, regs);
+  err = __os_swi (OS_FSControl, regs);
   if (err)
     {
       __seterr (err);
@@ -127,7 +127,7 @@ newstream (const char *name, __off_t offset)
   regs[2] = (int) stream->dd_name_can;
   regs[3] = regs[4] = 0;
   regs[5] = 1 - regs[5];
-  err = os_swi (OS_FSControl, regs);
+  err = __os_swi (OS_FSControl, regs);
   if (err != NULL || regs[5] != 1)
     {
       __seterr (err);
@@ -183,10 +183,10 @@ opendir (const char *ux_name)
     }
 
 #ifdef DEBUG
-  os_print ("opendir: ux_name="); os_print (ux_name);
-  os_print (", ro name="); os_print (name);
-  os_print (", iletype=0x"); os_prhex (filetype);
-  os_print ("\r\n");
+  __os_print ("opendir: ux_name="); __os_print (ux_name);
+  __os_print (", ro name="); __os_print (name);
+  __os_print (", iletype=0x"); __os_prhex (filetype);
+  __os_print ("\r\n");
 #endif
   if (filetype != __RISCOSIFY_FILETYPE_NOTFOUND)
     {
@@ -375,7 +375,7 @@ readdir_r (DIR *stream, struct dirent *entry, struct dirent **result)
             regs[4] = (int) stream->gbpb_off;
             regs[6] = 0;                    /* Match all names */
 
-            err = os_swi (OS_GBPB, regs);
+            err = __os_swi (OS_GBPB, regs);
             if (err)
               {
                 __seterr (err);
