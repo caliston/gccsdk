@@ -20,5 +20,6 @@ unixlib:
 	mkdir -p $(upath)/stdio/o $(upath)/stdlib/o $(upath)/scl/o
 	mkdir -p $(upath)/string/o $(upath)/sys/o $(upath)/time/o
 	mkdir -p $(upath)/termios/o $(upath)/unix/o $(upath)/wchar/o
+	mkdir -p $(upath)/module/o
 	$(MAKE) -C source
 
