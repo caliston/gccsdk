@@ -13,12 +13,7 @@ endif
 
 INCLUDES = -I. -I../../ -I../../include
 CFLAGS += -DHAVE_CONFIG_H
-
 ldobjdir = $(objdir)/riscos-aof/ld/$(STAGE)
-
-$(ldobjdir)/%.o: %.c
-	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
-
 OBJS = $(ldobjdir)/ld.o $(ldobjdir)/rname.o
 
 all:	$(gcc_bin_dir)/ld$(exesfx)
@@ -26,7 +21,10 @@ all:	$(gcc_bin_dir)/ld$(exesfx)
 $(gcc_bin_dir)/ld$(exesfx):	$(OBJS)
 	$(CC) -o $@ $(OBJS) -L$(objdir)/libiberty/$(STAGE) -liberty
 
-$(ldobjdir)/ld.o: ld.c
-	$(CC) $(CFLAGS) -o $@ -c ld.c $(INCLUDES) -DSTANDARD_EXEC_PREFIX=\"$(prefix)$(gn_standard_exec_prefix)\"
+$(ldobjdir)/ld.o: ld.c ../../sdk-config.h ../../include/obstack.h \
+	../../include/demangle.h
+	$(CC) $(CFLAGS) -o $@ -c ld.c $(INCLUDES) \
+	-DSTANDARD_EXEC_PREFIX=\"$(prefix)$(gn_standard_exec_prefix)\"
 
 $(ldobjdir)/rname.o: rname.c
+	$(CC) $(CFLAGS) -o $@ -c rname.c $(INCLUDES)
