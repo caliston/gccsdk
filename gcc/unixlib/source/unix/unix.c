@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2002/06/10 10:00:57 $
- * $Revision: 1.2.2.10 $
+ * $Date: 2002/06/10 11:32:51 $
+ * $Revision: 1.2.2.11 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.10 2002/06/10 10:00:57 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.11 2002/06/10 11:32:51 admin Exp $";
 #endif
 
 #include <stdio.h>
@@ -51,7 +51,8 @@ int __atexit_function_count = 0;
 static void initialise_process_structure (struct proc *process);
 static struct proc *create_process_structure (void);
 static void initialise_unix_io (struct proc *process);
-static void check_fd_redirection (const char *filename, int fd_to_replace);
+static void check_fd_redirection (const char *filename,
+				  unsigned int fd_to_replace);
 static int get_fd_redirection (const char *redir);
 static const char *find_terminator (const char *s);
 static void get_io_redir (const char *cli);
@@ -463,7 +464,7 @@ initialise_unix_io (struct proc *process)
 /* Attempt to re-direct a file descriptor based on the file descriptor
    number that was passed on the command line.  */
 static void
-check_fd_redirection (const char *filename, int fd_to_replace)
+check_fd_redirection (const char *filename, unsigned int fd_to_replace)
 {
   /* <&- means shut.
      <&[fd] would mean dup this fd.  */
@@ -539,6 +540,8 @@ static void check_io_redir (const char *p, int fd, int mode)
 
   if (isdigit (p[-1]))
     fd = get_fd_redirection (p);
+  else if (p[-1] == '>' && isdigit (p[-2]))
+    fd = get_fd_redirection (p - 1);
 
 #ifdef DEBUG
   __os_print ("-- check_io_redir: redirecting fd ");
@@ -556,7 +559,8 @@ static void check_io_redir (const char *p, int fd, int mode)
   fn[space - p] = '\0';
 #ifdef DEBUG
   __os_print ("-- check_io_redir: filename = '");
-  __os_print (fn); __os_print ("'\r\n");
+  __os_print (fn); __os_print (", mode = ");
+  __os_prhex (mode) ; __os_print ("'\r\n");
 #endif
 
   /* Check the >& construct.  */
@@ -610,10 +614,27 @@ static void get_io_redir (const char *cli)
     {
       if (p[-1] != '<')
         {
-          if (p[1] == '>')
-            p++, check_io_redir (p, STDOUT_FILENO, mode);
-          else
-            check_io_redir (p, STDOUT_FILENO, mode | O_TRUNC);
+	  /* p might point to:
+	     1. >
+	     2. >>
+	     3. 2>
+	     4. 2>>
+	  */
+	  if (isdigit (p[0]))
+	    {
+	      p++;
+	      if (p[0] == '>' && p[1] == '>')
+		p++, check_io_redir (p, STDOUT_FILENO, mode);
+	      else if (p[0] == '>')
+		check_io_redir (p, STDOUT_FILENO, mode | O_TRUNC);
+	    }
+	  else
+	    {
+	      if (p[0] == '>' && p[1] == '>')
+		p++, check_io_redir (p, STDOUT_FILENO, mode);
+	      else
+		check_io_redir (p, STDOUT_FILENO, mode | O_TRUNC);
+	    }
         }
       p++;
     }
