@@ -6,7 +6,6 @@
 #ifndef __os_h
 #define __os_h
 #include <stdio.h>
-#include <string.h>
 
 #ifdef CROSS_COMPILE
 /* UNIX specific information.  */
@@ -57,8 +56,9 @@ char *(CanonicalisePath) (const char *path);
 #endif /* __riscos__ */
 
 char *CanonicaliseFile (const FILE * path);
-#ifndef strndup
-char *strndup (const char *, int len);
+
+#ifndef HAVE_STRNDUP
+extern char *strndup (const char *str, int len);
 #endif
 
 #endif
