@@ -273,10 +273,11 @@ SharedCLibrary_LibInitAPCS_32	EQU &80683
 	EXPORT	strcoll
 	EXPORT	|_clib_finalisemodule|
 	EXPORT	|_clib_version|
-	EXPORT	Finalise
+	EXPORT	|_clib_finalise|  ; RISC OS PRMs say 'Finalise' but that'll clash
 	EXPORT	tmpnam
 	EXPORT	|_swi|
 	EXPORT	|_swix|
+	EXPORT  |disable_stack_extension|
 	EXPORT	|__errno|
 	EXPORT	errno
 	EXPORT	|__iob|
@@ -284,124 +285,129 @@ SharedCLibrary_LibInitAPCS_32	EQU &80683
 	EXPORT	|__ctype|
 	EXPORT	|__huge_val|
 
-	EXPORT	stdin
-	EXPORT	stdout
-	EXPORT	stderr
-
 	AREA	|Stub$$code|, CODE, READONLY
 
 	ENTRY
 
-	swi	OS_GetEnv
-	mov	r2, r1
-	adr	r0, stubs
-	ldr	r1, [pc, #workspace - . - 8]
-	mov	r3, #-1
-	mov	r4, #0
-	mov	r5, #-1
+	SWI	OS_GetEnv
+	MOV	r2, r1			; workspace limit
+	ADR	r0, stubs		; list of stubs
+	LDR	r1, workspace		; workspace start
+	MOV	r3, #-1			; "-1"
+	MOV	r4, #0			; "0"
+	MOV	r5, #-1			; "-1"
+
 	; check for __root_stack_size. If it doesn't exist, then
 	; make our own up.
-	ldr	r6, [pc, #stack_size - . - 8]
-	cmp	r6, #0
-	moveq	r6, #&1000
-	ldrne	r6, [r6, #0]
-	mov	r6, r6, asr #10
-	mov	r6, r6, lsl #16
-	[ {config} = 26
-	swi	SharedCLibrary_LibInitAPCS_R
-	|
-	swi	SharedCLibrary_LibInitAPCS_32
-	]
-	mov	r6, r6, lsl #16
-	cmp	r6, #&50000	; check library version number
-	movge	r4, r0
-	adrge	r0, kernel_init_block
-	movge	r3, #0
-	bge	|_kernel_init|
+	LDR	r6, stack_size
+	TEQ	r6, #0
+	LDRNE	r6, [r6]		; use __root_stack_size
+	MOVEQ	r6, #(4*1024)		; 4KB (single chunk) stack, then.
+	MOV	r6, r6, asr #10 	; convert bytes to KB
+	MOV	r6, r6, lsl #16 	; put in upper 16bits
 
-	adr	r0, error
-	swi	OS_GenerateError
+	[ {config} = 26
+	SWI	SharedCLibrary_LibInitAPCS_R
+	MOV	r6, r6, lsl #16 	; safety catch for ancient Shared C Lib modules
+	CMP	r6, #(5<<16)		; check library version number
+	|
+	SWI	SharedCLibrary_LibInitAPCS_32
+	MOV	r6, r6, lsl #16 	; safety catch for ancient Shared C Lib modules
+	CMP	r6, #(6<<16)		; check library version number (32bit)
+	]
+
+	MOVGE	r4, r0			; end of workspace
+	ADRGE	r0, kernel_init_block
+	MOVGE	r3, #0			; we're an application
+	BGE	|_kernel_init|		; off we go!
+
+	ADR	r0, error
+	SWI	OS_GenerateError
 error
-	dcd	0
-	dcb	"Shared C Library not loaded or out of date", 0
-	align
+	DCD	0
+	DCB	"Shared C Library not loaded or out of date", 0
+	ALIGN
 
 stubs
-	dcd	1
-	dcd	kernel_vectors
-	dcd	kernel_vectors_end
-	dcd	kernel_statics
-	dcd	kernel_statics_end
-	dcd	2
-	dcd	clib_vectors
-	dcd	clib_vectors_end
-	dcd	clib_statics
-	dcd	clib_statics_end
-	dcd	-1
+	DCD	1			; lib chunk id : kernel
+	DCD	kernel_vectors
+	DCD	kernel_vectors_end
+	DCD	kernel_statics
+	DCD	kernel_statics_end
+	DCD	2			; lib chunk id : CLib
+	DCD	clib_vectors
+	DCD	clib_vectors_end
+	DCD	clib_statics
+	DCD	clib_statics_end
+	DCD	-1			; end of list
 
 kernel_init_block
-	dcd	|Image$$RO$$Base|
-	dcd	|RTSK$$Data$$Base|
-	dcd	|RTSK$$Data$$Limit|
+	DCD	|Image$$RO$$Base|	; image base
+	DCD	|RTSK$$Data$$Base|	; start of lang blocks
+	DCD	|RTSK$$Data$$Limit|	; end of lang blocks
 workspace
-	dcd	|Image$$RW$$Limit|
+	DCD	|Image$$RW$$Limit|
 stack_size
-	dcd	|__root_stack_size|
-	dcd	|Image$$RW$$Base|
-	dcd	|Image$$ZI$$Base|
+	DCD	|__root_stack_size|
+	DCD	|Image$$RW$$Base|
+	DCD	|Image$$ZI$$Base|
 
 
 
 	AREA	|RTSK$$Data|, DATA, READONLY
-	dcd	40 ; |RTSK$$Data$$Limit| - |RTSK$$Data$$Base|
-	dcd	|C$$code$$Base|
-	dcd	|C$$code$$Limit|
-	dcd	language_name
-	dcd	|__main|+4
-	dcd	0
-	dcd	|TrapHandler|
-	dcd	|UncaughtTrapHandler|
-	dcd	|EventHandler|
-	dcd	|UnhandledEventHandler|
+	DCD	40 ; |RTSK$$Data$$Limit| - |RTSK$$Data$$Base|
+	DCD	|C$$code$$Base|
+	DCD	|C$$code$$Limit|
+	DCD	language_name		; must be "C"
+	DCD	|__main|		; our PROC-returning InitProc
+	DCD	0			; finaliser
+	; these are the "optionals"...
+	DCD	|TrapHandler|		; SharedCLib's own trap handler...
+	DCD	|UncaughtTrapHandler|	; ...and uncaught trap proc
+	DCD	|EventHandler|		; ...and event proc
+	DCD	|UnhandledEventHandler|	; ...and unhandled event proc!
+	; no fast event proc
+	; no unwind proc
+	; no name proc
 
 	AREA	|C$$Code|, CODE, READONLY
 language_name
-	dcb	"C", 0
-	align
+	DCB	"C", 0
+	ALIGN
 
 |__main|
-	mov	r0, #1
-	ldr	r1, [pc, #stub_data - . - 8]
-	strb	r0, [r1, #&115]
-	mov	r0, sp
-	mov	r1, #0
-	mov	r2, #0
-	stmfd	sp!, {lr}
-	ldr	r1, [pc, #rtsk_data - . - 8]
-	ldmib	r1, {r1, r2}
-	bl	|_clib_initialise|
-	ldr	r0, [pc, #c_run - . - 8]
-	cmp	r0, #0
-	adrne	r0, c_next
-	ldmfd	sp!, {pc}^
+	MOV	r0, #1
+	LDR	r1, stub_data
+	STRB	r0, [r1, #_stub_kallocExtendsWS - kernel_statics]
 
+	MOV	r0, sp			; (historical??)
+	STMFD	sp!, {lr}
+	LDR	r1, rtsk_data
+	LDMIB	r1, {r1, r2}		; fetch code start/end (historical??)
+	BL	|_clib_initialise|
+	LDR	r0, c_run		; get our main()
+	CMP	r0, #0			; was there one?
+	ADRNE	r0, c_next		; yup, so point to hook to it
+	LDMFD	sp!, {pc}^
+
+; this is called when all RTL blocks have been initialised via their InitProc
 c_next
-	stmfd	sp!, {lr}
-	bl	|_kernel_command_string|
-	ldmfd	sp!, {lr}
-	ldr	r1, [pc, #c_run - . - 8]
-	b	|_main|
+	STMFD	sp!, {lr}		
+	BL	|_kernel_command_string|; get r0=command string
+	LDMFD	sp!, {lr}
+	LDR	r1, c_run		; get ptr to main() function
+	B	|_main|			; call clib to enter it.  Never returns from here.
 
 stub_data
-	dcd	|Stub$$Data|
+	DCD	|Stub$$Data|
 
 rtsk_data
-	dcd	|RTSK$$Data|
+	DCD	|RTSK$$Data|
 
 c_run
-	dcd	main
+	DCD	main
 
-	AREA	|Stub$$Entries|, DATA, NOINIT
+	AREA	|Stub$$Entries|, DATA
 kernel_vectors
 	%	48 * 4
 kernel_vectors_end
@@ -650,16 +656,76 @@ clib_vectors_end
 |strcoll|			EQU	clib_vectors+(178*4)
 |_clib_finalisemodule|		EQU	clib_vectors+(179*4)
 |_clib_version|			EQU	clib_vectors+(180*4)
-|Finalise|			EQU	clib_vectors+(181*4)
+|_clib_finalise|		EQU	clib_vectors+(181*4)
 |tmpnam|			EQU	clib_vectors+(182*4)
 |_swi|				EQU	clib_vectors+(183*4)
 |_swix|				EQU	clib_vectors+(184*4)
 
 
 
-	AREA	|Stub$$Data|, DATA, NOINIT
+	AREA	|Stub$$Data|, DATA
 kernel_statics	% &31c
 kernel_statics_end
+
+|_stub_imageBase|		EQU	kernel_statics+&000
+|_stub_rtsDataBase|		EQU	kernel_statics+&004
+|_stub_rtsDataLimit|		EQU	kernel_statics+&008
+|_stub_errorR12|		EQU	kernel_statics+&00c
+|_stub_errorBuffer|		EQU	kernel_statics+&010
+|_stub_errorNumber|		EQU	kernel_statics+&014
+|_stub_errorString|		EQU	kernel_statics+&018
+|_stub_registerDump|		EQU	kernel_statics+&07c
+|_stub_oldAbortHandlers| 	EQU	kernel_statics+&0bc
+|_stub_oldExitHandler|		EQU	kernel_statics+&0cc
+|_stub_oldMemoryLimit|		EQU	kernel_statics+&0d4
+|_stub_oldErrorHandler|  	EQU	kernel_statics+&0d8
+|_stub_oldErrorR0|		EQU	kernel_statics+&0dc
+|_stub_oldErrorBuffer|		EQU	kernel_statics+&0e0
+|_stub_oldCallBackHandler|	EQU	kernel_statics+&0e4
+|_stub_oldEscapeHandler|	EQU	kernel_statics+&0f0
+|_stub_oldEventHandler|  	EQU	kernel_statics+&0f8
+|_stub_oldUpCallHandler| 	EQU	kernel_statics+&100
+|_stub_languageEnvSave|  	EQU	kernel_statics+&108
+|_stub_hadEscape|		EQU	kernel_statics+&114
+|_stub_kallocExtendsWS|  	EQU	kernel_statics+&115
+|_stub_inTrapHandler|		EQU	kernel_statics+&116
+|_stub_beingDebugged|		EQU	kernel_statics+&117
+|_stub_fpPresent|		EQU	kernel_statics+&118
+|_stub_initialised|		EQU	kernel_statics+&119
+|_stub_callbackInactive| 	EQU	kernel_statics+&11a
+|_stub_unused_byte_2|		EQU	kernel_statics+&11b
+|_stub_IIHandlerInData|  	EQU	kernel_statics+&11c
+|_stub_PAHandlerInData|  	EQU	kernel_statics+&128
+|_stub_DAHandlerInData|  	EQU	kernel_statics+&134
+|_stub_AEHandlerInData|  	EQU	kernel_statics+&140
+|_stub_eventCode|		EQU	kernel_statics+&14c
+|_stub_eventUserR13|		EQU	kernel_statics+&150
+|_stub_eventRegisters|		EQU	kernel_statics+&154
+|_stub_fastEventStack|		EQU	kernel_statics+&184
+|_stub_fastEventStackEnd|	EQU	kernel_statics+&284
+|_stub_heapTop| 		EQU	kernel_statics+&284
+|_stub_heapLimit|		EQU	kernel_statics+&288
+|_stub_allocProc|		EQU	kernel_statics+&28c
+|_stub_freeProc| 		EQU	kernel_statics+&290
+|_stub_returnCode|		EQU	kernel_statics+&294
+|_stub_moduleDataWord|		EQU	kernel_statics+&298
+|_stub_APCS_A_Client|		EQU	kernel_statics+&29c
+|_stub_escapeSeen|		EQU	kernel_statics+&29d
+|_stub_unwinding|		EQU	kernel_statics+&29e
+|_stub_underDesktop|		EQU	kernel_statics+&29f
+|_stub_heapBase|		EQU	kernel_statics+&2a0
+|_stub_ArgString|		EQU	kernel_statics+&2a4
+|_stub_heapExtender|		EQU	kernel_statics+&2a8
+|_stub_knownSlotSize|		EQU	kernel_statics+&2ac
+|_stub_initSlotSize|		EQU	kernel_statics+&2b0
+|_stub_lk_RestoreOSHandlers|	EQU	kernel_statics+&2b4
+|_stub_extendChunk|		EQU	kernel_statics+&2b8
+|_stub_rootStackChunk|		EQU	kernel_statics+&2bc
+|_stub_pc_hex_buff|		EQU	kernel_statics+&2c0
+|_stub_returnCodeLimit|		EQU	kernel_statics+&2c0
+|_stub_reg_hex_buff|		EQU	kernel_statics+&2cc
+|disable_stack_extension|	EQU	kernel_statics+&2d8
+|_stub_unused|			EQU	kernel_statics+&2dc
 
 clib_statics	% &b48
 clib_statics_end
@@ -673,11 +739,11 @@ errno				EQU	clib_statics+0
 |__ctype|			EQU	clib_statics+&290
 |__huge_val|			EQU	clib_statics+&390
 
-; For link compatibility with UnixLib headers.  Note that the
-; SharedCLibrary method of declaring stdin, stdout and stderr
-; as macros is incorrect.
-stdin				EQU	clib_statics+4
-stdout				EQU	clib_statics+8
-stderr				EQU	clib_statics+12
+|_stub_app_space_end|		EQU	clib_statics+&6b4
+|_stub_stack_o_flag|		EQU	clib_statics+&6b8
+|_stub_inSignalHandler|		EQU	clib_statics+&6b9
+|_stub_dummybyte|		EQU	clib_statics+&6ba
+|_stub_|			EQU	clib_statics+&6bb
+|_stub_ClibSpace|		EQU	clib_statics+&6bc
 
 	END
