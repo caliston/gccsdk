@@ -393,7 +393,6 @@ SYS =	$(libunixobj)/sys/alarm.o \
 	$(libunixobj)/sys/execv.o \
 	$(libunixobj)/sys/execvp.o \
 	$(libunixobj)/sys/mman.o \
-	$(libunixobj)/sys/os.o \
 	$(libunixobj)/sys/sigsetjmp.o \
 	$(libunixobj)/sys/syslib.o \
 	$(libunixobj)/sys/vfork.o
@@ -412,6 +411,7 @@ SYS_ASM =	$(libunixobj)/sys/_alloca.o \
 	$(libunixobj)/sys/_sdiv.o \
 	$(libunixobj)/sys/_sdiv10.o \
 	$(libunixobj)/sys/_smod.o \
+	$(libunixobj)/sys/_swi.o \
 	$(libunixobj)/sys/_syslib.o \
 	$(libunixobj)/sys/_udiv.o \
 	$(libunixobj)/sys/_udiv10.o \
@@ -990,6 +990,7 @@ $(libunixobj)/sys/_sigjmp.o: sys/_sigjmp.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_sdiv.o: sys/_sdiv.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_sdiv10.o: sys/_sdiv10.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_smod.o: sys/_smod.s clib/unixlib/asm_dec.s
+$(libunixobj)/sys/_swi.o: sys/_swi.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_syslib.o: sys/_syslib.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_udiv.o: sys/_udiv.s clib/unixlib/asm_dec.s
 $(libunixobj)/sys/_udiv10.o: sys/_udiv10.s clib/unixlib/asm_dec.s
