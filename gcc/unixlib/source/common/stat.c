@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/stat.c,v $
- * $Date: 2002/06/10 12:01:27 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2002/06/10 16:32:14 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: stat.c,v 1.2.2.2 2002/06/10 12:01:27 admin Exp $";
+static const char rcs_id[] = "$Id: stat.c,v 1.2.2.3 2002/06/10 16:32:14 admin Exp $";
 #endif
 
 #include <time.h>
@@ -70,14 +70,22 @@ __stat (int *regs, struct stat *buf)
 	break;
 
       case 3: /* Image directory (RISC OS 3 and above).  */
-	/* Who said that we were a real Unix dir?  */
-	buf->st_nlink = 1;
 	/* Get round a filing system bug (as above).  */
 	mode |= S_IRWXU;
-	mode |= (__feature_imagefs_is_file) ? S_IFREG : S_IFDIR;
-	/* Fudge directory size (as above).  */
-	if ((size_t) regs[4] > 32768)
-	  regs[4] = 0;
+        if (__feature_imagefs_is_file)
+	  {
+	    mode |= S_IFREG;
+	    /* Who said that we were a real Unix dir?  */
+	    buf->st_nlink = 1;
+	  }
+        else
+          {
+	    mode |= S_IFDIR;
+	    buf->st_nlink = 2;
+	    /* Fudge directory size (as above).  */
+	    if ((size_t) regs[4] > 32768)
+	      regs[4] = 0;
+	  }
 	break;
     }
 
