@@ -46,12 +46,13 @@ ifeq (${STAGE},stage2)
 OBJS +=	$(libfileobjdir)/OS_File.o \
 	$(libfileobjdir)/OS_GBPB.o \
 	$(libfileobjdir)/OS_Word.o \
-	$(libfileobjdir)/OS_CnvtDT.o
+	$(libfileobjdir)/OS_CnvtDT.o 
+DEPS += $(gcc_bin_dir)/$(TRG)/o/unixlib
 endif
 
 all:	$(bin_dir)/libfile$(exesfx)
 
-$(bin_dir)/libfile$(exesfx):	$(OBJS)
+$(bin_dir)/libfile$(exesfx):	$(OBJS) $(DEPS)
 	$(CXX) -o $@ $(OBJS) $(linklibs)
 
 $(libfileobjdir)/TimeStamp.o: TimeStamp.cc

@@ -31,9 +31,14 @@ OBJS =	$(drlinkobjdir)/Aoffiles.o \
 	$(drlinkobjdir)/Stdcode.o \
 	$(drlinkobjdir)/Symbols.o
 
+ifeq (${STAGE},stage2)
+	DEPS += $(gcc_bin_dir)/$(TRG)/o/unixlib
+endif
+
+
 all:	$(bin_dir)/drlink$(exesfx)
 
-$(bin_dir)/drlink$(exesfx): $(OBJS)
+$(bin_dir)/drlink$(exesfx): $(OBJS) $(DEPS)
 	$(CC) -o $@ $(OBJS)
 
 $(drlinkobjdir)/Aoffiles.o: Aoffiles.c

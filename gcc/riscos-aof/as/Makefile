@@ -68,11 +68,12 @@ OBJS =	$(asobjdir)/area.o \
 
 ifeq (${STAGE},stage2)
 	OBJS += $(asobjdir)/os.o
+	DEPS += $(gcc_bin_dir)/$(TRG)/o/unixlib
 endif
 
 all:	$(gcc_bin_dir)/as$(exesfx)
 
-$(gcc_bin_dir)/as$(exesfx):	$(OBJS)
+$(gcc_bin_dir)/as$(exesfx):	$(OBJS) $(DEPS)
 	$(CC) -o $@ $(OBJS) -lm
 
 $(asobjdir)/area.o: area.c

@@ -25,8 +25,8 @@ TARGET_DEFS=@target_defs@
 # The native C and C++ compiler on the host computer
 CC=@CC@
 CXX=@CXX@
-CFLAGS=@CFLAGS@ $(TARGET_DEFS)
-CXXFLAGS=@CXXFLAGS@ $(TARGET_DEFS)
+CFLAGS=@CFLAGS@ $(TARGET_DEFS) -MMD
+CXXFLAGS=@CXXFLAGS@ $(TARGET_DEFS) -MMD
 
 # Installation directory of Unix binaries i.e. the stage 1 compiler.
 ux_gccpkg=@prefix@
@@ -187,7 +187,7 @@ riscos-aof-stg1:
 	$(MAKE) -C riscos-aof "STAGE=stage1"
 
 riscos-aof-stg2:
-	$(MAKE) -C riscos-aof "STAGE=stage2"
+	$(MAKE) -C riscos-aof "STAGE=stage2" "TRG=$(trg10)"
 
 
 libscl:

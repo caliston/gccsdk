@@ -16,9 +16,13 @@ CFLAGS += -DHAVE_CONFIG_H
 ldobjdir = $(objdir)/riscos-aof/ld/$(STAGE)
 OBJS = $(ldobjdir)/ld.o $(ldobjdir)/rname.o
 
+ifeq (${STAGE},stage2)
+	DEPS += $(gcc_bin_dir)/$(TRG)/o/unixlib
+endif
+
 all:	$(gcc_bin_dir)/ld$(exesfx)
 
-$(gcc_bin_dir)/ld$(exesfx):	$(OBJS)
+$(gcc_bin_dir)/ld$(exesfx):	$(OBJS) $(DEPS)
 	$(CC) -o $@ $(OBJS) -L$(objdir)/libiberty/$(STAGE) -liberty
 
 $(ldobjdir)/ld.o: ld.c ../../sdk-config.h ../../include/obstack.h \
