@@ -1363,7 +1363,7 @@ start_dynamic_handler ()
      but there is no allocation routine that allocates at the level of
      the last binding contour.  */
   arg = assign_stack_local (BLKmode,
-			    GET_MODE_SIZE (Pmode)*(size+1),
+			    GET_MODE_SIZE (Pmode)*(size+2),
 			    0);
 
   arg = change_address (arg, Pmode, NULL_RTX);
