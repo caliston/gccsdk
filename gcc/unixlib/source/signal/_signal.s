@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_signal.s,v $
-; $Date: 2001/05/03 06:25:32 $
-; $Revision: 1.3 $
+; $Date: 2001/05/09 08:15:16 $
+; $Revision: 1.4 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -247,16 +247,19 @@ lb2	DCD	&FF000000 + lb2 - lb1
 	; Entered in IRQ mode. Be quick by just clearing the escape
 	; flag and setting a callback.
 
-	; Check for the escape condition
-	TST	r11, #64
-	MOVEQS	pc, lr
-	MOV	ip, #SIGINT
-	STR	ip, |__cba1|
+	STMFD	sp!, {a1-a3,lr}
+	TST	r11, #64		; bit 6
+	MOVNE	ip, #SIGINT
+	STRNE	ip, |__cba1|
 	; Set the escape condition flag
 	LDR	ip, |__cbflg|
-	ORR	ip, ip, #1		; set CallBack
-	STR	ip,|__cbflg|		; set __cbflg bit 0
-	MOVS	pc, lr
+	ORRNE	ip, ip, #1		; set CallBack
+	BICEQ	ip, ip, #1		; clear CallBack
+	STR	ip,|__cbflg|		; set/clear __cbflg bit 0
+
+	MOVEQ	ip, #0
+	MOVNE	ip, #1
+	LDMFD   sp!, {a1-a3,pc}^
 
 	IMPORT	|__sigstk|
 	IMPORT	|__sigstksize|
@@ -302,7 +305,7 @@ callback_signal
 	; We are no longer processing a callback
 	ADR	a1, __cbflg
 	LDR	a2, [a1, #0]
-	BIC	a2, a2, #4
+	BIC	a2, a2, #4	; __cbflg bit 2
 	STR	a2, [a1, #0]
 	LDMFD	sp!, {r0-r12, pc}^
 
@@ -379,16 +382,10 @@ callback_signal
 	; Check for an escape condition
 	LDR	a1,|__cbflg|		; check __cbflg bit 0
 	TST	a1,#1
-	BEQ	|__h_cback_l1|
-
 	; There was an escape condition.  Clear it.
-	MOV	a1,#&7c
-	SWI	XOS_Byte
+	MOVNE	a1,#&7e
+	SWINE	XOS_Byte		; This calls our escape handler
 
-|__h_cback_l1|
-	LDR	a1,|__cbflg|
-	BIC	a1,a1,#1
-	STR	a1,|__cbflg|
 	LDR	a1,|__cba1|
 	MOV	v1,sp
 	BL	|raise|
@@ -466,7 +463,7 @@ callback_signal
 	LDMFD	sp!, {a1, a2, pc}
 
 	EXPORT	|__h_sigalrm_sema|
-	; Set to one to prevent multiple CallEvery's being set up.
+	; Set to one to prevent multiple CallEverys being set up.
 |__h_sigalrm_sema|
 	DCD	0
 
@@ -506,7 +503,7 @@ callback_signal
 	LDMFD	sp!, {a1, a2, pc}
 
 	EXPORT	|__h_sigvtalrm_sema|
-	; Set to one to prevent multiple CallEvery's being set up.
+	; Set to one to prevent multiple CallEverys being set up.
 |__h_sigvtalrm_sema|
 	DCD	0
 

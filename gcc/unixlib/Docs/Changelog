@@ -1,3 +1,9 @@
+Mon Aug  6 09:16:22 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
+
+	* signal/_signal.s (__h_sigint): Unset escape condition flag
+	if escape not pressed.
+	(__h_cback): Tidy up.
+	
 Mon Aug  6 09:11:55 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* unix/unix.c (convert_command_line): Fix off-by-one error
