@@ -1,10 +1,10 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/sys/h/types,v $
- * $Date: 1997/12/17 22:02:53 $
- * $Revision: 1.10 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/types.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -15,6 +15,10 @@
 
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
+#endif
+
+#ifndef __ENDIAN_H
+#include <machine/endian.h>
 #endif
 
 #define u_char __u_char

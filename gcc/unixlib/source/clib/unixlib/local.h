@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/unixlib/h/local,v $
- * $Date: 2001/01/02 10:23:49 $
- * $Revision: 1.17 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/local.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -43,7 +43,7 @@ extern "C" {
 extern __ino_t __get_file_ino (const char *__directory,
 			       const char *__filename);
 
-/* Return the converted to canonicalised RISCOS filename, or NULL on
+/* Return the converted to canonicalised RISC OS filename, or NULL on
    failure.  */
 extern char * __fd_to_name (int __riscos_fd, char *__buf, size_t __buflen);
 
@@ -178,7 +178,7 @@ extern int __riscosify_control;
 
 /* Convert Unix filenames/pathnames to Risc OS format creating the final
    directory if necessary and CREATE_DIR is non-zero.
-   Pass Risc OS pathnames through unchanged.
+   Pass RISC OS pathnames through unchanged.
    Returns pointer to terminating '\0' in buffer,
    or NULL if there was a problem.  */
 extern char *__riscosify (const char *__name, int __create_dir,
