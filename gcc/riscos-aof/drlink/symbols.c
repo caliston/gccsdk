@@ -807,6 +807,7 @@ static bool check_library(filelist *fp) {
     }
     else if ((wp->symtptr->symtattr & SYM_WEAKREF)!=0 && opt_leaveweak) {	/* Ignore if weak external */
       lp = NIL;
+      lastwp = wp;    /* Move 'last still in list' ptr to current entry */
     }
     else {	/* Symbol is not available yet. Search library */
       lp = search_lib(wp);
