@@ -14,6 +14,7 @@ GCCPKG = $(pkg)/\!Boot,feb \
 	$(pkg)/\!Sprites22,ff9 \
 	$(pkg)/SetFTypes \
 	$(pkg)/Changes \
+	$(pkg)/include \
 	$(pkg)/support \
 	$(pkg)/bin/drlink$(exesfx) \
 	$(pkg)/bin/dyn_kill,ffb \
@@ -24,6 +25,7 @@ GCCPKG = $(pkg)/\!Boot,feb \
 	$(bindir)/cpp$(exesfx) \
 	$(bindir)/ld$(exesfx) \
 	$(bindir)/apcs26/libscl/o/libscl \
+	$(bindir)/apcs26/libscl/o/libgcc \
 	$(bindir)/apcs26/unixlib/o/libgcc \
 	$(bindir)/apcs26/unixlib/o/unixlib
 
@@ -40,6 +42,7 @@ CC1PKG = $(pkg)/bin/g++$(exesfx) \
 	$(bindir)/cc1$(exesfx) \
 	$(libdir)/include/h \
 	$(bindir)/apcs26/unixlib/o/libiostream \
+	$(bindir)/apcs26/unixlib/o/libio \
 	$(bindir)/apcs26/unixlib/o/libstdc++
 
 CC1PLUSPKG = $(bindir)/cc1plus$(exesfx) \
