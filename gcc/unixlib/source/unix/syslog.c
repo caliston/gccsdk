@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/syslog.c,v $
- * $Date: 2001/08/16 09:18:13 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: syslog.c,v 1.2.2.1 2001/08/16 09:18:13 admin Exp $";
+static const char rcs_id[] = "$Id: syslog.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 /*
@@ -129,9 +129,13 @@ vsyslog (int pri, const char *fmt, va_list ap)
       leaf = strrchr(__u->argv[0],'.');
       if (leaf == NULL)
 	leaf = __u->argv[0];
+      else
+	leaf ++;
       LogTag = strrchr(leaf,':');
       if (LogTag == NULL)
 	LogTag = leaf;
+      else
+	LogTag ++;
     }
   if (LogTag != NULL)
     p += sprintf (p, "%s", LogTag);

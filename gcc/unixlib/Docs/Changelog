@@ -1,4 +1,8 @@
-Wed Sep  5 17:26:15 2001  John Tytgat <John.Tytgat@aaug.net>
+Wed Sep  5 17:32:19 2001  Alex Waugh  <ajw498@ecs.soton.ac.uk>
+
+	* unix/syslog.c (vsyslog): Bug fix.
+	
+Wed Sep  5 17:26:15 2001  John Tytgat  <John.Tytgat@aaug.net>
 
 	* objs/Makefile,fe1: Added info on how to build APCS-R and
 	APCS-32 versions. Fixed include path for objasm. Removed
