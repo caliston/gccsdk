@@ -853,7 +853,6 @@ tlink_execute (char *prog, char **argv, char *redir, char *viafile)
     printf ("Command line to execute: '%s'\n", command);
 
 #ifdef __riscos
-  printf ("__vfork model\n");
   pid = vfork ();
   if (pid == (pid_t) 0)
     {
