@@ -41,7 +41,7 @@ compilation is specified by a string called a "spec".  */
 
 #ifdef __riscos
 #include <sys/os.h>
-#include <sys/swis.h>
+#include <swis.h>
 #endif
 
 #ifdef VMS
