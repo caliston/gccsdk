@@ -1,3 +1,9 @@
+Tue Jan 31 16:18:22 2002  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* getopt.h: New file.
+	* unistd.h: Include getopt.h rather than defining prototypes
+	for getopt.
+
 Tue Jan 31 14:31:05 2002  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* stdio/tmpfile.c (generate_temporary_filename): Randomise

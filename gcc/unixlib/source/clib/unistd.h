@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2001/09/14 14:01:17 $
- * $Revision: 1.2.2.3 $
+ * $Date: 2002/01/31 14:32:04 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -515,27 +515,8 @@ enum
 /* Get the value of the string-valued system variable NAME.  */
 extern size_t confstr (int __name, char *__buf, size_t __len);
 
-/* Process the arguments in ARGV (ARGC of them, minus
-   the program name) for options given in OPTS.
-
-   If `opterr' is zero, no messages are generated
-   for invalid options; it defaults to 1.
-   `optind' is the current index into ARGV.
-   `optarg' is the argument corresponding to the current option.
-   Return the option character from OPTS just read.
-   Return -1 when there are no more options.
-   For unrecognized options, or options missing arguments,
-   `optopt' is set to the option letter, and '?' is returned.
-
-   The OPTS string is a list of characters which are recognized option
-   letters, optionally followed by colons, specifying that that letter
-   takes an argument, to be placed in `optarg'.
-
-   The argument `--' causes premature termination of argument scanning,
-   explicitly telling `getopt' that there are no more options. */
-extern int getopt (int __argc, char *const *__argv, const char *__opts);
-extern int opterr, optind, optopt, optreset;
-extern char *optarg;
+#define __need_getopt
+#include <getopt.h>
 
 #ifdef __cplusplus
 	}
