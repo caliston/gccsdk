@@ -13,6 +13,8 @@ cdir <obey$dir>.objs.math
 cdir <obey$dir>.objs.math.o
 cdir <obey$dir>.objs.math-asm
 cdir <obey$dir>.objs.math-asm.o
+cdir <obey$dir>.objs.module
+cdir <obey$dir>.objs.module.o
 cdir <obey$dir>.objs.netlib
 cdir <obey$dir>.objs.netlib.o
 cdir <obey$dir>.objs.pwd
