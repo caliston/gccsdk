@@ -24,8 +24,6 @@ packages installed on your system, with at *least* these software revisions.
 	gcc		version 2.91
 	gperf		version 2.7.2
 	sed		version 2.05
-	zip		version 2.3
-
 
 Installation
 ------------
@@ -49,11 +47,14 @@ will be created.  These should then be suitable for unpacking on a RISC OS
 computer to make a working compiler.
   $ ./configure --prefix=/home/riscos/cross \
 	--with-riscos-dist=/home/riscos/riscos-dist \
-	--with-riscos-pkg=/home/riscos/riscos-pkg
+	--with-riscos-pkg=/home/riscos/riscos-pkg \
+	--enable-filetype-ff8
 
 Adding the flag --enable-filetype-ff8 to the configure options will add the
 ",ff8" suffix to any RISC OS executables built under Unix.  This is to allow
-filetyping by networking filing systems from RISC OS, such as LanMan98.  
+filetyping by networking filing systems from RISC OS, such as LanMan98.
+We supply a modified version of `zip' which can encode proper filetypes
+into zipfiles whenever it sees the ,xxx suffix.  
 
 Create installation directory structure
   $ make setup
@@ -62,7 +63,7 @@ Build it.  This will take about 1 hour 30 mins on a Pentium II-266MHz.
   $ make
 
 Optionally, you can create the RISC OS GCC compiler zip packages using
-this command. Note, this currently does not work properly.
+this command.
   $ make riscos-pkg
 
 
@@ -114,7 +115,7 @@ The cross-compiler contains the following tools:
    libscl - C library headers and stubs for linking with the SharedCLibrary.
   unixlib - A C library with BSD, System V and POSIX library extensions.
   rink, rinkptr, extractsym - components of Ben Summers' run-time linker
-
+      zip - A file archive utility
 
 The RISC OS distribution contains the following tools:
 
