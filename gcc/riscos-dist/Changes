@@ -28,6 +28,10 @@ RISC OS GCC release 2.95.2  (released xx August 2001)
   recommended that the GCC command is used, rather than calling drlink
   directly.
 
+* gcc: The option specifying that source code should be built and linked
+  against the SharedCLibrary rather than UnixLib has changed from the
+  rather uninformative -mstubs to -mlibscl.
+
 RISC OS GCC pre-release 3a  (released 23 November 1999)
 ==========================
 
