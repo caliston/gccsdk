@@ -1,3 +1,19 @@
+RISC OS GCC release 2.95.2  (released xx August 2001)
+==========================
+
+* unixlib: Allow for program independent sfix settings.
+
+* unixlib: Remove restriction on the maximum length of a command line.
+
+* unixlib: Add wchar.h, inttypes.h, stdint.h and supporting functions.
+
+* unixlib: Support `,xyz' RISC OS file type extensions.
+
+* unixlib: Fix longstanding bug that causes programs to hard-lock a
+  computer whilst using the network stack.
+
+* gcc: Remove weak symbol use that was enabled in pre-release 3.
+
 RISC OS GCC pre-release 3a  (released 23 November 1999)
 ==========================
 
