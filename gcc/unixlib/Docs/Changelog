@@ -1,3 +1,8 @@
+Sat Jan 12 16:31:01 2002  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* stdio.h (putc): Do not define as a macro.  We should not
+	be evaluating the argument more than once.
+
 Sat Jan 12 16:15:07 2002  Alex Waugh  <alex@alexwaugh.com>
 
 	* locale/ctypetable.c (__build_ctype_tables): Correctly

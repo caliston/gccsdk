@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdio.h,v $
- * $Date: 2001/09/14 14:01:17 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2002/01/12 15:47:12 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -239,11 +239,6 @@ extern int fgetc (FILE *__stream);
 
 /* Write a character to stream. */
 extern int putc (int __c, FILE *__stream);
-
-#define putc(c,f) \
-	(((f)->__linebuf && (c) == '\n') ? __flsbuf(c,f) : \
-	((--((f)->o_cnt) > 0 ? (*((f)->o_ptr)++ = (c)) : __flsbuf(c,f))))
-
 extern int fputc (int __c, FILE *__stream);
 
 /* Write a character to stdout.  */
