@@ -1,3 +1,8 @@
+Mon Jun 10 12:39:14 2002  Peter Naulls  <peter@chocky.org>
+
+	* signal/_signals.s (__seterr): Setup errno[EOPSYS] to point
+	to RISC OS error here.
+
 Mon Jun 10 12:32:13 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	* math/exp.c: Include stdlib.h.

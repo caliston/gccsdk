@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_signal.s,v $
-; $Date: 2001/09/21 10:13:48 $
-; $Revision: 1.4.2.8 $
+; $Date: 2001/10/02 10:16:45 $
+; $Revision: 1.4.2.9 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -65,8 +65,7 @@
 ;	APCS compliant. a1-a4, ip corrupted.
 ;
 ; Set UnixLib's errno to EOPSYS and copy the error from err to UnixLib's
-; error buffer. UnixLib's sys_errlist[EOPSYS] already points to this
-; buffer, so there is no need to update sys_errlist.
+; error buffer.
 ;
 	EXPORT	|__seterr|
 |__seterr|
@@ -78,8 +77,12 @@
 	MOV	a3, #EOPSYS
 	STR	a3, [a2, #0]
 
-	; Copy the error to UnixLib's buffer.
+	LDR     a4, =sys_errlist
 	LDR     a2, =|__ul_errbuf_errblock|
+	ADD     a3, a2, #4
+	STR     a3, [a4, #(EOPSYS:SHL:2)]
+
+	; Copy the error to UnixLib's buffer.
 	MOV	a3, #|__ul_errbuf__size|
 |__seterr.00|
 	LDMIA	a1!, {a4, v1-v5, ip, lr}
