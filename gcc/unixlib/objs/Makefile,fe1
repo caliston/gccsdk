@@ -1,8 +1,8 @@
 # Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2001/09/11 14:20:03 $
-# $Revision: 1.2.2.5 $
+# $Date: 2001/10/04 12:50:46 $
+# $Revision: 1.2.2.6 $
 # $State: Exp $
 # $Author: admin $
 
@@ -214,6 +214,8 @@ TERMIOS =	 termios.o.cfgetispee termios.o.cfgetospee \
 
 TIME_ASM =	time.o._clock
 
+UNISTD =	unistd.o.chroot unistd.o.getpass
+
 UNIX =	unix.o.access unix.o.alphasort unix.o.chdir unix.o.chmod \
 	unix.o.chown unix.o.close unix.o.creat unix.o.getdtables unix.o.dev \
 	unix.o.dirent unix.o.dup unix.o.dup2 unix.o.fchmod unix.o.fchown \
@@ -252,14 +254,15 @@ STAMP =	!Stamp common.!Stamp complex.!Stamp gcccompat.!Stamp \
 	grp.!Stamp locale.!Stamp math.!Stamp math-asm.!Stamp \
 	netlib.!Stamp pwd.!Stamp resource.!Stamp signal.!Stamp \
 	scl.!Stamp stdio.!Stamp stdlib.!Stamp sys.!Stamp \
-	termios.!Stamp time.!Stamp unix.!Stamp wchar.!Stamp
+	termios.!Stamp time.!Stamp unistd.!Stamp unix.!Stamp \
+	wchar.!Stamp
 
 # Final targets:
 UnixLib:   $(STAMP)
 	$(AR) $(ARflags) -o $@ o.* common.o.* complex.o.* gcccompat.o.* \
 	grp.o.* locale.o.* math.o.* math-asm.o.* netlib.o.* pwd.o.* \
 	resource.o.* scl.o.* signal.o.* stdio.o.* stdlib.o.* sys.o.* \
-	termios.o.* time.o.* unix.o.* wchar.o.*
+	termios.o.* time.o.* unistd.o.* unix.o.* wchar.o.*
 
 test:	test.link
 
@@ -316,6 +319,8 @@ clean:
 	-wipe test.o.* fv~r~c
 	-wipe time.o.* fv~r~c
 	-remove time.!stamp
+	-wipe unistd.o.* fv~r~c
+	-remove unistd.!stamp
 	-wipe unix.o.* fv~r~c
 	-remove unix.!stamp
 	-wipe wchar.o.* fv~r~c
@@ -397,6 +402,10 @@ termios.!Stamp:	$(TERMIOS)
 time.!Stamp:	$(TIME) $(TIME_ASM)
 	-remove time.!Stamp
 	-create time.!Stamp 0
+
+unistd.!Stamp:	$(UNISTD)
+	-remove unistd.!Stamp
+	-create unistd.!Stamp 0
 
 unix.!Stamp:	$(UNIX) $(UNIX_ASM)
 	-remove unix.!Stamp
@@ -822,6 +831,9 @@ time.o.times:		time.c.times
 time.o.tzset:		time.c.tzset
 time.o.utimes:		time.c.utimes
 time.o._clock:		time.s._clock <UnixHdr$Dir>.unixlib.s.asm_dec
+
+unistd.o.chroot:	unistd.c.chroot
+unistd.o.getpass:	unistd.c.getpass
 
 unix.o.access:		unix.c.access
 unix.o.alphasort:	unix.c.alphasort

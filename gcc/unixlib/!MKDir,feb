@@ -39,6 +39,8 @@ cdir <obey$dir>.objs.test
 cdir <obey$dir>.objs.test.o
 cdir <obey$dir>.objs.termios
 cdir <obey$dir>.objs.termios.o
+cdir <obey$dir>.objs.unistd
+cdir <obey$dir>.objs.unistd.o
 cdir <obey$dir>.objs.unix
 cdir <obey$dir>.objs.unix.o
 cdir <obey$dir>.objs.wchar

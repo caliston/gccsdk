@@ -469,6 +469,9 @@ TERMIOS =	$(libunixobj)/termios/cfgetispee.o \
 	$(libunixobj)/termios/tcsetattr.o \
 	$(libunixobj)/termios/tcsetpgrp.o
 
+UNISTD =	$(libunixobj)/unistd/chroot.o \
+	$(libunixobj)/unistd/getpass.o
+
 UNIX =	$(libunixobj)/unix/access.o \
 	$(libunixobj)/unix/alphasort.o \
 	$(libunixobj)/unix/chdir.o \
@@ -582,7 +585,7 @@ WCHAR = $(libunixobj)/wchar/btowc.o \
 
 C_OBJS = $(COMPLEX) $(MATH) $(OBJS) $(COMMON) $(LOCALE) $(NETLIB) \
 	$(PWD) $(GRP) $(RESOURCE) $(SIGNAL) $(STDIO) $(STDLIB) $(SYS) \
-	$(TIME) $(TERMIOS) $(UNIX) $(WCHAR)
+	$(TIME) $(TERMIOS) $(UNISTD) $(UNIX) $(WCHAR)
 
 ASM_OBJS = $(MATH_ASM) $(COMMON_ASM) $(GCCCOMPAT_ASM) $(NETLIB_ASM) \
 	$(SIGNAL_ASM) $(STDIO_ASM) $(SCL_ASM) $(SYS_ASM) $(TIME_ASM) \
@@ -1067,6 +1070,9 @@ $(libunixobj)/time/times.o: time/times.c
 $(libunixobj)/time/tzset.o: time/tzset.c
 $(libunixobj)/time/utimes.o: time/utimes.c
 $(libunixobj)/time/_clock.o: time/_clock.s clib/unixlib/asm_dec.s
+
+$(libunixobj)/unistd/chroot.o: unistd/chroot.c
+$(libunixobj)/unistd/getpass.o: unistd/getpass.c
 
 $(libunixobj)/unix/access.o: unix/access.c
 $(libunixobj)/unix/alphasort.o: unix/alphasort.c

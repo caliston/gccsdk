@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2002/01/31 14:32:04 $
- * $Revision: 1.2.2.4 $
+ * $Date: 2002/01/31 16:19:53 $
+ * $Revision: 1.2.2.5 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -460,7 +460,6 @@ extern size_t getpagesize (void);
 extern int getdtablesize (void);
 
 #if 0
-
 /* Return the current machine's Internet number.  */
 extern long int gethostid (void);
 
@@ -480,10 +479,6 @@ extern int vhangup (void);
    turn accounting off.  This call is restricted to the super-user.  */
 extern int acct (const char *__name);
 
-/* Make PATH be the root directory (the starting point for absolute paths).
-   This call is restricted to the super-user.  */
-extern int chroot (const char *__path);
-
 /* Make the block special device PATH available to the system for swapping.
    This call is restricted to the super-user.  */
 extern int swapon (const char *__path);
@@ -496,12 +491,15 @@ extern int reboot (int __howto);
 extern char *getusershell (void);
 extern void endusershell (void); /* Discard cached info.  */
 extern void setusershell (void); /* Rewind and re-read the file.  */
+#endif
 
+/* Make PATH be the root directory (the starting point for absolute paths).
+   This call is restricted to the super-user.  */
+extern int chroot (const char *__path);
 
 /* Prompt with PROMPT and read a string from the terminal without echoing.
    Uses /dev/tty if possible; otherwise stderr and stdin.  */
 extern char *getpass (const char *__prompt);
-#endif
 
 /* POSIX 2 extensions.  */
 

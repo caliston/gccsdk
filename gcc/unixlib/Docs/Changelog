@@ -1,3 +1,10 @@
+Sat Mar 30 09:37:00 2002  Theo Markettos  <theo@markettos.org.uk>
+
+	* unistd/chroot.c: New file.  Stub function.
+	* unistd/getpass.c: New file.
+	* unistd.h (chroot): Declare.
+	(getpass): Declare.
+
 Mon Feb 11 13:15:03 2002  Alex Waugh  <alex@alexwaugh.com>
 
 	* strtol.c (strtol): Correctly detect when the string supplied
