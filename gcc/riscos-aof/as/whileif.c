@@ -168,6 +168,8 @@ c_while (Lex * label)
   WhileBlock *whileNew;
   Value flag;
 
+  label = label;
+
   inputMark ();
   /* Evaluate expression */
   exprBuild ();
@@ -265,6 +267,8 @@ whileReEval (void)
 void 
 c_wend (Lex * label)
 {
+  label = label;
+
   if (!whileCurrent)
     {
       error (ErrorError, TRUE, "Mismatched WEND");

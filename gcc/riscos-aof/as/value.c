@@ -105,7 +105,7 @@ Value valueCopy(Value value)
   return value;
 }
 
-void valueFree(Value value)
+static void valueFree(Value value)
 {
   switch(value.Tag.t) {
     case ValueIllegal:

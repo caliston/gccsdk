@@ -40,7 +40,7 @@ routPos;
 
 int rout_lblno[100] =
 {0};
-char *rout_id = "Local$$0";
+const char *rout_id = "Local$$0";
 int rout_null = 0;
 static routPos
 * routList = 0, *routListEnd = 0;
@@ -64,9 +64,12 @@ c_rout (Lex * label)
     }
   else
     {
-      rout_id = malloc (16);
-      if (rout_id)
-	sprintf (rout_id, "Local$$%i", rout_null++);
+      char *new_rout_id = malloc (16);
+      if (new_rout_id)
+        {
+          sprintf (new_rout_id, "Local$$%i", rout_null++);
+          rout_id = new_rout_id;
+        }
     }
   if (!rout_id)
     errorOutOfMem ("c_rout");

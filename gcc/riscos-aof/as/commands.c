@@ -14,6 +14,7 @@
 #include <inttypes.h>
 #endif
 
+#include "main.h"
 #include "commands.h"
 #include "depend.h"
 #include "error.h"
@@ -40,7 +41,7 @@ extern FILE *asmfile;		/* in input.c */
 
 
 static Symbol *
-c_define (char *msg, Symbol * sym, ValueTag legal)
+c_define (const char *msg, Symbol * sym, ValueTag legal)
 {
   Value value;
   if (!sym)
@@ -354,13 +355,9 @@ c_import (void)
 }
 
 
-extern int verbose;
-
-
 void 
 c_get (void)
 {
-  extern int gcc_backend;
   char *filename, *cptr;
   FILE *getfp;
 
@@ -427,7 +424,7 @@ c_lnk (void)
   filename = strdup (inputRest ());
   if (!filename)
     errorOutOfMem ("c_lnk");
-#ifdef __riscos
+#ifdef __riscos__
   dependPut (" ", filename, "");
 #endif
   for (cptr = filename; *cptr && !isspace (*cptr); cptr++);

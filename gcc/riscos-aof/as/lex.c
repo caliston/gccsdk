@@ -13,6 +13,7 @@
 #include <inttypes.h>
 #endif
 
+#include "main.h"
 #include "error.h"
 #include "lex.h"
 #include "local.h"
@@ -22,12 +23,6 @@
 #include "symbol.h"
 #include "area.h"
 #include "os.h"
-
-extern int gcc_backend;
-extern int objasm;
-extern int lexAcornBinop (Lex * lex);
-extern int lexAcornUnop (Lex * lex);
-extern int lexAcornPrim (Lex * lex);
 
 
 const char Pri[2][10] =

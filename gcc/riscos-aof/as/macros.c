@@ -64,7 +64,7 @@ macroPop (void)
 
 
 Macro *
-macroFind (int len, char *name)
+macroFind (size_t len, char *name)
 {
   Macro *m = macroList;
   while (m)
@@ -275,8 +275,9 @@ c_macro (Lex * label)
 {
   int len, bufptr = 0, buflen = 0, i;
   char *ptr, *buf = 0, c;
-  Macro m =
-  {0};				/* zero init */
+  Macro m;
+
+  memset(&m, 0, sizeof(Macro));  
 
   inputExpand = FALSE;
   if (label->tag != LexNone)
@@ -364,7 +365,7 @@ c_macro (Lex * label)
 		    inputSkip ();
 		  i = 0;
 		  while (i < m.numargs &&
-			 !(strlen (m.args[i]) == len && !strncmp (ptr, m.args[i], len))
+			 !(strlen (m.args[i]) == (size_t)len && !strncmp (ptr, m.args[i], len))
 		    )
 		    i++;
 		  if (i < m.numargs)
@@ -398,7 +399,7 @@ c_macro (Lex * label)
   if (buf)
     buf[bufptr] = 0;
   m.file = inputName;
-  m.buf = buf ? buf : "";
+  m.buf = buf ? buf : strdup("");
   macroAdd (&m);
   return;
 
