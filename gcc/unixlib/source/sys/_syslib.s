@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_syslib.s,v $
-; $Date: 2002/02/11 13:11:31 $
-; $Revision: 1.3.2.9 $
+; $Date: 2002/07/19 13:12:30 $
+; $Revision: 1.3.2.10 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -106,9 +106,10 @@ struct_base
 	DCB 0
 	ALIGN
 
-	ENTRY
 	EXPORT	|__main|
 	NAME	__main
+
+	ENTRY
 |__main|
 	; Read environment parameters
 	; On exit:

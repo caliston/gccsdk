@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/riscosify.c,v $
- * $Date: 2002/08/18 19:57:19 $
- * $Revision: 1.2.2.4 $
+ * $Date: 2002/09/24 11:29:18 $
+ * $Revision: 1.2.2.5 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: riscosify.c,v 1.2.2.4 2002/08/18 19:57:19 admin Exp $";
+static const char rcs_id[] = "$Id: riscosify.c,v 1.2.2.5 2002/09/24 11:29:18 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -943,12 +943,10 @@ main:
           regs.r[1] = (int)last_dot;
           regs.r[2] = MMM_TYPE_RISCOS; /* Output filetype */
 
-          if (_kernel_swi(MimeMap_Translate, &regs, &regs)) {
-            /* Default to text if there's an error */
-            *filetype = 0xFFF;
-          } else {
-            *filetype = regs.r[3];
-          }
+	  /* If there's an error, then the filetype will remain
+	     __RISCOSIFY_FILETYPE_NOT_FOUND.  */
+          if (! _kernel_swi (MimeMap_Translate, &regs, &regs))
+	    *filetype = regs.r[3];
         }
 
       /* Check if we have "blabla,xyz" as filename where `xyz' is a
