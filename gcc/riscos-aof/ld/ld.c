@@ -45,6 +45,10 @@ Boston, MA 02111-1307, USA.  */
 #include <unixlib/local.h>
 #endif
 
+#ifdef __CYGWIN__
+#define ARG_MAX _POSIX_ARG_MAX
+#endif
+
 #include "obstack.h"
 #include "demangle.h"
 #include "getopt.h"
