@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/sys/c/vfork,v $
- * $Date: 2000/08/17 16:16:06 $
- * $Revision: 1.17 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/vfork.c,v $
+ * $Date: 2001/01/29 15:10:21 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: vfork,v 1.17 2000/08/17 16:16:06 admin Exp $";
+static const char rcs_id[] = "$Id: vfork.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -32,7 +32,7 @@ static const char rcs_id[] = "$Id: vfork,v 1.17 2000/08/17 16:16:06 admin Exp $"
 #include <sys/wait.h>
 #include <sys/swis.h>
 
-/* #define DEBUG */
+#define DEBUG 1
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -257,6 +257,12 @@ __vexit (int e)
 #endif
   /* Raise SIGCHLD because the child process has now terminated
      or stopped.  The default action is to ignore this.  */
+#ifdef DEBUG
+  os_print ("__vexit: raising SIGCHLD\r\n");
+#endif
   raise (SIGCHLD);
+#ifdef DEBUG
+  os_print ("__vexit: raising SIGCHLD completed\r\n");
+#endif
   return __u->child[0].vreg;
 }

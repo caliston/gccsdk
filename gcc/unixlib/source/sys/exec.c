@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/exec.c,v $
- * $Date: 2001/01/29 15:10:21 $
- * $Revision: 1.2 $
+ * $Date: 2001/07/31 11:34:05 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: exec.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
+static const char rcs_id[] = "$Id: exec.c,v 1.2.2.1 2001/07/31 11:34:05 admin Exp $";
 #endif
 
 #include <ctype.h>
@@ -470,12 +470,10 @@ execve (const char *execname, char **argv, char **envp)
 
 	 Pointers located between __lomem and __break (i.e. the data
 	 section of a program) will be relocated using 'variable'.  */
+      for (i = 0; i < process->envc; i++)
+	ushift (process->envp[i], variable, code);
       if (process->envp)
-	{
-	  for (i = 0; i <= process->envc; i++)
-	    ushift (process->envp[i], variable, code);
-	  ushift (process->envp, variable, code);
-	}
+	ushift (process->envp, variable, code);
       for (i = 0; i < MAXTTY; i++)
 	{
 	  if (process->tty[i].out)
@@ -587,11 +585,9 @@ __exret (void)
 	    dshift (process->tty[i].ptr, variable, code);
 	}
       if (process->envp)
-	{
-	  dshift (process->envp, variable, code);
-	  for (i = 0; i <= process->envc; i++)
-	    dshift (process->envp[i], variable, code);
-	}
+	dshift (process->envp, variable, code);
+      for (i = 0; i < process->envc; i++)
+	dshift (process->envp[i], variable, code);
       process->argv = NULL;
     }
 

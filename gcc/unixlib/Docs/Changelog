@@ -1,6 +1,17 @@
+Thu Aug 02 14:26:42 2001  Nick Burrett  <nick@dsvr.net>
+
+	* sys/exec.c (execve, __exret): Revert last change.  Was infact
+	an off-by-1 error.
+	* sys/_syslib.s (__main): Extra indirection needed to correctly
+	set __sigstk.
+	* sys/_vfork.s (vfork): Change final stack return from EQ to AL.
+	Was dropping through to __vret.
+	* sys/debug.c (__debug): Add __sigstk and __sigstksize output.
+	* sys/vfork.c (__vexit): Additional logging.
+
 Tue Jul 31 12:32:14 2001  Nick Burrett  <nick@dsvr.net>
 
-	* exec.c (execve): ushift envp only if it already exists.
+	* sys/exec.c (execve): ushift envp only if it already exists.
 	(__exret): dshift envp only if it exists.
 
 Tue Jul 24 17:11:43 2001  Nick Burrett  <nick@dsvr.net>

@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_syslib.s,v $
-; $Date: 2001/01/29 15:10:21 $
-; $Revision: 1.2 $
+; $Date: 2001/05/03 06:25:32 $
+; $Revision: 1.3 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -41,6 +41,7 @@ sigstk
 	; For simplicity, the first X bytes of stack is reserved for the
 	; signal callback stack.
 	ADR	a2, sigstk
+	LDR	a2, [a2, #0]
 	STR	sp, [a2, #0]
 	LDR	a2, =|__sigstksize|
 

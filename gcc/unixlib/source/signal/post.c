@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/signal/c/post,v $
- * $Date: 2000/06/03 14:46:10 $
- * $Revision: 1.12 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/post.c,v $
+ * $Date: 2001/01/29 15:10:20 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: post,v 1.12 2000/06/03 14:46:10 admin Exp $";
+static const char rcs_id[] = "$Id: post.c,v 1.2 2001/01/29 15:10:20 admin Exp $";
 #endif
 
 /* signal.c.post: Written by Nick Burrett, 27 August 1996.  */
@@ -24,7 +24,7 @@ static const char rcs_id[] = "$Id: post,v 1.12 2000/06/03 14:46:10 admin Exp $";
 #include <sys/unix.h>
 #include <unixlib/sigstate.h>
 
-/* #define DEBUG */
+/* #define DEBUG 1 */
 
 void
 __unixlib_default_sigaction (struct unixlib_sigstate *ss)
