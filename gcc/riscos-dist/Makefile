@@ -3,7 +3,7 @@
 # this makefile will install the additional files to make a complete
 # RISC OS distribution of GCC.
 #
-pkg=riscos-dist
+pkg=`basename $(ro_gccpkg)`
 
 bindir=$(pkg)/bin/$(TARGET_NAME)/$(VERSION)
 libdir=$(pkg)/lib/gcc-lib/$(TARGET_NAME)/$(VERSION)
@@ -96,6 +96,7 @@ install:
 	cp Sprites,ff9 $(ro_gccpkg)/\!Sprites,ff9
 	cp Sprites22,ff9 $(ro_gccpkg)/\!Sprites22,ff9
 	cp Changes $(ro_gccpkg)/Changes
+	cp Readme $(ro_gccpkg)/Readme
 	find $(ro_gccpkg) -name "CVS" -type d | xargs rm -rf
 
 
