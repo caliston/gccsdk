@@ -1,8 +1,8 @@
 # Project:   UnixLib 3.8
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2000/11/08 09:38:59 $
-# $Revision: 1.1.1.1 $
+# $Date: 2001/05/09 08:15:45 $
+# $Revision: 1.2 $
 # $State: Exp $
 # $Author: admin $
 
@@ -12,14 +12,19 @@ CCfeatures =
 # XX = commamd
 # XXflags = general flags
 # XXdflags = debugging flags
-# XXrflags = release flags.
+# XXrflags = release flags
+# XXapcsflags = APCS selection flags
 
 # Compiler
-#CC = run adfs::gcc.$.compilers.cc506
-#CCdflags = 
+#CC = cc
+#CCdflags = -g
 #CCrflags =
-#CCflags = -depend !Depend -throwback -fcah -JUnixHdr: -wda -wp $(CCrflags)
-Predefs = -D__UNIXLIB_INTERNALS
+## APCS selection :
+##   - APCS-R build : -APCS 3/26bit/fpe2
+##   - APCS-32 build : -APCS 3/32bit/fpe3
+#CCapcsflags = -APCS 3/26bit/fpe2
+#CCflags = -depend !Depend -throwback -fcah -JUnixHdr: -wda -wp $(CCdflags) $(CCapcsflags)
+#Predefs = -D__UNIXLIB_INTERNALS
 
 # GCC compiler. Comment out if you are using Acorn C
 CC = gcc
@@ -28,11 +33,15 @@ CCrflags =
 CCflags = -O2 -mpoke-function-name -mthrowback $(CCdflags) $(CCfeatures)
 
 # Acorn Objasm Assembler. Comment out if you are using 'as'.
-#AS = objasm $(ObjAsmflags)
+#AS = objasm
 #ASflags = -Stamp -quit -CloseExec
 #ASdflags =
 #ASrflags =
-#ASflags = -throwback -depend !Depend -I UnixHdr: $(ASdflags)
+## APCS selection :
+##   - APCS-R build : -APCS 3/26bit
+##   - APCS-32 build : -APCS 3/32bit
+#ASapcsflags = -APCS 3/26bit
+#ASflags = -throwback -depend !Depend -I UnixHdr:^ $(ASdflags) $(ASapcsflags)
 
 # as Assembler. Comment out if you are using Acorn Objasm.
 AS = gcc

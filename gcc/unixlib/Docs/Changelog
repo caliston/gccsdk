@@ -1,3 +1,20 @@
+Wed Sep  5 17:26:15 2001  John Tytgat <John.Tytgat@aaug.net>
+
+	* objs/Makefile,fe1: Added info on how to build APCS-R and
+	APCS-32 versions. Fixed include path for objasm. Removed
+	sys/syslib.c & sys/os.c.
+	* clib/unixlib/asm_dec.s: Changed "{config}" into "{CONFIG}"
+	(objasm knows only about the latter).
+	* signal/sigexec.s: Likewise.
+	* signal/_coredump.s: Likewise.
+	* sys/_jmp.s: Likewise.
+	* sys/_jmp.s (setjmp & __longjmp_l3): Changed test on "ARMFPE = "3""
+	into "{CONFIG}=26" [This means either an APCS-R build, or either
+	an APCS-32 build. No other flavours possible.]
+	SFM/LFM post increase must be 48, not 12. When SFM/LFM gets
+	executed, it shouldn't execute STFE/LDFE as well.
+	* sys/_syslib.s: Added lots of IMPORT statements.
+
 Tue Sep  4 17:31:42 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	Emphasise that these header files are private to UnixLib.

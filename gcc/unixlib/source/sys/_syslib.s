@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_syslib.s,v $
-; $Date: 2001/09/02 10:08:43 $
-; $Revision: 1.3.2.4 $
+; $Date: 2001/09/02 14:04:55 $
+; $Revision: 1.3.2.5 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -15,6 +15,20 @@ NO_MEMORY * 0
 NO_CALLASWI * 1
 
 	AREA	|C$$code|, CODE, READONLY
+
+	IMPORT  |__unixinit|            ;C function (unix/unix.c)
+	IMPORT  |exit|                  ;C function (unix/unix.c)
+	IMPORT  |__cbreg|               ;Data (signal/_signal.s)
+	IMPORT  |__h_sigill|            ;ASM function (signal/_signal.s)
+	IMPORT  |__h_sigsegv0|          ;ASM function (signal/_signal.s)
+	IMPORT  |__h_sigsegv1|          ;ASM function (signal/_signal.s)
+	IMPORT  |__h_sigbus|            ;ASM function (signal/_signal.s)
+	IMPORT  |__h_error|             ;ASM function (signal/_signal.s)
+	IMPORT  |__h_cback|             ;ASM function (signal/_signal.s)
+	IMPORT  |__h_sigint|            ;ASM function (signal/_signal.s)
+	IMPORT  |__h_event|             ;ASM function (signal/_signal.s)
+	IMPORT  |__h_exit|              ;ASM function (signal/_signal.s)
+	IMPORT  |__h_upcall|            ;ASM function (signal/_signal.s)
 
 	IMPORT	|_main|
 	IMPORT	|__dynamic_no_da|, WEAK
