@@ -1,3 +1,17 @@
+Sat Mar 30 10:00:52 2002  John Tytgat  <John.Tytgat@aaug.net>
+
+	* unistd.h (ualarm): Declare. 
+	(usleep): return type is now 'int'. 
+	* signal/sleep.c: Added GNU LGPL.
+	(sleep_int): Created, this gets	used by `sleep' and `usleep'.
+	`usleep' works now with a 1/100th sec resolution instead of 1 sec. 
+	* sys/alarm.c: Added GNU LGPL.
+	(alarm): Synced implementation with GNU C Lib.
+	(ualarm): Added. 
+	* time/setitmr.c (setitimer): Changed invalid parameter test 
+
+	* unixlib/features.h: Clean up Norcroft compiler warnings. 
+
 Sat Mar 30 09:37:00 2002  Theo Markettos  <theo@markettos.org.uk>
 
 	* unistd/chroot.c: New file.  Stub function.

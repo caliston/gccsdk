@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/time/setitmr.c,v $
- * $Date: 2001/09/11 13:05:55 $
- * $Revision: 1.2.2.4 $
+ * $Date: 2001/09/11 14:16:00 $
+ * $Revision: 1.2.2.5 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: setitmr.c,v 1.2.2.4 2001/09/11 13:05:55 admin Exp $";
+static const char rcs_id[] = "$Id: setitmr.c,v 1.2.2.5 2001/09/11 14:16:00 admin Exp $";
 #endif
 
 #include <stddef.h>
@@ -112,7 +112,9 @@ setitimer (enum __itimer_which which, const struct itimerval *new_timer,
   if (__wimpprogram)
     return __set_errno (ENOSYS);
 
-  if ((unsigned) which >= __MAX_ITIMERS)
+  if ((unsigned) which >= __MAX_ITIMERS
+      || new_timer->it_interval.tv_usec >= 1000000
+      || new_timer->it_value.tv_usec >= 1000000)
     return __set_errno (EINVAL);
 
   /* __u is current process <unixlib/unix.h>.  */

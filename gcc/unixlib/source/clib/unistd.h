@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2002/01/31 16:19:53 $
- * $Revision: 1.2.2.5 $
+ * $Date: 2002/03/30 09:40:18 $
+ * $Revision: 1.2.2.6 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -192,10 +192,16 @@ extern unsigned int alarm (unsigned int __seconds);
    signal afterwards is undefined.  There is no return value to indicate
    error, but if `sleep' returns '__seconds', it probably didn't work.  */
 extern unsigned int sleep (unsigned int __seconds);
- 
+
+/* Set an alarm to go off (generating a SIGALRM signal) in VALUE
+   microseconds.  If INTERVAL is nonzero, when the alarm goes off, the
+   timer is reset to go off every INTERVAL microseconds thereafter.
+   Returns the number of microseconds remaining before the alarm.  */
+extern __useconds_t ualarm(__useconds_t __useconds, __useconds_t __interval);
+
 /* Make the process sleep for '__usec' microseconds, or until a signal
    arrives that is not blocked or ignored.  */
-extern unsigned int usleep (unsigned int __usec);
+extern int usleep (__useconds_t __usec);
 
 /* Suspend the process until a signal arrives.  */
 extern int pause (void);
