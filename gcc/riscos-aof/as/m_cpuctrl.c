@@ -401,7 +401,7 @@ void
 m_mrs (WORD cc)
 {
   cpuWarn (ARM6);
-  cc |= getCpuReg () << 12 | 0x0100F000;
+  cc |= getCpuReg () << 12 | 0x01000000;
   skipblanks ();
   if (inputLook () == ',')
     {
