@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/dev.c,v $
- * $Date: 2002/06/10 12:08:01 $
- * $Revision: 1.2.2.6 $
+ * $Date: 2002/06/10 16:32:14 $
+ * $Revision: 1.2.2.7 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: dev.c,v 1.2.2.6 2002/06/10 12:08:01 admin Exp $";
+static const char rcs_id[] = "$Id: dev.c,v 1.2.2.7 2002/06/10 16:32:14 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -138,7 +138,7 @@ __fsopen (struct __unixlib_fd *file_desc, const char *filename, int mode)
 
       /* Check for permission to access the file in the mode we
 	 requested.  */
-      if (regs[0] == 2 || (__feature_imagefs_is_file && regs[0] == 3))
+      if (regs[0] == 2 || (! __feature_imagefs_is_file && regs[0] == 3))
 	{
 	  /* Directory or image file.  Set errno if the user
 	     specified write access.  */
