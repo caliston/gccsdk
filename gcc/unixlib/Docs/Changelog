@@ -1,3 +1,38 @@
+Wed Jun 12 14:34:13 2002  Nick Burrett  <nick@dsvr.net>
+
+	* stdlib/drand48.c: New file.
+	* stdlib/erand48.c: New file.
+	* stdlib/jrand48.c: New file.
+	* stdlib/lcong48.c: New file.
+	* stdlib/lrand48.c: New file.
+	* stdlib/mrand48.c: New file.
+	* stdlib/nrand48.c: New file.
+	* stdlib/_rand48.c: New file.
+	* stdlib/rand48.h: New file.
+	* stdlib/seed48.c: New file.
+	* stdlib/srand48.c: New file.
+
+	* stdlib/rand.c: Moved here from parent directory.  Stripped out
+	the rand48 functions and random and srandom.
+
+	* stdlib/random.c: New file.  A better random number generator.
+
+	* stdlib.h (lrand48, rand, random, srandom): Remove macroised
+	versions of these functions since they are now properly implemented.
+	(initstate): Declare.
+	(setstate): Declare.
+	(drand48): Declare.
+	(erand48): Declare.
+	(lrand48): Declare.
+	(nrand48): Declare.
+	(mrand48): Declare.
+	(jrand48): Declare.
+	(srand48): Declare.
+	(seed48): Declare.
+	(lcong48): Declare.
+
+	* sys/mman.h (MAP_FAILED): Add macro.
+
 Wed Jun 12 12:13:20 2002  Peter Naulls  <peter@chocky.org>
 
 	* Sprites,ff9, Sprites22,ff9: Rename from !unixlib37 to !unixlib.

@@ -1,8 +1,8 @@
 # Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2001/10/04 12:50:46 $
-# $Revision: 1.2.2.6 $
+# $Date: 2002/03/30 09:40:18 $
+# $Revision: 1.2.2.7 $
 # $State: Exp $
 # $Author: admin $
 
@@ -183,7 +183,10 @@ STDIO =	stdio.o.clearerr stdio.o.fclose stdio.o.feof stdio.o.ferror \
 
 STDIO_ASM =	stdio.o._printf
 
-STDLIB = stdlib.o.realpath
+STDLIB = stdlib.o.drand48 stdlib.o.erand48 stdlib.o.jrand48 stdlib.o.lcong48 \
+	stdlib.o.lrand48 stdlib.o.mrand48 stdlib.o.nrand48 stdlib.o._rand48 \
+	stdlib.o.rand stdlib.o.random stdlib.o.realpath stdlib.o.seed48 \
+	stdlib.o.srand48
 
 SCL_ASM = scl.o._kcurskch scl.o._kernel scl.o._kgetenv scl.o._kosargs \
 	scl.o._kosbget scl.o._kosbput scl.o._kosbyte scl.o._koscli \
@@ -783,7 +786,19 @@ stdio.o.tmpfile:	stdio.c.tmpfile
 stdio.o.ungetc:		stdio.c.ungetc
 stdio.o._printf:	stdio.s._printf <UnixHdr$Dir>.unixlib.s.asm_dec
 
+stdlib.o.drand48:	stdlib.c.drand48
+stdlib.o.erand48:	stdlib.c.erand48
+stdlib.o.jrand48:	stdlib.c.jrand48
+stdlib.o.lcong48:	stdlib.c.lcong48
+stdlib.o.lrand48:	stdlib.c.lrand48
+stdlib.o.mrand48:	stdlib.c.mrand48
+stdlib.o.nrand48:	stdlib.c.nrand48
+stdlib.o._rand48:	stdlib.c._rand48
+stdlib.o.rand:		stdlib.c.rand
+stdlib.o.random:	stdlib.c.random
 stdlib.o.realpath:	stdlib.c.realpath
+stdlib.o.seed48:	stdlib.c.seed48
+stdlib.o.srand48:	stdlib.c.srand48
 
 sys.o.alarm:		sys.c.alarm
 sys.o.brk:		sys.c.brk

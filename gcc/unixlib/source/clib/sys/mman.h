@@ -1,10 +1,10 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/sys/h/mman,v $
- * $Date: 1997/10/09 19:59:55 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/mman.h,v $
+ * $Date: 2001/01/29 15:10:19 $
  * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -30,6 +30,8 @@
 #define	PROT_WRITE	0x02	/* Pages can be written.  */
 #define	PROT_EXEC	0x01	/* Pages can be executed.  */
 
+/* Return value of mmap in case of errors.  */
+#define MAP_FAILED ((void *) -1)
 
 /* Flags contain mapping type, sharing type and options.  */
 

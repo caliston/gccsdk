@@ -143,7 +143,6 @@ OBJS =	$(libunixobj)/abort.o \
 	$(libunixobj)/memset.o \
 	$(libunixobj)/psignal.o \
 	$(libunixobj)/qsort.o \
-	$(libunixobj)/rand.o \
 	$(libunixobj)/stpcpy.o \
 	$(libunixobj)/stpncpy.o \
 	$(libunixobj)/strcat.o \
@@ -374,7 +373,18 @@ STDIO = $(libunixobj)/stdio/clearerr.o \
 
 STDIO_ASM =	$(libunixobj)/stdio/_printf.o
 
-STDLIB = $(libunixobj)/stdlib/realpath.o
+STDLIB = $(libunixobj)/stdlib/drand48.o \
+	$(libunixobj)/stdlib/erand48.o \
+	$(libunixobj)/stdlib/jrand48.o \
+	$(libunixobj)/stdlib/lcong48.o \
+	$(libunixobj)/stdlib/mrand48.o \
+	$(libunixobj)/stdlib/nrand48.o \
+	$(libunixobj)/stdlib/_rand48.o \
+	$(libunixobj)/stdlib/rand.o \
+	$(libunixobj)/stdlib/random.o \
+	$(libunixobj)/stdlib/realpath.o \
+	$(libunixobj)/stdlib/seed48.o \
+	$(libunixobj)/stdlib/srand48.o
 
 SCL_ASM = $(libunixobj)/scl/_kcurskch.o \
 	$(libunixobj)/scl/_kernel.o \
@@ -640,7 +650,6 @@ $(libunixobj)/memccpy.o: memccpy.c
 $(libunixobj)/memset.o: memset.c
 $(libunixobj)/psignal.o: psignal.c
 $(libunixobj)/qsort.o: qsort.c
-$(libunixobj)/rand.o: rand.c
 $(libunixobj)/stpcpy.o: stpcpy.c
 $(libunixobj)/stpncpy.o: stpncpy.c
 $(libunixobj)/strcat.o: strcat.c
@@ -997,7 +1006,19 @@ $(libunixobj)/stdio/tmpfile.o: stdio/tmpfile.c
 $(libunixobj)/stdio/ungetc.o: stdio/ungetc.c
 $(libunixobj)/stdio/_printf.o: stdio/_printf.s clib/unixlib/asm_dec.s
 
+$(libunixojb)/stdlib/drand48.o: stdlib/drand48.c
+$(libunixojb)/stdlib/erand48.o: stdlib/erand48.c
+$(libunixojb)/stdlib/jrand48.o: stdlib/jrand48.c
+$(libunixojb)/stdlib/lcong48.o: stdlib/lcong48.c
+$(libunixojb)/stdlib/lrand48.o: stdlib/lrand48.c
+$(libunixojb)/stdlib/mrand48.o: stdlib/mrand48.c
+$(libunixojb)/stdlib/nrand48.o: stdlib/nrand48.c
+$(libunixojb)/stdlib/_rand48.o: stdlib/_rand48.c
+$(libunixojb)/stdlib/rand.o: stdlib/rand.c
+$(libunixojb)/stdlib/random.o: stdlib/random.c
 $(libunixobj)/stdlib/realpath.o: stdlib/realpath.c
+$(libunixojb)/stdlib/seed48.o: stdlib/seed48.c
+$(libunixojb)/stdlib/srand48.o: stdlib/srand48.c
 
 $(libunixobj)/sys/alarm.o: sys/alarm.c
 $(libunixobj)/sys/brk.o: sys/brk.c
