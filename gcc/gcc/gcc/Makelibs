@@ -7,6 +7,7 @@ INCLUDES = -I. -I../../include -I./include -I./config -I./cp
 CROSS_CFLAGS += -D$(targetsystem)
 CROSS_CFLAGS += -DIN_GCC -DHAVE_CONFIG_H -DIN_LIBGCC2 -D__GCC_FLOAT_NOT_NEEDED
 CROSS_CFLAGS += $(CFL)
+CROSS_CXXFLAGS += $(CFL)
 
 libgccobjdir=$(objdir)/gcc-$(VERSION)/libgcc/$(TRG)
 
@@ -148,29 +149,29 @@ $(libgccobjdir)/div0.o:	config/arm/lib1aof.s
 
 # C++ language-support library pieces for libgcc
 $(libgccobjdir)/tinfo.o:	cp/tinfo.cc
-	$(CROSS_CXX) -o $@ -c cp/tinfo.cc -I./cp/inc $(INCLUDES)
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/tinfo.cc -I./cp/inc $(INCLUDES)
 $(libgccobjdir)/tinfo2.o:	cp/tinfo2.cc
-	$(CROSS_CXX) -o $@ -c cp/tinfo2.cc -I./cp/inc $(INCLUDES)
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/tinfo2.cc -I./cp/inc $(INCLUDES)
 $(libgccobjdir)/exception.o:	cp/exception.cc
-	$(CROSS_CXX) -o $@ -c cp/exception.cc -I./cp/inc $(INCLUDES) -fexceptions
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/exception.cc -I./cp/inc $(INCLUDES) -fexceptions
 $(libgccobjdir)/new.o:	cp/new.cc
-	$(CROSS_CXX) -o $@ -c cp/new.cc -I./cp/inc $(INCLUDES)
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/new.cc -I./cp/inc $(INCLUDES)
 $(libgccobjdir)/opnew.o:	cp/new1.cc
-	$(CROSS_CXX) -o $@ -c cp/new1.cc -I./cp/inc $(INCLUDES) -DL_op_new -fexceptions
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/new1.cc -I./cp/inc $(INCLUDES) -DL_op_new -fexceptions
 $(libgccobjdir)/opnewnt.o:	cp/new1.cc
-	$(CROSS_CXX) -o $@ -c cp/new1.cc -I./cp/inc $(INCLUDES) -DL_op_newnt -fexceptions
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/new1.cc -I./cp/inc $(INCLUDES) -DL_op_newnt -fexceptions
 $(libgccobjdir)/opvnew.o:	cp/new2.cc
-	$(CROSS_CXX) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_vnew
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_vnew
 $(libgccobjdir)/opvnewnt.o:	cp/new2.cc
-	$(CROSS_CXX) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_vnewnt
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_vnewnt
 $(libgccobjdir)/opdel.o:	cp/new2.cc
-	$(CROSS_CXX) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_delete
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_delete
 $(libgccobjdir)/opdelnt.o:	cp/new2.cc
-	$(CROSS_CXX) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_delnt
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_delnt
 $(libgccobjdir)/opvdel.o:	cp/new2.cc
-	$(CROSS_CXX) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_vdel
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_vdel
 $(libgccobjdir)/opvdelnt.o:	cp/new2.cc
-	$(CROSS_CXX) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_vdelnt
+	$(CROSS_CXX) $(CROSS_CXXFLAGS) -o $@ -c cp/new2.cc -I./cp/inc $(INCLUDES) -DL_op_vdelnt
 
 # Assembler versions of certain library functions
 
