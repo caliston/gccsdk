@@ -12,6 +12,9 @@ upath=$(objdir)/$@/$(TRG)
 install_headers:
 	$(MAKE) -C source install_headers
 
+install_source:
+	$(MAKE) -C source install_source
+
 unixlib:
 	mkdir -p $(upath)/o $(upath)/complex/o $(upath)/grp/o
 	mkdir -p $(upath)/math/o $(upath)/math-asm/o $(upath)/signal/o

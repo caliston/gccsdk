@@ -591,10 +591,10 @@ ASM_OBJS = $(MATH_ASM) $(COMMON_ASM) $(GCCCOMPAT_ASM) $(NETLIB_ASM) \
 	$(SIGNAL_ASM) $(STDIO_ASM) $(SCL_ASM) $(SYS_ASM) $(TIME_ASM) \
 	$(UNIX_ASM)
 
-SUL = $(ro_syspkg)/Modules/SharedULib,ffa
+SUL = $(ro_syspkg)/310/Modules/SharedULib,ffa
 
 all:	$(ux_gcc_bin_dir)/$(TRG)/unixlib.o $(ro_gcc_bin_dir)/$(TRG)/o/unixlib \
-	$(SUL)
+	$(ro_unixlibpkg)/source/clib/o/unixlib $(SUL)
 
 install_headers:
 	$(insthdr) clib "*.h" unixlib $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
@@ -605,10 +605,15 @@ install_headers:
 	$(insthdr) clib/sys "*.h" unixlib/sys $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
 	$(insthdr) clib/unixlib "*.[hs]" unixlib/unixlib $(ux_gccpkg)/$(gn_cross_include_dir) $(ro_gccpkg)/$(gn_cross_include_dir)
 
-$(ux_gcc_bin_dir)/$(TRG)/unixlib.o:	$(C_OBJS) $(ASM_OBJS)
-	$(CROSS_AR) $(CROSS_AR_FLAGS) $@ $(C_OBJS) $(ASM_OBJS)
+install_source:
+	$(instsrc) . "*.[chs]" source $(ro_unixlibpkg)
+	for dir in common complex gcccompat grp locale math math-asm \
+		module netlib pwd resource scl signal stdio stdlib sys \
+		 termios time unistd unix wchar clib clib/arpa \
+		 clib/machine clib/net clib/netinet clib/sys clib/unixlib; do \
+	  $(instsrc) $$dir "*.[chs]" source/$$dir $(ro_unixlibpkg) ; done
 
-$(ro_gcc_bin_dir)/$(TRG)/o/unixlib:	$(C_OBJS) $(ASM_OBJS)
+$(ux_gcc_bin_dir)/$(TRG)/unixlib.o $(ro_gcc_bin_dir)/$(TRG)/o/unixlib $(ro_unixlibpkg)/source/clib/o/unixlib: $(C_OBJS) $(ASM_OBJS)
 	$(CROSS_AR) $(CROSS_AR_FLAGS) $@ $(C_OBJS) $(ASM_OBJS)
 
 $(SUL):	$(MODULE)
