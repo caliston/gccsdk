@@ -50,9 +50,56 @@ do {									\
   (VAR) = _posixepath;							\
 } while (0)
 
-#define PATH_SEPARATOR ':'
 
 /* This is needed so that protoize will compile.  */
 #ifndef POSIX
 #define POSIX
+#endif
+
+
+/* NAB FIXME: These decls (copied from xm-riscos.h) do not belong
+   in here.  */
+
+
+/* #defines that need visibility everywhere.  */
+#define FALSE 0
+#define TRUE 1
+
+/* This describes the machine the compiler is hosted on.  */
+#define HOST_BITS_PER_CHAR 8
+#define HOST_BITS_PER_SHORT 16
+#define HOST_BITS_PER_INT 32
+#define HOST_BITS_PER_LONG 32
+#define HOST_BITS_PER_LONGLONG 64
+
+/* A code distinguishing the floating point format of the host
+   machine.  There are three defined values: IEEE_FLOAT_FORMAT,
+   VAX_FLOAT_FORMAT, and UNKNOWN_FLOAT_FORMAT.  */
+
+#define HOST_FLOAT_FORMAT IEEE_FLOAT_FORMAT
+
+#define HOST_FLOAT_WORDS_BIG_ENDIAN 1
+
+/* If not compiled with GNU C, use C alloca.  */
+#ifndef __GNUC__
+#define USE_C_ALLOCA
+#endif
+
+/* Define this to be 1 if you know the host compiler supports prototypes, even
+   if it doesn't define __STDC__, or define it to be 0 if you do not want any
+   prototypes when compiling GNU CC. */
+#define USE_PROTOTYPES 1
+
+/* target machine dependencies.
+   tm.h is a symbolic link to the actual target specific file.  */
+#include "tm.h"
+
+/* Arguments to use with `exit'.  */
+#define SUCCESS_EXIT_CODE 0
+#define FATAL_EXIT_CODE 33
+
+/* If we have defined POSIX, but are compiling in the BSD environment, then
+   we need to define getcwd in terms of getwd.  */
+#if defined (POSIX) && defined (_BSD_C)
+#define HAVE_GETWD 1
 #endif
