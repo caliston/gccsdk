@@ -87,7 +87,7 @@ all:	install
 
 install:
 	for dir in bin docs examples support sys; do \
-		cp -a $$dir $(ro_gccpkg) ; done
+		cp -pR $$dir $(ro_gccpkg) ; done
 	cp Boot,feb $(ro_gccpkg)/\!Boot,feb
 	cp Run,feb $(ro_gccpkg)/\!Run,feb
 	cp Sprites,ff9 $(ro_gccpkg)/\!Sprites,ff9
