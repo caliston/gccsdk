@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/exec.c,v $
- * $Date: 2001/08/02 13:27:19 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2001/08/02 14:57:14 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: exec.c,v 1.2.2.2 2001/08/02 13:27:19 admin Exp $";
+static const char rcs_id[] = "$Id: exec.c,v 1.2.2.3 2001/08/02 14:57:14 admin Exp $";
 #endif
 
 #include <ctype.h>
@@ -122,17 +122,16 @@ static int
 set_dde_cli (char *cli)
 {
   int regs[10];
-  char *temp = cli;
+  char *temp;
 
-  if (*temp == '*')		/* skip any leading star and whitespace.  */
-    temp++;
-  while (*temp == ' ')
-    temp++;
-  temp = strchr (temp, ' ');	/* skip program name.  */
+  /* Skip program name.  */
+  temp = cli;
+  while (*temp && *temp != ' ')
+    temp ++;
 
   /* Check that the actual command is not greater than
      RISC OS's maximum path length.  */
-  if (!temp || (temp - cli) >= MAXPATHLEN)
+  if ((temp - cli) >= MAXPATHLEN)
     return __set_errno (E2BIG);
 
   /* Set the command line size within DDE utils.  */
@@ -143,6 +142,7 @@ set_dde_cli (char *cli)
 
   regs[0] = (int) temp + 1;
   os_swi (DDEUtils_SetCL, regs);
+
   *temp = '\0';		/* terminate cli.  */
 #ifdef DEBUG
   os_print ("DDE utils set up\n\r");
@@ -163,15 +163,15 @@ execve (const char *execname, char **argv, char **envp)
   char *command_line;
   void (*__exec) (char *);
   char *cli;
-  char pathname[MAXPATHLEN];	/* There is scope to merge this buffer with
-				   cli. I don't feel brave enough */
+  char pathname[MAXPATHLEN];
+  int nasty_hack = 0;
 
   if (! execname || ! argv || ! envp)
     return __set_errno (EINVAL);
 
 #ifdef DEBUG
   os_print ("-- execve: function arguments\r\n");
-  os_print ("      execname: "); os_print (execname); os_print ("\r\n");
+  os_print ("      execname: '"); os_print (execname); os_print ("'\r\n");
   x = -1;
   while (argv[++x])
     {
@@ -196,14 +196,59 @@ execve (const char *execname, char **argv, char **envp)
       if (program_name == NULL)
 	return __set_errno (E2BIG);
 
-      cli_length = program_name - pathname + 1;	/* strlen + 1 */
       program_name = pathname;		/* This is copied into cli + 1 */
     }
   else
     {
-      program_name = execname;
-      cli_length = strlen (program_name) + 1;
+      /* Watch out ! If we've arrived here from a user call to system(),
+	 the we could find that execname == "*" because on RISC OS
+	 the '*' is equivalent to the SHELL of /bin/bash on Unix.
+	 If this is the case, the we'll probably find the real program
+	 name in argv[1].  */
+      if (execname[1] == '\0')
+	{
+	  char *p = argv[1];
+	  char temp[MAXPATHLEN];
+	  x = 0;
+	  while (x < MAXPATHLEN && *p && *p != ' ')
+	    temp[x++] = *p++;
+
+	  if (x == MAXPATHLEN)
+	    return __set_errno (E2BIG);
+	  temp[x] = '\0';
+
+	  /* Ah. The nasty hack.  Comes into everything somewhere.
+	     Since argv[1] contains our program name and all arguments,
+	     we need to stop the command line builder sticking quotes
+	     around everything and also not include the program name
+	     twice in the argument vector.
+
+	     So nasty_hack contains the length of the program name
+	     held within argv[1].  We then know (when non-zero) how
+	     many characters to skip, if at all.  */
+	  nasty_hack = x;
+
+#ifdef DEBUG
+	  os_print ("-- execve: pathname: '");
+	  os_print (temp); os_print ("'\r\n");
+#endif
+
+	  program_name = __riscosify_std (temp, 0, pathname,
+					  sizeof (pathname), NULL);
+	  if (program_name == NULL)
+	    return __set_errno (E2BIG);
+	  program_name = pathname;
+	}
+      else
+	{
+	  program_name = execname;
+	}
     }
+
+#ifdef DEBUG
+  os_print ("-- execve: program_name: "); os_print (program_name);
+  os_print ("\r\n");
+#endif
 
 #if __FEATURE_ITIMERS
   /* Stop any interval timers that might be running.  Technically
@@ -219,24 +264,33 @@ execve (const char *execname, char **argv, char **envp)
      because the program that we are about to run might not
      be a UnixLib compatable binary so it won't know anything about
      the child process structure.  */
-  cli_length = 0;
-  for (x = 0; argv[x]; x++)
+  cli_length = strlen (program_name) + 1;
+  x = (nasty_hack) ? 1 : 0;
+  for (; argv[x]; x++)
     {
       char *p;
       int space = 0;
       /* We must add extra characters if the argument contains spaces (wrap
          argument in quotes) and quotes (must add backslash) and
          inverted commas (must add backslash).  */
-      for (p = argv[x]; *p; p++)
+      p = argv[x];
+      if (nasty_hack && x == 1)
+	p += nasty_hack;
+      while (*p)
         {
           if (isspace (*p))
             space = 1;
           if (*p == '\"' || *p == '\'')
             cli_length ++;
           cli_length ++;
+	  p++;
         }
-      if (space)
-        cli_length += 2; /* Account for quotes around argument.  */
+
+      /* Account for quotes around argument but only if our hack isn't
+         in place.  */
+      if (space && ! nasty_hack)
+        cli_length += 2;
+
       cli_length ++;
     }
 
@@ -250,42 +304,48 @@ execve (const char *execname, char **argv, char **envp)
   if (cli == NULL)
     return __set_errno (ENOMEM);
 
-#ifdef DEBUG
-  os_print ("-- execve: here 2\r\n");
-#endif
-
   /* Copy program name into cli and terminate with a space, ready for below.
      Should trim leading space between '*' and command in name.  */
   command_line = cli;
   while (*program_name == '*' || *program_name == ' ')
     program_name ++;
+
   command_line = stpcpy (command_line, program_name);
   *command_line ++ = ' ';
 
-#ifdef DEBUG
-  os_print ("-- execve: here 3\r\n");
-#endif
   /* Copy the rest of the arguments into the cli.  */
   if (argv[0])
     for (x = 1; argv[x]; x++)
       {
         char *p = argv[x];
         int contains_space = 0;
+
+	if (nasty_hack && x == 1)
+	  p += nasty_hack;
+
         while (*p != '\0' && ! isspace (*p))
           p++;
-        if (*p)
+
+	/* Don't enclose arguments in additional quotes if our nasty hack
+	   is in place.  */
+        if (! nasty_hack && *p)
           contains_space = 1;
 
         /* Add quotes, if argument contains a space.  */
 	if (contains_space)
 	  *command_line ++ = '\"';
-        for (p = argv[x]; *p; p++)
-          {
+
+	p = argv[x];
+	if (nasty_hack && x == 1)
+	  p += nasty_hack;
+	while (*p)
+	  {
             /* If character is a " or a ' then preceed with a backslash.  */
             if (*p == '\"' || *p == '\'')
               *command_line ++ = '\\';
             *command_line ++ = *p;
-          }
+	    p++;
+	  }
         if (contains_space)
           *command_line ++ = '\"';
         *command_line ++ = ' ';
@@ -370,13 +430,15 @@ execve (const char *execname, char **argv, char **envp)
 #endif
 
   /* Count new environment variable vector length.  */
-  for (x = 0; envp[x]; x++)
+  x = -1;
+  while (envp[++x])
     ;
+      
   process->envc = x;
   if (process->envc)
     {
       /* Make a copy of the command line arguments.  */
-      process->envp = (char **) malloc ((process->envc + 2)
+      process->envp = (char **) malloc ((process->envc + 1)
       	       	       	    	       	* sizeof (char *));
       if (process->envp == NULL)
         __exit_no_code ();
@@ -470,10 +532,9 @@ execve (const char *execname, char **argv, char **envp)
 
 	 Pointers located between __lomem and __break (i.e. the data
 	 section of a program) will be relocated using 'variable'.  */
+      ushift (process->envp, variable, code);
       for (i = 0; i < process->envc; i++)
 	ushift (process->envp[i], variable, code);
-      if (process->envp)
-	ushift (process->envp, variable, code);
       for (i = 0; i < MAXTTY; i++)
 	{
 	  if (process->tty[i].out)
@@ -584,10 +645,11 @@ __exret (void)
 	  if (process->tty[i].ptr)
 	    dshift (process->tty[i].ptr, variable, code);
 	}
-      if (process->envp)
-	dshift (process->envp, variable, code);
+      
+      dshift (process->envp, variable, code);
       for (i = 0; i < process->envc; i++)
 	dshift (process->envp[i], variable, code);
+      process->argc = 0;
       process->argv = NULL;
     }
 

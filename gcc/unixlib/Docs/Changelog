@@ -1,4 +1,14 @@
-Thu Aug 04 11:46:43 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
+Sat Aug 04 15:29:12 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* sys/exec.c (set_dde_cli): Don't use strchr.
+	(execve): If called from `system' then cope when command and
+	arguments all appear in argv[1].
+	(__exret): Ensure process->argc is set to zero.
+	* sys/vfork.c (__vfork): Set child->argc earlier so if we do
+	have memory problems, we at least will have the opportunity to
+	free the vector.
+
+Sat Aug 04 11:46:43 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* time/times.c (times): Add NULL check on argument.
 	* unix/tty.c (__ttyioctl): Fix the FIXMEs in TIOCGETP and TIOCSETP.

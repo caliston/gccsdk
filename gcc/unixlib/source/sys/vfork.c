@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/vfork.c,v $
- * $Date: 2001/08/02 13:27:19 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/08/03 08:23:55 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.1 2001/08/02 13:27:19 admin Exp $";
+static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.2 2001/08/03 08:23:55 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -32,7 +32,7 @@ static const char rcs_id[] = "$Id: vfork.c,v 1.2.2.1 2001/08/02 13:27:19 admin E
 #include <sys/wait.h>
 #include <sys/swis.h>
 
-/* #define DEBUG 1 */
+#define DEBUG 1
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -78,7 +78,7 @@ int *
 __vfork (void)
 {
   struct proc *child;
-  int x /*, regs[10] */;
+  int x;
 
 #ifdef DEBUG
   __debug ("vfork: parent process structure");
@@ -93,9 +93,8 @@ __vfork (void)
   memset (child, 0, sizeof (struct proc));
 
   /* Create a process ID.  It is cheaper to call clock() than os_swi.  */
-  /* os_swi (OS_ReadMonotonicTime, regs); */
   child->ppid = __u->pid;  /* Get parent process's ID.  */
-  child->pid = clock (); /* regs[0]; */  /* Child process ID.  */
+  child->pid = clock ();  /* Child process ID.  */
 
   /* Make sure child's PID is not the same as the parents.  */
   if (child->pid == __u->pid)
@@ -123,6 +122,7 @@ __vfork (void)
       /* Copy entries from the environment and argument vectors.  */
       for (x = 0; x < __u->argc; x++)
         child->argv[x] = strdup (__u->argv[x]);
+      child->argc = __u->argc;
     }
 
   /* Copy environment vector.  */
@@ -133,10 +133,8 @@ __vfork (void)
         goto nomem;
       for (x = 0; x < __u->envc; x++)
         child->envp[x] = strdup (__u->envp[x]);
+      child->envc = __u->envc;
     }
-
-  child->argc = __u->argc;
-  child->envc = __u->envc;
 
   /* Copy resource usage of the parent process.  */
   child->usage = __u->usage;
