@@ -14,6 +14,7 @@
 #elif HOST_ARM_LINUX
 #include "config/arm/xm-linux.h"
 #elif HOST_I386_CYGWIN
+#include "config/i386/xm-i386.h"
 #include "config/i386/xm-cygwin.h"
 #elif HOST_I386_FREEBSD
 #include "config/i386/xm-freebsd.h"
