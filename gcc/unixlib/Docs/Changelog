@@ -1,3 +1,8 @@
+Sun Sep  2 15:03:26 2001  David Marston <david.marston@physics.org>
+
+	* sys/_syslib.s (__main): Take into account __sigstk when
+	checking for old dynamic area.
+
 Sun Sep  2 11:25:00 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* stdio.h (vsnprintf): Add decl.

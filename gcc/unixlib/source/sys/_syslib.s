@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_syslib.s,v $
-; $Date: 2001/08/16 10:25:17 $
-; $Revision: 1.3.2.2 $
+; $Date: 2001/09/02 10:08:43 $
+; $Revision: 1.3.2.4 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -124,10 +124,11 @@ NO_CALLASWI * 1
 	MOV	a1, #14
 	MOVS	a2, #0			; Ensure Z flag set
 	SWI	XOS_ChangeEnvironment	; preserves Z
-	CMPVC	a2, sp			; only make check if SWI succeeds
+	LDRVC	a1, [ip, #64]		; top of our app space at __sigstk 
+	CMPVC	a2, a1			; only make check if SWI succeeds
 	BEQ	no_old_area		; B if eq or SWI failed
 	; validate numbers at top of application memory (see sys.s._exec)
-	LDMIA	sp, {a1, a2, a3, a4, v1, v2, v3, v4}
+	LDMIA	a1, {a1, a2, a3, a4, v1, v2, v3, v4}
 	EOR	a3, a3, a1, ROR #7
 	CMP	a3, a1
 	EOREQ	v1, v1, a1, ROR #13
