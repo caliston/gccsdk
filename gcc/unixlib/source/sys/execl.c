@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/execl.c,v $
- * $Date: 2001/01/29 15:10:21 $
- * $Revision: 1.2 $
+ * $Date: 2002/11/13 11:57:32 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: execl.c,v 1.2 2001/01/29 15:10:21 admin Exp $";
+static const char rcs_id[] = "$Id: execl.c,v 1.2.2.1 2002/11/13 11:57:32 admin Exp $";
 #endif
 
 #include <stdarg.h>
@@ -34,7 +34,7 @@ execl (const char *path, const char *arg, ...)
   argv = malloc (n * sizeof (const char *));
   if (argv == NULL)
     return __set_errno (E2BIG);
-  argv[0] = arg;
+  argv[0] = (char *) arg;
   i = 0;
   while (argv[i++] != NULL)
     {
@@ -45,7 +45,7 @@ execl (const char *path, const char *arg, ...)
           if (argv == NULL)
             return __set_errno (E2BIG);
         }
-      argv[i] = va_arg (args, const char *);
+      argv[i] = va_arg (args, char *);
     }
 
   va_end (args);
