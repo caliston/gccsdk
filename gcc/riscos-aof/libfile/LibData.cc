@@ -1,4 +1,4 @@
-#include <iostream.h>
+#include <iostream>
 #include "LibData.h"
 #include "TimeStamp.h"
 #include "BError.h"

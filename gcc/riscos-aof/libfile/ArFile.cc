@@ -1,12 +1,12 @@
 #include <iostream>
-#include "Librarian.h"
+#include "Ar.h"
 #include "BError.h"
 
 int main(int argc,char **argv)
 {
   try
     {
-      Librarian libFile (argc, argv);
+      Ar libFile (argc, argv);
       libFile.run();
     }
 

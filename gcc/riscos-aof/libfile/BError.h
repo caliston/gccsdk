@@ -1,7 +1,7 @@
 #ifndef __HiAsnError__
 #define __HiAsnError__
 
-#include <iostream.h>
+#include <iostream>
 #include "BString.h"
 
 class BError

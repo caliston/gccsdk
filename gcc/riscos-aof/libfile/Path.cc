@@ -1,6 +1,6 @@
 #include <ctype.h>
 #include <glob.h>
-#include <iostream.h>
+#include <iostream>
 #include "Path.h"
 
 #ifndef CROSS_COMPILE

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <iostream.h>
+#include <iostream>
 #include <ctype.h>
 #include "Buffer.h"
 #include "BString.h"

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <iostream.h>
+#include <iostream>
 #include "BString.h"
 #include "Buffer.h"
 
