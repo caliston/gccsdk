@@ -1,5 +1,6 @@
 /* Expands front end tree to back end RTL for GNU C-Compiler
-   Copyright (C) 1987, 88, 89, 91-98, 1999 Free Software Foundation, Inc.
+   Copyright (C) 1987, 1988, 1989, 1991, 1992, 1993, 1994, 1995, 1996, 1997,
+   1998, 1999, 2000, 2001 Free Software Foundation, Inc.
 
 This file is part of GNU CC.
 
@@ -512,8 +513,9 @@ static int *record_insns	PROTO((rtx));
 static int contains		PROTO((rtx, int *));
 #endif /* HAVE_prologue || HAVE_epilogue */
 static void put_addressof_into_stack PROTO((rtx, struct hash_table *));
-static void purge_addressof_1	PROTO((rtx *, rtx, int, int, 
+static boolean purge_addressof_1 PROTO((rtx *, rtx, int, int, 
 				       struct hash_table *));
+static int is_addressof		PROTO ((rtx *, void *));
 static struct hash_entry *insns_for_mem_newfunc PROTO((struct hash_entry *,
 						       struct hash_table *,
 						       hash_table_key));
@@ -1428,8 +1430,17 @@ free_temps_for_rtl_expr (t)
 
   for (p = temp_slots; p; p = p->next)
     if (p->rtl_expr == t)
-      p->in_use = 0;
-
+      {     
+	/* If this slot is below the current TEMP_SLOT_LEVEL, then it
+	   needs to be preserved.  This can happen if a temporary in 
+	   the RTL_EXPR was addressed; preserve_temp_slots will move
+	   the temporary into a higher level.   */
+	if (temp_slot_level <= p->level)
+          p->in_use = 0;
+	else
+	  p->rtl_expr = NULL_TREE;
+      }
+  
   combine_temp_slots ();
 }
 
@@ -3045,9 +3056,10 @@ static rtx purge_addressof_replacements;
 
 /* Helper function for purge_addressof.  See if the rtx expression at *LOC
    in INSN needs to be changed.  If FORCE, always put any ADDRESSOFs into
-   the stack.  */
+   the stack.  If the function returns FALSE then the replacement could not
+   be made.  */
 
-static void
+static boolean
 purge_addressof_1 (loc, insn, force, store, ht)
      rtx *loc;
      rtx insn;
@@ -3058,13 +3070,14 @@ purge_addressof_1 (loc, insn, force, store, ht)
   RTX_CODE code;
   int i, j;
   char *fmt;
+  boolean result = true;
 
   /* Re-start here to avoid recursion in common cases.  */
  restart:
 
   x = *loc;
   if (x == 0)
-    return;
+    return true;
 
   code = GET_CODE (x);
 
@@ -3077,7 +3090,7 @@ purge_addressof_1 (loc, insn, force, store, ht)
 
       if (validate_change (insn, loc, sub, 0)
 	  || validate_replace_rtx (x, sub, insn))
-	return;
+	return true;
   
       start_sequence ();
       sub = force_operand (sub, NULL_RTX);
@@ -3088,7 +3101,7 @@ purge_addressof_1 (loc, insn, force, store, ht)
       insns = gen_sequence ();
       end_sequence ();
       emit_insn_before (insns, insn);
-      return;
+      return true;
     }
   else if (code == MEM && GET_CODE (XEXP (x, 0)) == ADDRESSOF && ! force)
     {
@@ -3107,7 +3120,7 @@ purge_addressof_1 (loc, insn, force, store, ht)
 	  && (MEM_VOLATILE_P (x) || GET_MODE (x) == BLKmode))
 	{
 	  put_addressof_into_stack (XEXP (x, 0), ht);
-	  return;
+	  return true;
 	}
       else if (GET_CODE (sub) == REG && GET_MODE (x) != GET_MODE (sub))
 	{
@@ -3126,7 +3139,7 @@ purge_addressof_1 (loc, insn, force, store, ht)
 		if (rtx_equal_p (x, XEXP (tem, 0)))
 		  {
 		    *loc = XEXP (XEXP (tem, 1), 0);
-		    return;
+		    return true;
 		  }
 
 	      /* See comment for purge_addressof_replacements. */
@@ -3166,11 +3179,17 @@ purge_addressof_1 (loc, insn, force, store, ht)
 		      z = gen_lowpart (GET_MODE (x), z);
 
 		    *loc = z;
-		    return;
+		    return true;
 		  }
 
-	      /* There should always be such a replacement.  */
-	      abort ();
+	      /* Sometimes we may not be able to find the replacement.  For
+		 example when the original insn was a MEM in a wider mode,
+		 and the note is part of a sign extension of a narrowed
+		 version of that MEM.  Gcc testcase compile/990829-1.c can
+		 generate an example of this siutation.  Rather than complain
+		 we return false, which will prompt our caller to remove the
+		 offending note.  */
+	      return false;
 	    }
 
 	  size_x = GET_MODE_BITSIZE (GET_MODE (x));
@@ -3212,13 +3231,7 @@ purge_addressof_1 (loc, insn, force, store, ht)
 
 		  /* Make sure to unshare any shared rtl that store_bit_field
 		     might have created.  */
-		  for (p = get_insns(); p; p = NEXT_INSN (p))
-		    {
-		      reset_used_flags (PATTERN (p));
-		      reset_used_flags (REG_NOTES (p));
-		      reset_used_flags (LOG_LINKS (p));
-		    }
-		  unshare_all_rtl (get_insns ());
+		  unshare_all_rtl_again (get_insns ());
 
 		  seq = gen_sequence ();
 		  end_sequence ();
@@ -3262,7 +3275,7 @@ purge_addressof_1 (loc, insn, force, store, ht)
 				      purge_bitfield_addressof_replacements));
 
 	      /* We replaced with a reg -- all done.  */
-	      return;
+	      return true;
 	    }
 	}
       else if (validate_change (insn, loc, sub, 0))
@@ -3279,13 +3292,13 @@ purge_addressof_1 (loc, insn, force, store, ht)
 		if (rtx_equal_p (XEXP (x, 0), XEXP (tem, 0)))
 		  {
 		    XEXP (XEXP (tem, 1), 0) = sub;
-		    return;
+		    return true;
 		  }
 	      purge_addressof_replacements
 		= gen_rtx (EXPR_LIST, VOIDmode, XEXP (x, 0),
 			   gen_rtx_EXPR_LIST (VOIDmode, sub,
 					      purge_addressof_replacements));
-	      return;
+	      return true;
 	    }
 	  goto restart;
 	}
@@ -3295,13 +3308,13 @@ purge_addressof_1 (loc, insn, force, store, ht)
   else if (code == ADDRESSOF)
     {
       put_addressof_into_stack (x, ht);
-      return;
+      return true;
     }
   else if (code == SET)
     {
-      purge_addressof_1 (&SET_DEST (x), insn, force, 1, ht);
-      purge_addressof_1 (&SET_SRC (x), insn, force, 0, ht);
-      return;
+      result = purge_addressof_1 (&SET_DEST (x), insn, force, 1, ht);
+      result &= purge_addressof_1 (&SET_SRC (x), insn, force, 0, ht);
+      return result;
     }
 
   /* Scan all subexpressions. */
@@ -3309,11 +3322,13 @@ purge_addressof_1 (loc, insn, force, store, ht)
   for (i = 0; i < GET_RTX_LENGTH (code); i++, fmt++)
     {
       if (*fmt == 'e')
-	purge_addressof_1 (&XEXP (x, i), insn, force, 0, ht);
+	result &= purge_addressof_1 (&XEXP (x, i), insn, force, 0, ht);
       else if (*fmt == 'E')
 	for (j = 0; j < XVECLEN (x, i); j++)
-	  purge_addressof_1 (&XVECEXP (x, i, j), insn, force, 0, ht);
+	  result &= purge_addressof_1 (&XVECEXP (x, i, j), insn, force, 0, ht);
     }
+
+  return result;
 }
 
 /* Return a new hash table entry in HT.  */
@@ -3433,6 +3448,16 @@ compute_insns_for_mem (insns, last_insn, ht)
 	}
 }
 
+/* Helper function for purge_addressof called through for_each_rtx.
+   Returns true iff the rtl is an ADDRESSOF.  */
+static int
+is_addressof (rtl, data)
+     rtx * rtl;
+     void * data ATTRIBUTE_UNUSED;
+{
+  return GET_CODE (* rtl) == ADDRESSOF;
+}
+
 /* Eliminate all occurrences of ADDRESSOF from INSNS.  Elide any remaining
    (MEM (ADDRESSOF)) patterns, and force any needed registers into the
    stack.  */
@@ -3461,15 +3486,50 @@ purge_addressof (insns)
     if (GET_CODE (insn) == INSN || GET_CODE (insn) == JUMP_INSN
 	|| GET_CODE (insn) == CALL_INSN)
       {
-	purge_addressof_1 (&PATTERN (insn), insn,
-			   asm_noperands (PATTERN (insn)) > 0, 0, &ht);
-	purge_addressof_1 (&REG_NOTES (insn), NULL_RTX, 0, 0, &ht);
+	if (! purge_addressof_1 (&PATTERN (insn), insn,
+				 asm_noperands (PATTERN (insn)) > 0, 0, &ht))
+	  /* If we could not replace the ADDRESSOFs in the insn,
+	     something is wrong.  */
+	  abort ();
+	
+	if (! purge_addressof_1 (&REG_NOTES (insn), NULL_RTX, 0, 0, &ht))
+	  {
+	    /* If we could not replace the ADDRESSOFs in the insn's notes,
+	       we can just remove the offending notes instead.  */
+	    rtx note;
+
+	    for (note = REG_NOTES (insn); note; note = XEXP (note, 1))
+	      {
+		/* If we find a REG_RETVAL note then the insn is a libcall.
+		   Such insns must have REG_EQUAL notes as well, in order
+		   for later passes of the compiler to work.  So it is not
+		   safe to delete the notes here, and instead we abort.  */
+		if (REG_NOTE_KIND (note) == REG_RETVAL)
+		  abort ();
+		if (for_each_rtx (& note, is_addressof, NULL))
+		  remove_note (insn, note);
+	      }
+	  }
       }
 
   /* Clean up.  */
   hash_table_free (&ht);
   purge_bitfield_addressof_replacements = 0;
   purge_addressof_replacements = 0;
+
+  /* REGs are shared.  purge_addressof will destructively replace a REG
+     with a MEM, which creates shared MEMs.
+
+     Unfortunately, the children of put_reg_into_stack assume that MEMs
+     referring to the same stack slot are shared (fixup_var_refs and
+     the associated hash table code).
+
+     So, we have to do another unsharing pass after we have flushed any
+     REGs that had their address taken into the stack.
+
+     It may be worth tracking whether or not we converted any REGs into
+     MEMs to avoid this overhead when it is not needed.  */
+  unshare_all_rtl_again (get_insns ());
 }
 
 /* Pass through the INSNS of function FNDECL and convert virtual register
@@ -5274,7 +5334,18 @@ locate_and_pad_parm (passed_mode, type, in_regs, fndecl,
 				- offset_ptr->constant); 
     }
 #else /* !ARGS_GROW_DOWNWARD */
-  pad_to_arg_alignment (initial_offset_ptr, boundary);
+  if (!in_regs
+#ifdef REG_PARM_STACK_SPACE
+      || REG_PARM_STACK_SPACE (fndecl) > 0
+#else
+      /* For the gcc-2_95-branch we want to make sure not to break something
+	 on platforms which pass argument in registers but don't define
+	 REG_PARM_STACK_SPACE. So we force the original behaviour here.  */
+      || 1
+#endif
+      )
+    pad_to_arg_alignment (initial_offset_ptr, boundary);
+
   *offset_ptr = *initial_offset_ptr;
 
 #ifdef PUSH_ROUNDING
@@ -6695,7 +6766,10 @@ void
 thread_prologue_and_epilogue_insns (f)
      rtx f ATTRIBUTE_UNUSED;
 {
-  int insertted = 0;
+  int inserted = 0;
+#ifdef HAVE_prologue
+  rtx prologue_end = NULL_RTX;
+#endif
 
   prologue = 0;
 #ifdef HAVE_prologue
@@ -6712,7 +6786,7 @@ thread_prologue_and_epilogue_insns (f)
 	seq = get_insns ();
       prologue = record_insns (seq);
 
-      emit_note (NULL, NOTE_INSN_PROLOGUE_END);
+      prologue_end = emit_note (NULL, NOTE_INSN_PROLOGUE_END);
       seq = gen_sequence ();
       end_sequence ();
 
@@ -6725,7 +6799,7 @@ thread_prologue_and_epilogue_insns (f)
 	    abort ();
 
 	  insert_insn_on_edge (seq, ENTRY_BLOCK_PTR->succ);
-	  insertted = 1;
+	  inserted = 1;
 	}
       else
 	emit_insn_after (seq, f);
@@ -6857,8 +6931,56 @@ thread_prologue_and_epilogue_insns (f)
     }
 #endif
 
-  if (insertted)
+  if (inserted)
     commit_edge_insertions ();
+
+#ifdef HAVE_prologue
+  if (prologue_end)
+    {
+      rtx insn, prev;
+
+      /* GDB handles `break f' by setting a breakpoint on the first
+	 line note *after* the prologue.  Which means (1) that if
+	 there are line number notes before where we inserted the
+	 prologue we should move them, and (2) if there is no such
+	 note, then we should generate one at the prologue.  */
+
+      for (insn = prologue_end; insn ; insn = prev)
+	{
+	  prev = PREV_INSN (insn);
+	  if (GET_CODE (insn) == NOTE && NOTE_LINE_NUMBER (insn) > 0)
+	    {
+	      /* Note that we cannot reorder the first insn in the
+		 chain, since rest_of_compilation relies on that
+		 remaining constant.  Do the next best thing.  */
+	      if (prev == NULL)
+		{
+		  emit_line_note_after (NOTE_SOURCE_FILE (insn),
+					NOTE_LINE_NUMBER (insn),
+					prologue_end);
+		  NOTE_LINE_NUMBER (insn) = NOTE_INSN_DELETED;
+		}
+	      else
+		reorder_insns (insn, insn, prologue_end);
+	    }
+	}
+
+      insn = NEXT_INSN (prologue_end);
+      if (! insn || GET_CODE (insn) != NOTE || NOTE_LINE_NUMBER (insn) <= 0)
+	{
+	  for (insn = next_active_insn (f); insn ; insn = PREV_INSN (insn))
+	    {
+	      if (GET_CODE (insn) == NOTE && NOTE_LINE_NUMBER (insn) > 0)
+		{
+		  emit_line_note_after (NOTE_SOURCE_FILE (insn),
+					NOTE_LINE_NUMBER (insn),
+					prologue_end);
+		  break;
+		}
+	    }
+	}
+      }
+#endif
 }
 
 /* Reposition the prologue-end and epilogue-begin notes after instruction

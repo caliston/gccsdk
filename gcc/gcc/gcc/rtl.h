@@ -1,5 +1,6 @@
 /* Register Transfer Language (RTL) definitions for GNU C-Compiler
-   Copyright (C) 1987, 91-98, 1999 Free Software Foundation, Inc.
+   Copyright (C) 1987, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
+   2000, 2001 Free Software Foundation, Inc.
 
 This file is part of GNU CC.
 
@@ -887,6 +888,12 @@ extern char *note_insn_name[];
 /* For a NOTE_INSN_LIVE note, the original basic block number.  */
 #define RANGE_LIVE_ORIG_BLOCK(INSN) (XINT (INSN, 1))
 
+/* Nonzero if we need to distinguish between the return value of this function
+   and the return value of a function called by this function.  This helps
+   integrate.c.
+   This is 1 until after the rtl generation pass.  */
+extern int rtx_equal_function_value_matters;
+
 /* Generally useful functions.  */
 
 /* The following functions accept a wide integer argument.  Rather than
@@ -1084,6 +1091,7 @@ extern int for_each_rtx                 PROTO((rtx *, rtx_function, void *));
 extern rtx regno_use_in			PROTO((int, rtx));
 extern int auto_inc_p			PROTO((rtx));
 extern void remove_node_from_expr_list	PROTO((rtx, rtx *));
+extern int insns_safe_to_move_p         PROTO((rtx, rtx, rtx *));
 
 /* flow.c */
 
@@ -1390,7 +1398,7 @@ extern int subreg_realpart_p			PROTO ((rtx));
 extern void reverse_comparison			PROTO ((rtx));
 extern void set_new_first_and_last_insn		PROTO ((rtx, rtx));
 extern void set_new_first_and_last_label_num	PROTO ((int, int));
-extern void unshare_all_rtl			PROTO ((rtx));
+extern void unshare_all_rtl_again		PROTO ((rtx));
 extern void set_last_insn			PROTO ((rtx));
 extern void link_cc0_insns			PROTO ((rtx));
 extern void add_insn				PROTO ((rtx));
@@ -1593,6 +1601,18 @@ extern void rrotate_double	PROTO ((HOST_WIDE_INT, HOST_WIDE_INT,
 					HOST_WIDE_INT *));
 
 /* In calls.c */
+enum libcall_type
+{
+  LCT_NORMAL = 0,
+  LCT_CONST = 1,
+  LCT_PURE = 2,
+  LCT_CONST_MAKE_BLOCK = 3,
+  LCT_PURE_MAKE_BLOCK = 4,
+  LCT_NORETURN = 5,
+  LCT_THROW = 6,
+  LCT_ALWAYS_RETURN = 7
+};
+
 /* Emit library call.  */                                           
 extern void emit_library_call		PVPROTO ((rtx, int, enum machine_mode,
 						  int, ...));

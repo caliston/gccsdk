@@ -1,5 +1,5 @@
 # Makefile for the GNU Compiler Collection for ARM/RISC OS
-# Copyright (c) 1997, 1998, 1999, 2000 Nick Burrett
+# Copyright (c) 1997, 1998, 1999, 2000, 2001 Nick Burrett
 # Written by Nick Burrett <nick@dsvr.net>
 
 # Defs for the host compiler
@@ -37,7 +37,10 @@ export prefix CC CXX CFLAGS bin_dir gcc_bin_dir gccobjdir gexesfx
 $(gccobjdir)/%.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $< $(INCLUDES)
 
-all: c cp f77 gpc objc java docs
+all: comp-stg1 comp-stg2
+
+comp-stg1: c docs
+comp-stg2: comp-stg1 cp cp f77 gpc objc java
 
 .PHONY: c
 .PHONY: cp
@@ -46,6 +49,8 @@ all: c cp f77 gpc objc java docs
 .PHONY: objc
 .PHONY: java
 .PHONY: docs
+.PHONY: comp-stg1
+.PHONY: comp-stg2
 
 c: $(bin_dir)/gcc$(gexesfx) $(gcc_bin_dir)/cpp$(gexesfx) \
    $(gcc_bin_dir)/cc1$(gexesfx) $(bin_dir)/gcov$(gexesfx)

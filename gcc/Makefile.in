@@ -48,7 +48,7 @@ hostsystem=@host_system@
 targetsystem=HOST_ARM_RISCOS
 
 # GCC compiler version that we are going to build.
-VERSION = 2_95_2
+VERSION = 2_95_4
 
 # Define the installation base directory.  These don't determine the actual
 # stored location of files, rather they are the hard-coded values that
