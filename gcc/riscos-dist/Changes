@@ -1,5 +1,16 @@
 Noteworthy changes to the RISC OS GCCSDK
 
+RISC OS GCC release 2.95.4 release 3 (released 05 January 2003)
+====================================
+
+* as: Fix pre/post indexed addressing assembler error.
+
+* gccsdk: Support NetBSD.
+
+* unixlib: Fix #include typo in inttypes.h.
+
+* libscl: Preserve flags on 26-bit systems.
+
 RISC OS GCC release 2.95.4 release 2 (released 13 November 2002)
 ====================================
 
