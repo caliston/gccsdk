@@ -1,13 +1,18 @@
-Fri Jul 19 14:19:48 2002  John Tytgat <John.Tytgat@aaug.net>
+Fri Jul 26 10:35:30 2002  Alex Waugh  <alex@alexwaugh.com>
+
+	* unix/fcntl.c (fcntl): When F_SETFL is called on a socket,
+	actually alter the behaviour of the socket.
+
+Fri Jul 19 14:19:48 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	* index.c: #include <strings.h> so that we have header file
 	declaration all exported functions.
 
-Fri Jul 19 14:18:33 2002  John Tytgat <John.Tytgat@aaug.net>
+Fri Jul 19 14:18:33 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	* objs/Makefile,fe1: Fixed typo in the Norcroft compiler settings
 
-Fri Jul 19 14:16:30 2002  John Tytgat <John.Tytgat@aaug.net>
+Fri Jul 19 14:16:30 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	* stdlib/_rand48.c, drand48.c, erand48.c, jrand48.c, lcong48.c
           lrand48.c, mrand48.c, nrand48.c, random.c, seed48.c
@@ -15,7 +20,7 @@ Fri Jul 19 14:16:30 2002  John Tytgat <John.Tytgat@aaug.net>
 	* sys/vfork.c (__vfork): The last environment and argument
 	  vector needs to be NULL.
 
-Fri Jul 19 14:13:45 2002  John Tytgat <John.Tytgat@aaug.net>
+Fri Jul 19 14:13:45 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	* objs/Makefile,fe1: Removed o.rand
 	* scl/_kernel.s: declared AREA readonly. Updated comments.
