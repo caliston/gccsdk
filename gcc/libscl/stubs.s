@@ -275,6 +275,8 @@ SharedCLibrary_LibInitAPCS_32	EQU &80683
 	EXPORT	|_clib_version|
 	EXPORT	Finalise
 	EXPORT	tmpnam
+	EXPORT	|_swi|
+	EXPORT	|_swix|
 	EXPORT	|__errno|
 	EXPORT	errno
 	EXPORT	|__iob|
@@ -405,7 +407,7 @@ kernel_vectors
 kernel_vectors_end
 
 clib_vectors
-	%	183 * 4
+	%	185 * 4
 clib_vectors_end
 
 |_kernel_init|			EQU	kernel_vectors
@@ -650,6 +652,9 @@ clib_vectors_end
 |_clib_version|			EQU	clib_vectors+(180*4)
 |Finalise|			EQU	clib_vectors+(181*4)
 |tmpnam|			EQU	clib_vectors+(182*4)
+|_swi|				EQU	clib_vectors+(183*4)
+|_swix|				EQU	clib_vectors+(184*4)
+
 
 
 	AREA	|Stub$$Data|, DATA, NOINIT
@@ -668,8 +673,8 @@ errno				EQU	clib_statics+0
 |__ctype|			EQU	clib_statics+&290
 |__huge_val|			EQU	clib_statics+&390
 
-; For link compatibility with UnixLib headers. However note that
-; the SharedCLibrary's method of declaring stdin, stdout and stderr
+; For link compatibility with UnixLib headers.  Note that the
+; SharedCLibrary method of declaring stdin, stdout and stderr
 ; as macros is incorrect.
 stdin				EQU	clib_statics+4
 stdout				EQU	clib_statics+8
