@@ -1471,7 +1471,10 @@ static void fixup_type2(unsigned int reltypesym, unsigned int *relplace) {
      * inter-link-unit value of a branch destination is to be used, rather than
      * the more usual intra-link-unit value.
      */
-    if ((reltype & REL_BASED)!=0) {	/* PC-relative and based - relocate using the inter-link-unit, not intra-link unit */
+    if ((reltype & REL_BASED)!=0) {
+      /* PC-relative and based - relocate using the inter-link-unit,
+	 not intra-link unit */
+
       /* We need to check that the destination is a leaf or not.
        * If it is a leaf, then we branch to its start; otherwise we branch to
        * start + 4 :
@@ -1575,18 +1578,34 @@ void check_entryarea(void) {
     entryoffset = 0;
     error("Warning: Program has no entry point. Default of first executable instruction assumed");
   }
-  
-/*
- * NB sent me a diff where the following statement was changed. It
- * is a few years since I wrote this code so I cannot remember the
- * precise details of what it was trying to achieve but this version
- * looks correct to me. I've changed it slightly by adding extra
- * () to it
- */
-  noheader = imagetype==RMOD 
-   || (imagetype==BIN &&
-    (entryarea==rocodelist || (rodatalist==NIL && entryarea==rwcodelist)) && entryoffset==0)
-   || opt_codebase;
+
+  /* Default to suggesting that the program requires a standard
+   * AIF or Binary header.
+   */
+  noheader = 0;
+
+  /* Relocatable modules do not have a standard header.  */
+  if (imagetype==RMOD)
+    noheader = 1;
+
+  /* Images where the user has supplied a base address do not have
+   * a standard header.
+   */
+  if (imagetype==opt_codebase)
+    noheader = 1;
+
+  /* Both AIF and Binary (BIN) images can have headers.
+   *
+   * In the case of binary images, if the user explicitly set an ENTRY
+   * attribute on either a read-only or a read-write CODE AREA, then we
+   * drop the standard binary header and therefore assume that the
+   * user knows better.
+   */
+  if (imagetype==BIN
+      && (entryarea==rocodelist
+	  || (rodatalist==NIL && entryarea==rwcodelist))
+      && entryoffset==0)
+    noheader = 1;
 }
 
 /*
