@@ -1,3 +1,7 @@
+Fri Jul 19 14:18:33 2002  John Tytgat <John.Tytgat@aaug.net>
+
+	* objs/Makefile,fe1: Fixed typo in the Norcroft compiler settings
+
 Fri Jul 19 14:16:30 2002  John Tytgat <John.Tytgat@aaug.net>
 
 	* stdlib/_rand48.c, drand48.c, erand48.c, jrand48.c, lcong48.c
