@@ -1,3 +1,8 @@
+Tue Sep 11 14:40:33 2001  John Tytgat  <John.Tytgat@aaug.net>
+
+	* unistd.h (usleep): New decl.
+	* signal/sleep.c (usleep): New function.
+
 Tue Sep 11 14:32:08 2001  Alex Waugh  <ajw498@ecs.soton.ac.uk>
 
 	* grp.h: New header file.

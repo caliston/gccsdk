@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/sleep.c,v $
- * $Date: 2001/09/01 13:44:29 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/04 16:32:04 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: sleep.c,v 1.2.2.1 2001/09/01 13:44:29 admin Exp $";
+static const char rcs_id[] = "$Id: sleep.c,v 1.2.2.2 2001/09/04 16:32:04 admin Exp $";
 #endif
 
 /* signal.c.sleep: Written by Nick Burrett, 6 October 1996.  */
@@ -124,4 +124,10 @@ sleep (unsigned int seconds)
   (void) __set_errno (save);
 
   return slept > seconds ? 0 : seconds - slept;
+}
+
+unsigned int
+usleep (unsigned int usec)
+{
+  return sleep ((usec + 999) / 1000);
 }

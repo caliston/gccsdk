@@ -1,10 +1,10 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/h/unistd,v $
- * $Date: 1998/01/29 21:15:09 $
- * $Revision: 1.15 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -141,8 +141,18 @@ extern int pipe (int __pipedes[2]);
 /* Schedule an alarm.  */
 extern unsigned int alarm (unsigned int __seconds);
 
-/* Make the process sleep for 'seconds' seconds.  */
+/* Make the process sleep for '__seconds' seconds, or until a signal arrives
+   and is not ignored.  The function returns the number of seconds less
+   than '__seconds' which it actually slept (zero if it slept the full time).
+   If a signal handler does a `longjmp' or modifies the handling of the
+   SIGALRM signal while inside `sleep' call, the handling of the SIGALRM
+   signal afterwards is undefined.  There is no return value to indicate
+   error, but if `sleep' returns '__seconds', it probably didn't work.  */
 extern unsigned int sleep (unsigned int __seconds);
+ 
+/* Make the process sleep for '__usec' microseconds, or until a signal
+   arrives that is not blocked or ignored.  */
+extern unsigned int usleep (unsigned int __usec);
 
 /* Suspend the process until a signal arrives.  */
 extern int pause (void);
@@ -178,15 +188,19 @@ extern int execve (const char *__path, char **__argv, char **__envp);
 
 /* Execute PATH with arguments ARGV and environment from `environ'.  */
 extern int execv (const char *__path, char **__argv);
+
 /* Execute PATH with all arguments after PATH until a NULL pointer,
    and the argument after that for environment.  */
 extern int execle (const char *__path, const char *__arg, ...);
+
 /* Execute PATH with all arguments after PATH until
    a NULL pointer and environment from `environ'.  */
 extern int execl (const char *__path, const char *__arg, ...);
+
 /* Execute FILE, searching in the `PATH' environment variable if it contains
    no slashes, with arguments ARGV and environment from `environ'.  */
 extern int execvp (const char *__file, char **__argv);
+
 /* Execute FILE, searching in the `PATH' environment variable if
    it contains no slashes, with all arguments after FILE until a
    NULL pointer and environment from `environ'.  */
