@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/time.h,v $
- * $Date: 2001/09/04 16:32:04 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -12,9 +12,11 @@
 
 #if ! defined __need_timeval
 #define __SYS_TIME_H
+
+#define __need_timeval
 #endif
 
-#if !defined __timeval_defined && (defined __SYS_TIME_H || defined __need_timeval)
+#if !defined __timeval_defined && defined __need_timeval
 #define __timeval_defined
 #include <unixlib/types.h>
 /* A time value that is accurate to the nearest
@@ -134,4 +136,6 @@ extern int utimes (const char *, const struct timeval __tvp[2]);
 
 
 #endif /* sys/time.h */
+#else
+#undef __need_timeval
 #endif /* ! __SYS_TIME_H */

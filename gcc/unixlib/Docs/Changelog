@@ -1,3 +1,13 @@
+Thu Apr 18 08:32:42 2002  John Tytgat <John.Tytgat@aaug.net>
+
+	* clib/stddef.h: Better protection against multiple includes
+	avoiding the "repeated definition of #define macro xxx" warning
+	from the Norcroft compiler.  Simplified source a bit.
+	* clib/time.h: Likewise.
+	* sys/time.h: Likewise.
+	* sys/uio.h: Removed the unnecessary #include <stdarg.h> and
+	#define __need_size_t.
+
 Wed Apr 03 09:41:27 2002  Nick Burrett  <nick@dsvr.net>
 
 	* netlib/host.c (gethostbyname2): New function.  Move the

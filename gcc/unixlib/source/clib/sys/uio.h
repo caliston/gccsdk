@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/uio.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -14,9 +14,6 @@
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
-
-#define __need_size_t
-#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {
