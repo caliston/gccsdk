@@ -1,3 +1,15 @@
+Wed Aug  8 09:52:58 2001  Peter Burwood  <pjb@arcangel.dircon.co.uk>
+			  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* signal/_signal.s: Add lots of explanations.
+	(__seterr): New function.  Moved here from sys/os.c.
+	(_kernel_last_oserror): Likewise.
+	(__h_sigsegv1): Remove code that attempted to fixup the base
+	register.  Only really of use for virtual memory.
+	(__h_sigsys): Alter to call __h_cback directly rather than via
+	SWI OS_CallBack.
+	* sys/os.c: Delete file.
+	
 Wed Aug  8 09:44:05 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	Work towards a drop-in replacement for the SharedCLibrary.
