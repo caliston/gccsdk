@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/netlib/_sread.s,v $
-; $Date: 2000/07/15 14:52:27 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -15,6 +15,7 @@
 	IMPORT	|__net_error_simple_entry|
 
 	EXPORT	|_sread|
+	NAME	_sread
 |_sread|
 	NetSWIsimple	XSocket_Read
 

@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/scl/_kosbyte.s,v $
-; $Date: 2000/07/15 14:52:29 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -12,9 +12,11 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
+	IMPORT	|__seterr|
+
 	; int _kernel_osbyte (int op, int x, int y)
 	EXPORT	|_kernel_osbyte|
-	IMPORT	|__seterr|
+	NAME	_kernel_osbyte
 |_kernel_osbyte|
 	STMFD	sp!, {lr}
 	SWI	XOS_Byte

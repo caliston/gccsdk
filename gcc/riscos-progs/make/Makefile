@@ -1,9 +1,11 @@
-INCLUDES = -I./
-CFLAGS = -O2 $(OPTS) $(TARGET_DEFS) -DHAVE_CONFIG_H
-CC = $(standard_exec_prefix)/gcc $(CFLAGS)
+# Makefile for GNU make - a build management tool
+# Written by Nick Burrett <nick@dsvr.net>
+
+INCLUDES = -I.
+CROSS_CFLAGS += -DHAVE_CONFIG_H
 
 $(objdir)/riscos-progs/make/%.o: %.c
-	$(CC) -o $@ -c $< $(INCLUDES)
+	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ -c $< $(INCLUDES)
 
 OBJS = $(objdir)/riscos-progs/make/ar.o \
 	$(objdir)/riscos-progs/make/arscan.o \
@@ -20,17 +22,17 @@ OBJS = $(objdir)/riscos-progs/make/ar.o \
 	$(objdir)/riscos-progs/make/misc.o \
 	$(objdir)/riscos-progs/make/read.o \
 	$(objdir)/riscos-progs/make/remake.o \
-	$(objdir)/riscos-progs/make/remote-stu.o \
+	$(objdir)/riscos-progs/make/remote-stub.o \
 	$(objdir)/riscos-progs/make/rule.o \
 	$(objdir)/riscos-progs/make/signame.o \
 	$(objdir)/riscos-progs/make/variable.o \
 	$(objdir)/riscos-progs/make/version.o \
 	$(objdir)/riscos-progs/make/vpath.o
 
-all:	$(BIN)/make
+all:	$(bin_dir)/make$(exesfx)
 
-$(BIN)/make:	$(OBJS) $(TBIN)/$(TRG)/unixlib.o 
-	$(standard_exec_prefix)/gcc -o $@ $(OBJS)
+$(bin_dir)/make$(exesfx):	$(OBJS)
+	$(CROSS_CC) -o $@ $(OBJS)
 
 $(objdir)/riscos-progs/make/ar.o: ar.c
 $(objdir)/riscos-progs/make/arscan.o: arscan.c
@@ -41,13 +43,14 @@ $(objdir)/riscos-progs/make/expand.o: expand.c
 $(objdir)/riscos-progs/make/file.o: file.c
 $(objdir)/riscos-progs/make/function.o: function.c
 $(objdir)/riscos-progs/make/getloadavg.o: getloadavg.c
+$(objdir)/riscos-progs/make/gettext.o: gettext.c gettext.h
 $(objdir)/riscos-progs/make/implicit.o: implicit.c
 $(objdir)/riscos-progs/make/job.o: job.c
 $(objdir)/riscos-progs/make/main.o: main.c
 $(objdir)/riscos-progs/make/misc.o: misc.c
 $(objdir)/riscos-progs/make/read.o: read.c
 $(objdir)/riscos-progs/make/remake.o: remake.c
-$(objdir)/riscos-progs/make/remote-stu.o: remote-stu.c
+$(objdir)/riscos-progs/make/remote-stub.o: remote-stub.c
 $(objdir)/riscos-progs/make/rule.o: rule.c
 $(objdir)/riscos-progs/make/signame.o: signame.c
 $(objdir)/riscos-progs/make/variable.o: variable.c

@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/select.h,v $
- * $Date: 2000/07/15 14:52:16 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -13,27 +13,43 @@
 #ifndef __SYS_SELECT_H
 #define __SYS_SELECT_H
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define __need_timeval
+#include <sys/time.h>
 
-#define	FD_SETSIZE	__FD_SETSIZE
-#define	NFDBITS		__NFDBITS
-#define	FD_ZERO(set)	__FD_ZERO(set)
-#define	FD_SET(d, set)	__FD_SET((d), (set))
-#define	FD_CLR(d, set)	__FD_CLR((d), (set))
-#define	FD_ISSET(d, set)__FD_ISSET((d), (set))
+#define __need_timespec
+#include <time.h>
 
-#ifndef __SYS_TIME_H
-/* This being here makes the `select' prototype valid whether or not
-   we have already included <sys/time.h> to define `struct timeval'.  */
-struct timeval;
-struct timespec;
-#endif
+__BEGIN_DECLS
+
+/* Number of descriptors that can fit in an `fd_set'.  */
+#define	FD_SETSIZE	256
+
+/* It's easier to assume 8-bit bytes than to get CHAR_BIT.  */
+#define	NFDBITS	(sizeof (unsigned long int) * 8)
+#define	FDELT(d)	((d) / NFDBITS)
+#define	FDMASK(d)	(1ul << ((d) % NFDBITS))
+
+typedef unsigned long int __fd_mask;
+
+typedef struct
+  {
+    /* Some braindead old software uses this member name.  */
+    __fd_mask fds_bits[(FD_SETSIZE + (NFDBITS - 1)) / NFDBITS];
+  } __fd_set;
+
+#define	FD_ZERO(set) ((void) memset (set, 0, sizeof (*(set))))
+#define	FD_SET(d, set)	((set)->fds_bits[FDELT(d)] |= FDMASK(d))
+#define	FD_CLR(d, set)	((set)->fds_bits[FDELT(d)] &= ~FDMASK(d))
+#define	FD_ISSET(d, set)	((set)->fds_bits[FDELT(d)] & FDMASK(d))
+
 
 typedef __fd_mask fd_mask;
 typedef __fd_set fd_set;
@@ -60,9 +76,6 @@ int _select (int __nfds, __fd_set *__readfds, __fd_set *__writefds,
 	     __fd_set *__exceptfds, const struct timeval *__timeout);
 #endif  /* __UNIXLIB_INTERNALS */
 
-
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #endif

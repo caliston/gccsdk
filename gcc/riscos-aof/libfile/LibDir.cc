@@ -1,12 +1,13 @@
-#include <iostream.h>
+#include <errno.h>
+#include <iostream>
 #include <ctype.h>
 #include "LibDir.h"
 #include "TimeStamp.h"
 #include "BError.h"
 #include "Path.h"
 
-#ifndef UNIX
-extern "C" OS_File(int *);
+#ifndef CROSS_COMPILE
+extern "C" void *OS_File(int *);
 #endif
 
 LibDir::LibDir(Library *a_owner) : Chunk("LIB_DIRY", a_owner)

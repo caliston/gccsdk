@@ -2,10 +2,15 @@
  * m_cpuctrl.c
  * Copyright © 1992 Niklas Röjemo
  */
-
+#include "sdk-config.h"
 #include <string.h>
 #include <ctype.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "mnemonics.h"
 #include "error.h"
 #include "option.h"
@@ -81,7 +86,7 @@ m_swi (WORD cc)
       relocSwi (im);
       break;
     case ValueString:
-#ifdef __riscos
+#ifdef __riscos__
       im.ValueString.s[im.ValueString.len] = 0;
       ir |= switonum (im.ValueString.s);
       if (ir == 0xFFFFFFFF)
@@ -396,7 +401,7 @@ void
 m_mrs (WORD cc)
 {
   cpuWarn (ARM6);
-  cc |= getCpuReg () << 12 | 0x0100F000;
+  cc |= getCpuReg () << 12 | 0x01000000;
   skipblanks ();
   if (inputLook () == ',')
     {

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/getcwd.c,v $
- * $Date: 2000/07/15 14:52:43 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/09/01 13:44:29 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: getcwd.c,v 1.1.1.1 2000/07/15 14:52:43 nick Exp $";
+static const char rcs_id[] = "$Id: getcwd.c,v 1.2.2.2 2001/09/01 13:44:29 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -18,10 +18,9 @@ static const char rcs_id[] = "$Id: getcwd.c,v 1.1.1.1 2000/07/15 14:52:43 nick E
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <sys/os.h>
-#include <sys/syslib.h>
-#include <sys/swis.h>
-#include <sys/unix.h>
+#include <unixlib/os.h>
+#include <swis.h>
+#include <unixlib/unix.h>
 
 #include <unixlib/local.h>
 
@@ -76,15 +75,15 @@ getcwd (char *buffer, size_t size)
   /* Try OS_Args 7 (get cannonicalised name) on "@" by opening CSD.  */
   {
     int handle;
-    if (os_fopen (0x40, "@", &handle) == NULL)
+    if (__os_fopen (0x40, "@", &handle) == NULL)
       {
 	if (__fd_to_name (handle, ro_path, sizeof (ro_path)) != NULL)
 	  {
-	    os_fclose (handle);
+	    __os_fclose (handle);
 	    return __unixify_std (ro_path, buffer, size,
 	    	     	     	  __RISCOSIFY_FILETYPE_NOTSPECIFIED);
 	  }
-	os_fclose (handle);
+	__os_fclose (handle);
       }
   }
 
@@ -95,7 +94,7 @@ getcwd (char *buffer, size_t size)
       /* Read current directory name.  */
       regs[0] = 6;
       regs[2] = (int) temp_buf;
-      err = os_swi (OS_GBPB, regs);
+      err = __os_swi (OS_GBPB, regs);
       if (err)
 	{
 	  /* Failed to read dirname.
@@ -103,13 +102,13 @@ getcwd (char *buffer, size_t size)
 	  __seterr (err);
 	  if (*rp != '\0')
 	    {
-	      if (os_fsctrl (0, "\\", NULL, 0) == NULL)
+	      if (__os_fsctrl (0, "\\", NULL, 0) == NULL)
 		{
 		  /* cd \ successful, so now need to cd \.{rp}  */
 		  *--rp = '.';
 		  *--rp = '\\';
 		}
-	      os_fsctrl (0, rp, NULL, 0);
+	      __os_fsctrl (0, rp, NULL, 0);
 	    }
 	  return NULL;
 	}
@@ -126,11 +125,11 @@ getcwd (char *buffer, size_t size)
       *--rp = '.';
 
       /* Now select PSD.  */
-      err = os_fsctrl (0, "\\", NULL, 0);
+      err = __os_fsctrl (0, "\\", NULL, 0);
       if (err)
 	{
 	  /* If cd \ failed then just cd ^.  */
-	  err = os_fsctrl (0, "^", NULL, 0);
+	  err = __os_fsctrl (0, "^", NULL, 0);
 	  if (err)
 	    goto swi_fail;
 	}
@@ -139,7 +138,7 @@ getcwd (char *buffer, size_t size)
 	  /* Select new PSD.^
 	     This ensures that the PSD doesn't get corrupted by
 	     calling getcwd().  */
-	  err = os_fsctrl (0, "\\.^", NULL, 0);
+	  err = __os_fsctrl (0, "\\.^", NULL, 0);
 	  if (err)
 	    goto swi_fail;
 	}
@@ -149,11 +148,11 @@ getcwd (char *buffer, size_t size)
   *--rp = '$';
 
   /* Again, PSD then original directory.  */
-  err = os_fsctrl (0, "\\", NULL, 0);
+  err = __os_fsctrl (0, "\\", NULL, 0);
   if (err)
     goto swi_fail;
 
-  err = os_fsctrl (0, rp, NULL, 0);
+  err = __os_fsctrl (0, rp, NULL, 0);
   if (err)
     goto swi_fail;
 
@@ -161,12 +160,12 @@ getcwd (char *buffer, size_t size)
      Next find the FS name.  */
 
   /* Get FS number.  */
-  err = os_args (0, 0, 0, regs);
+  err = __os_args (0, 0, 0, regs);
   if (err)
     goto swi_fail;
 
   /* Convert FS number to name.  */
-  err = os_fsctrl (33, (const char *) regs[0], temp_buf, _POSIX_PATH_MAX - 3);
+  err = __os_fsctrl (33, (const char *) regs[0], temp_buf, _POSIX_PATH_MAX - 3);
   if (err)
     goto swi_fail;
 
@@ -180,7 +179,7 @@ getcwd (char *buffer, size_t size)
     /* Next find the disk name.  */
     regs[0] = 5;
     regs[2] = (int) &temp_buf[len];
-    err = os_swi (OS_GBPB, regs);
+    err = __os_swi (OS_GBPB, regs);
     if (err)
       goto swi_fail;
 

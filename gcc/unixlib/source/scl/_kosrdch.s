@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/scl/_kosrdch.s,v $
-; $Date: 2000/07/15 14:52:29 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -12,9 +12,11 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	; int _kernel_osrdch (void)
 	IMPORT	|__seterr|
+
+	; int _kernel_osrdch (void)
 	EXPORT	|_kernel_osrdch|
+	NAME	_kernel_osrdch
 |_kernel_osrdch|
 	STMFD	sp!, {lr}
 	SWI	XOS_ReadC

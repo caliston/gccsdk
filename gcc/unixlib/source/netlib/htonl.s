@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/netlib/htonl.s,v $
-; $Date: 2000/07/15 14:52:26 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -13,6 +13,7 @@
 	AREA	|C$$code|,CODE,READONLY
 
 	EXPORT	htonl
+	NAME	htonl
 htonl
 	EOR	r1, r0, r0, ROR #16
 	BIC	r1, r1, #&FF0000

@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/scl/_kosgbpb.s,v $
-; $Date: 2000/07/15 14:52:29 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -12,9 +12,11 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	; _kernel_osgbpb (int op, unsigned handle, _kernel_osgbpb_block *inout)
 	IMPORT	|__seterr|
+
+	; _kernel_osgbpb (int op, unsigned handle, _kernel_osgbpb_block *inout)
 	EXPORT	|_kernel_osgbpb|
+	NAME	_kernel_osgbpb
 |_kernel_osgbpb|
 	STMFD	sp!, {v1, v2, v3, v4, lr}
 	MOV	v4, a3

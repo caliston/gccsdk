@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/strtoul.c,v $
- * $Date: 2000/07/15 14:52:10 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: strtoul.c,v 1.1.1.1 2000/07/15 14:52:10 nick Exp $";
+static const char rcs_id[] = "$Id: strtoul.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
 #endif
 
 #include <ctype.h>
@@ -65,6 +65,9 @@ strtoul (const char *nptr, char **end, int base)
 	base = 10;
     }
 
+  /* Save the pointer so we can check later if anything happened.  */
+  save = s;
+
   cutoff = ULONG_MAX / base;
   cutlim = ULONG_MAX % base;
 
@@ -99,7 +102,7 @@ strtoul (const char *nptr, char **end, int base)
 	  if ((save - nptr) >= 2 && toupper (save[-1]) == 'X' && save[-2] == '0')
 	    *end = (char *) &save[-1];
 	  else
-	    *end = (char *) s;
+	    *end = (char *) nptr;
 	}
       return 0;
     }

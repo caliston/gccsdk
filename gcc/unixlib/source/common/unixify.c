@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/common/unixify.c,v $
- * $Date: 2000/07/15 14:52:18 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/08/16 09:08:25 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -18,7 +18,8 @@
 char *__unixify_std (const char *name, char *buffer, size_t buflen,
      		     int filetype)
 {
-  return __unixify (name, __riscosify_control, buffer, buflen, filetype);
+  return __unixify (name, __get_riscosify_control (), buffer, buflen,
+		    filetype);
 }
 
 /* Convert RO_PATH into a Unix style pathname and store in BUFFER. If BUFFER
@@ -42,6 +43,12 @@ __unixify (const char *ro_path, int unixify_flags, char *buffer,
   if (buffer == NULL)
     {
       buf_len = strlen (ro_path) + 2;
+
+      /* Allow for the ,xyz filetype extension.  */
+      if ((unixify_flags & __RISCOSIFY_FILETYPE_EXT) != 0
+          && filetype != __RISCOSIFY_FILETYPE_NOTSPECIFIED)
+        buf_len += 4;
+      
       if ((buffer = malloc (buf_len)) == NULL)
 	return NULL;
     }
@@ -226,21 +233,21 @@ __unixify (const char *ro_path, int unixify_flags, char *buffer,
                    before_suffix --)
                 ;
 
-              if (*before_suffix == '/')
+              if (before_suffix == buffer || *before_suffix++ == '/')
                 {
-                  /* before_suffix is "/c/file"
+                  /* before_suffix is "c/file"
                      after_suffix is "/file"  */
                   *after_suffix = '\0'; /* temporary.  */
-                  if (__sfixfind (before_suffix + 1))
+                  if (__sfixfind (before_suffix))
                     {
                       /* We need to do reverse suffix swapping.  */
                       char suffix[32];
 
-                      memcpy (suffix, before_suffix + 1,
-                      	      after_suffix - before_suffix);
-                      strcpy (before_suffix + 1, after_suffix + 1);
-                      before_suffix[1 + (out - after_suffix - 1)] = '.';
-                      strcpy (before_suffix + 1 + (out - after_suffix - 1) + 1,
+                      memcpy (suffix, before_suffix,
+                      	      after_suffix - before_suffix + 1);
+                      strcpy (before_suffix, after_suffix + 1);
+                      before_suffix[out - after_suffix - 1] = '.';
+                      strcpy (before_suffix + (out - after_suffix - 1) + 1,
                       	      suffix);
                     }
                   else

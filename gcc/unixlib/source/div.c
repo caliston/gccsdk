@@ -1,41 +1,53 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/div.c,v $
- * $Date: 2000/07/15 14:52:08 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:18 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: div.c,v 1.1.1.1 2000/07/15 14:52:08 nick Exp $";
+static const char rcs_id[] = "$Id: div.c,v 1.2 2001/01/29 15:10:18 admin Exp $";
 #endif
 
 #include <stdlib.h>
 
 div_t
-div (register int numer, register int denom)
-
+div (int numer, int denom)
 {
-  register div_t r;
-  register int i;
+  div_t r;
+  int i;
 
   r.quot = i = numer / denom;
   r.rem = numer - (i * denom);
 
-  return (r);
+  return r;
 }
 
 ldiv_t
-ldiv (register long numer, register long denom)
-
+ldiv (long numer, long denom)
 {
-  register ldiv_t r;
-  register long i;
+  ldiv_t r;
+  long i;
 
   r.quot = i = numer / denom;
   r.rem = numer - (i * denom);
 
-  return (r);
+  return r;
 }
+
+#ifdef __GNUC__
+lldiv_t
+lldiv (long long numer, long long denom)
+{
+  lldiv_t r;
+  long long i;
+
+  r.quot = i = numer / denom;
+  r.rem = numer - (i * denom);
+
+  return r;
+}
+#endif

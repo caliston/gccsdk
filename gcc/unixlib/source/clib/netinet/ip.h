@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/netinet/ip.h,v $
- * $Date: 2000/07/15 14:52:14 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -12,6 +12,10 @@
 #define __NETINET_IP_H
 
 /* Freenet programmers interface - netinet/ip.h - 23/5/95 */
+
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
 
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
@@ -28,6 +32,8 @@
 #ifndef __SYS_BYTEORDER_H
 #include <sys/byteorder.h>
 #endif
+
+__BEGIN_DECLS
 
 /*
  * Current IP version
@@ -165,5 +171,7 @@ struct	ip_timestamp
 #define	IPFRAGTTL	60		/* Time to live for frags, slowhz */
 #define	IPTTLDEC	1		/* Subtracted when forwarding */
 #define	IP_MSS		576		/* Default maximum segment size */
+
+__END_DECLS
 
 #endif

@@ -1,27 +1,14 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/fcrypt.h,v $
- * $Date: 2000/07/15 14:52:11 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/08/18 15:19:05 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
-/* Fcrypt.h: Header file for fcrypt() DES encryption */
-
 #ifndef __FCRYPT_H
 #define __FCRYPT_H 1
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern void init_des (void);
-extern char *fcrypt (const char *, const char *);
-
-#ifdef __cplusplus
-}
-#endif
-
+#include <crypt.h>
 #endif

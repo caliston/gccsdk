@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/termios/tcgetattr.c,v $
- * $Date: 2000/07/15 14:52:35 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/09/11 14:16:00 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tcgetattr.c,v 1.1.1.1 2000/07/15 14:52:35 nick Exp $";
+static const char rcs_id[] = "$Id: tcgetattr.c,v 1.2.2.1 2001/09/11 14:16:00 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -17,8 +17,7 @@ static const char rcs_id[] = "$Id: tcgetattr.c,v 1.1.1.1 2000/07/15 14:52:35 nic
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-
-extern const speed_t __bsd_speeds[]; /* Defined in tcsetattr.c.  */
+#include <unixlib/unix.h>
 
 /* Put the state of FD into *TERMIOS_P.  */
 int
@@ -66,7 +65,7 @@ tcgetattr (int fd, struct termios *termios_p)
       termios_p->c_lflag |= ISIG;
 #endif
     }
-  if ((buf.sg_flags & (CBREAK|RAW)) == 0)
+  if ((buf.sg_flags & (CBREAK | RAW)) == 0)
     termios_p->c_lflag |= ICANON;
   if (!(buf.sg_flags & RAW) && !(local & LLITOUT))
     termios_p->c_oflag |= OPOST;
@@ -81,7 +80,7 @@ tcgetattr (int fd, struct termios *termios_p)
     termios_p->c_cflag |= CSTOPB;
 #endif
 
-  switch (buf.sg_flags & (EVENP|ODDP))
+  switch (buf.sg_flags & (EVENP | ODDP))
     {
     case EVENP|ODDP:
       break;
@@ -93,15 +92,15 @@ tcgetattr (int fd, struct termios *termios_p)
       break;
     }
   if (buf.sg_flags & ECHO)
-    termios_p->c_lflag |= _ECHO;
+    termios_p->c_lflag |= ECHO;
   if (local & LCRTERA)
     termios_p->c_lflag |= ECHOE;
   if (local & LCRTKIL)
     termios_p->c_lflag |= ECHOK;
   if (local & LTOSTOP)
-    termios_p->c_lflag |= _TOSTOP;
+    termios_p->c_lflag |= TOSTOP;
   if (local & LNOFLSH)
-    termios_p->c_lflag |= _NOFLSH;
+    termios_p->c_lflag |= NOFLSH;
 
   termios_p->c_cc[VEOF] = tchars.t_eofc;
   termios_p->c_cc[VEOL] = '\n';

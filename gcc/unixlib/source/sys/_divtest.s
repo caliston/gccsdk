@@ -1,21 +1,22 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_divtest.s,v $
-; $Date: 2000/07/15 14:52:34 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/09/11 13:05:55 $
+; $Revision: 1.2.2.1 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
 	GET	clib/unixlib/asm_dec.s
 
-	AREA	|C$code|, CODE, READONLY
+	AREA	|C$$code|, CODE, READONLY
 
-	EXPORT	|x$divtest|
-	EXPORT	|__rt_divtest|
 	IMPORT	raise
 
+	EXPORT	|__rt_divtest|
+	EXPORT	|x$divtest|
+	NAME	__rt_divtest
 |__rt_divtest|
 |x$divtest|
 	CMP	a1, #0

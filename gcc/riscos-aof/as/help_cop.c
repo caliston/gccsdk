@@ -3,8 +3,14 @@
  * help_cop.c
  * Copyright © 1992 Niklas Röjemo
  */
-
+#include "sdk-config.h"
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+#include <stdlib.h>
+
 #include "error.h"
 #include "expr.h"
 #include "help_cop.h"
@@ -18,7 +24,7 @@
 #include "reloc.h"
 
 int 
-help_copInt (int max, char *msg)
+help_copInt (int max, const char *msg)
 {
   Value i;
   exprBuild ();

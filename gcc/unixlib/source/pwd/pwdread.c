@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/pwd/pwdread.c,v $
- * $Date: 2000/07/15 14:52:28 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/06/10 11:42:49 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: pwdread.c,v 1.1.1.1 2000/07/15 14:52:28 nick Exp $";
+static const char rcs_id[] = "$Id: pwdread.c,v 1.2.2.2 2002/06/10 11:42:49 admin Exp $";
 #endif
 
 /* pwd.c.pwdread. Internal password-file reading functions.
@@ -46,7 +46,7 @@ p_pdecode (char *line, struct passwd *passwd)
 {
   char *lp;
 
-  if (!line || !passwd)
+  if (! line || ! passwd)
     return;
 
   lp = line;
@@ -64,10 +64,11 @@ p_pdecode (char *line, struct passwd *passwd)
 struct passwd *
 __pwdread (FILE * stream, struct passwd *ppwd)
 {
-  char buf[256], *bp;
+  static char buf[256];
+  char *bp;
 
   if (stream == NULL)
-    return 0;
+    return NULL;
 
   /* Get a line, skipping past comment lines.  */
   do
@@ -82,10 +83,35 @@ __pwdread (FILE * stream, struct passwd *ppwd)
   while (*bp)
     bp++;
   if (*--bp != '\n')
-    return 0;
+    return NULL;
   *bp = 0;
 
   /* Decode the line.  */
   p_pdecode (buf, ppwd);
   return ppwd;
 }
+
+/* Return default values for when /etc/passwd doesn't exist */
+struct passwd *
+__pwddefault (void)
+{
+  static int pwd_inited = 0;
+  static struct passwd pwd;
+
+  if (pwd_inited == 0)
+    {
+      pwd.pw_name   = strdup("unixlib");
+      pwd.pw_passwd = strdup("");
+      pwd.pw_uid    = 1;
+      pwd.pw_gid    = 1;
+      pwd.pw_gecos  = strdup("UnixLib User");
+      pwd.pw_dir    = strdup(getenv("HOME"));
+      pwd.pw_shell  = strdup("/bin/bash");
+
+      pwd_inited = 1;
+   }
+
+   return &pwd;
+}
+
+

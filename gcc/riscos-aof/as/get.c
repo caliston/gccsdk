@@ -3,9 +3,14 @@
  * get.c
  * Copyright © 1992 Niklas Röjemo
  */
-
+#include "sdk-config.h"
 #include <string.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #include "get.h"
 #include "error.h"
 #include "input.h"
@@ -20,7 +25,7 @@ extern int gcc_backend;
 
 struct reg_id
   {
-    char *name;
+    const char *name;
     int reg_no;
     int len;
   };
@@ -28,20 +33,20 @@ struct reg_id
 WORD 
 getCpuReg (void)
 {
-  static struct reg_id cpu_regs[] =
+  static const struct reg_id cpu_regs[] =
   {
-    "r0", 0, 2, "r1", 1, 2, "r2", 2, 2, "r3", 3, 2,
-    "r4", 4, 2, "r5", 5, 2, "r6", 6, 2, "r7", 7, 2,
-    "r8", 8, 2, "r9", 9, 2, "r10", 10, 3, "r11", 11, 3,
-    "r12", 12, 3, "r13", 13, 3, "r14", 14, 3, "r15", 15, 3,
-    "a1", 0, 2, "a2", 1, 2, "a3", 2, 2, "a4", 3, 2,
-    "v1", 4, 2, "v2", 5, 2, "v3", 6, 2, "v4", 7, 2, "v5", 8, 2, "v6", 9, 2,
-    "sl", 10, 2, "fp", 11, 2, "ip", 12, 2, "sp", 13, 2, "lr", 14, 2, "pc", 15, 2,
-    "rfp", 9, 3, "sb", 9, 2
-  };
+    { "r0", 0, 2 },  { "r1", 1, 2 },   { "r2", 2, 2 },   { "r3", 3, 2 },
+    { "r4", 4, 2 },  { "r5", 5, 2 },   { "r6", 6, 2 },   { "r7", 7, 2 },
+    { "r8", 8, 2 },  { "r9", 9, 2 },   { "r10", 10, 3 }, { "r11", 11, 3 },
+    { "r12", 12, 3 },{ "r13", 13, 3 }, { "r14", 14, 3 }, { "r15", 15, 3 },
+    { "a1", 0, 2 },  { "a2", 1, 2  },  { "a3", 2, 2 },   { "a4", 3, 2 },
+    { "v1", 4, 2 },  { "v2", 5, 2  },  { "v3", 6, 2 },   { "v4", 7, 2 },  { "v5", 8, 2  }, { "v6", 9, 2 },
+    { "sl", 10, 2 }, { "fp", 11, 2 },  { "ip", 12, 2 },  { "sp", 13, 2 }, { "lr", 14, 2 }, {"pc", 15, 2 },
+    { "rfp", 9, 3 }, { "sb", 9, 2 }    
+  };                 
 
   Lex lexSym;
-  int loop;
+  unsigned int loop;
   Symbol *sym;
 
   lexSym = lexGetId ();
@@ -74,13 +79,13 @@ WORD
 getFpuReg (void)
 {
   /* NB since len is fixed at 2, we don't actually use the length */
-  static struct reg_id cpu_regs[8] =
-  {"f0", 0, 2, "f1", 1, 2, "f2", 2, 2, "f3", 3, 2,
-   "f4", 4, 2, "f5", 5, 2, "f6", 6, 2, "f7", 7, 2};
+  static const struct reg_id cpu_regs[8] =
+  {{ "f0", 0, 2 }, { "f1", 1, 2 }, { "f2", 2, 2 }, { "f3", 3, 2 },
+   { "f4", 4, 2 }, { "f5", 5, 2 }, { "f6", 6, 2 }, { "f7", 7, 2 }};
 
   Lex lexSym;
   Symbol *sym;
-  int loop;
+  unsigned int loop;
 
   lexSym = lexGetId ();
   if (lexSym.tag == LexNone)
@@ -156,7 +161,7 @@ getCopNum (void)
 static WORD 
 getShiftOp (void)
 {
-  WORD r;
+  WORD r = 0;
   switch (inputLookLower ())
     {
     case 'a':

@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/math-asm/_sinh.s,v $
-; $Date: 2000/07/15 14:52:24 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -12,9 +12,10 @@
 
 	AREA	|C$$code|,CODE,READONLY
 
-	EXPORT	sinh
-sinh
 	; return (exp(x) - exp(-x)) / 2
+	EXPORT	sinh
+	NAME	sinh
+sinh
 	STMFD	sp!, {a1, a2}
 	LDFD	f0, [sp], #8
 	MNFD	f1, f0

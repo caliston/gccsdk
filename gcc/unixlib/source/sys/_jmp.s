@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_jmp.s,v $
-; $Date: 2000/07/15 14:52:34 $
-; $Revision: 1.1.1.1 $
+; $Date: 2002/03/30 10:03:28 $
+; $Revision: 1.2.2.3 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -18,6 +18,7 @@
 	IMPORT	|_exit|
 
 	EXPORT	setjmp
+	NAME	setjmp
 setjmp
 	; record the current allocation pointer for use with longjmp
 	; Note, alloca_list is a weak symbol so may not be set
@@ -33,14 +34,14 @@ setjmp
 	LDR	a4, [a4]
 	CMP	a4, #0
 	ADDEQ	a1, a1, #48
+	[ {CONFIG} = 26
 	BEQ	|__setjmp_l1|
-	[	ARMFPE = "3"
-	SFM	f4, 4, [a1], #12
-	|
 	STFE	f4, [a1], #12
 	STFE	f5, [a1], #12
 	STFE	f6, [a1], #12
 	STFE	f7, [a1], #12
+	|
+	SFMNE	f4, 4, [a1], #48
 	]
 |__setjmp_l1|
 	; warning!!!!
@@ -52,6 +53,7 @@ setjmp
 	return	AL, pc, lr
 
 	EXPORT	longjmp
+	NAME	longjmp
 longjmp
 	; free allocations that occurred after the setjmp. This must be
 	; done before any registers, including the fp registers, are
@@ -88,14 +90,14 @@ longjmp
 	LDR	a4, [a4]
 	CMP	a4, #0
 	ADDEQ	v1, v1, #48
+	[ {CONFIG} = 26
 	BEQ	|__longjmp_l1|
-	[	ARMFPE = "3"
-	LFM	f4, 4, [v1], #12
-	|	
 	LDFE	f4, [v1], #12
 	LDFE	f5, [v1], #12
 	LDFE	f6, [v1], #12
 	LDFE	f7, [v1], #12
+	|
+	LFMNE	f4, 4, [v1], #48
 	]
 |__longjmp_l1|
 	MOVS	a1, a2
@@ -108,10 +110,10 @@ longjmp
 	; once by using this position in the jmp_buf as the return
 	; value for vret!!!!
 	STR	a1, [v1]
-	[	APCS32 = "no"
+	[ {CONFIG} = 26
 	LDMIA	v1, {a1, v1, v2, v3, v4, v5, v6, fp, sp, pc}^
 	|
-	LDMIA	v1, {a2, v1, v2, v3, v4, v5, v6, fp, sp, pc}
+	LDMIA	v1, {a1, v1, v2, v3, v4, v5, v6, fp, sp, pc}
 	]
 
 	; if we get here something has screwed up. The old value

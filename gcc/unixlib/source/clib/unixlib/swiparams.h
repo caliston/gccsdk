@@ -1,23 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/swiparams.h,v $
- * $Date: 2000/07/15 14:52:17 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/08/17 10:52:33 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifndef __UNIXLIB_SWIPARAMS_H
 #define __UNIXLIB_SWIPARAMS_H
-
-#ifndef __UNIXLIB_FEATURES_H
-#include <unixlib/features.h>
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifdef __UNIXLIB_INTERNALS
 
@@ -50,10 +42,11 @@ extern "C" {
 #define OSFILE_OPENUP	   (OSFIND_OPEN_OPENUP)
 #endif
 
-#endif  /* __UNIXLIB_INTERNALS */
+#define MMM_TYPE_RISCOS               0
+#define MMM_TYPE_RISCOS_STRING        1
+#define MMM_TYPE_MIME                 2
+#define MMM_TYPE_DOT_EXTN             3
 
-#ifdef __cplusplus
-}
-#endif
+#endif  /* __UNIXLIB_INTERNALS */
 
 #endif

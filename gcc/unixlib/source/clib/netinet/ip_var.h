@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/netinet/ip_var.h,v $
- * $Date: 2000/07/15 14:52:15 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -12,6 +12,9 @@
 #define __NETINET_IP_VAR_H 1
 
 /* Freenet programmers interface - netinet/ip_var.h - 23/5/95 */
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
 
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
@@ -20,6 +23,8 @@
 #ifndef __SYS_BYTEORDER_H
 #include <sys/byteorder.h>
 #endif
+
+__BEGIN_DECLS
 
 /*
  * Overlay for ip header used by other protocols (tcp, udp).
@@ -133,5 +138,7 @@ struct	ipstat {
  * Maximum size of the IP options for a packet
  */
 #define	MAX_IPOPTLEN 40
+
+__END_DECLS
 
 #endif

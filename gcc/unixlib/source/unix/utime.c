@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/utime.c,v $
- * $Date: 2000/07/15 14:52:45 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: utime.c,v 1.1.1.1 2000/07/15 14:52:45 nick Exp $";
+static const char rcs_id[] = "$Id: utime.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -18,7 +18,7 @@ static const char rcs_id[] = "$Id: utime.c,v 1.1.1.1 2000/07/15 14:52:45 nick Ex
 #include <unistd.h>
 #include <utime.h>
 
-#include <sys/os.h>
+#include <unixlib/os.h>
 #include <unixlib/local.h>
 #include <unixlib/swiparams.h>
 
@@ -39,7 +39,7 @@ utime (const char *ux_filename, const struct utimbuf *times)
     return __set_errno (ENAMETOOLONG);
 
   /* See if the file exists first and get file type and attributes.  */
-  err = os_file (OSFILE_READCATINFO_NOPATH, filename, regs);
+  err = __os_file (OSFILE_READCATINFO_NOPATH, filename, regs);
   if (err)
     {
       __seterr (err);
@@ -66,8 +66,8 @@ utime (const char *ux_filename, const struct utimbuf *times)
   __cvt_unix_time (unix_time, &high, &low);
   regs[2] = (regs[2] & 0x000fff00U) | 0xfff00000U | high;
   regs[3] = (int) low;
-  /* Object attributes (regs[5]) come from os_file above.  */
-  err = os_file (1, filename, regs);
+  /* Object attributes (regs[5]) come from __os_file above.  */
+  err = __os_file (1, filename, regs);
   if (err)
     {
       __seterr (err);

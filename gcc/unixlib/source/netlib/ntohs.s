@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/netlib/ntohs.s,v $
-; $Date: 2000/07/15 14:52:26 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -13,6 +13,7 @@
 	AREA	|C$$code|,CODE,READONLY
 
 	EXPORT	ntohs
+	NAME	ntohs
 ntohs
 	MOV	r2, #255
 	AND	r1, r2, r0, LSR #8

@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/assert.h,v $
- * $Date: 2000/07/15 14:52:10 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/02/07 10:19:30 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -17,25 +17,20 @@
 #ifndef __ASSERT_H
 #define __ASSERT_H
 
-#ifndef __GNUC__
-#undef  __attribute__
-#define __attribute__(x) /* Ignore */
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+__BEGIN_DECLS
 
-extern void assert (int) __attribute__ ((__noreturn__));
+extern void assert (int);
 
-extern void __assert_fail (char *__message,
+extern void __assert_fail (const char *__message,
 			   const char *__file,
 			   int __line,
 			   const char *__function) __attribute__ ((__noreturn__));
 
-#ifdef __cplusplus
-}
-#endif
+__END_DECLS
 
 #else
 #undef assert

@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/scl/_kosfind.s,v $
-; $Date: 2000/07/15 14:52:29 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:20 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -12,9 +12,11 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	; _kernel_osfind (int op, char *name)
 	IMPORT	|__seterr|
+
+	; _kernel_osfind (int op, char *name)
 	EXPORT	|_kernel_osfind|
+	NAME	_kernel_osfind
 |_kernel_osfind|
 	STMFD	sp!, {lr}
 	SWI	XOS_Find

@@ -1,18 +1,19 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/strnicmp.c,v $
- * $Date: 2000/07/15 14:52:09 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: strnicmp.c,v 1.1.1.1 2000/07/15 14:52:09 nick Exp $";
+static const char rcs_id[] = "$Id: strnicmp.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
 #endif
 
 #include <string.h>
+#include <strings.h>
 #include <ctype.h>
 
 int

@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/netinet/in.h,v $
- * $Date: 2000/07/15 14:52:14 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2002/08/18 15:19:06 $
+ * $Revision: 1.3.2.1 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -48,6 +48,10 @@
 
 /* Freenet programmers interface - netinet/in.h - edited by andy 23/5/95 */
 
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
+#endif
+
 #ifndef __UNIXLIB_TYPES_H
 #include <unixlib/types.h>
 #endif
@@ -55,6 +59,8 @@
 /* Constants and structures defined by the internet system,
    Per RFC 790, September 1981, and numerous additions.  */
 
+
+__BEGIN_DECLS
 
 /* Standard well-defined IP protocols.  */
 enum
@@ -164,9 +170,8 @@ struct in6_addr
 #define	IN_EXPERIMENTAL(i)	(((long)(i) & 0xf0000000) == 0xf0000000)
 #define	IN_BADCLASS(i)		(((long)(i) & 0xf0000000) == 0xf0000000)
 
-/*
- * Some useful addresses
- */
+/* Some useful addresses.  */
+
 /* Address to accept any incoming messages.  */
 #define INADDR_ANY	    ((__u_long)0x00000000)
 /* Address to loopback in software to local host.  */
@@ -231,7 +236,11 @@ struct sockaddr_in6
 struct ip_opts
 {
   struct in_addr ip_dst;	/* First hop; zero without source route.  */
+#if defined(__cplusplus)
+  char Ip_opts[40];		/* Cannot have same name as class */
+#else
   char ip_opts[40];		/* Actually variable in size.  */
+#endif  
 };
 
 /* Argument structure for IP_ADD_MEMBERSHIP and IP_DROP_MEMBERSHIP.  */
@@ -240,6 +249,8 @@ struct ip_mreq
   struct in_addr imr_multiaddr;	/* IP multicast address of group.  */
   struct in_addr imr_interface;	/* Local IP address of interface.  */
 };
+
+__END_DECLS
 
 /* The host byte order and network byte order translation functions are
    normally declared in this .h file, so pull them in.  */

@@ -1,26 +1,26 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/fchmod.c,v $ $/usr/local/cvsroot/unixlib/source/unix/c/chmod,v $
- * $Date: 2000/07/15 14:52:43 $
- * $Revision: 1.1.1.1 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/fchmod.c,v $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: fchmod.c,v 1.1.1.1 2000/07/15 14:52:43 nick Exp $";
+static const char rcs_id[] = "$Id: fchmod.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 #include <errno.h>
 #include <limits.h>
 #include <unistd.h>
 
-#include <sys/dev.h>
-#include <sys/os.h>
+#include <unixlib/dev.h>
+#include <unixlib/os.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/unix.h>
+#include <unixlib/unix.h>
 
 #include <unixlib/local.h>
 
@@ -45,7 +45,7 @@ int fchmod (int fd, mode_t mode)
 
   /* Set the file access permission bits.  */
   regs[5] = __set_protection (mode);
-  err = os_file (4, name, regs);
+  err = __os_file (4, name, regs);
   if (err)
     {
       __seterr (err);

@@ -1,10 +1,10 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/varargs.h,v $
- * $Date: 2000/07/15 14:52:12 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
@@ -12,9 +12,11 @@
 #define __STDARG_H
 #define __VARARGS_H
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __UNIXLIB_FEATURES_H
+#include <unixlib/features.h>
 #endif
+
+__BEGIN_DECLS
 
 typedef char *va_list;
 
@@ -27,8 +29,6 @@ typedef char *va_list;
 	(t)(*(int *)(((a) += sizeof(int)) - sizeof(int))))
 #define va_end(a)	((void)((a) = (char *)-1))
 
-#ifdef __cplusplus
-	}
-#endif
+__END_DECLS
 
 #endif

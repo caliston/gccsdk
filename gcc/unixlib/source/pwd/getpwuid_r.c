@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/pwd/getpwuid_r.c,v $
- * $Date: 2000/07/15 14:52:27 $
- * $Revision: 1.1.1.1 $
+ * $Date: 2001/01/29 15:10:20 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: nick $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: getpwuid_r.c,v 1.1.1.1 2000/07/15 14:52:27 nick Exp $";
+static const char rcs_id[] = "$Id: getpwuid_r.c,v 1.2 2001/01/29 15:10:20 admin Exp $";
 #endif
 
 /* Search for an entry with a matching user ID (re-entrant version).
@@ -33,7 +33,10 @@ getpwuid_r (uid_t uid, struct passwd *resbuf, char *buffer, size_t buflen,
 
   stream = fopen ("/etc/passwd", "r");
   if (stream == NULL)
-    return -1;
+    {
+      *result = __pwddefault ();
+      return 0;
+    }
 
   p = __pwdread (stream, resbuf);
   while (p != NULL)

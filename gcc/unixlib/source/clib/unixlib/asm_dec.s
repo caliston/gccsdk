@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
-; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/s/asm_dec,v $
-; $Date: 2000/07/15 14:52:18 $
-; $Revision: 1.1.1.1 $
+; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/asm_dec.s,v $
+; $Date: 2001/10/02 10:19:55 $
+; $Revision: 1.2.2.3 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ; Declare registers and SWIs we will be calling.
 ;
@@ -98,7 +98,7 @@ FFlag	EQU	&04000000	; FIRQ disable
 
 	MACRO
 	return	$cond, $dstreg, $srcreg
-	[	APCS32 = "no"
+	[ {CONFIG} = 26
 	MOV$cond.S	$dstreg, $srcreg
 	|
 	MOV$cond	$dstreg, $srcreg
@@ -107,7 +107,7 @@ FFlag	EQU	&04000000	; FIRQ disable
 
 	MACRO
 	stackreturn	$cond, $regs
-	[	APCS32 = "no"
+	[ {CONFIG} = 26
 	LDM$cond.FD	sp!, {$regs}^
 	|
 	LDM$cond.FD	sp!, {$regs}
@@ -270,7 +270,7 @@ SIGUSR2 EQU	31	;   user signal 2
 SIGLOST EQU	32	;   resource lost
 SIGERR	EQU	33	;   RISC OS error
 
-EOPSYS	EQU	106	; RISC OS error
+EOPSYS	EQU	88	; RISC OS error
 
 
 OS_WriteS	EQU	&000001
@@ -295,12 +295,22 @@ XOS_BGet			EQU	&00000A + X_Bit
 XOS_BPut			EQU	&00000B + X_Bit
 XOS_GBPB			EQU	&00000C + X_Bit
 XOS_Find			EQU	&00000D + X_Bit
+XOS_ReadLine			EQU	&00000E + X_Bit
+XOS_Control			EQU	&00000F + X_Bit
 XOS_GetEnv			EQU	&000010 + X_Bit
+XOS_Exit			EQU	&000011 + X_Bit
 XOS_SetEnv			EQU	&000012 + X_Bit
 XOS_IntOn			EQU	&000013 + X_Bit
+XOS_IntOff			EQU	&000014 + X_Bit
+XOS_CallBack			EQU	&000015 + X_Bit
 XOS_EnterOS			EQU	&000016 + X_Bit
-
+XOS_BreakPt			EQU	&000017 + X_Bit
+XOS_BrealCtrl			EQU	&000018 + X_Bit
+ 
+XOS_UpdateMEMC			EQU	&00001A + X_Bit
 XOS_SetCallBack			EQU	&00001B + X_Bit
+XOS_Mouse			EQU	&00001C + X_Bit
+XOS_Heap			EQU	&00001D + X_Bit
 XOS_Module			EQU	&00001E + X_Bit
 XOS_ReadUnsigned		EQU	&000021 + X_Bit
 XOS_ReadVarVal			EQU	&000023 + X_Bit
@@ -398,7 +408,10 @@ XSharedCLibrary_LibInitModule	EQU	&080682 + X_Bit
 XMessageTrans_ErrorLookup	EQU	&041506 + X_Bit
 
 XTaskWindow_TaskInfo		EQU	&043380 + X_Bit
-
+XWimp_ReadSysInfo		EQU	&0400F2 + X_Bit
 XDDEUtils_SetCLSize		EQU	&042581 + X_Bit
+
+XSharedUnixLibrary_RegisterUpCall	EQU	&55c80 + X_Bit
+XSharedUnixLibrary_DeRegisterUpCall	EQU	&55c81 + X_Bit
 
 	END

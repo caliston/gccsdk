@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_modsi3.s,v $
-; $Date: 2000/07/15 14:52:34 $
-; $Revision: 1.1.1.1 $
+; $Date: 2001/01/29 15:10:21 $
+; $Revision: 1.2 $
 ; $State: Exp $
-; $Author: nick $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -14,9 +14,10 @@
 
 	AREA	|C$$code|, CODE, READONLY
 
-	IMPORT |_kernel_sdiv|
-	EXPORT |__modsi3|
+	IMPORT	|_kernel_sdiv|
 
+	EXPORT	|__modsi3|
+	NAME	__modsi3
 |__modsi3|
 	STMFD	sp!, {lr}
 	MOV	a3, a1

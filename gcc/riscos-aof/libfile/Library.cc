@@ -1,3 +1,4 @@
+#include <errno.h>
 #include "Library.h"
 #include "LibTime.h"
 #include "LibVersion.h"
@@ -227,7 +228,7 @@ void Library::extractMembers(const List<BString> &a_wildMembers, const BString &
 
  // Add a '.' to end of path if necessary
  int l=path.laenge();
-#ifdef UNIX
+#ifdef CROSS_COMPILE
  if(path[l-1] != '/')
    path += "/";
 #else
@@ -263,7 +264,7 @@ void Library::extractMembers(const List<BString> &a_wildMembers, const BString &
  	 			fullPath = *member;
 
  	 		// Save file
- 	 		cerr << "Pfad: " << fullPath << endl;
+ 	 		// cerr << "Pfad: " << fullPath << endl;
  	 		data->createPath(fullPath);
  	 		data->save(fullPath, dirEntry->m_time);
  	 	}

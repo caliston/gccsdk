@@ -1,8 +1,11 @@
 #ifndef BString_hxx
 #define BString_hxx
 
+using namespace std;
+
 #include <stdio.h>
-#include <iostream.h>
+#include <string.h>
+#include <iostream>
 
 class BString
 {
