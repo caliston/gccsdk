@@ -112,6 +112,9 @@ case "$host" in
   *openbsd*)
 	os_type="OPENBSD"
 	;;
+  *netbsd*)
+	os_type="NETBSD"
+	;;
   *linux*)
 	os_type="LINUX"
 	;;

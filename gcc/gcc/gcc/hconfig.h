@@ -20,6 +20,8 @@
 #include "config/i386/xm-freebsd.h"
 #elif HOST_I386_OPENBSD
 #include "config/i386/xm-openbsd.h"
+#elif HOST_I386_NETBSD
+#include "config/i386/xm-netbsd.h"
 #elif HOST_I386_LINUX
 #include "config/i386/xm-linux.h"
 #elif HOST_MIPS_IRIX

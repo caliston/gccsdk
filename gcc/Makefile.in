@@ -98,8 +98,8 @@ AR_FLAGS = -rc
 CROSS_AR = $(ux_gccpkg)/$(gn_standard_exec_prefix)/libfile
 CROSS_AR_FLAGS = -c
 
-insthdr = @topdir@/scripts/install-headers.pl
-instsrc = @topdir@/scripts/install-source.pl
+insthdr = perl @topdir@/scripts/install-headers.pl
+instsrc = perl @topdir@/scripts/install-source.pl
 
 # Place variables in the environment.  This saves us having to pass
 # the variables to sub-makes on the command line.
