@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/_printf.s,v $
-; $Date: 2001/01/29 15:10:21 $
-; $Revision: 1.2 $
+; $Date: 2002/07/19 13:12:30 $
+; $Revision: 1.2.2.1 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -36,4 +36,28 @@
 |_vfprintf|
 	B	vfprintf
 
+	IMPORT	vprintf
+	EXPORT	|_vprintf|
+	NAME	_vprintf
+|_vprintf|
+	B	vprintf
+
+	IMPORT	snprintf
+	EXPORT	|_snprintf|
+	NAME	_snprintf
+|_snprintf|
+	B	snprintf
+
+	IMPORT	vsprintf
+	EXPORT	|_vsprintf|
+	NAME	_vsprintf
+|_vsprintf|
+	B	vsprintf
+
+	IMPORT	vsnprintf
+	EXPORT	|_vsnprintf|
+	NAME	_vsnprintf
+|_vsnprintf|
+	B	vsnprintf
+	
 	END

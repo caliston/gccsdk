@@ -1,3 +1,10 @@
+Wed Nov 13 10:55:36 2002  Stefan Bellon  <sbellon@sbellon.de>
+
+	* stdint.h: Norcroft version 5.50 supports long long.
+
+	* stdio/_printf.s (_vprintf, _snprintf): New functions.
+	(_vsprintf, _vsnprintf): New Norcroft compatibility functions.
+
 Mon Oct 21 22:12:25 2002  Alex Waugh  <alex.waugh@arm.com>
 
 	* sys/exec.c (execve): Allow a null argument list.
