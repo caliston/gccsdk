@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2001/09/14 14:01:17 $
- * $Revision: 1.2.2.7 $
+ * $Date: 2002/01/31 14:32:04 $
+ * $Revision: 1.2.2.8 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.7 2001/09/14 14:01:17 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.8 2002/01/31 14:32:04 admin Exp $";
 #endif
 
 #include <stdio.h>
@@ -613,6 +613,8 @@ static void get_io_redir (const char *cli)
 static int
 verify_redirection (const char *redir)
 {
+  int x;
+
 #if 0 /*def DEBUG*/
   __os_print ("-- verify_redirection: ");
   __os_print (redir);
@@ -646,9 +648,23 @@ verify_redirection (const char *redir)
       && (redir[2] == '-' || isdigit (redir[2])))
     return 1;
 
-  if ((redir[0] == '>' || redir[0] == '<')
-      && (redir[1] == ' ' || isdigit (redir[-1])))
-    return 1;
+
+  /* This should match:
+     "2>foo"
+     "2<foo"
+  */
+  x = 0;
+  if (isdigit (redir[x]))
+    {
+      while (redir[x] && isdigit (redir[x]))
+	x++;
+
+      while (redir[x] && redir[x] == ' ')
+	x++;
+      
+      if (redir[x] == '<' || redir[x] == '>')
+	return 1;
+    }
 
   if (redir[0] == '<')
     {
@@ -699,6 +715,10 @@ find_redirection_type (const char *cmdline, char redirection_type)
     	return NULL;
       else
         {
+	  /* Cope with "2> foobar" */
+	  while (isdigit (cmdline[-1]))
+	    cmdline --;
+
           if (verify_redirection (cmdline))
             return cmdline;
           /* Skip a character otherwise we loop on <foo$bar>.  */

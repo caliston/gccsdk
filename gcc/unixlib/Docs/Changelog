@@ -1,3 +1,10 @@
+Tue Apr 02 20:01:07 2002  Nick Burrett  <nick@dsvr.net>
+
+	* unix/unix.c (verify_redirection): Add logic to cope with
+	file descriptor numbers before redirection operators.
+	(find_redirection_type): Add logic to recognise file descriptor
+	before redirection operators so as to prevent false arguments.
+
 Mon Apr 01 11:27:23 2002  Peter Naulls  <peter@chocky.org>
 
 	* ctype.h (isprint): Fix logic error.
