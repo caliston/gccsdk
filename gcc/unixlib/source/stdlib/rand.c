@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/rand.c,v $
- * $Date: 2001/01/29 15:10:18 $
- * $Revision: 1.2 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdlib/Attic/rand.c,v $
+ * $Date: 2002/06/12 13:33:54 $
+ * $Revision: 1.1.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: rand.c,v 1.2 2001/01/29 15:10:18 admin Exp $";
+static const char rcs_id[] = "$Id: rand.c,v 1.1.2.1 2002/06/12 13:33:54 admin Exp $";
 #endif
 
 #include <stdlib.h>
@@ -37,9 +37,9 @@ srand (long seed)
     seed = __state[i] = (seed * 1103515245 + 12345);
   __st1 = 0;
   __st2 = 3;
-  for (i = 0; i < ((lrand () ^ seed) & 255); i++);
-  for (i = 0; i < ((lrand () ^ seed) & 255); i++)
-    lrand ();
+  for (i = 0; i < ((rand () ^ seed) & 255); i++);
+  for (i = 0; i < ((rand () ^ seed) & 255); i++)
+    rand ();
 }
 
 int
