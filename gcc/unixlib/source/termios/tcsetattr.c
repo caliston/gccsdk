@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/termios/tcsetattr.c,v $
- * $Date: 2001/09/11 14:16:00 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/09/11 16:53:58 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tcsetattr.c,v 1.2.2.1 2001/09/11 14:16:00 admin Exp $";
+static const char rcs_id[] = "$Id: tcsetattr.c,v 1.2.2.2 2001/09/11 16:53:58 admin Exp $";
 #endif
 
 #include <errno.h>
@@ -65,7 +65,7 @@ tcsetattr (int fd, int optional_actions, const struct termios *termios_p)
   if (termios_p == NULL)
     return __set_errno (EINVAL);
 
-  switch (optional_actions)
+  switch (optional_actions & ~TCSASOFT)
     {
     case TCSANOW:
       break;

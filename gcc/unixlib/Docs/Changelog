@@ -1,3 +1,8 @@
+Sat Jan 12 16:06:35 2002  Peter Naulls  <peter@chocky.org>
+
+	* termios/tcsetattr.c (tcsetattr): Mask out hardware state.
+	* unix/tty.c (__ttyicanon): Don't reset cursor position.
+
 Sat Jan 12 15:46:08 2002  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* stdio.h (putchar): Do not define as a macro.
