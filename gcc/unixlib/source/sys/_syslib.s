@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_syslib.s,v $
-; $Date: 2001/05/03 06:25:32 $
-; $Revision: 1.3 $
+; $Date: 2001/08/02 13:27:19 $
+; $Revision: 1.3.2.1 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -22,9 +22,6 @@ NO_CALLASWI * 1
 
 	EXPORT	|__main|
 
-sigstk
-	DCD	|__sigstk|
-	
 	ENTRY
 |__main|
 	SWI	XOS_GetEnv
@@ -40,10 +37,10 @@ sigstk
 	MOV	sp, a2
 	; For simplicity, the first X bytes of stack is reserved for the
 	; signal callback stack.
-	ADR	a2, sigstk
-	LDR	a2, [a2, #0]
+	LDR	a2, =|__sigstk|
 	STR	sp, [a2, #0]
 	LDR	a2, =|__sigstksize|
+	LDR	a2, [a2, #0]
 
 	; Application stack starts here.
 	BIC	a2, a2, #&03	;  Round to a 4 byte boundary.
@@ -81,7 +78,6 @@ sigstk
 	CMP	sl, a1		; order for StrongARM
 	STR	a1, [a4, #0]
 
-;	CMP	sl, a1		; reordered above
 	; No stack, exit fast.
 	BLS	exit_with_error_no_memory
 
@@ -140,10 +136,10 @@ no_old_area
 	LDR	a1, [a4]
 	MOV	a2, a1
 	; search for space or end of cli string
-01
+t01
 	LDRB	a3, [a1], #1
 	CMP	a3, #" "
-	BGT	%B01
+	BGT	t01
 	SUB	a1, a1, #1	; back up to point at terminator char
 
 	; use a maximum of 10 characters from the program name
@@ -158,15 +154,15 @@ no_old_area
 
 	; So, decending copy from a1 to v5
 	; limit is a2, terminate early if we find "." or ":"
-02
+t02
 	LDRB	a4, [a1, #-1]!
 	CMP	a4, #"."
 	CMPNE	a4, #':'
 	STRNEB	a4, [v5, #-1]!
-	BEQ	%F03		; Not sure if some very slick conditionals
+	BEQ	t03		; Not sure if some very slick conditionals
 	CMP	a1, a2		; can eliminate that branch
-	BHI	%B02		; limit not yet reached
-03
+	BHI	t02		; limit not yet reached
+t03
 
 	; check environment variable for creating a DA
 	MOV	a1, v5
@@ -261,7 +257,7 @@ no_dynamic_area
 
 
 exit_with_error_no_memory
-	MOVVS	a1, #NO_MEMORY
+	MOV	a1, #NO_MEMORY
 	; a1 contains an index to the error to print.
 exit_with_error
 	ADR	a2, error_table

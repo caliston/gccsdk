@@ -1,3 +1,11 @@
+Thu Aug 16 11:23:16 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* sys/_syslib.s (sigstk): Delete.
+	(__main): Fix indirection error when referencing __sigstksize.
+	(no_old_area): Use local variables rather than % variables
+	to kill warnings.
+	(exit_with_error_no_memory): Change to an unconditional MOV.
+
 Thu Aug 16 11:02:04 2001  Peter Naulls  <peter@erble.freeserve.co.uk>
 
 	* signal/_signal.s (__h_event): Don't set our own callback.
