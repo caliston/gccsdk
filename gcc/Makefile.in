@@ -112,7 +112,8 @@ export CROSS_AR CROSS_AR_FLAGS
 export VERSION TARGET_NAME CFLAGS CXXFLAGS AR AR_FLAGS
 export insthdr
 
-all:	build-stg1 build-stg2
+all:	build-stg1 build-stg2 build-stg3 build-stg4 build-stg5 build-stg6 \
+	build-stg7
 
 # Setup build and installation directories.  Install run-time library
 # headers
@@ -122,13 +123,18 @@ setup:	directories install_headers
 # i.e. under Linux this will build the GCC cross-compiler, cross-assembler
 # and cross-linker.  Under RISC OS this will build the compiler, assembler
 # and linker natively
-build-stg1:	libiberty-stg1 riscos-aof-stg1 gcc-stg1 cross-progs
+
+# These dependencies are split to help make get parallel building right.
+build-stg1:	libiberty-stg1
+build-stg2:	build-stg1 riscos-aof-stg1
+build-stg3:	build-stg2 gcc-stg1 cross-progs
 
 # These targets build the libraries and binaries suitable for execution
 # on RISC OS machines only.
-build-stg2:	libiberty-stg2 libgcc unixlib gcc-stg2 \
-	libscl libio libstdc riscos-aof-stg2 libf2c libgpc riscos-libs \
-	riscos-progs riscos-dist
+build-stg4:	build-stg3 libiberty-stg2 libgcc unixlib
+build-stg5:	build-stg4 gcc-stg2
+build-stg6:	build-stg5 libscl libio libstdc riscos-aof-stg2
+build-stg7:	build-stg6 libf2c libgpc riscos-libs riscos-progs riscos-dist
 
 .PHONY: directories
 .PHONY: libgcc
@@ -148,6 +154,13 @@ build-stg2:	libiberty-stg2 libgcc unixlib gcc-stg2 \
 .PHONY: riscos-aof-stg1
 .PHONY: riscos-aof-stg2
 
+.PHONY: build-stg1
+.PHONY: build-stg2
+.PHONY: build-stg3
+.PHONY: build-stg4
+.PHONY: build-stg5
+.PHONY: build-stg6
+.PHONY: build-stg7
 
 # Target (trgXX) and compiler flags (cflXX) definitions.  The XX must
 # match for both trg and cfl in all calls to sub-make processes.  We
@@ -200,7 +213,7 @@ riscos-progs:
 	$(MAKE) -C riscos-progs "TRG=$(trg10)" $(cfl10)
 
 cross-progs:
-	$(MAKE) -C cross-progs
+	$(MAKE) -C cross-progs "STAGE=stage1"
 
 riscos-elf:
 	$(MAKE) -C riscos-elf
