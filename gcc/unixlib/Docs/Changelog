@@ -1,3 +1,7 @@
+Wed Jun 12 12:13:20 2002  Peter Naulls  <peter@chocky.org>
+
+	* Sprites,ff9, Sprites22,ff9: Rename from !unixlib37 to !unixlib.
+
 Mon Jun 10 19:14:37 2002  Stefan Bellon  <sbellon@sbellon.de>
 
 	* unix/dev.c (__fsopen): Fix ImageFS logic inversion.
