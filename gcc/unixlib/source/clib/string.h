@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/string.h,v $
- * $Date: 2001/09/14 14:01:17 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2002/08/18 15:19:06 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -126,7 +126,7 @@ extern char *strsep (char **__stringp, const char *__delim);
 /* GNU enhancements.  */
 
 /* Return a string describing the meaning of the signal number sig.  */
-extern const char *strsignal (int __sig);
+extern char *strsignal (int __sig);
 
 /* Return the descriptive error message string for an error code.  */
 extern char *strerror (int __errnum);

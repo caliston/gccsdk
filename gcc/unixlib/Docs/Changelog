@@ -1,3 +1,8 @@
+Tue Sep 24 13:08:36 2002  Nick Burrett  <nick@dsvr.net>
+
+	* strsignal.c (strsignal): Return a char *, not const char *.
+	* string.h (strsignal): Fix prototype.
+
 Tue Sep 24 13:03:52 2002  Nick Burrett  <nick@dsvr.net>
 
 	* sys/exec.c (execve): Make 3rd param char *const *.

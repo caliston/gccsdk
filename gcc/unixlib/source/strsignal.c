@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/strsignal.c,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2002/09/24 11:51:26 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: strsignal.c,v 1.2 2001/01/29 15:10:19 admin Exp $";
+static const char rcs_id[] = "$Id: strsignal.c,v 1.2.2.1 2002/09/24 11:51:26 admin Exp $";
 #endif
 
 #include <signal.h>
@@ -18,7 +18,7 @@ static const char rcs_id[] = "$Id: strsignal.c,v 1.2 2001/01/29 15:10:19 admin E
 
 
 /* Return a string describing the meaning of the signal number SIGNUM.  */
-const char *
+char *
 strsignal (int signum)
 {
   if (signum < 0 || signum >= NSIG)
@@ -29,5 +29,5 @@ strsignal (int signum)
       return unknown_signal;
     }
 
-  return sys_siglist[signum];
+  return (char *) sys_siglist[signum];
 }
