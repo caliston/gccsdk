@@ -28,7 +28,7 @@ Boston, MA 02111-1307, USA.  */
 /* To whomever it may concern: I have heard that such a thing was once
    written by AT&T, but I have never seen it.  */
 
-%expect 66
+%expect 72
 
 %{
 #include "config.h"
@@ -1703,6 +1703,7 @@ compstmt_or_error:
 	;
 
 compstmt_start: '{' { compstmt_count++; }
+	;
 
 compstmt: compstmt_start '}'
 		{ $$ = convert (void_type_node, integer_zero_node); }
@@ -2033,6 +2034,7 @@ all_iter_stmt_simple:
 	    if ($<itype>5)
 	      iterator_for_loop_end ($3);
 	  }
+	;
 
 /*  This really should allow any kind of declaration,
     for generality.  Fix it before turning it back on.
@@ -2378,12 +2380,14 @@ classdecl:
 		{
 		  objc_declare_class ($2);
 		}
+	;
 
 aliasdecl:
 	  ALIAS identifier identifier ';'
 		{
 		  objc_declare_alias ($2, $3);
 		}
+	;
 
 classdef:
 	  INTERFACE identifier protocolrefs '{'
