@@ -103,7 +103,7 @@ int Chunk::createPath(const BString &a_path)
 	  
 	  //cerr << "create " << fullDir << endl;
 	  if (stat ((char *) fullDir (), &r) == 0)
-	    if (! S_ISDIR (r.st_rdev))
+	    if (! S_ISDIR (r.st_mode))
 	      THROW_SPEC_ERR(BError::IsAFile);
 	  
 	  mkdir ((char *) fullDir(), 0755);
