@@ -5,6 +5,8 @@ cdir <obey$dir>.objs.complex
 cdir <obey$dir>.objs.complex.o
 cdir <obey$dir>.objs.gcccompat
 cdir <obey$dir>.objs.gcccompat.o
+cdir <obey$dir>.objs.grp
+cdir <obey$dir>.objs.grp.o
 cdir <obey$dir>.objs.locale
 cdir <obey$dir>.objs.locale.o
 cdir <obey$dir>.objs.math
