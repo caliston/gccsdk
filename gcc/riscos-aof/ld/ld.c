@@ -42,8 +42,6 @@ Boston, MA 02111-1307, USA.  */
 #include <sys/types.h>
 
 #ifndef CROSS_COMPILE
-#include <sys/os.h>
-#include <sys/swis.h>
 #include <unixlib/local.h>
 #endif
 
