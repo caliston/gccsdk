@@ -9,7 +9,7 @@
 #include "os.h"
 #include "error.h"
 
-#ifndef strndup
+#ifndef HAVE_STRNDUP
 char *
 strndup (const char *str, int len)
 {
@@ -24,3 +24,4 @@ strndup (const char *str, int len)
   return c;
 }
 #endif
+
