@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/dev.c,v $
- * $Date: 2002/06/10 12:01:27 $
- * $Revision: 1.2.2.5 $
+ * $Date: 2002/06/10 12:08:01 $
+ * $Revision: 1.2.2.6 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: dev.c,v 1.2.2.5 2002/06/10 12:01:27 admin Exp $";
+static const char rcs_id[] = "$Id: dev.c,v 1.2.2.6 2002/06/10 12:08:01 admin Exp $";
 #endif
 
 /* #define DEBUG */
@@ -31,8 +31,6 @@ static const char rcs_id[] = "$Id: dev.c,v 1.2.2.5 2002/06/10 12:01:27 admin Exp
 #include <unixlib/local.h>
 #include <unixlib/features.h>
 #include <unixlib/swiparams.h>
-
-extern int __feature_imagefs_is_file;
 
 #define IGNORE(x) {(void) x;}
 

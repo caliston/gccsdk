@@ -1,3 +1,9 @@
+Mon Jun 10 17:31:46 2002  Nick Burrett  <nick@dsvr.net>
+
+	* common/stat.c (__feature_imagefs_is_file): Remove extern decl.
+	* unix/dev.c: Likewise.
+	* unixlib/features.h (__feature_imagefs_is_file): Declare here.
+
 Mon Jun 10 13:08:23 2002  Stefan Bellon  <sbellon@sbellon.de>
 
 	* unix/dev.c (__fsopen): Support PipeFS.

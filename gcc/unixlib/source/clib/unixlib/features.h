@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/features.h,v $
- * $Date: 2001/09/21 10:21:15 $
- * $Revision: 1.2.2.2 $
+ * $Date: 2002/03/30 10:01:12 $
+ * $Revision: 1.2.2.3 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -453,5 +453,10 @@
 #ifndef __FEATURE_DEV_RS423
 #define __FEATURE_DEV_RS423 1
 #endif
+
+/* Default to recognising Image filesystems as directories.  Some programs
+   may wish to expose them as files for the purpose of compression
+   or direct manipulation of the contents.  Set to one in this case.  */
+extern int __feature_imagefs_is_file;
 
 #endif
