@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2002/08/18 15:19:06 $
- * $Revision: 1.2.2.8 $
+ * $Date: 2002/08/18 18:35:21 $
+ * $Revision: 1.2.2.9 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -522,6 +522,7 @@ extern size_t confstr (int __name, char *__buf, size_t __len);
    range [FROM - N + 1, FROM - 1].  If N is odd the first byte in FROM
    is without partner.  */
 extern void swab (const void * __from, void * __to, ssize_t __n);
+#endif
 
 #define __need_getopt
 #include <getopt.h>

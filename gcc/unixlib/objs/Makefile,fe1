@@ -1,8 +1,8 @@
 # Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2002/08/18 19:57:19 $
-# $Revision: 1.2.2.14 $
+# $Date: 2002/08/18 21:22:10 $
+# $Revision: 1.2.2.15 $
 # $State: Exp $
 # $Author: admin $
 
@@ -16,44 +16,44 @@ Predefs = -D__UNIXLIB_INTERNALS
 # XXrflags = release flags
 # XXapcsflags = APCS selection flags
 
-# Compiler
-#CC = cc
-#CCdflags = -g
-#CCrflags =
-## APCS selection :
-##   - APCS-R build : -APCS 3/26bit/fpe2
-##   - APCS-32 build : -APCS 3/32bit/fpe3
-#CCapcsflags = -APCS 3/26bit/fpe2
-#CCflags = -depend !Depend -throwback -fcah -JUnixHdr: -wda -wp $(CCdflags) $(CCapcsflags)
-
-# GCC compiler. Comment out if you are using Acorn C
-CC = gcc
-CCdflags = -pedantic -Wall -Wno-long-long
+# Norcroft C (Acorn) compiler. Comment out if you are using GCC compiler.
+CC = cc
+CCdflags = -g
 CCrflags =
-CCflags = -O2 -mpoke-function-name -mthrowback $(CCdflags) $(CCfeatures)
+# APCS selection :
+#   - APCS-R build : -APCS 3/26bit/fpe2
+#   - APCS-32 build : -APCS 3/32bit/fpe3
+CCapcsflags = -APCS 3/26bit/fpe2
+CCflags = -depend !Depend -throwback -fcah -JUnixHdr: -wda -wp $(CCdflags) $(CCapcsflags)
+
+# GCC compiler. Comment out if you are using Norcroft C (Acorn) compiler.
+#CC = gcc
+#CCdflags = -pedantic -Wall -Wno-long-long
+#CCrflags =
+#CCflags = -O2 -mpoke-function-name -mthrowback $(CCdflags) $(CCfeatures)
 
 # Acorn Objasm Assembler. Comment out if you are using 'as'.
-#AS = objasm
-#ASflags = -Stamp -quit -CloseExec
-#ASdflags =
-#ASrflags =
-## APCS selection :
-##   - APCS-R build : -APCS 3/26bit
-##   - APCS-32 build : -APCS 3/32bit
-#ASapcsflags = -APCS 3/26bit
-#ASflags = -throwback -depend !Depend -I UnixHdr:^ $(ASdflags) $(ASapcsflags)
+AS = objasm
+ASflags = -Stamp -quit -CloseExec
+ASdflags =
+ASrflags =
+# APCS selection :
+#   - APCS-R build : -APCS 3/26bit
+#   - APCS-32 build : -APCS 3/32bit
+ASapcsflags = -APCS 3/26bit
+ASflags = -throwback -depend !Depend -I UnixHdr:^ $(ASdflags) $(ASapcsflags)
 
 # as Assembler. Comment out if you are using Acorn Objasm.
-AS = gcc
-ASflags = -c
-ASdflags =
-ASrflags = -I UnixHdr:
+#AS = gcc
+#ASflags = -c
+#ASdflags =
+#ASrflags = -I UnixHdr:
 
 # Libfile, etc
-#AR = libfile
-#ARflags = -c
-AR = makealf
-ARflags =
+AR = libfile
+ARflags = -c
+#AR = makealf
+#ARflags =
 
 # Linker
 LD = drlink
@@ -417,7 +417,7 @@ stdlib.!Stamp:	$(STDLIB)
 	-remove stdlib.!Stamp
 	-create stdlib.!Stamp 0
 
-string.!Stamp:	$(STDLIB)
+string.!Stamp:	$(STRING)
 	-remove string.!Stamp
 	-create string.!Stamp 0
 

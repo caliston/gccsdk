@@ -1,3 +1,9 @@
+Mon Aug 19 12:50:40 2002  John Tytgat  <John.Tytgat@aaug.net>
+
+	* objs/Makefile,fe1: module 'string' dependency was wrong; Made
+	Norcroft C compiler selection the default.
+	* unistd.h: Added missing #endif to fix 18-Aug-2002 19:32:36 change.
+	
 Sun Aug 18 22:19:01 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	crypt implementation -- derived from glibc 2.2.5.
