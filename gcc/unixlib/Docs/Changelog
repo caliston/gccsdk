@@ -1,3 +1,7 @@
+Tue Sep 11 13:55:54 2001  Alex Waugh  <ajw498@ecs.soton.ac.uk>
+
+	* sysexits.h: New header file.
+
 Thu Sep  6 15:51:33 2001  Nick Burrett  <nick.burrett@btinternet.com>
 
 	* objs/Makefile,fe1 (SIGNAL): Remove o.setup and o.sigwakeup.
