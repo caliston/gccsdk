@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/unix.c,v $
- * $Date: 2002/04/02 19:02:48 $
- * $Revision: 1.2.2.9 $
+ * $Date: 2002/06/10 10:00:57 $
+ * $Revision: 1.2.2.10 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: unix.c,v 1.2.2.9 2002/04/02 19:02:48 admin Exp $";
+static const char rcs_id[] = "$Id: unix.c,v 1.2.2.10 2002/06/10 10:00:57 admin Exp $";
 #endif
 
 #include <stdio.h>
@@ -87,12 +87,6 @@ __badr (void)
 {
   __unixlib_fatal ("Bad redirection");
 }
-
-#ifndef __GNUC__
-/* Macros to simulate 'noreturn' functions.  */
-#define __badr() do { __badr (); return; } while (0)
-#define __unixlib_fatal(msg) do { __unixlib_fatal (msg); return; } while (0)
-#endif
 
 /* strtoul to avoid pulling in global verion for small executables.
    This version is limited to base 10, the first character is known to be

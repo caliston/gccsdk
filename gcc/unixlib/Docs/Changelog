@@ -1,3 +1,9 @@
+Mon Jun 10 12:32:13 2002  John Tytgat  <John.Tytgat@aaug.net>
+
+	* math/exp.c: Include stdlib.h.
+	* unix/unix.c (__badr): Delete macro.
+	(__unixlib_fatal): Delete macro.
+
 Mon Jun 10 11:01:17 2002  John Tytgat  <John.Tytgat@aaug.net>
 
 	* unix/unix.c (_main): Make a snapshot of `environ' as calls
