@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unistd.h,v $
- * $Date: 2002/03/30 10:01:12 $
- * $Revision: 1.2.2.7 $
+ * $Date: 2002/08/18 15:19:06 $
+ * $Revision: 1.2.2.8 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -515,6 +515,13 @@ enum
 
 /* Get the value of the string-valued system variable NAME.  */
 extern size_t confstr (int __name, char *__buf, size_t __len);
+
+#ifdef __USE_XOPEN
+/* Swab pairs bytes in the first N bytes of the area pointed to by
+   FROM and copy the result to TO.  The value of TO must not be in the
+   range [FROM - N + 1, FROM - 1].  If N is odd the first byte in FROM
+   is without partner.  */
+extern void swab (const void * __from, void * __to, ssize_t __n);
 
 #define __need_getopt
 #include <getopt.h>

@@ -1,8 +1,8 @@
 # Project:   UnixLib 4.0
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2002/07/19 13:16:20 $
-# $Revision: 1.2.2.11 $
+# $Date: 2002/08/05 08:46:05 $
+# $Revision: 1.2.2.12 $
 # $State: Exp $
 # $Author: admin $
 
@@ -189,6 +189,8 @@ STDLIB = stdlib.o.drand48 stdlib.o.erand48 stdlib.o.jrand48 stdlib.o.lcong48 \
 	stdlib.o.rand stdlib.o.random stdlib.o.realpath stdlib.o.seed48 \
 	stdlib.o.srand48
 
+STRING = string.o.swab
+
 SCL_ASM = scl.o._kcurskch scl.o._kernel scl.o._kgetenv scl.o._kosargs \
 	scl.o._kosbget scl.o._kosbput scl.o._kosbyte scl.o._koscli \
 	scl.o._kosfile scl.o._kosfind scl.o._kosgbpb scl.o._kosrdch \
@@ -259,7 +261,7 @@ STAMP =	!Stamp common.!Stamp complex.!Stamp gcccompat.!Stamp \
 	grp.!Stamp locale.!Stamp math.!Stamp math-asm.!Stamp \
 	netlib.!Stamp pwd.!Stamp resource.!Stamp signal.!Stamp \
 	scl.!Stamp stat.!Stamp stdio.!Stamp stdlib.!Stamp sys.!Stamp \
-	termios.!Stamp time.!Stamp unistd.!Stamp unix.!Stamp \
+	string.!Stamp termios.!Stamp time.!Stamp unistd.!Stamp unix.!Stamp \
 	wchar.!Stamp
 
 # Final targets:
@@ -267,7 +269,7 @@ UnixLib:   $(STAMP)
 	$(AR) $(ARflags) -o $@ o.* common.o.* complex.o.* gcccompat.o.* \
 	grp.o.* locale.o.* math.o.* math-asm.o.* netlib.o.* pwd.o.* \
 	resource.o.* scl.o.* signal.o.* stat.o.* stdio.o.* stdlib.o.* \
-	sys.o.* termios.o.* time.o.* unistd.o.* unix.o.* wchar.o.*
+	string.o.* sys.o.* termios.o.* time.o.* unistd.o.* unix.o.* wchar.o.*
 
 test:	test.link
 
@@ -319,6 +321,8 @@ clean:
 	-remove stdio.!stamp
 	-wipe stdlib.o.* fv~r~c
 	-remove stdlib.!stamp
+	-wipe string.o.* fv~r~c
+	-remove string.!stamp
 	-wipe sys.o.* fv~r~c
 	-remove sys.!stamp
 	-wipe termios.o.* fv~r~c
@@ -401,6 +405,10 @@ stdio.!Stamp:	$(STDIO) $(STDIO_ASM)
 stdlib.!Stamp:	$(STDLIB)
 	-remove stdlib.!Stamp
 	-create stdlib.!Stamp 0
+
+string.!Stamp:	$(STDLIB)
+	-remove string.!Stamp
+	-create string.!Stamp 0
 
 sys.!Stamp:	$(SYS) $(SYS_ASM)
 	-remove sys.!Stamp
@@ -810,6 +818,8 @@ stdlib.o.random:	stdlib.c.random
 stdlib.o.realpath:	stdlib.c.realpath
 stdlib.o.seed48:	stdlib.c.seed48
 stdlib.o.srand48:	stdlib.c.srand48
+
+string.o.swab:	string.c.swab
 
 sys.o.alarm:		sys.c.alarm
 sys.o.brk:		sys.c.brk

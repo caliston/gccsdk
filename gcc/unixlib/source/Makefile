@@ -393,6 +393,8 @@ STDLIB = $(libunixobj)/stdlib/drand48.o \
 	$(libunixobj)/stdlib/seed48.o \
 	$(libunixobj)/stdlib/srand48.o
 
+STRING	= $(libunixobj)/string/swab.o
+
 SCL_ASM = $(libunixobj)/scl/_kcurskch.o \
 	$(libunixobj)/scl/_kernel.o \
 	$(libunixobj)/scl/_kgetenv.o \
@@ -606,7 +608,7 @@ WCHAR = $(libunixobj)/wchar/btowc.o \
 #  wchar.o.wcstold wchar.o.wcstod wchar.o.wcstof
 
 C_OBJS = $(COMPLEX) $(MATH) $(OBJS) $(COMMON) $(LOCALE) $(NETLIB) \
-	$(PWD) $(GRP) $(RESOURCE) $(SIGNAL) $(STAT) $(STDIO) \
+	$(PWD) $(GRP) $(RESOURCE) $(SIGNAL) $(STAT) $(STDIO) $(STRING) \
 	$(STDLIB) $(SYS) $(TIME) $(TERMIOS) $(UNISTD) $(UNIX) $(WCHAR)
 
 ASM_OBJS = $(MATH_ASM) $(COMMON_ASM) $(GCCCOMPAT_ASM) $(NETLIB_ASM) \
@@ -650,6 +652,7 @@ $(ux_gcc_bin_dir)/$(TRG)/unixlib.o $(ro_gcc_bin_dir)/$(TRG)/o/unixlib $(ro_unixl
 	$(CROSS_AR) -i $@ $(STAT)
 	$(CROSS_AR) -i $@ $(STDIO)
 	$(CROSS_AR) -i $@ $(STDLIB)
+	$(CROSS_AR) -i $@ $(STRING)
 	$(CROSS_AR) -i $@ $(SYS)
 	$(CROSS_AR) -i $@ $(TIME)
 	$(CROSS_AR) -i $@ $(TERMIOS)
@@ -1063,6 +1066,8 @@ $(libunixojb)/stdlib/random.o: stdlib/random.c
 $(libunixobj)/stdlib/realpath.o: stdlib/realpath.c
 $(libunixojb)/stdlib/seed48.o: stdlib/seed48.c
 $(libunixojb)/stdlib/srand48.o: stdlib/srand48.c
+
+$(libunixobj)/string/swab.o: string/swab.c
 
 $(libunixobj)/sys/alarm.o: sys/alarm.c
 $(libunixobj)/sys/brk.o: sys/brk.c
