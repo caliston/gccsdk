@@ -1,15 +1,15 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/time/c/time,v $
- * $Date: 1997/12/17 22:27:08 $
- * $Revision: 1.3 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/time/time.c,v $
+ * $Date: 2001/01/29 15:10:22 $
+ * $Revision: 1.2 $
  * $State: Exp $
- * $Author: unixlib $
+ * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: time,v 1.3 1997/12/17 22:27:08 unixlib Exp $";
+static const char rcs_id[] = "$Id: time.c,v 1.2 2001/01/29 15:10:22 admin Exp $";
 #endif
 
 /* Territory time support, written by Nick Burrett on 12 July 1997.  */
@@ -32,7 +32,7 @@ time (time_t * time)
   time_t time1;
 
   buf[0] = 3;
-  err = os_word (14, buf);
+  err = __os_word (14, buf);
   if (err)
     {
       __seterr (err);

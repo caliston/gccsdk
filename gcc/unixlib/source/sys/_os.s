@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/_os.s,v $
-; $Date: 2001/01/29 15:10:21 $
-; $Revision: 1.2 $
+; $Date: 2001/05/03 06:49:12 $
+; $Revision: 1.3 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -134,16 +134,16 @@ os_423break
 	MVNVS	a1, #0
 	return	AL, pc, lr
 
-	EXPORT	os_byte
-os_byte
+	EXPORT	|__os_byte|
+|__os_byte|
 	MOVS	ip, a4
 	SWI	XOS_Byte
 	STMNEIA ip, {a1, a2, a3}
 	MOVVC	a1, #0
 	return	AL, pc, lr
 
-	EXPORT	os_word
-os_word
+	EXPORT	|__os_word|
+|__os_word|
 	SWI	XOS_Word
 	MOVVC	a1, #0
 	return	AL, pc, lr
@@ -199,8 +199,8 @@ os_nl
 	MOVVC	a1, #0
 	return	AL, pc, lr
 
-	EXPORT	os_cli
-os_cli
+	EXPORT	|__os_cli|
+|__os_cli|
 	SWI	XOS_CLI
 	MOVVC	a1, #0
 	return	AL, pc, lr

@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/exec.c,v $
- * $Date: 2001/07/31 11:34:05 $
- * $Revision: 1.2.2.1 $
+ * $Date: 2001/08/02 13:27:19 $
+ * $Revision: 1.2.2.2 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: exec.c,v 1.2.2.1 2001/07/31 11:34:05 admin Exp $";
+static const char rcs_id[] = "$Id: exec.c,v 1.2.2.2 2001/08/02 13:27:19 admin Exp $";
 #endif
 
 #include <ctype.h>
@@ -319,7 +319,7 @@ execve (const char *execname, char **argv, char **envp)
 	}
 
       /* Pass the command to os_cli (which never returns).  */
-      os_cli (cli);
+      __os_cli (cli);
 
       /* If we've called a RISC OS builtin then we can return here.
          If we haven't then something ugly must have happened.  There

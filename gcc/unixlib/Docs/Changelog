@@ -1,3 +1,15 @@
+Thu Aug 02 15:55:07 2001  John Tytgat <John.Tytgat@aaug.net>
+
+        Removing clashing symbols between UnixLib and OSLib.
+        * clib/sys/os.h (__os_cli): Renamed from os_cli.
+        (__os_byte): Renamed from os_byte.
+	(__os_word): Renamed from os_word.
+        * sys/_os.s: Likewise.
+        * unix/gethostnam.c: Renamed os_byte to __os_byte.
+        * unix/tty.c: Likewise.
+        * sys/exec.c: Renamed os_cli to __os_cli.
+	* time/time.c: Renamed from os_word to __os_word.
+	
 Thu Aug 02 14:26:42 2001  Nick Burrett  <nick@dsvr.net>
 
 	* sys/exec.c (execve, __exret): Revert last change.  Was infact

@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/sys/h/os,v $
- * $Date: 1999/11/16 13:26:49 $
- * $Revision: 1.10 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/sys/os.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -45,8 +45,8 @@ extern int os_423break (int);
 
 extern _kernel_oserror *os_swi (int,int * /* 10 reg */ );
 
-extern _kernel_oserror *os_byte (int,int,int,int * /* 3 reg */ );
-extern _kernel_oserror *os_word (int,void *);
+extern _kernel_oserror *__os_byte (int,int,int,int * /* 3 reg */ );
+extern _kernel_oserror *__os_word (int,void *);
 
 extern _kernel_oserror *os_prhex (int); 	/* %8x format hex output */
 extern _kernel_oserror *os_prdec (int);
@@ -54,7 +54,7 @@ extern _kernel_oserror *os_print (const char *);
 extern _kernel_oserror *os_write (const char *,int);
 extern _kernel_oserror *os_nl (void);		/* newline */
 
-extern _kernel_oserror *os_cli (const char *);
+extern _kernel_oserror *__os_cli (const char *);
 
 extern _kernel_oserror *os_file (int,const char *,int * /* 6 reg */ );
 

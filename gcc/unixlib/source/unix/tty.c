@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/unix/tty.c,v $
- * $Date: 2001/05/03 07:30:15 $
- * $Revision: 1.3 $
+ * $Date: 2001/05/03 07:37:56 $
+ * $Revision: 1.4 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: tty.c,v 1.3 2001/05/03 07:30:15 admin Exp $";
+static const char rcs_id[] = "$Id: tty.c,v 1.4 2001/05/03 07:37:56 admin Exp $";
 #endif
 
 /* System V tty device driver for RISC OS.  */
@@ -142,9 +142,9 @@ __tty_console_gterm (struct termios *term)
   int regs[3];
 
   /* Get `Interrupt key' and state of `Interrupt key'.  */
-  os_byte (0xdc, 0, 0xff, regs);
+  __os_byte (0xdc, 0, 0xff, regs);
   term->c_cc[VINTR] = regs[1];
-  os_byte (0xe5, 0, 0xff, regs);
+  __os_byte (0xe5, 0, 0xff, regs);
   if (regs[1])
     term->c_lflag &= ~ISIG; /* Disable signals.  */
   else
@@ -156,12 +156,12 @@ static void
 __tty_console_sterm (struct termios *term)
 {
   /* Set `Interrupt key' and state of `Interrupt key'.  */
-  os_byte (0xdc, term->c_cc[VINTR], 0, NULL);
+  __os_byte (0xdc, term->c_cc[VINTR], 0, NULL);
   if (term->c_lflag & ISIG)
     /* Enable signals.  */
-    os_byte (0xe5, 0, 0, NULL);
+    __os_byte (0xe5, 0, 0, NULL);
   else
-    os_byte (0xe5, 0xff, 0, NULL);
+    __os_byte (0xe5, 0xff, 0, NULL);
 }
 
 #if __FEATURE_DEV_RS423
@@ -437,14 +437,14 @@ __ttyicanon (const struct __unixlib_fd *file_desc, void *buf, int nbyte,
 #endif
 
   if (tty == __u->tty)
-    os_byte (0xe5, 0xff, 0, 0);		/* Disable SIGINT.  */
+    __os_byte (0xe5, 0xff, 0, 0);		/* Disable SIGINT.  */
 
 ret:
 
   if (tty->cnt != 0)
     {
       if (tty == __u->tty)
-	os_byte (0xe5, 0, 0, 0);	/* Re-enable SIGINT.  */
+	__os_byte (0xe5, 0, 0, 0);	/* Re-enable SIGINT.  */
 
       i = (nbyte > tty->cnt) ? tty->cnt : nbyte;
       memcpy (buf, tty->ptr, i);
@@ -575,7 +575,7 @@ eol:
     goto ret;
 
   if (tty == __u->tty)
-    os_byte (0xe5, 0, 0, 0);	/* Re-enable SIGINT.  */
+    __os_byte (0xe5, 0, 0, 0);	/* Re-enable SIGINT.  */
 
   if (tty->cnt == 0)
     return __set_errno (EAGAIN);
