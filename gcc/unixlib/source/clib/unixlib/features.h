@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/features.h,v $
- * $Date: 2002/03/30 10:01:12 $
- * $Revision: 1.2.2.3 $
+ * $Date: 2002/06/10 16:32:14 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -388,6 +388,10 @@
 # define __ptrvalue     /* nothing */
 #endif
 
+#ifdef __CC_NORCROFT
+#define __const const
+#define __THROW
+#endif
 
 /* Support for flexible arrays.  */
 #if __GNUC_PREREQ (2,97)

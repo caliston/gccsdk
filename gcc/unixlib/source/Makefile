@@ -48,6 +48,12 @@ COMPLEX = $(libunixobj)/complex/cabs.o \
 	$(libunixobj)/complex/ctan.o \
 	$(libunixobj)/complex/ctanh.o
 
+CRYPT =	$(libunixobj)/crypt/crypt.o \
+	$(libunixobj)/crypt/crypt-entry.o \
+	$(libunixobj)/crypt/crypt_util.o \
+	$(libunixobj)/crypt/md5.o \
+	$(libunixobj)/crypt/md5-crypt.o \
+
 MATH =	$(libunixobj)/math/acosh.o \
 	$(libunixobj)/math/asinh.o \
 	$(libunixobj)/math/atanh.o \
@@ -141,7 +147,6 @@ OBJS =	$(libunixobj)/abort.o \
 	$(libunixobj)/ctypeproc.o \
 	$(libunixobj)/div.o \
 	$(libunixobj)/errno.o \
-	$(libunixobj)/fcrypt.o \
 	$(libunixobj)/index.o \
 	$(libunixobj)/memccpy.o \
 	$(libunixobj)/memchr.o \
@@ -608,7 +613,7 @@ WCHAR = $(libunixobj)/wchar/btowc.o \
 # wchar.o.wcstol wchar.o.wcstoul wchar.o.wcstoq wchar.o.wcstouq
 #  wchar.o.wcstold wchar.o.wcstod wchar.o.wcstof
 
-C_OBJS = $(COMPLEX) $(MATH) $(OBJS) $(COMMON) $(LOCALE) $(NETLIB) \
+C_OBJS = $(COMPLEX) $(CRYPT) $(MATH) $(OBJS) $(COMMON) $(LOCALE) $(NETLIB) \
 	$(PWD) $(GRP) $(RESOURCE) $(SIGNAL) $(STAT) $(STDIO) $(STRING) \
 	$(STDLIB) $(SYS) $(TIME) $(TERMIOS) $(UNISTD) $(UNIX) $(WCHAR)
 
@@ -632,15 +637,16 @@ install_headers:
 
 install_source:
 	$(instsrc) . "*.[chs]" source $(ro_unixlibpkg)
-	for dir in common complex gcccompat grp locale math math-asm \
+	for dir in common complex crypt gcccompat grp locale math math-asm \
 		module netlib pwd resource scl signal stat stdio stdlib sys \
-		 termios time unistd unix wchar clib clib/arpa \
+		 string termios time unistd unix wchar clib clib/arpa \
 		 clib/machine clib/net clib/netinet clib/sys clib/unixlib; do \
 	  $(instsrc) $$dir "*.[chs]" source/$$dir $(ro_unixlibpkg) ; done
 
 # Split AR to work around Cygwin 16Kbyte command line limit,
 $(ux_gcc_bin_dir)/$(TRG)/unixlib.o $(ro_gcc_bin_dir)/$(TRG)/o/unixlib $(ro_unixlibpkg)/source/clib/o/unixlib: $(C_OBJS) $(ASM_OBJS)
 	$(CROSS_AR) -c $@ $(COMPLEX)
+	$(CROSS_AR) -i $@ $(CRYPT)
 	$(CROSS_AR) -i $@ $(MATH)
 	$(CROSS_AR) -i $@ $(OBJS)
 	$(CROSS_AR) -i $@ $(COMMON)
@@ -686,7 +692,6 @@ $(libunixobj)/ctypeproc.o: ctypeproc.c
 $(libunixobj)/div.o: div.c
 $(libunixobj)/dtoa.o: dtoa.c
 $(libunixobj)/errno.o: errno.c
-$(libunixobj)/fcrypt.o: fcrypt.c
 $(libunixobj)/index.o: index.c
 $(libunixobj)/memchr.o: memchr.c
 $(libunixobj)/memcmp.o: memcmp.c
@@ -763,6 +768,12 @@ $(libunixobj)/complex/csinh.o: complex/csinh.c
 $(libunixobj)/complex/csqrt.o: complex/csqrt.c
 $(libunixobj)/complex/ctan.o: complex/ctan.c
 $(libunixobj)/complex/ctanh.o: complex/ctanh.c
+
+$(libunixobj)/crypt/crypt.o: crypt/crypt.c
+$(libunixobj)/crypt/crypt-entry.o: crypt/crypt-entry.c
+$(libunixobj)/crypt/crypt_util.o: crypt/crypt_util.c
+$(libunixobj)/crypt/md5.o: crypt/md5.c
+$(libunixobj)/crypt/md5-crypt.o: crypt/md5-crypt.c
 
 $(libunixobj)/gcccompat/_udivdi3.o: gcccompat/_udivdi3.s clib/unixlib/asm_dec.s
 $(libunixobj)/gcccompat/_umoddi3.o: gcccompat/_umoddi3.s clib/unixlib/asm_dec.s

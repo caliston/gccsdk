@@ -3,6 +3,8 @@ cdir <obey$dir>.objs.common
 cdir <obey$dir>.objs.common.o
 cdir <obey$dir>.objs.complex
 cdir <obey$dir>.objs.complex.o
+cdir <obey$dir>.objs.crypt
+cdir <obey$dir>.objs.crypt.o
 cdir <obey$dir>.objs.gcccompat
 cdir <obey$dir>.objs.gcccompat.o
 cdir <obey$dir>.objs.grp

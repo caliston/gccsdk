@@ -16,7 +16,7 @@ install_source:
 	$(MAKE) -C source install_source
 
 unixlib:
-	mkdir -p $(upath) $(upath)/complex $(upath)/grp
+	mkdir -p $(upath) $(upath)/complex $(upath)/crypt $(upath)/grp
 	mkdir -p $(upath)/math $(upath)/math-asm $(upath)/signal
 	mkdir -p $(upath)/common $(upath)/gcccompat $(upath)/locale
 	mkdir -p $(upath)/netlib $(upath)/pwd $(upath)/resource

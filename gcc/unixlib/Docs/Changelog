@@ -1,3 +1,24 @@
+Sun Aug 18 22:19:01 2002  John Tytgat  <John.Tytgat@aaug.net>
+
+	crypt implementation -- derived from glibc 2.2.5.
+	* MKDir: Creating crypt & crypt.o directories.
+	* objs/Makefile,fe1: Added crypt/*; Removed o.fcrypt.
+	* source/Makefile: Likewise.
+	* fcrypt.h: Replaced by a #include <crypt.h>.
+	* stdint.h: Added long long equivalents for Norcroft C.
+	* unixlib/features.h: Added __const, __THROW definitions
+	for Norcroft C.
+	* fcrypt.c: Remove
+	* crypt.h: New file (from glibc 2.2.5)
+	* crypt/crypt.c: New file.
+	* crypt/crypt-entry.c: New file.
+	* crypt/crypt_util.c: New file.
+	* crypt/crypt-private.h: New file.
+	* crypt/ufc-crypt.h: New file.
+	* crypt/md5.c: New file.
+	* crypt/md5-crypt.c: New file.
+	* crypt/md5.h: New file.
+	
 Sun Aug 18 20:54:03 2002  John Tytgat  <John.Tytgat@aaug.net>
 			  Nick Burrett  <nick@dsvr.net>
 
