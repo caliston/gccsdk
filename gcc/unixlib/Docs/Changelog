@@ -1,7 +1,13 @@
-Mon Jun 10 12:39:14 2002  Peter Naulls  <peter@chocky.org>
+Mon Jun 10 12:43:11 2002  Peter Naulls  <peter@chocky.org>
+			  John Tytgat  <John.Tytgat@aaug.net>
 
-	* signal/_signals.s (__seterr): Setup errno[EOPSYS] to point
-	to RISC OS error here.
+	* pwd.h (__pwddefault): Declare.
+	* getpwnam.c (getpwnam): If passwd file cannot be found,
+	then use __pwddefault to supply fake entries.
+	* getpwnam_r.c (getpwnam_r): Likewise.
+	* getpwuid.c (getpwuid): Likewise.
+	* getpwuid_r.c (getpwuid_r): Likewise.
+	* pwdread.c (__pwddefault): New function.
 
 Mon Jun 10 12:32:13 2002  John Tytgat  <John.Tytgat@aaug.net>
 

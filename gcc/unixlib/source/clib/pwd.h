@@ -1,8 +1,8 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/pwd.h,v $
- * $Date: 2001/01/29 15:10:19 $
- * $Revision: 1.2 $
+ * $Date: 2001/09/14 14:01:17 $
+ * $Revision: 1.2.2.1 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -101,6 +101,9 @@ extern int getpw (__uid_t __uid, char *__buf);
 #ifdef __UNIXLIB_INTERNALS
 /* UnixLib pwd implementation function.  */
 extern struct passwd *__pwdread (FILE *, struct passwd *);
+
+/* Default values for passwd struct. */
+extern struct passwd *__pwddefault (void);
 #endif
 
 #ifdef __cplusplus
