@@ -1,8 +1,8 @@
 ;----------------------------------------------------------------------------
 ;
 ; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/signal/_signal.s,v $
-; $Date: 2001/08/06 08:20:31 $
-; $Revision: 1.4.2.1 $
+; $Date: 2001/08/08 08:53:47 $
+; $Revision: 1.4.2.2 $
 ; $State: Exp $
 ; $Author: admin $
 ;
@@ -71,7 +71,7 @@
 	TEQ	a1, #0			; quick exit when no error
 	MOVEQS	pc, lr
 
-	STMFD	sp!, {v1-v4,lr}		; Stack working registers
+	STMFD	sp!, {v1-v5,lr}		; Stack working registers
 	LDR	a2, =|errno|		; Set errno = EOPSYS
 	MOV	a3, #EOPSYS
 	STR	a3, [a2, #0]
@@ -89,7 +89,7 @@
 	MOV	a1, #0			; ensure zero-terminated.
 	STRB	a1, [a2, #3]
 
-	LDMFD	sp!, {v1-v4,pc}^	
+	LDMFD	sp!, {v1-v5,pc}^	
 
 ;-----------------------------------------------------------------------
 ; _kernel_oserror *_kernel_last_oserror (void)
