@@ -1,3 +1,8 @@
+Sun Sep  2 11:25:00 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* stdio.h (vsnprintf): Add decl.
+	(snprintf): Add decl.
+
 Sun Sep  2 11:18:36 2001  Christian Ludlam <chris@recoil.org>
 
 	* stdio/printf.c (out_char): New function.
@@ -7,7 +12,7 @@ Sun Sep  2 11:18:36 2001  Christian Ludlam <chris@recoil.org>
 	(STOP): Define.
 	(vprintfsub): Renamed from vfprintf.  Support wide characters.
 	(vfprintf): New function.
-	(vsprintf): New function.
+	(vsnprintf): New function.
 	(snprintf): New function.
 
 Sun Sep  2 11:07:47 2001  Peter Naulls  <peter@erble.freeserve.co.uk>

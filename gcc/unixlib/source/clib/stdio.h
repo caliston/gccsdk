@@ -1,8 +1,8 @@
 /****************************************************************************
  *
- * $Source: /usr/local/cvsroot/unixlib/source/clib/h/stdio,v $
- * $Date: 2000/01/12 16:52:26 $
- * $Revision: 1.20 $
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/stdio.h,v $
+ * $Date: 2001/01/29 15:10:19 $
+ * $Revision: 1.2 $
  * $State: Exp $
  * $Author: admin $
  *
@@ -129,8 +129,8 @@ extern FILE *__stream_init (int __fd, FILE *__stream);
 /* Dissect the given mode string into an __io_mode.  */
 extern __io_mode __getmode (const char *__mode);
 
-extern void __stdioinit(void);	/* initialise stdin,stdout & stderr */
-extern void __stdioexit(void);	/* close streams & delete tmpfile() */
+extern void __stdioinit (void);	/* initialise stdin,stdout & stderr */
+extern void __stdioexit (void);	/* close streams & delete tmpfile() */
 
 /* Return the next character in the input buffer, keeping it in
    the input buffer.  If the buffer is empty, then fill it.  */
@@ -263,6 +263,10 @@ extern int puts (const char *__s);
 
 /* I know I said I would not do this, but ... */
 
+/* Write formatted output to s from argument list arg.  limit is the
+   maximum number of characters to produce.  */
+extern int vsnprintf (char *__s, size_t __limit, const char *__format,
+		      __va_list __arg);
 /* Write formatted output to s from argument list arg.  */
 extern int vsprintf (char *__s, const char *__format, __va_list __arg);
 /* Write formatted output to stream from arg list arg.  */
@@ -274,6 +278,9 @@ extern int vprintf (const char *__format, __va_list __arg);
 #pragma -v1
 #endif
 
+/* Write formatted output to s.  limit is the maximum number of characters
+   to produce.  */
+extern int snprintf (char *__s, size_t __limit, const char *__format, ...);
 /* Write formatted output to s.  */
 extern int sprintf (char *__s, const char *__format, ...);
 /* Write formatted output to stream.  */
