@@ -1,8 +1,8 @@
 # Project:   UnixLib 3.8
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2001/09/05 16:28:57 $
-# $Revision: 1.2.2.1 $
+# $Date: 2001/09/06 14:52:00 $
+# $Revision: 1.2.2.2 $
 # $State: Exp $
 # $Author: admin $
 
@@ -147,6 +147,10 @@ PWD =	pwd.o.fgetpwent pwd.o.fgetpwentr pwd.o.getlogin pwd.o.getpw \
 	pwd.o.getpwent pwd.o.getpwnam pwd.o.getpwnam_r pwd.o.getpwuid \
 	pwd.o.getpwuid_r pwd.o.putpwent pwd.o.pwdread
 
+GRP =	grp.o.fgetgrent grp.o.fgetgrentr grp.o.getgrent grp.o.getgrgid \
+	grp.o.getgrgid_r grp.o.getgrnam grp.o.getgrnam_r grp.o.getgroups \
+	grp.o.grpread
+
 RESOURCE =	resource.o.getegid resource.o.geteuid resource.o.getgid \
 	resource.o.getpgrp resource.o.getpid resource.o.getppid \
 	resource.o.getprior resource.o.getrlimit resource.o.getrusage \
@@ -244,7 +248,7 @@ WCHAR = wchar.o.btowc wchar.o.mblen wchar.o.mbrlen wchar.o.mbrtowc \
 #  wchar.o.wcstold wchar.o.wcstod wchar.o.wcstof
 
 STAMP =	!Stamp common.!Stamp complex.!Stamp gcccompat.!Stamp \
-	locale.!Stamp math.!Stamp math-asm.!Stamp \
+	grp.!Stamp locale.!Stamp math.!Stamp math-asm.!Stamp \
 	netlib.!Stamp pwd.!Stamp resource.!Stamp signal.!Stamp \
 	scl.!Stamp stdio.!Stamp sys.!Stamp termios.!Stamp time.!Stamp \
 	unix.!Stamp wchar.!Stamp
@@ -252,9 +256,9 @@ STAMP =	!Stamp common.!Stamp complex.!Stamp gcccompat.!Stamp \
 # Final targets:
 UnixLib:   $(STAMP)
 	$(AR) $(ARflags) -o $@ o.* common.o.* complex.o.* gcccompat.o.* \
-	locale.o.* math.o.* math-asm.o.* netlib.o.* pwd.o.* resource.o.* \
-	scl.o.* signal.o.* stdio.o.* sys.o.* termios.o.* time.o.* unix.o.* \
-	wchar.o.*
+	grp.o.* locale.o.* math.o.* math-asm.o.* netlib.o.* pwd.o.* \
+	resource.o.* scl.o.* signal.o.* stdio.o.* sys.o.* termios.o.* \
+	time.o.* unix.o.* wchar.o.*
 
 test:	test.link
 
@@ -282,6 +286,8 @@ clean:
 	-remove complex.!Stamp
 	-wipe gcccompat.o.* gv~r~c
 	-remove gcccompat.!Stamp
+	-wipe grp.o.* fv~r~c
+	-remove grp.!stamp
 	-wipe locale.o.* fv~r~c
 	-remove locale.!Stamp
 	-wipe math.o.* fv~r~c
@@ -332,6 +338,10 @@ common.!Stamp:	$(COMMON) $(COMMON_ASM)
 gcccompat.!Stamp:	$(GCCCOMPAT_ASM)
 	-remove gcccompat.!Stamp
 	-create gcccompat.!Stamp
+
+grp.!Stamp:	$(GRP)
+	-remove grp.!Stamp
+	-create grp.!Stamp 0
 
 locale.!Stamp:	$(LOCALE)
 	-remove locale.!Stamp
@@ -642,6 +652,16 @@ pwd.o.getpwuid:		pwd.c.getpwuid
 pwd.o.getpwuid_r:	pwd.c.getpwuid_r
 pwd.o.putpwent:		pwd.c.putpwent
 pwd.o.pwdread:		pwd.c.pwdread
+
+grp.o.fgetgrent:	grp.c.fgetgrent
+grp.o.fgetgrentr:	grp.c.fgetgrentr
+grp.o.getgrent:		grp.c.getgrent
+grp.o.getgrgid:		grp.c.getgrgid
+grp.o.getgrgid_c:	grp.c.getgrgid_c
+grp.o.getgrnam:		grp.c.getgrnam
+grp.o.getgrnam_r:	grp.c.getgrnam_r
+grp.o.getgroups:	grp.c.getgroups
+grp.o.grpread:		grp.c.grpread
 
 resource.o.getegid:	resource.c.getegid
 resource.o.geteuid:	resource.c.geteuid
