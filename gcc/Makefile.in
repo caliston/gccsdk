@@ -212,6 +212,7 @@ riscos-libs:
 
 libgcc:
 	$(MAKE) -C gcc $@ "TRG=$(trg10)" $(cfl10)
+	$(MAKE) -C gcc $@ "TRG=$(trg11)" $(cfl11)
 
 libgpc libio libf2c libstdc:
 	$(MAKE) -C gcc $@ "TRG=$(trg10)" $(cfl10)
