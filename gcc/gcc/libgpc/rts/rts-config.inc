@@ -43,7 +43,7 @@
 {$define HAVE_PUTENV 1}
 
 { Define if you have the realpath function.  }
-{$undef HAVE_REALPATH}
+{$define HAVE_REALPATH 1}
 
 { Define if you have the select function.  }
 {$define HAVE_SELECT 1}
