@@ -40,7 +40,7 @@ compilation is specified by a string called a "spec".  */
 #include "prefix.h"
 
 #ifdef __riscos
-#include <sys/os.h>
+#include <unixlib/os.h>
 #include <swis.h>
 #endif
 
@@ -4695,7 +4695,7 @@ main (argc, argv)
 
     regs[0] = -1;
     regs[1] = -1;
-    os_swi (Wimp_SlotSize, regs);
+    __os_swi (Wimp_SlotSize, regs);
     if (regs[0] < (3000 * 1024))
       {
         fprintf (stderr,
