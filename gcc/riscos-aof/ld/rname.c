@@ -22,7 +22,7 @@ static char *prefixes[] =
 {
   "f", "for", "fpp", "p", "pas", "ph", "gpi",
   "cc", "cxx", "cpp", "c++", "c", "m", "rpo",
-  "i", "ii", "h", "i", "s", "l", "o", "y",
+  "i", "ii", "h", "hh", "icc", "s", "l", "o", "y",
   "ads", "adb", "ada", "ali", "adc", "xrb", "xrs", 0
 };
 
