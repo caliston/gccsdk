@@ -12,7 +12,7 @@ GCCPKG = $(pkg)/\!Boot,feb \
 	$(pkg)/\!Run,feb \
 	$(pkg)/\!Sprites,ff9 \
 	$(pkg)/\!Sprites22,ff9 \
-	$(pkg)/Readme \
+	$(pkg)/\!Help \
 	$(pkg)/Changes \
 	$(pkg)/include \
 	$(pkg)/support \
@@ -98,7 +98,7 @@ install:
 	cp Sprites,ff9 $(ro_gccpkg)/\!Sprites,ff9
 	cp Sprites22,ff9 $(ro_gccpkg)/\!Sprites22,ff9
 	cp Changes $(ro_gccpkg)/Changes
-	cp Readme $(ro_gccpkg)/Readme
+	cp Help $(ro_gccpkg)/\!Help
 	find $(ro_gccpkg) -name "CVS" -type d | xargs rm -rf
 
 
