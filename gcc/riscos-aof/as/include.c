@@ -15,14 +15,6 @@
 
 #include "uname.h"
 
-#ifndef UNIXLIB
-#if !(defined(CROSS_COMPILE) && defined(USG))
-#if !defined(__GNUC_MINOR__) || __GNUC__<2 || __GNUC_MINOR__<7
-extern char *strdup (char *);
-#endif
-#endif
-#endif
-
 extern int dde;
 
 #define INCDIRMAX  10

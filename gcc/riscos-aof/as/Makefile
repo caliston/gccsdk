@@ -60,7 +60,6 @@ OBJS =	$(asobjdir)/area.o \
 	$(asobjdir)/lit.o \
 	$(asobjdir)/uname.o \
 	$(asobjdir)/macros.o \
-	$(asobjdir)/strdup.o \
 	$(asobjdir)/variables.o \
 	$(asobjdir)/whileif.o \
 	$(asobjdir)/local.o \
@@ -117,7 +116,6 @@ $(asobjdir)/lit.o: lit.c
 $(asobjdir)/uname.o: uname.c
 $(asobjdir)/os.o: os.s
 $(asobjdir)/macros.o: macros.c
-$(asobjdir)/strdup.o: strdup.c
 $(asobjdir)/variables.o: variables.c
 $(asobjdir)/whileif.o: whileif.c
 $(asobjdir)/local.o: local.c
@@ -137,7 +135,7 @@ $(asobjdir)/code.o:  \
 $(asobjdir)/commands.o:  \
  commands.c ../../sdk-config.h commands.h symbol.h lex.h global.h value.h \
   error.h input.h macros.h whileif.h output.h help_lex.h expr.h code.h \
-  reloc.h put.h fix.h include.h filestack.h area.h lit.h strdup.h hash.h \
+  reloc.h put.h fix.h include.h filestack.h area.h lit.h hash.h \
   local.h os.h
 $(asobjdir)/decode.o:  \
  decode.c ../../sdk-config.h decode.h symbol.h lex.h global.h value.h \
@@ -149,8 +147,7 @@ $(asobjdir)/error.o:  \
  error.c ../../sdk-config.h filestack.h error.h global.h input.h macros.h \
   lex.h whileif.h symbol.h value.h output.h os.h
 $(asobjdir)/eval.o:  \
- eval.c global.h eval.h lex.h value.h help_eval.h error.h include.h \
-  strdup.h
+ eval.c global.h eval.h lex.h value.h help_eval.h error.h include.h
 $(asobjdir)/expr.o:  \
  expr.c ../../sdk-config.h expr.h value.h global.h lex.h error.h symbol.h \
   code.h reloc.h area.h lit.h
@@ -182,7 +179,7 @@ $(asobjdir)/input.o:  \
   whileif.h symbol.h value.h os.h filestack.h uname.h
 $(asobjdir)/lex.o:  \
  lex.c ../../sdk-config.h error.h global.h lex.h local.h help_lex.h \
-  input.h macros.h whileif.h symbol.h value.h hash.h strdup.h area.h \
+  input.h macros.h whileif.h symbol.h value.h hash.h area.h \
   reloc.h lit.h
 $(asobjdir)/lexAcorn.o:  \
  lexAcorn.c ../../sdk-config.h lex.h global.h input.h macros.h whileif.h \
@@ -191,7 +188,7 @@ $(asobjdir)/lit.o:  \
  lit.c ../../sdk-config.h error.h global.h input.h macros.h lex.h \
   whileif.h symbol.h value.h area.h reloc.h lit.h put.h fix.h
 $(asobjdir)/local.o:  \
- local.c ../../sdk-config.h strdup.h error.h global.h local.h lex.h asm.h \
+ local.c ../../sdk-config.h error.h global.h local.h lex.h asm.h \
   symbol.h value.h input.h macros.h whileif.h variables.h
 $(asobjdir)/m_cop.o:  \
  m_cop.c ../../sdk-config.h mnemonics.h global.h error.h option.h input.h \
@@ -223,9 +220,9 @@ $(asobjdir)/m_fpumem.o:  \
   put.h
 $(asobjdir)/macros.o:  \
  macros.c ../../sdk-config.h commands.h symbol.h lex.h global.h value.h \
-  macros.h whileif.h input.h error.h strdup.h variables.h
+  macros.h whileif.h input.h error.h variables.h
 $(asobjdir)/main.o:  \
- main.c ../../sdk-config.h strdup.h error.h global.h input.h macros.h \
+ main.c ../../sdk-config.h error.h global.h input.h macros.h \
   lex.h whileif.h symbol.h value.h output.h asm.h area.h reloc.h lit.h \
   os.h include.h version.h targetcpu.h variables.h
 $(asobjdir)/option.o:  \
@@ -247,23 +244,21 @@ $(asobjdir)/riscos_c.o:  \
 $(asobjdir)/storage.o:  \
  storage.c ../../sdk-config.h storage.h value.h global.h symbol.h lex.h \
   get.h input.h macros.h whileif.h expr.h error.h
-$(asobjdir)/strdup.o:  \
- strdup.c error.h global.h
 $(asobjdir)/symbol.o:  \
  symbol.c ../../sdk-config.h symbol.h lex.h global.h value.h error.h \
   aoffile.h code.h reloc.h help_lex.h local.h area.h lit.h
 $(asobjdir)/targetcpu.o:  \
- targetcpu.c targetcpu.h global.h error.h strdup.h
+ targetcpu.c targetcpu.h global.h error.h
 $(asobjdir)/uname.o:  \
  uname.c
 $(asobjdir)/value.o:  \
  value.c ../../sdk-config.h value.h global.h code.h lex.h symbol.h \
-  reloc.h error.h strdup.h
+  reloc.h error.h
 $(asobjdir)/variables.o:  \
  variables.c ../../sdk-config.h variables.h symbol.h lex.h global.h \
   value.h error.h input.h macros.h whileif.h output.h help_lex.h expr.h \
-  code.h reloc.h put.h fix.h include.h filestack.h area.h lit.h strdup.h \
+  code.h reloc.h put.h fix.h include.h filestack.h area.h lit.h \
   hash.h os.h
 $(asobjdir)/whileif.o:  \
  whileif.c ../../sdk-config.h commands.h symbol.h lex.h global.h value.h \
-  decode.h error.h input.h macros.h whileif.h expr.h strdup.h os.h
+  decode.h error.h input.h macros.h whileif.h expr.h os.h

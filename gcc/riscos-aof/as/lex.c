@@ -19,7 +19,6 @@
 #include "input.h"
 #include "hash.h"
 #include "symbol.h"
-#include "strdup.h"
 #include "area.h"
 
 extern int gcc_backend;

@@ -30,7 +30,6 @@
 #include "area.h"
 #include "lit.h"
 #include "macros.h"
-#include "strdup.h"
 #include "hash.h"
 #include "symbol.h"
 #include "local.h"
