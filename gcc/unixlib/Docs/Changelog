@@ -1,3 +1,8 @@
+Fri Jul 26 10:47:36 2002  Nick Burrett  <nick@dsvr.net>
+
+	* sys/_vfork.s (vfork): No need to save sp around __vfork call.
+	I think it is legacy from the old __vfork implementation.
+
 Fri Jul 26 10:41:47 2002  Peter Naulls  <peter@chocky.org>
 			  Nick Burrett  <nick@dsvr.net>
 
