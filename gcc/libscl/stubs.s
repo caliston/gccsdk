@@ -1,6 +1,6 @@
 ; s.stubs
 ; Provides an Object Format file for linking with the SharedCLibrary
-; (c) Copyright 1997, 1999 Nick Burrett <nick@dsvr.net>
+; (c) Copyright 1997, 1999, 2001 Nick Burrett <nick@dsvr.net>
 
 r0 RN 0
 r1 RN 1
@@ -19,7 +19,8 @@ OS_Exit			EQU &11
 OS_GetEnv		EQU &10
 
 SharedCLibrary_LibInitAPCS_R	EQU &80681
-
+SharedCLibrary_LibInitAPCS_32	EQU &80683
+ 
 	IMPORT	|Image$$RO$$Base|
 	IMPORT	|RTSK$$Data$$Base|
 	IMPORT	|RTSK$$Data$$Limit|
@@ -304,7 +305,11 @@ SharedCLibrary_LibInitAPCS_R	EQU &80681
 	ldrne	r6, [r6, #0]
 	mov	r6, r6, asr #10
 	mov	r6, r6, lsl #16
+	[ {config} = 26
 	swi	SharedCLibrary_LibInitAPCS_R
+	|
+	swi	SharedCLibrary_LibInitAPCS_32
+	]
 	mov	r6, r6, lsl #16
 	cmp	r6, #&50000	; check library version number
 	movge	r4, r0
