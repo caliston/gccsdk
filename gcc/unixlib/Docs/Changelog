@@ -1,3 +1,8 @@
+Fri Jul 26 11:00:15 2002  Nick Burrett  <nick@dsvr.net>
+
+	* stdio/fpos.c (fseek): Set errno to EINVAL if the offset to
+	SEEK_SET is negative, but don't set the stream error.
+	
 Fri Jul 26 10:47:36 2002  Nick Burrett  <nick@dsvr.net>
 
 	* sys/_vfork.s (vfork): No need to save sp around __vfork call.
