@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/stdio/printf.c,v $
- * $Date: 2002/02/11 13:11:31 $
- * $Revision: 1.2.2.3 $
+ * $Date: 2002/04/18 07:40:02 $
+ * $Revision: 1.2.2.4 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: printf.c,v 1.2.2.3 2002/02/11 13:11:31 admin Exp $";
+static const char rcs_id[] = "$Id: printf.c,v 1.2.2.4 2002/04/18 07:40:02 admin Exp $";
 #endif
 
 /*-
@@ -53,7 +53,7 @@ static const char rcs_id[] = "$Id: printf.c,v 1.2.2.3 2002/02/11 13:11:31 admin 
 static char sccsid[] = "@(#)vfprintf.c	8.1 (Berkeley) 6/4/93";
 #endif
 static const char rcsid[] =
-		"$Id: printf.c,v 1.2.2.3 2002/02/11 13:11:31 admin Exp $";
+		"$Id: printf.c,v 1.2.2.4 2002/04/18 07:40:02 admin Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -904,12 +904,6 @@ number:			if ((dprec = prec) >= 0)
 
 		/* finally, adjust ret */
 		ret += width > realsz ? width : realsz;
-
-                if (max < 1 || (flags & STOP))
-                {
-                    ret = EOF;
-                    break;
-                }
 	}
 done:
 	if (ferror(fp))

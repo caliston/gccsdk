@@ -1,15 +1,15 @@
 /****************************************************************************
  *
  * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/exec.c,v $
- * $Date: 2002/09/24 12:04:04 $
- * $Revision: 1.2.2.11 $
+ * $Date: 2002/09/24 13:32:47 $
+ * $Revision: 1.2.2.12 $
  * $State: Exp $
  * $Author: admin $
  *
  ***************************************************************************/
 
 #ifdef EMBED_RCSID
-static const char rcs_id[] = "$Id: exec.c,v 1.2.2.11 2002/09/24 12:04:04 admin Exp $";
+static const char rcs_id[] = "$Id: exec.c,v 1.2.2.12 2002/09/24 13:32:47 admin Exp $";
 #endif
 
 #include <ctype.h>
@@ -167,9 +167,16 @@ execve (const char *execname, char *const argv[], char *const envp[])
   char *cli;
   char pathname[MAXPATHLEN];
   int nasty_hack = 0;
+  char *null_list = NULL;
 
-  if (! execname || ! argv || ! envp)
+  if (! execname)
     return __set_errno (EINVAL);
+
+  if (! argv)
+    argv = &null_list;
+
+  if (! envp)
+    envp = &null_list;
 
 #ifdef DEBUG
   __os_print ("-- execve: function arguments\r\n");
