@@ -558,6 +558,9 @@ parse_args (int argc, char **argv)
     {NULL, no_argument, NULL, 0}
   };
 
+  if (argc <= 1)
+    nm_help ();
+
   while (1)
     {
       /* getopt_long_only is like getopt_long, but '-' as well as '--' can
@@ -636,5 +639,10 @@ int main (int argc, char **argv)
 
 static void nm_help (void)
 {
-  printf ("nm - AOF version\n");
+  printf ("Usage: nm [option(s)] [file(s)]\n"
+	  " List symbols in [file(s)]\n"
+	  " The options are:\n"
+	  "  -g, --extern-only      Display only external symbols\n");
+
+  printf ("\nnm: supported targets: aof\n");
 }

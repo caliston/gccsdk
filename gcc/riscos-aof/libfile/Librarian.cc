@@ -90,7 +90,10 @@ void Librarian::run()
  	listSymbols = 1;
 
  if(libFile == "")
- 	return;
+   {
+     usage ();
+     return;
+   }
 
  m_argParser->warn();
 

@@ -88,7 +88,10 @@ void Ar::run ()
     }
 
   if (libFile == "")
-    return;
+    {
+      usage ();
+      return;
+    }
 
   Library *library = new Library (libFile);
   switch (action)
