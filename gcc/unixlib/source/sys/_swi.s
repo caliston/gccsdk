@@ -1,10 +1,10 @@
 ;----------------------------------------------------------------------------
 ;
-; $Source$
-; $Date$
-; $Revision$
-; $State$
-; $Author$
+; $Source: /usr/local/cvsroot/gccsdk/unixlib/source/sys/Attic/_swi.s,v $
+; $Date: 2001/08/07 08:16:13 $
+; $Revision: 1.1.2.1 $
+; $State: Exp $
+; $Author: admin $
 ;
 ;----------------------------------------------------------------------------
 
@@ -289,6 +289,43 @@ swibl00	MOVS	r11,r11,LSL #2		;Shift into C and N flags
 	DCB	"daft"
 	LDMFD	sp!,{r10-r12,r14,pc}^
 	DCB	"daft"
+
+|_swihack|
+	DCD	|__swihack|
+
+	; --- Initial sorting out and dispatching routine ---
+
+|__swihack|
+	STMFD	r13!,{r0,r1,r14}	;Store some registers away
+	MOV	r0,#0			;Read feature flags
+	SWI	XOS_PlatformFeatures	;Read the features then
+	ADRVC	r0,|_swihack_call|	;If SWI there, call directly
+	ADRVS	r0,|_swihack_build|	;Otherwise build the call
+	STR	r0,|_swihack|		;Store the value away
+	LDMFD	r13!,{r0,r1,r14}	;Restore the registers
+	TEQP	r14,#0			;Reset flags from r14
+	LDR	pc,|_swihack|		;And snap the pointer
+
+	; --- Dispatch to OS_CallASWI ---
+
+|_swihack_call|
+	MOV	r12,r14			;Save the return address
+	SWI	&6F			;OS_CallASWI
+|_ret_r12|
+	MOV	pc,r12			;And return to caller
+
+	; --- Dispatch by building code dynamically ---
+
+|_swihack_build|
+	STMFD	r13!,{r14}		;Save the return address
+	BIC	r10,r10,#&FF000000	;Clear the opcode byte
+	ORR	r10,r10,#&EF000000	;And make it SWIAL
+	LDR	r14,|_ret_r12|		;And load the return instr
+	STMFD	r13!,{r10,r14}		;Save code on the stack
+	MOV	r12,pc			;Set up return address
+	MOV	pc,r13			;And call the code
+	ADD	r13,r13,#8		;Reclaim stack space
+	LDMFD	r13!,{pc}		;And return with SWI's flags
 
 	END
 
