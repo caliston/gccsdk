@@ -391,7 +391,6 @@ SCL_ASM = $(libunixobj)/scl/_kcurskch.o \
 
 SYS =	$(libunixobj)/sys/alarm.o \
 	$(libunixobj)/sys/brk.o \
-	$(libunixobj)/sys/child.o \
 	$(libunixobj)/sys/debug.o \
 	$(libunixobj)/sys/errlist.o \
 	$(libunixobj)/sys/exec.o \
@@ -979,7 +978,6 @@ $(libunixobj)/stdio/_printf.o: stdio/_printf.s clib/unixlib/asm_dec.s
 
 $(libunixobj)/sys/alarm.o: sys/alarm.c
 $(libunixobj)/sys/brk.o: sys/brk.c
-$(libunixobj)/sys/child.o: sys/child.c
 $(libunixobj)/sys/debug.o: sys/debug.c
 $(libunixobj)/sys/errlist.o: sys/errlist.c
 $(libunixobj)/sys/exec.o: sys/exec.c

@@ -1,8 +1,8 @@
 # Project:   UnixLib 3.8
 
 # $Source: /usr/local/cvsroot/gccsdk/unixlib/objs/Makefile,fe1,v $
-# $Date: 2001/09/11 13:57:26 $
-# $Revision: 1.2.2.3 $
+# $Date: 2001/09/11 14:16:00 $
+# $Revision: 1.2.2.4 $
 # $State: Exp $
 # $Author: admin $
 
@@ -188,7 +188,7 @@ SCL_ASM = scl.o._kcurskch scl.o._kernel scl.o._kgetenv scl.o._kosargs \
 	scl.o._kosfile scl.o._kosfind scl.o._kosgbpb scl.o._kosrdch \
 	scl.o._kosword scl.o._koswrch scl.o._ksetenv scl.o._kswi_c
 
-SYS =	sys.o.alarm sys.o.brk sys.o.child sys.o.debug sys.o.errlist \
+SYS =	sys.o.alarm sys.o.brk sys.o.debug sys.o.errlist \
 	sys.o.exec sys.o.execl sys.o.execle sys.o.execlp sys.o.execv \
 	sys.o.execvp sys.o.mman sys.o.sigsetjmp sys.o.vfork
 
@@ -768,7 +768,6 @@ stdio.o._printf:	stdio.s._printf <UnixHdr$Dir>.unixlib.s.asm_dec
 
 sys.o.alarm:		sys.c.alarm
 sys.o.brk:		sys.c.brk
-sys.o.child:		sys.c.child
 sys.o.debug:		sys.c.debug
 sys.o.errlist:		sys.c.errlist
 sys.o.exec:		sys.c.exec

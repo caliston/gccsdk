@@ -1,3 +1,9 @@
+Tue Sep 11 15:19:41 2001  Nick Burrett  <nick.burrett@btinternet.com>
+
+	* sys/child.c: Delete file.
+	* objs/Makefile (SYS): Remove sys.o.child.
+	(sys.o.child): Delete dependency.
+	
 Tue Sep 11 15:15:37 2001  John Tytgat  <John.Tytgat@aaug.net>
 
 	* unix/write.c: Include <unixlib/features.h> for the
