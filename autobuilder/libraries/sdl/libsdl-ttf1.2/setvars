@@ -1,7 +1,0 @@
-
-AB_INSTALL=yes
-
-./autogen.sh
-
-cp /usr/share/automake-1.8/depcomp .
-

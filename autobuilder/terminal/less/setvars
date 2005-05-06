@@ -1,6 +1,0 @@
-
-AB_CATEGORY=terminal
-
-AB_FILESNOPATH="less,ff8 COPYING"
-
-chmod a+w configure
