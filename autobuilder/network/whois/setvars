@@ -1,9 +1,0 @@
-
-AB_CATEGORY=network
-
-AB_CONFIG=:
-AB_MANPAGE=whois.1
-
-ab_package() {
-  cp -av $S/whois,ff8 $D
-}

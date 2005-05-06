@@ -1,6 +1,0 @@
-
-AB_PRECONF=:
-
-AB_MAKE="$AB_MAKE riscos"
-
-touch cflags
