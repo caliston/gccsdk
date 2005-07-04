@@ -1,4 +1,0 @@
-
-Wimpslot -min 3000k -max 3000k
-
-<RDesktop$Dir>.rdesktop %*0 ><RDesktop$Dir>.stdout 2><RDesktop$Dir>.stderr

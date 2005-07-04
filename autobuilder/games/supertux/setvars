@@ -1,7 +1,0 @@
-
-
-ab_package() {
-  echo moose
-}
-
-
