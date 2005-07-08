@@ -1,3 +1,0 @@
-rm -r debian
-tar xfz freesci-*.tar.gz
-mv freesci-*/* .

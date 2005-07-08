@@ -1,5 +1,0 @@
-
-
-ab_make() {
-  $AB_MAKE xjig
-}
