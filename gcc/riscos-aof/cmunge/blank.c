@@ -7,12 +7,11 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "kernel.h"
-
 #include "error.h"
 #include "options.h"
 #include "format.h"
 #include "readfile.h" /* For fields */
+#include "filename.h"
 
 #include "VersionNum" /* CVS maintained version numbers */
 
@@ -24,14 +23,27 @@ void WriteBlank(void) {
   if (!opt.blank)
     return;
 
+  /* We check both forms of the name do not exist before trying to create
+     the blank file. */
   file=fopen(opt.infile,"r");
+  if (file==NULL)
+  {
+    const char *altname;
+    altname = filename_unixtoriscos(opt.infile, EXTLIST_NORCROFT_CMHG);
+    file = fopen(altname, "r");
+  }
   if (file!=NULL)
     ErrorFatal("File %s already exists - not overwriting",opt.infile);
 
   printf("Generating blank CMHG template\n");
 
   file=fopen(opt.infile,"w");
-
+  if (file==NULL)
+  {
+    const char *altname;
+    altname = filename_unixtoriscos(opt.infile, EXTLIST_NORCROFT_CMHG);
+    file = fopen(altname, "w");
+  }
   if (file==NULL)
     ErrorFatal("Cannot write blank template %s",opt.infile);
 
@@ -60,5 +72,5 @@ void WriteBlank(void) {
     field++;
   }
   fclose(file);
-  exit(0); /* And exit NOW because we can't do any more processing */
+  exit(EXIT_SUCCESS); /* And exit NOW because we can't do any more processing */
 }

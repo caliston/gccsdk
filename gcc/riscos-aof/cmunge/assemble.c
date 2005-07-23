@@ -7,12 +7,16 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "kernel.h"
-
 #include "datestamp.h"
 #include "error.h"
 #include "mem.h"
 #include "options.h"
+#include "system.h"
+#include "apcscli.h"
+
+#ifndef GCC_BIN_DIR
+#define GCC_BIN_DIR ""
+#endif
 
 static char buf[2048];
 
@@ -21,43 +25,39 @@ void AssembleFile(void) {
   int rc;
 
   if (opt.ofile) {
+    int throwback;
+#ifdef __riscos
+    throwback = opt.throwback;
+#else
+    throwback = 0;
+#endif
+
     switch (opt.toolchain)
     {
       case tc_norcroft:
         {
           unsigned long flags = opt.apcs;
-          apcsoptions_t *aarg;
           char *bufend;
-          bufend = buf + sprintf(buf, "objasm -nowarn %s %s -o %s -apcs 3",
-                                 opt.throwback ? "-throwback " : "",
+          bufend = buf + sprintf(buf, "objasm -nowarn %s %s -o %s -apcs ",
+                                 throwback ? "-throwback " : "",
                                  opt.sfile, opt.ofile);
-
-          aarg = apcsoptions;
-          while (aarg->name!=NULL)
-          {
-            if (aarg->bic & (APCS_32BIT | APCS_SWSTACKCHECK | APCS_FPREGARGS))
-            {
-              /* Only process flags that objasm is known to accept */
-              if ((flags & aarg->bic) == aarg->orr)
-                bufend += sprintf(bufend, "/%s", aarg->name);
-            }
-            aarg++;
-          }
+          bufend += apcscli_buildstring(flags, ~(APCS_32BIT |
+                                                 APCS_SWSTACKCHECK),
+                                        1, bufend, buf+2048-bufend);
         }
         break;
       case tc_gcc:
       case tc_lcc:
-        sprintf(buf, "as %s -objasm -gcc %s %s -o %s",
-                          (CODE32) ? "-apcs32 -apcsfpv3" :
-                                                        "",
-                          opt.throwback ? "-throwback " : "",
+        sprintf(buf, GCC_BIN_DIR "gcc -xassembler -mmodule %s %s -c %s -o %s",
+                          (CODE32) ? "-apcs32 -apcsfpv3" : "",
+                          throwback ? "-mthrowback" : "",
                           opt.sfile, opt.ofile);
         break;
     }
 
     /* printf("Command: %s\n",buf); */
 
-    rc = system(buf);
+    rc = our_system(buf);
     switch (rc) {
       case EXIT_SUCCESS:
         /* Yo, success! print a message ? Nah, just return */
@@ -72,6 +72,7 @@ void AssembleFile(void) {
         /* They returned something icky. Obviously that's a fault; they
            should have already displayed an error as to the fault though.
          */
+        fprintf(stderr,"Assembling: %s\n",buf);
         fprintf(stderr,"Assembler returned %i unexpectedly; aborting\n",rc);
         exit(rc);
     }

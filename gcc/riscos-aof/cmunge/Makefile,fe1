@@ -42,6 +42,7 @@ Squeezeflags = -o $@
 OS_FILES =
 
 OC_FILES = \
+        o.apcscli       \
         o.assemble      \
         o.datestamp     \
         o.error         \
@@ -57,9 +58,12 @@ OC_FILES = \
         o.writefile     \
         o.blank         \
         o.format        \
+        o.system        \
+        o.filename      \
         o.comments
 
 OC32_FILES = \
+        o32.apcscli       \
         o32.assemble      \
         o32.datestamp     \
         o32.error         \
@@ -75,9 +79,12 @@ OC32_FILES = \
         o32.writefile     \
         o32.blank         \
         o32.format        \
+        o32.system        \
+        o32.filename      \
         o32.comments
 
 OMC_FILES = \
+        om.apcscli      \
         om.assemble     \
         om.datestamp    \
         om.error        \
@@ -93,6 +100,8 @@ OMC_FILES = \
         om.writefile    \
         om.blank        \
         om.format       \
+        om.system       \
+        om.filename     \
         om.comments
 
 LIBS = C:o.stubs
@@ -148,12 +157,14 @@ release: aif32.cmunge
         cdir $(RELEASE).Source.Examples.inc
         cdir $(RELEASE).Source.Examples.o
         cdir $(RELEASE).Source.Examples.s
+        cdir $(RELEASE).Source.linux
         copy Docs          $(RELEASE).Source.Docs ~C~VR
         IfThere VersionLog Then copy VersionLog $(RELEASE).Source.Docs.History ~C~VR
         copy Examples.!*   $(RELEASE).Source.Examples.* ~C~VR
         copy Examples.inc  $(RELEASE).Source.Examples.inc ~C~VR
         copy Examples.cmhg $(RELEASE).Source.Examples.cmhg ~C~VR
         copy c             $(RELEASE).Source.c ~C~VR
+        copy linux.mklinks $(RELEASE).Source.linux.mklinks ~C~VR
         copy h             $(RELEASE).Source.h ~C~VR
         copy Makefile      $(RELEASE).Source.Makefile ~C~VR
         IfThere Resources Then Copy Resources.!Mk* $(RELEASE).Source.* ~C~VR Else Copy !Mk* $(RELEASE).Source.* ~C~VR
@@ -176,14 +187,3 @@ export:
 # Static dependencies:
 
 # Dynamic dependencies:
-o32.assemble: c.assemble C:h.kernel h.datestamp h.error h.mem h.options
-o32.main: c.main h.MemCheck h.gfile h.options h.readfile h.writefile h.writeheader h.writeexport h.assemble h.datestamp h.blank h.format h.copyright VersionNum
-o32.mem: c.mem h.error
-o32.options: c.options h.gfile h.error h.options h.str h.mem h.format
-o32.readfile: c.readfile h.gfile h.error h.mem h.options h.str h.readfile
-o32.gfile: c.gfile h.gfile h.str
-o32.throwback: c.throwback C:h.kernel h.throwback
-o32.writeheader: c.writeheader h.gfile h.error h.options h.format h.comments h.copyright VersionNum
-o32.writeexport: c.writeexport h.gfile h.error h.options h.comments h.copyright VersionNum
-o32.writefile: c.writefile h.gfile h.error h.options h.copyright VersionNum
-o32.blank: c.blank C:h.kernel h.error h.options h.format h.readfile VersionNum
