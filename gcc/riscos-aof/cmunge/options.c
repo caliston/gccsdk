@@ -12,11 +12,12 @@
 #include "str.h"
 #include "mem.h"
 #include "format.h"
+#include "apcscli.h"
 
 /* Instantiate the global options struct here */
 options opt;
 
-void Options_Init() {
+void Options_Init(void) {
 
   opt.runnable    = run_none;
   opt.reentrant   = 1;
@@ -44,8 +45,10 @@ void Options_Init() {
   opt.ofile       = NULL; /* AOF output */
   opt.sfile       = NULL; /* Assembler output */
   opt.pfile       = NULL; /* Pre-processor output */
+  opt.pextended   = 0;    /* Extended pre-processor input */
   opt.hfile       = NULL; /* Header output */
   opt.throwback   = 0;
+  opt.rootinfile  = NULL;
   opt.infile      = NULL;
   opt.atline      = 0;
   opt.defines     = NULL;
@@ -64,92 +67,25 @@ void Options_Init() {
   /* Export files */
   opt.x_hdr       = NULL;
   opt.x_h         = NULL;
-  opt.apcs        = APCS_SWSTACKCHECK |
-                    APCS_FP;
+  opt.apcs        = DEFAULT_APCS;
   opt.toolchain   = tc_norcroft;
   opt.apcs_used   = 0;
   opt.toolchain_used = 0;
-}
-
-/* This is a global variable so that we can use it in the other files */
-apcsoptions_t apcsoptions[] = {
-  { "reentrant",      5, APCS_REENTRANT,    APCS_REENTRANT,
-    "Reentrant APCS variant" },
-  { "nonreentrant",   8, APCS_REENTRANT,    0,
-    "Non reentrant APCS variant" },
-  { "32bit",          2, APCS_32BIT,        APCS_32BIT,
-    "32 bit APCS variant" },
-  { "26bit",          2, APCS_32BIT,        0,
-    "26 bit APCS variant" },
-  { "fpe3",           4, APCS_FPE3,         APCS_FPE3,
-    "Floating point emulator 3 compatibility" },
-  { "fpe2",           4, APCS_FPE3,         0,
-    "Floating point emulator 2 compatibility" },
-  { "swstackcheck",   4, APCS_SWSTACKCHECK, APCS_SWSTACKCHECK,
-    "Software stack checking APCS variant" },
-  { "noswstackcheck", 6, APCS_SWSTACKCHECK, 0,
-    "No software stack checking APCS variant" },
-  { "fpregargs",      3, APCS_FPREGARGS,    APCS_FPREGARGS,
-    "FP arguments passed in FP registers" },
-  { "nofpregargs",    5, APCS_FPREGARGS,    0,
-    "FP arguments are not passed in FP registers" },
-  { "fp",             2, APCS_FP,           APCS_FP,
-    "Arguments referenced through the frame pointer" },
-  { "nofp",           4, APCS_FP,           0,
-    "Arguments referenced through the stack pointer" },
-  { NULL }
-};
-
-/* Parse the -apcs arguments to generate a new set of flags */
-static unsigned long parse_apcs(unsigned long flags, const char *arg)
-{
-  if (*arg == '3') arg++;
-  while (*arg)
-  {
-    if (*arg=='/')
-      arg++;
-    else
-    {
-      const char *argend;
-      int arglen;
-      argend = strchr(arg,'/');
-      if (argend)
-        arglen = argend-arg;
-      else
-        arglen = strlen(arg);
-
-      {
-        apcsoptions_t *aarg = &apcsoptions[0];
-        while (aarg->name!=NULL)
-        {
-          if ( strncmp(aarg->name, arg, arglen)==0 &&
-               ( (arglen == aarg->minabbrev &&
-                  arg[aarg->minabbrev]=='\0' || arg[aarg->minabbrev]=='/') ||
-                 (strlen(aarg->name) == arglen)
-               ) )
-            break;
-          aarg++;
-        }
-        /* printf("Option '%.*s' matches '%s'\n",arglen,arg,aarg->name); */
-        if (aarg->name==NULL)
-          ErrorFatal("APCS flag %s not recognised\n");
-        flags &=~ aarg->bic;
-        flags |=  aarg->orr;
-      }
-
-      arg += arglen;
-    }
-  }
-  return flags;
+  opt.help_requested = 0;
 }
 
 static void help_text(void) {
 
   format_wrap(stdout,"","",
 "\n"
-"Make a RISC OS module header for a module written in C.\n"
+"Make a RISC OS module header for a module written in C/C++.\n"
 "\n"
+#ifdef __riscos
+"Syntax: *CMunge [<options>] <infile>\n"
+#else
+/* Non-RISC OS systems don't use the above style for their usage commands. */
 "Usage: cmunge [options] infile\n"
+#endif
 "\n"
 "Options:\n"
 "\n"
@@ -159,7 +95,8 @@ static void help_text(void) {
 "\t-d <file>     \bName a C header file that CMunge will generate.\n"
 "\t-xhdr <file>  \bName a Assembler SWI header file that CMunge will generate.\n"
 "\t-xh <file>    \bName a C SWI header file that CMunge will generate.\n"
-"\t-p            \bPre-process the file with cpp before parsing.\n"
+"\t-p            \bPre-process the file with pre-processor before parsing.\n"
+"\t-px           \bExtended pre-processing of all content from pre-processor.\n"
 /*"-b            \bUse _blib_entermodule instead of SCL version\n" */
 "\t-I<directory> \bInclude <directory> on the #include search path.\n"
 "\t-D<symbol>=<value>\b\n"
@@ -172,46 +109,17 @@ static void help_text(void) {
 "\t-zoslib       \bUse '#include \"oslib/os.h\"' (OSLib) instead of "
                  "'#include \"kernel.h\"' (Acorn) in generated C header file.\n"
 "\t-blank        \bGenerate a blank cmhg file to infile.\n"
-"\t-cmhg         \bGive warnings for non CMHG values.\n"
+"\t-cmhg         \bGive warnings for non-CMHG values.\n"
 "\t-tgcc         \bUse GCC tool chain to generate output.\n"
 "\t-tlcc         \bUse LCC tool chain to generate output.\n"
-"\t-tnorcroft    \bUse GCC tool chain to generate output (default).\n"
+"\t-tnorcroft    \bUse Norcroft tool chain to generate output (default).\n"
 "\t-32bit        \bGenerate 32-bit compatible code.\n"
 "\t-26bit        \bGenerate 26-bit only code (default).\n"
 "\t-apcs 3/<flags>\bSpecify APCS variant to use.\n",
 "");
 
-  /* Now print out the APCS flags */
-  {
-    int longest=0;
-    apcsoptions_t *arg;
-    arg = apcsoptions;
-    while (arg->name != NULL)
-    {
-      int len=strlen(arg->name);
-      if (len > longest)
-        longest = len;
-      arg++;
-    }
-    arg = apcsoptions;
-
-    printf("APCS flags: (*=currently selected)\n");
-    while (arg->name != NULL)
-    {
-      int count;
-      int len = strlen(arg->name);
-      if (len == arg->minabbrev)
-        printf("  /%s   ",arg->name);
-      else
-        printf("  /%.*s[%s] ",arg->minabbrev, arg->name,
-                             &arg->name[arg->minabbrev]);
-      for (count=longest-len; count>0; count--)
-        putc(' ', stdout);
-      printf("%s %s\n",((opt.apcs & arg->bic)==arg->orr) ? "*" : " ",
-                       arg->desc);
-      arg++;
-    }
-  }
+  /* Display the APCS variant in use */
+  apcscli_help(opt.apcs, 1);
 }
 
 void Options_CL(int argc, char *argv[]) {
@@ -252,20 +160,21 @@ void Options_CL(int argc, char *argv[]) {
         ErrorFatal("Export flag %s used twice!",arg);
       i++;
       if (i < argc) {
-        *file = strdup(argv[i]);
+        *file = strdup_strip(argv[i]);
       } else {
         ErrorFatal("No filename passed with export flag %s flag!",arg);
       }
     } else if (stricmp("-h", argv[i]) || stricmp("-help", argv[i])) {
-      help_text();
-      exit(EXIT_FAILURE);
-    } else if (stricmp("-p", argv[i])) {
+      opt.help_requested = 1;
+    } else if (stricmp("-p", argv[i]) || stricmp("-px", argv[i])) {
       if (opt.pfile) {
         ErrorFatal("-p flag used twice!");
       }
       opt.pfile=file_temp();
       if (opt.pfile==NULL)
         ErrorFatal("Failed to find a temporary file for preprocessor");
+      if (stricmp("-px", argv[i]))
+        opt.pextended = 1;
     } else if (stricmp("-cmhg", argv[i])) {
       if (opt.cmhg) {
         ErrorFatal("-cmhg flag used twice!");
@@ -277,7 +186,7 @@ void Options_CL(int argc, char *argv[]) {
       }
       i++;
       if (i < argc) {
-        opt.sfile = strdup(argv[i]);
+        opt.sfile = strdup_strip(argv[i]);
       } else {
         ErrorFatal("No filename passed with -s flag!");
       }
@@ -287,7 +196,7 @@ void Options_CL(int argc, char *argv[]) {
       }
       i++;
       if (i < argc) {
-        opt.ofile = strdup(argv[i]);
+        opt.ofile = strdup_strip(argv[i]);
       } else {
         ErrorFatal("No filename passed with -o flag!");
       }
@@ -304,23 +213,23 @@ void Options_CL(int argc, char *argv[]) {
       }
       i++;
       if (i < argc) {
-        opt.dfile = strdup(argv[i]);
+        opt.dfile = strdup_strip(argv[i]);
       } else {
         ErrorFatal("No filename passed with -depend flag!");
       }
-    } else if (strncmp("-I", argv[i], 2) == 0) {
+    } else if (strncmp("-I", argv[i], sizeof("-I")-1) == 0) {
       /* Includes must go in in order! */
       arg = &argv[i][2];
       if (*arg) {
         inc = Malloc(sizeof(*inc));
-        inc->path = strdup(arg);
+        inc->path = strdup_strip(arg);
         inc->next = NULL;
         *inc_tail = inc;
         inc_tail  = &inc->next;
       } else {
         ErrorFatal("No path passed with -I flag!");
       }
-    } else if (strncmp("-D", argv[i], 2)==0) { /* case sensitive */
+    } else if (strncmp("-D", argv[i], sizeof("-D")-1)==0) { /* case sensitive */
       arg = &argv[i][2];
       if (*arg == 0) {
         i++;
@@ -330,7 +239,7 @@ void Options_CL(int argc, char *argv[]) {
           ErrorFatal("No definition variable given with -D");
         }
       }
-      arg = strdup(arg);
+      arg = strdup_strip(arg);
       val = strchr(arg,'=');
       if (val != NULL)
         *val++ = 0;
@@ -341,7 +250,7 @@ void Options_CL(int argc, char *argv[]) {
       define->invert = 0;
       define->next   = opt.defines;
       opt.defines    = define;
-    } else if (strncmp("-U", argv[i], 2)==0) { /* case insensitive */
+    } else if (strncmp("-U", argv[i], sizeof("-U")-1)==0) { /* case insensitive */
       arg = &argv[i][2];
       if (*arg == 0) {
         i++;
@@ -351,7 +260,7 @@ void Options_CL(int argc, char *argv[]) {
           ErrorFatal("No (un)definition variable given with -U");
         }
       }
-      arg = strdup(arg);
+      arg = strdup_strip(arg);
       val = strchr(arg, '=');
       if (val != NULL) {
         ErrorFatal("How can you undefine something to be something? %s", arg);
@@ -369,7 +278,7 @@ void Options_CL(int argc, char *argv[]) {
       }
       i++;
       if (i < argc) {
-        opt.hfile = strdup(argv[i]);
+        opt.hfile = strdup_strip(argv[i]);
       } else {
         ErrorFatal("No filename passed with -d flag!");
       }
@@ -391,7 +300,7 @@ void Options_CL(int argc, char *argv[]) {
     } else if (strcmp("-apcs", argv[i])==0) { /* case sensitive */
       i++;
       if (i < argc) {
-        opt.apcs = parse_apcs(opt.apcs, argv[i]);
+        opt.apcs = apcscli_parse(opt.apcs, argv[i], ErrorFatal);
       } else {
         ErrorFatal("No APCS type supplied!");
       }
@@ -399,8 +308,15 @@ void Options_CL(int argc, char *argv[]) {
       if (opt.infile) {
         ErrorFatal("Unknown flag/Only specify one input file: %s", argv[i]);
       }
-      opt.infile = strdup(argv[i]);
+      opt.infile = strdup_strip(argv[i]);
     }
+  }
+
+  /* Doing the help after all options means that any APCS changes made on
+     the command line become visible in the help output. */
+  if (opt.help_requested) {
+    help_text();
+    exit(EXIT_FAILURE);
   }
 }
 
@@ -428,6 +344,8 @@ void Options_CheckSanity(void) {
       CMHGWarning("-apcs specified");
     if (opt.toolchain_used)
       CMHGWarning("-t<toolchain> specified");
+    if (opt.pextended)
+      CMHGWarning("-px specified");
 
     defines = opt.defines;
     while (defines) {
@@ -460,18 +378,44 @@ void Options_CheckSanity(void) {
 
   /* We need a temporary file for the assembler */
   if (opt.sfile==NULL) {
+    opt.stemp=1;
     opt.sfile=file_temp();
     if (opt.sfile==NULL)
       ErrorFatal("Failed to find a temporary file for assembly");
+  }
+
+  /* Toolchain specific checks */
+  switch (opt.toolchain)
+  {
+    case tc_gcc:
+#ifdef __riscos
+      /* Throwback is supported on RISC OS builds of GCC */
+#else
+      if (opt.throwback)
+        Warning("GCC has no support for -throwback flag");
+#endif
+      if (opt.dfile)
+        Warning("GCC has no support for -depend flag");
+      break;
+
+    case tc_lcc:
+      if (opt.throwback)
+        Warning("LCC has no support for -throwback flag");
+      if (opt.dfile)
+        Warning("LCC has no support for -depend flag");
+      break;
+
+    case tc_norcroft:
+      break;
   }
 }
 
 void Options_CheckSanityPostRead(void) {
 
   /* APCS variant checks */
-#if 0
   if (opt.apcs & APCS_REENTRANT)
     ErrorFatal("APCS mode 'reentrant' not supported by CMunge");
+#if 0
   if (!(opt.apcs & APCS_SWSTACKCHECK))
     ErrorFatal("APCS mode 'swstackcheck' is required by CMunge");
   if (opt.apcs & APCS_FPREGARGS)
@@ -500,6 +444,14 @@ void Options_CheckSanityPostRead(void) {
     } else {
       if (!opt.swi_handler && !opt.swi_codesupplied)
         ErrorFatal("SWI chunk defined, but no SWI handler!");
+      if (!opt.swi_names)
+      {
+        Warning("No SWI prefix specified; assuming module title");
+        opt.swi_names = Malloc(sizeof(*opt.swi_names));
+        opt.swi_names->name = strdup_strip(opt.title);
+        opt.swi_names->handler = NULL; /* Never actually used */
+        opt.swi_names->next = NULL;
+      }
     }
 
     if (opt.errors && opt.error_base == 0 && !opt.errors_special)

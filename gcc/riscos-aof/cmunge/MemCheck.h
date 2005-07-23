@@ -16,7 +16,7 @@ Purpose:	Checking of memory accesses.
 */
 
 /*
-$Id: MemCheck.h,v 1.1.1.1 2005/07/03 13:39:35 john Exp $
+$Id: MemCheck,v 1.1 2000/12/05 00:49:01 justin Exp $
 */
 
 #ifndef __MemCheck_MemCheck_h

@@ -8,6 +8,7 @@
 
 #include "error.h"
 #include "mem.h"
+#include "str.h"
 
 int stricmp(const char *p, const char *q) {
 
@@ -24,7 +25,7 @@ int stricmp(const char *p, const char *q) {
   }
 }
 
-char *strdup(char *p) {
+char *strdup_strip(const char *p) {
 
   char *res;
   int s;
