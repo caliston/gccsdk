@@ -105,6 +105,7 @@ OMC_FILES = \
         om.comments
 
 LIBS = C:o.stubs
+# NOTE: (JRF) Do not use StubsGS until it's been released.
 LIBS32 = C:o.stubsG
 
 # Final targets:
@@ -122,10 +123,10 @@ aif.cmunge: aif.cmungeU
 aif32.cmunge: aif32.cmungeU
         Squeeze aif32.cmungeU aif32.cmunge
 
-aif.cmungeU: $(OC_FILES) $(OS_FILES)
+aif.cmungeU: $(OC_FILES) $(OS_FILES) $(LIBS)
         link $(linkflags) $(OC_FILES) $(OS_FILES) $(LIBS)
 
-aif32.cmungeU: $(OC32_FILES) $(OS32_FILES)
+aif32.cmungeU: $(OC32_FILES) $(OS32_FILES) $(LIBS32)
         link $(linkflags) $(OC32_FILES) $(OS32_FILES) $(LIBS32)
 
 aif.cmungeM: $(OMC_FILES) $(OS_FILES)
