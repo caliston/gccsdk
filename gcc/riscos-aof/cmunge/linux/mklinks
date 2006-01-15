@@ -13,7 +13,7 @@
 ## This script may be used freely within other projects whether they be
 ## freely available, for commercial use or otherwise. The only thing
 ## that is asked is that improvements and suggestions be returned to
-## Justin Fletcher at <justin.fletcher@ntlworld.com>.
+## Justin Fletcher at <gerph@gerph.org>.
 
 $target = shift || "prog";
 
