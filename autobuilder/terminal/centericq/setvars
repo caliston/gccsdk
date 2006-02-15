@@ -1,5 +1,0 @@
-
-AB_CATEGORY=terminal/test
-
-AB_CONFLAGS="--ro-recurse --disable-msn"
-
