@@ -1,0 +1,29 @@
+--- ../../../gcc-3.4-20050719/gcc/cpplib.c	2004-12-02 03:32:17.000000000 +0100
++++ ./cpplib.c	2005-03-21 12:56:25.000000000 +0100
+@@ -636,6 +636,11 @@
+ {
+   char *fname;
+   const cpp_token *header;
++#if defined(CROSS_COMPILE)
++  char unixed[256]; /* Temp buffer to translate Unix filenames to RISCOS */
++  int len;
++  extern char *riscos_to_unix (char *, char *);
++#endif
+ 
+   /* Allow macro expansion.  */
+   header = get_token_no_padding (pfile);
+@@ -644,6 +649,14 @@
+       fname = xmalloc (header->val.str.len - 1);
+       memcpy (fname, header->val.str.text + 1, header->val.str.len - 2);
+       fname[header->val.str.len - 2] = '\0';
++#if defined(CROSS_COMPILE)
++      /* Convert the #include filename to a Unix version.  */
++      riscos_to_unix (fname, unixed);
++      free (fname);
++      len = strlen (unixed) + 1;
++      fname = xmalloc (len);
++      memcpy (fname, unixed, len);
++#endif
+       *pangle_brackets = header->type == CPP_HEADER_NAME;
+     }
+   else if (header->type == CPP_LESS)
