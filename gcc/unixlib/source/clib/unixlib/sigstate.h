@@ -1,0 +1,97 @@
+/****************************************************************************
+ *
+ * $Source: /usr/local/cvsroot/gccsdk/unixlib/source/clib/unixlib/sigstate.h,v $
+ * $Date: 2005/03/31 09:32:23 $
+ * $Revision: 1.10 $
+ * $State: Exp $
+ * $Author: nick $
+ *
+ ***************************************************************************/
+
+/* This is an internal UnixLib header file for implementing the signal
+   handlers.  These functions cannot be used in a user program.  */
+
+#ifndef __UNIXLIB_SIGSTATE_H
+#define __UNIXLIB_SIGSTATE_H 1
+
+#ifndef __UNIXLIB_FEATURES_H
+#include <features.h>
+#endif
+
+#ifndef __SIGNAL_H
+#include <signal.h>
+#endif
+
+__BEGIN_DECLS
+
+#define __SIG_INVALID_P(sig) ((unsigned int)sig >= NSIG)
+
+/* Signal state for each thread.  */
+
+struct unixlib_sigstate
+  {
+    /* The blocked signals for this process.  */
+    sigset_t blocked;
+    /* The pending signals for this process.  */
+    sigset_t pending;
+    /* The defined signal handlers for this process.  */
+    struct sigaction actions[NSIG];
+    struct sigaltstack signalstack;
+
+    /* If `suspended' is set when this process gets a signal,
+       the signal thread sends an empty message to it.  */
+    int suspended;
+
+    /* If 'currently_handling' is set, then the process is currently
+       executing a signal handler. Any raised signals will be pended and
+       executed after the current signal has finished executing.  */
+    int currently_handling;
+  };
+
+/* Raise a signal as described by __signo on the process whose sigstate
+   __ss points to. If __ss is null, this will affect the calling process.  */
+extern void __unixlib_raise_signal (struct unixlib_sigstate *__ss,
+				   int __signo);
+
+/* Function run for SIGINFO when its action is SIG_DFL and the current
+   process is the session leader.  */
+extern void __unixlib_siginfo_handler (int);
+
+/* Actual signal execution functions. Depends on whether we are
+   using sigstack, sigaltstack or not.  */
+extern void __unixlib_exec_sig (__sighandler_t, int);
+extern void __unixlib_exec_sigstack_bsd (void *__sp, __sighandler_t, int);
+extern void __unixlib_exec_sigstack (void *__sp, int size, __sighandler_t, int);
+extern void __unixlib_default_sigaction (struct unixlib_sigstate *);
+
+/* Returns non-zero value when address range __lower - __upper (excl) is
+   a valid address range.  */
+extern int __valid_address (const void *__lower, const void *__upper);
+
+/* Write a stack backtrace direct to the terminal.  A meaningful signal
+   number can be supplied as 'signo'.  */
+extern void __write_backtrace (int signo);
+
+/* SIGALRM handler.  */
+extern void __h_sigalrm_init (void);
+
+/* SIGVTALRM handler.  */
+extern void __h_sigvtalrm_init (void);
+
+/* SIGPROF handler.  */
+extern void __h_sigprof_init (void);
+
+/* Alarm semaphores.  */
+extern int __h_sigprof_sema, __h_sigvtalrm_sema, __h_sigalrm_sema;
+
+/* Get the fp at the moment of calling.  */
+extern void *__backtrace_getfp (void);
+
+/* When non-NULL, the fp at the moment __h_cback_common is executed.  This
+   means that at __ul_callbackfp + 1, a complete exception snapshot of CPSR
+   followed by r0-r16 is located.  */
+extern unsigned int * __ul_callbackfp;
+
+__END_DECLS
+
+#endif

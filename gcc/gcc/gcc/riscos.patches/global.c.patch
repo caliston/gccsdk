@@ -1,0 +1,12 @@
+--- ../../../gcc-3.4-20050719/gcc/global.c	2003-12-20 03:39:43.000000000 +0100
++++ ./global.c	2004-05-31 17:10:33.000000000 +0200
+@@ -323,7 +323,9 @@
+ #endif
+   int need_fp
+     = (! flag_omit_frame_pointer
++#ifndef TARGET_RISCOSAOF
+        || (current_function_calls_alloca && EXIT_IGNORE_STACK)
++#endif
+        || FRAME_POINTER_REQUIRED);
+ 
+   size_t i;
