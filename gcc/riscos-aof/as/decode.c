@@ -239,6 +239,7 @@ decode (Lex * label)
       switch (c = inputGet ())
 	{
 	case 'i':
+	case 'I':
 	  switch (inputGetUC ())
 	    {
 	    case 'c':
