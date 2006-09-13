@@ -1,20 +1,13 @@
 # Top-level configure.in for the RISC OS GCCSDK
-# Copyright (c) 2000, 2001, 2002, 2003, 2004 Nick Burrett
-# Written by Nick Burrett <nick@dsvr.net>
+# Copyright (c) 2000, 2001, 2002, 2003, 2004, 2005, 2006 GCCSDK Developers
+# Written by Nick Burrett <nick@sqrt.co.uk>
 
 AC_PREREQ(2.50)
-AC_INIT(Makefile.in)
+AC_INIT([GCCSDK],[3.4.6 Release 2],[http://gccsdk.riscos.info/])
+AC_COPYRIGHT([(c) 2000, 2001, 2002, 2003, 2004, 2005, 2006 GCCSDK Developers])
 AC_CONFIG_HEADER(sdk-config.h)
 AC_CANONICAL_SYSTEM
 AC_ARG_PROGRAM
-
-dnl Global version variable
-PACKAGE=GCCSDK
-VERSION="3.4.0"
-AC_SUBST(PACKAGE)
-AC_SUBST(VERSION)
-AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE", [Program name])
-AC_DEFINE_UNQUOTED(VERSION, "$VERSION", [Program version])
 
 dnl Checks for programs
 AC_PROG_CC
@@ -98,31 +91,27 @@ AC_DECL_SYS_SIGLIST
 AC_FUNC_VFORK
 
 
-dnl Checks for typedefs, structures and compiler characteristics
-#AC_CHECK_TYPE(uint32_t, unsigned int)
-#AC_CHECK_TYPE(int32_t, int)
-
 dnl Additional configure command line parameters
 AC_ARG_WITH(riscos-dist,
-	[  --with-riscos-dist=DIR    path to RISC OS distribution install dir])
+	[  --with-riscos-dist=DIR  path to RISC OS distribution install dir])
 test "$with_riscos_dist" = yes && with_riscos_dist=$prefix/riscos-dist
 test "$with_riscos_dist" = default && with_riscos_dist=$prefix/riscos-dist
 test "$with_riscos_dist" = "" && with_riscos_dist=$prefix/riscos-dist
 
 AC_ARG_WITH(riscos-pkg,
-	[  --with-riscos-pkg=DIR    path to RISC OS distribution package])
+	[  --with-riscos-pkg=DIR   path to RISC OS distribution package])
 test "$with_riscos_pkg" = yes && with_riscos_pkg=$prefix/riscos-pkg
 test "$with_riscos_pkg" = default && with_riscos_pkg=$prefix/riscos-pkg
 test "$with_riscos_pkg" = "" && with_riscos_pkg=$prefix/riscos-pkg
 
 AC_ARG_WITH(riscos-env,
-	[  --with-riscos-env=DIR    path to RISC OS porting environment])
+	[  --with-riscos-env=DIR   path to RISC OS porting environment])
 test "$with_riscos_env" = yes && with_riscos_env=$prefix/env
 test "$with_riscos_env" = default && with_riscos_env=$prefix/env
 test "$with_riscos_env" = "" && with_riscos_env=$prefix/env
 
 AC_ARG_ENABLE(filetype-ff8,
-	[  --enable-filetype-ff8    add ,ff8 to RISC OS executables])
+	[  --enable-filetype-ff8   add ,ff8 to RISC OS executables])
 if test "$enable_filetype_ff8" = yes; then
   AC_DEFINE(ENABLE_FILETYPE_FF8, 1, [Define if the linker should append ,ff8 to all executables in the cross-compiler])
   exesfx=,ff8
@@ -130,12 +119,72 @@ else
   exesfx=
 fi
 
-withval=
-AC_ARG_WITH(target-arch,
-	[  --target-arch=CPU    specify an ARM processor to target with GCC (default: tune for StrongARM, compile for ARMv3)])
-target_arch=$withval
+AC_ARG_WITH(arch,
+	[  --with-arch=CPU         specify an ARM processor to target with GCC as default architecture.  Possible values are "arm6" (default), "arm7m", "strongarm", "xscale" ])
+test "$with_arch" = yes && with_arch=arm6
+test "$with_arch" = default && with_arch=arm6
+test "$with_arch" = "" && with_arch=arm6
 
-AC_SUBST(exesfx)
+case "$with_arch" in
+  arm6)
+	target_default_spec="{ \\\"arch\\\", \\\"arm6\\\" }"
+	;;
+  arm7m)
+	target_default_spec="{ \\\"arch\\\", \\\"arm7m\\\" }"
+	;;
+  strongarm)
+	target_default_spec="{ \\\"arch\\\", \\\"strongarm\\\" }"
+	;;
+  xscale)
+	target_default_spec="{ \\\"arch\\\", \\\"xscale\\\" }"
+	;;
+  *)
+	AC_MSG_ERROR([Unsupported --with-arch option value])
+	;;
+esac
+
+AC_ARG_WITH(tune,
+	[  --with-tune=CPU         specify an ARM processor to target with GCC as default tuning.  Possible values are "arm6", "arm7m", "strongarm" (default), "xscale" ])
+test "$with_tune" = yes && with_tune=strongarm
+test "$with_tune" = default && with_tune=strongarm
+test "$with_tune" = "" && with_tune=strongarm
+
+case "$with_tune" in
+  arm6)
+	target_default_spec+=",{ \\\"tune\\\", \\\"arm6\\\" }"
+	;;
+  arm7m)
+	target_default_spec+=",{ \\\"tune\\\", \\\"arm7m\\\" }"
+	;;
+  strongarm)
+	target_default_spec+=",{ \\\"tune\\\", \\\"strongarm\\\" }"
+	;;
+  xscale)
+	target_default_spec+=",{ \\\"tune\\\", \\\"xscale\\\" }"
+	;;
+  *)
+	AC_MSG_ERROR([Unsupported --with-tune option value])
+	;;
+esac
+
+# Not yet working:
+#AC_ARG_WITH(float,
+#	[  --with-float=CPU        specifies if default GCC spec is hard-float or soft-float.  Possible values are "hard" (default), "soft" ])
+#test "$with_float" = yes && with_float=hard
+#test "$with_float" = default && with_float=hard
+#test "$with_float" = "" && with_float=hard
+#
+#case "$with_float" in
+#  hard)
+#	target_default_spec+=",{ \\\"float\\\", \\\"hard\\\" }"
+#	;;
+#  soft)
+#	target_default_spec+=",{ \\\"float\\\", \\\"soft\\\" }"
+#	;;
+#  *)
+#	AC_MSG_ERROR([Unsupported --with-float option value])
+#	;;
+#esac
 
 dnl Checks for library functions
 echo Targeting for host $host
@@ -189,7 +238,8 @@ AC_SUBST(host_system)
 AC_SUBST(with_riscos_dist)
 AC_SUBST(with_riscos_pkg)
 AC_SUBST(with_riscos_env)
-AC_SUBST(target_arch)
+AC_SUBST(exesfx)
+AC_SUBST(target_default_spec)
 
 # Get an absolute path to the GCCSDK top-level source directory
 holddir=`pwd`
