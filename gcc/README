@@ -72,15 +72,17 @@ The `do-configure' script encapsulates this command, so instead of the
 above, you can adapt `do-configure' script if needed and run
 `./do-configure'.
 
-The `--with-arch=CPU' is an optional configure option allowing to specify
-the default architecture.  Supported values are the GCC -march values `arm6'
-(= default), `arm7m', `strongarm', `xscale'.  Note for 'strongarm' you need
+The `--with-arch=ARCH' is an optional configure option allowing to specify
+the default architecture.  Supported values are the GCC -march values `armv3'
+(= default), `armv3m', `armv4', `armv5te'.  Note for 'armv4' you need
 hardware allowing two byte read/write access which is not the case for e.g.
-RiscPC.
+RiscPC with StrongARM or even Kinetic card.
 
 The `--with-tune=CPU' is an optional configure option allowing to specify
 the default tuning.  Supported values are the GCC -march values `arm6',
 `arm7m', `strongarm' (= default), `xscale'.
+
+
 
 On systems with makeinfo 4.1, you can avoid building documentation by
 prefixing the `./configure' or `./do-configure' commands with:

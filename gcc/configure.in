@@ -120,23 +120,23 @@ else
 fi
 
 AC_ARG_WITH(arch,
-	[  --with-arch=CPU         specify an ARM processor to target with GCC as default architecture.  Possible values are "arm6" (default), "arm7m", "strongarm", "xscale" ])
-test "$with_arch" = yes && with_arch=arm6
-test "$with_arch" = default && with_arch=arm6
-test "$with_arch" = "" && with_arch=arm6
+	[  --with-arch=ARCH        specify an ARM architecture to target with GCC as default architecture.  Possible values are "armv3" (default), "armv3m", "armv4", "armv5te" ])
+test "$with_arch" = yes && with_arch=armv3
+test "$with_arch" = default && with_arch=armv3
+test "$with_arch" = "" && with_arch=armv3
 
 case "$with_arch" in
-  arm6)
-	target_default_spec="{ \\\"arch\\\", \\\"arm6\\\" }"
+  armv3)
+	target_default_spec="{ \\\"arch\\\", \\\"armv3\\\" }"
 	;;
-  arm7m)
-	target_default_spec="{ \\\"arch\\\", \\\"arm7m\\\" }"
+  armv3m)
+	target_default_spec="{ \\\"arch\\\", \\\"armv3m\\\" }"
 	;;
-  strongarm)
-	target_default_spec="{ \\\"arch\\\", \\\"strongarm\\\" }"
+  armv4)
+	target_default_spec="{ \\\"arch\\\", \\\"armv4\\\" }"
 	;;
-  xscale)
-	target_default_spec="{ \\\"arch\\\", \\\"xscale\\\" }"
+  armv5te)
+	target_default_spec="{ \\\"arch\\\", \\\"armv5te\\\" }"
 	;;
   *)
 	AC_MSG_ERROR([Unsupported --with-arch option value])
@@ -151,40 +151,39 @@ test "$with_tune" = "" && with_tune=strongarm
 
 case "$with_tune" in
   arm6)
-	target_default_spec+=",{ \\\"tune\\\", \\\"arm6\\\" }"
+	target_default_spec=$target_default_spec",{ \\\"tune\\\", \\\"arm6\\\" }"
 	;;
   arm7m)
-	target_default_spec+=",{ \\\"tune\\\", \\\"arm7m\\\" }"
+	target_default_spec=$target_default_spec",{ \\\"tune\\\", \\\"arm7m\\\" }"
 	;;
   strongarm)
-	target_default_spec+=",{ \\\"tune\\\", \\\"strongarm\\\" }"
+	target_default_spec=$target_default_spec",{ \\\"tune\\\", \\\"strongarm\\\" }"
 	;;
   xscale)
-	target_default_spec+=",{ \\\"tune\\\", \\\"xscale\\\" }"
+	target_default_spec=$target_default_spec",{ \\\"tune\\\", \\\"xscale\\\" }"
 	;;
   *)
 	AC_MSG_ERROR([Unsupported --with-tune option value])
 	;;
 esac
 
-# Not yet working:
-#AC_ARG_WITH(float,
-#	[  --with-float=CPU        specifies if default GCC spec is hard-float or soft-float.  Possible values are "hard" (default), "soft" ])
-#test "$with_float" = yes && with_float=hard
-#test "$with_float" = default && with_float=hard
-#test "$with_float" = "" && with_float=hard
-#
-#case "$with_float" in
-#  hard)
-#	target_default_spec+=",{ \\\"float\\\", \\\"hard\\\" }"
-#	;;
-#  soft)
-#	target_default_spec+=",{ \\\"float\\\", \\\"soft\\\" }"
-#	;;
-#  *)
-#	AC_MSG_ERROR([Unsupported --with-float option value])
-#	;;
-#esac
+AC_ARG_WITH(float,
+	[  --with-float=floattype  specifies if default GCC spec is hard-float or soft-float [EXPERIMENTAL].  Possible values are "hard" (default), "soft" ])
+test "$with_float" = yes && with_float=hard
+test "$with_float" = default && with_float=hard
+test "$with_float" = "" && with_float=hard
+
+case "$with_float" in
+  hard)
+	target_default_spec=$target_default_spec",{ \\\"float\\\", \\\"hard\\\" }"
+	;;
+  soft)
+	target_default_spec=$target_default_spec",{ \\\"float\\\", \\\"soft\\\" }"
+	;;
+  *)
+	AC_MSG_ERROR([Unsupported --with-float option value])
+	;;
+esac
 
 dnl Checks for library functions
 echo Targeting for host $host

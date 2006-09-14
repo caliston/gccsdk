@@ -547,7 +547,9 @@ do {							\
 
 /* Options to pass through to the assembler.  */
 #undef ASM_SPEC
-#define ASM_SPEC "%{!mcpu=*:-t ARM6 -apcsfpv3} \
+#define ASM_SPEC "%{!mcpu=*:%{march=armv3:-t ARM6 -apcsfpv3; \
+	march=armv3m:-t ARM7M -apcsfpv3; march=armv4:-t SA110 -apcsfpv3; \
+	march=armv5te:-t XSCALE -apcsfpv3; :-t ARM6 -apcsfpv3}} \
 	%{mcpu=arm6:-t ARM6 -apcsfpv3} \
 	%{mcpu=arm7:-t ARM7 -apcsfpv3} \
 	%{mcpu=strongarm:-t SA110 -apcsfpv3} \
