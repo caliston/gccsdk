@@ -1,3 +1,7 @@
+Wed Oct  4 23:13:35 CEST 2006  John Tytgat  <John.Tytgat@aaug.net>
+
+	* source/sys/exec.c (execve): Made code slightly less obfuscated.
+
 Tue Sep 26 23:14:57 2006  John-Mark Bell  <jmb202@ecs.soton.ac.uk>
 
 	* source/time/mktime.c: Fix corruption of input structure (bug #152)
