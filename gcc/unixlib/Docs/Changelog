@@ -1,3 +1,7 @@
+Sat Oct 21 22:38:13 CEST 2006  John Tytgat  <John.Tytgat@aaug.net>
+
+	* source/clib/regex.h: Made it usable for C++ programs.
+
 Wed Oct  4 23:13:35 CEST 2006  John Tytgat  <John.Tytgat@aaug.net>
 
 	* source/sys/exec.c (execve): Made code slightly less obfuscated.
