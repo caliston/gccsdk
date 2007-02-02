@@ -9752,6 +9752,7 @@ arm_expand_prologue (void)
       RTX_FRAME_RELATED_P (insn) = 1;
       
 #ifdef TARGET_RISCOSAOF
+      emit_insn (gen_blockage ());
       /* Explicit stack checks.  */
       if (TARGET_APCS_STACK)
         {
@@ -9759,10 +9760,19 @@ arm_expand_prologue (void)
           if (frame_size <= -256)
             {
               rtx stkovf = gen_rtx_SYMBOL_REF (Pmode, ARM_STKOVF_SPLIT_BIG);
+              rtx last = get_last_insn ();
               insn = emit_insn (gen_addsi3 (ip_rtx, stack_pointer_rtx,
                                             GEN_INT (frame_size)));
+              do
+              {
+                last = last ? NEXT_INSN (last) : get_insns ();
+                RTX_FRAME_RELATED_P (last) = 1;
+              }
+              while (last != insn);
+              insn = emit_insn (gen_prologue_use (ip_rtx));
               RTX_FRAME_RELATED_P (insn) = 1;
               insn = emit_insn (gen_rt_stkovf (ip_rtx, sl_reg, stkovf));
+              RTX_FRAME_RELATED_P (insn) = 1;
               /* Create barrier to prevent real stack adjustment from being
                  scheduled before call to stack checker.  */
               emit_insn (gen_blockage ());
