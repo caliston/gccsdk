@@ -3,6 +3,12 @@ Thu Jan 11 21:48:46 CET 2007  Martin Wuerthner  <martin@mw-software.com>
 	* source/common/riscosify.c (__riscosify_scl): Incorrect program name
 	  determination for programs run as "*Run MyLibrary:myprog".
 
+Mon Dec 04 01:59:39 2006  John-Mark Bell  <jmb202@ecs.soton.ac.uk>
+
+	* source/string/strnicmp.c: Compare lowercased versions of strings
+	rather than uppercase. This matches the manpage (and what stricmp
+	does).
+
 Tue Nov 21 21:45:22 2006  Alex Waugh  <alex@alexwaugh.com>
 
 	* source/unix/sync.c (fsync): Don't error on files open with 
