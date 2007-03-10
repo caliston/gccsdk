@@ -3,6 +3,12 @@ Thu Jan 11 21:48:46 CET 2007  Martin Wuerthner  <martin@mw-software.com>
 	* source/common/riscosify.c (__riscosify_scl): Incorrect program name
 	  determination for programs run as "*Run MyLibrary:myprog".
 
+Sun Dec 24 15:01:25 PST 2006  Peter Naulls <peter@chocky.org>
+
+	* source/sys/exec.c: Add to the hack that checks whether we use
+	 argv[0] or not - canonicalise RISC OS versions of the filenames before
+	 comparing.
+
 Mon Dec 04 01:59:39 2006  John-Mark Bell  <jmb202@ecs.soton.ac.uk>
 
 	* source/string/strnicmp.c: Compare lowercased versions of strings
