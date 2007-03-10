@@ -1,3 +1,8 @@
+Sun Jan 14 16:38:22 2007  Alex Waugh  <alex@alexwaugh.com>
+
+	* source/clib/errno.h: Change EAGAIN value to the same as
+	EWOULDBLOCK, to match TCPIPLibs and Linux.
+
 Thu Jan 11 21:48:46 CET 2007  Martin Wuerthner  <martin@mw-software.com>
 
 	* source/common/riscosify.c (__riscosify_scl): Incorrect program name
