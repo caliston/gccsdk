@@ -3,6 +3,11 @@ Thu Jan 11 21:48:46 CET 2007  Martin Wuerthner  <martin@mw-software.com>
 	* source/common/riscosify.c (__riscosify_scl): Incorrect program name
 	  determination for programs run as "*Run MyLibrary:myprog".
 
+Tue Nov 21 21:45:22 2006  Alex Waugh  <alex@alexwaugh.com>
+
+	* source/unix/sync.c (fsync): Don't error on files open with 
+	  O_RDWR
+
 Sat Oct 21 22:38:13 CEST 2006  John Tytgat  <John.Tytgat@aaug.net>
 
 	* source/clib/regex.h: Made it usable for C++ programs.
