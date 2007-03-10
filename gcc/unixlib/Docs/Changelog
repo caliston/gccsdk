@@ -1,3 +1,8 @@
+Thu Jan 18 21:59:26 2007  Alex Waugh  <alex@alexwaugh.com>
+
+	* source/clib/errno.h: Change EDEADLK value for TCPIPLibs
+	compatibility and add ENOTSUP.
+
 Sun Jan 14 16:38:22 2007  Alex Waugh  <alex@alexwaugh.com>
 
 	* source/clib/errno.h: Change EAGAIN value to the same as
