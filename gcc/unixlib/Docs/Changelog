@@ -1,3 +1,12 @@
+Tue Mar 27 01:48:55 CEST 2007  John Tytgat  <John.Tytgat@aaug.net>
+
+	* source/clib/unixlib/unix.h(__get_cpu_arch): Declare.  Gives rough
+	indication which ARM architecture we're running on.
+	* source/sys/_getcpuarch.s(__get_cpu_arch): New file.
+	* unix/uname.c(uname): changed utsname.sysname from "riscos" into
+	"RISC OS" and utsname.machine from "arm-acorn" into "armvxl" with 'x'
+	the major ARM architecture digit.
+
 Thu Jan 18 21:59:26 2007  Alex Waugh  <alex@alexwaugh.com>
 
 	* source/clib/errno.h: Change EDEADLK value for TCPIPLibs
