@@ -9752,7 +9752,6 @@ arm_expand_prologue (void)
       RTX_FRAME_RELATED_P (insn) = 1;
       
 #ifdef TARGET_RISCOSAOF
-      emit_insn (gen_blockage ());
       /* Explicit stack checks.  */
       if (TARGET_APCS_STACK)
         {
