@@ -1,3 +1,9 @@
+Sun Apr 29 17:55:43 CEST 2007  John-Mark Bell  <jmb202@ecs.soton.ac.uk>
+
+	* source/unix/unix.c(find_redirection_type): don't go beyond start of
+	cmdline when it starts with the redirection_type character or one or
+	more digits followed by the redirection_type character.
+
 Tue Mar 27 01:48:55 CEST 2007  John Tytgat  <John.Tytgat@aaug.net>
 
 	* source/clib/unixlib/unix.h(__get_cpu_arch): Declare.  Gives rough
