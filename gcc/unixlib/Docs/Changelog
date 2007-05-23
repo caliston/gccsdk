@@ -1,3 +1,7 @@
+Wed May 23 20:31:26 2007  Alex Waugh  <alex@alexwaugh.com>
+
+	* source/clib/unixlib/types.h: Fix typo in typedef.
+
 Sun Apr 29 17:55:43 CEST 2007  John-Mark Bell  <jmb202@ecs.soton.ac.uk>
 
 	* source/unix/unix.c(find_redirection_type): don't go beyond start of
