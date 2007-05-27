@@ -356,8 +356,11 @@ __PTHREAD_ALLOCA_OFFSET	EQU	8
         EXPORT |snprintf|
         EXPORT |__gcc_vsnprintf|
         EXPORT |vsnprintf|
+        EXPORT |__gcc_vfscanf|
         EXPORT |vfscanf|
+        EXPORT |__gcc_vscanf|
         EXPORT |vscanf|
+        EXPORT |__gcc_vsscanf|
         EXPORT |vsscanf|
         ;;EXPORT |ceilf|
         ;;EXPORT |floorf|
@@ -1005,8 +1008,11 @@ extra_vectors
 |snprintf|                      MOV     pc,#0
 |__gcc_vsnprintf|
 |vsnprintf|                     MOV     pc,#0
+|__gcc_vfscanf|
 |vfscanf|                       MOV     pc,#0
+|__gcc_vscanf|
 |vscanf|                        MOV     pc,#0
+|__gcc_vsscanf|
 |vsscanf|                       MOV     pc,#0
 |ceilf_not_used|                MOV     pc,#0
 |floorf_not_used|               MOV     pc,#0
