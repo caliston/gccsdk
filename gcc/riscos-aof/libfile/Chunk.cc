@@ -6,10 +6,6 @@
 #include "Library.h"
 #include "BError.h"
 
-#ifndef CROSS_COMPILE
-extern "C" void *OS_File(int *);
-#endif
-
 Chunk::Chunk()
 {
   m_chunkSize = -1;
@@ -91,8 +87,6 @@ int Chunk::createPath(const BString &a_path)
 {
   int save, start = 0;
   BString dir, fullDir;
-  int regs[6] = { 17, 0, 0, 0, 0, 0 };
-#ifdef CROSS_COMPILE
   while(a_path.leseWort(dir, start, "/"))
     {
       fullDir += dir;
@@ -110,31 +104,6 @@ int Chunk::createPath(const BString &a_path)
 	  fullDir += "/";
 	}
     }
-#else
-  while(a_path.leseWort(dir, start, "."))
-    {
-      fullDir += dir;
-      save = start;
-      if(a_path.leseWort(dir, save, "."))
-  	{
-	  regs[0] = 17;
-	  regs[1] = (int) fullDir();
-	  OS_File(regs);
-	  //cerr << "create " << fullDir << endl;
-
-	  // object is a file, but should be a directory
-	  if(regs[0] & 1)
-	    THROW_SPEC_ERR(BError::IsAFile);
-
-	  regs[0] = 8;
-	  regs[1] = (int) fullDir ();
-	  regs[4] = 0;
-	  OS_File(regs);
-
-	  fullDir += ".";
-  	}
-    }
-#endif
   return 1;
 }
 
@@ -153,5 +122,3 @@ BString Chunk::format(const BString &a_string, int a_len, int a_left) const
 		return pad + a_string;
  }
 }
-
-

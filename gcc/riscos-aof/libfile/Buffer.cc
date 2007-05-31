@@ -9,11 +9,6 @@
 #include "BString.h"
 #include "BError.h"
 
-#ifndef CROSS_COMPILE
-extern "C" void *OS_File(int *);
-extern "C" void *OS_GBPB(int *);
-#endif
-
 Buffer::Buffer()
 {
  m_size=1000;
@@ -82,7 +77,6 @@ void Buffer::set(Buffer *a_buffer, int a_start, int a_len)
 
 Buffer &Buffer::operator=(const Buffer &a_buffer)
 {
- cout << "Buffer::operator=(const Buffer &a_buffer)" << endl;
  if(m_data)
  	free(m_data);
  m_size=a_buffer.m_size;
@@ -224,23 +218,11 @@ void Buffer::save(const BString &a_file, int a_append)
  }
  else
  {
-#ifdef CROSS_COMPILE
 	fp = fopen (a_file(), "wb");
 	if (fp == NULL)
 	  THROW_SPEC_ERR(BError::CantOpenFile);
 	fwrite (m_data, 1, m_length, fp);
 	fclose (fp);
-#else
- 	int reg[6] = { 10, 0, 0, 0, 0, 0 };
-
- 	reg[1] = (int) (a_file());
- 	reg[2] = 0xFFD;
- 	reg[4] = (int) m_data;
- 	reg[5] = reg[4] + m_length;
-
- 	if (OS_File(reg) != NULL)
-	  THROW_SPEC_ERR(BError::CantOpenFile);
-#endif
  }
 }
 
@@ -250,29 +232,9 @@ void Buffer::load(const BString &a_file)
 
  fp=fopen(a_file(),"rb");
  if(!fp)
-#ifdef CROSS_COMPILE
  	THROW_SPEC_ERR(BError::FileNotFound);
-#else
- {
-   int reg[6] = { 17, 0, 0, 0, 0, 0 };
-
-   reg[1] = (int) (a_file());
-   OS_File(reg);
-   increase(reg[4]-m_size);
-  
-   m_length = reg[4];
-  
-   reg[0] = 16;
-   reg[2] = (int) m_data;
-   reg[3] = 0;
-  
-   OS_File(reg);
-   return;
- }
-#endif
 
  struct stat f;
-
  stat (a_file(), &f);
  increase (f.st_size - m_size);
  m_length = f.st_size;
