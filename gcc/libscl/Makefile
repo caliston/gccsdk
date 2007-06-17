@@ -22,7 +22,8 @@ COMPAT = $(libsclobj)/gcc-compat/divdi3.o \
 	$(libsclobj)/gcc-compat/udivdi3.o \
 	$(libsclobj)/gcc-compat/umoddi3.o
 
-STDIO = $(libsclobj)/stdio/fdopen.o
+STDIO = $(libsclobj)/stdio/fdopen.o \
+        $(libsclobj)/stdio/fileno.o
 
 STDLIB = $(libsclobj)/stdlib/div.o \
 	$(libsclobj)/stdlib/_exit.o \
