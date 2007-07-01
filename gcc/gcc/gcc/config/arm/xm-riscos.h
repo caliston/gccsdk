@@ -31,7 +31,6 @@ extern void riscos_host_initialisation (void);
 extern const char *riscos_convert_filename (void *obstack,
 			const char *name, int do_exe, int do_obj);
 
-#ifndef CROSS_COMPILE
 /* Defines for the implementation of throwbacks.  */
 
 #define ERROR_THROWBACK(FILE,LINE,PREFIX,S)		\
@@ -41,6 +40,8 @@ extern const char *riscos_convert_filename (void *obstack,
     } while (0)
 
 #define ERROR_THROWBACK_FINALISE arm_throwback_finish ()
+
+#ifndef CROSS_COMPILE
 #define GCC_DRIVER_HOST_INITIALIZATION riscos_host_initialisation ()
 #define TARGET_CONVERT_FILENAME(a,b,c,d) return riscos_convert_filename (a,b,c,d)
 #endif
