@@ -108,7 +108,7 @@ arm_throwback_start (void)
 /* Send a syslog message with details of the error.  */
 static void
 arm_throwback_error (const char *fname, int level,
-		     int line_number, const char *error)
+		     int line_number, const char *error, int errorlen)
 {
   char msg[1024];
   int len;
@@ -126,7 +126,15 @@ arm_throwback_error (const char *fname, int level,
   if (realpath(fname, pathname) == NULL)
     snprintf(pathname, sizeof(pathname), "%s", fname);
 
-  len = snprintf(msg, sizeof(msg), "<%d>%s %s throwback %s:%d: %s\n", level, timestamp, hostname, pathname, line_number, error);
+  len = snprintf(msg, sizeof(msg), "<%d>%s %s throwback %s:%d: ", level, timestamp, hostname, pathname, line_number);
+  while ((len < sizeof(msg)) && (errorlen > 0))
+    {
+      if (isprint(*error))
+        msg[len++] = *error;
+      error++;
+      errorlen--;
+    }
+
   if (len > sizeof(msg)) len = sizeof(msg);
 
   if (send(arm_throwback_socket, msg, len, 0) < 0)
@@ -176,6 +184,8 @@ arm_error_throwback (const char *file, int line, const char *prefix,
 	 as there are newlines.  */
       for (p = s; *p != '\0'; /* */)
 	{
+	  char *msg;
+
 	  /* Skip filename, line and level (warning/error) in the 'p' message:  */
 	  if (!strncmp (p, file, flen) && p[flen] == ':')
 	    {
@@ -188,14 +198,16 @@ arm_error_throwback (const char *file, int line, const char *prefix,
 	        }
 	    }
 
-	  arm_throwback_error (file,
-			       (!iserr) ? PRI_WARNING : PRI_ERROR,
-			       line, p);
-
+	  msg = p;
 	  while (*p != '\0' && *p != '\n')
 	    p++;
 	  if (*p == '\n')
 	    p++;
+
+	  arm_throwback_error (file,
+			       (!iserr) ? PRI_WARNING : PRI_ERROR,
+			       line, msg, p - msg);
+
 	}
     }
 }
