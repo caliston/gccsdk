@@ -204,7 +204,7 @@ SUL_MIN_VERSION	EQU	107
 	BNE	no_dynamic_area
 
 	[ TARGET_CPU = "XSCALE"
-	; Check that we really do have an XScale
+	; Check that we really do have an XScale
 	MRS	a2, CPSR
 	SWI	XOS_EnterOS
 	MOVVS	a1, #ERR_UNRECOVERABLE  ; paranoia
@@ -364,6 +364,7 @@ no_dynamic_area
 	TEQ	a1, #0
 	MOVNE	a1, #5		; When desktop mode, get the taskhandle
 	SWINE	XWimp_ReadSysInfo
+	MOVVS	a1, #0
 	STR	a1, [ip, #GBL_TASKHANDLE]	; __taskhandle
 
 	; Cache the system page size as this call can be slow.

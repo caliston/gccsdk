@@ -1,5 +1,5 @@
 ; Low level context switching code
-; Copyright (c) 2002, 2003, 2004, 2005, 2006 UnixLib Developers
+; Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007 UnixLib Developers
 ; Written by Martin Piper and Alex Waugh
 
 ; For a single tasking program (not running in a taskwindow), the context
@@ -46,68 +46,102 @@
 	NAME	__pthread_start_ticker
 |__pthread_start_ticker|
 	STMFD	sp!, {v1-v2, lr}
-	LDR	a2, =|__ul_global|
+	LDR	a3, =|__ul_global|
 
 	; Don't start until the thread system has been setup
-	LDR	a1, [a2, #GBL_PTH_SYSTEM_RUNNING]
+	LDR	a1, [a3, #GBL_PTH_SYSTEM_RUNNING]
 	TEQ	a1, #0
 	LDMEQFD	sp!, {v1-v2, pc}
 
 	; Don't start if there's only one thread running
-	LDR	a1, [a2, #GBL_PTH_NUM_RUNNING_THREADS]
+	LDR	a1, [a3, #GBL_PTH_NUM_RUNNING_THREADS]
 	CMP	a1, #1
 	LDMLEFD	sp!, {v1-v2, pc}
 
-	; Don't start if the ticker is already running
-	LDR	a1, =|ticker_started|
-	LDR	a1, [a1]
-	TEQ	a1, #0
-	LDMNEFD	sp!, {v1-v2, pc}
-
 	; Are we running as WIMP task ?
 	; If we are then we need a filter switching off our ticker when we're
-	; swapped out.
-	LDR	a1, [a2, #GBL_TASKWINDOW]
+	; swapped out and switching back on after we're swapped in.
+	LDR	a4, [a3, #GBL_TASKHANDLE]
+	TEQ	a4, #0
+	BNE	|start_ticker_install_filters|
+
+	; Application may have called Wimp_Initialise since we last checked
+	MOV	a1, #3				; In desktop?
+	SWI	XWimp_ReadSysInfo
+	MOVVS	a1, #0
 	TEQ	a1, #0
-	BEQ	|start_ticker_core|
+	MOVNE	a1, #5				; Read taskhandle, iff in desktop
+	SWINE	XWimp_ReadSysInfo
+	MOVVS	a1, #0
 
-	; Temporarily disable the filter code as it is not stable.
-	LDMFD	sp!, {v1-v2, pc}
+	MOVS	a4, a1
+	BEQ	|start_ticker_test_running|
+ 
+	STR	a4, [a3, #GBL_TASKHANDLE]	; __taskhandle
 
+	; a4 = current taskhandle
+start_ticker_install_filters
 	; Install the filter routines (a4 = WIMP taskhandle) :
 	LDR	v2, =|filter_installed|
 	LDR	a1, [v2]
 	STR	v2, [v2]
 	TEQ	a1, #0
-	BNE	|start_ticker_core|
+	BNE	|start_ticker_test_running|
+
+	MOV	a2, a4			; save taskhandle in a2
+
+	MOV	a1, #6			; allocate some RMA for filter name
+	MOV	a4, #(|filter_name_end| - |filter_name|)
+	SWI	XOS_Module
+	ADDVS	a1, a1, #4
+	BVS	|__pthread_fatal_error|
+
+	LDR	v2, =|filter_name_rma_ptr|
+	STR	a3, [v2]
+
+	MOV	a4, a2			; restore taskhandle
 
 	ADR	a1, |filter_name|
+start_ticker_copy_filter_name		; copy filter name to RMA
+	LDRB	a2, [a1], #1
+	STRB	a2, [a3], #1
+	TEQ	a2, #0
+	BNE	|start_ticker_copy_filter_name|
+
+	LDR	a1, [v2]		; get filter name RMA pointer
 	ADR	a2, |stop_call_every|
 	MOV	a3, #0
+	; a4 is still equal to taskhandle
 	SWI	XFilter_RegisterPreFilter
 	ADRVC	a2, |start_call_every|
-	MVNVC	v1, #0
+	; a3 is still 0
+	; a4 is still equal to taskhandle
+	MOVVC	v1, #0
 	SWIVC	XFilter_RegisterPostFilter
 	ADDVS	a1, a1, #4
 	BVS	|__pthread_fatal_error|
 
-start_ticker_core
+start_ticker_test_running
 	BL	|start_call_every|
 	LDMFD	sp!, {v1-v2, pc}
 
 filter_name
-	DCB	"pthread filter", 0
+	DCB	"UnixLib pthread", 0
+filter_name_end
 	ALIGN
 
 
 	; Start the RISC OS CallEvery ticker
+	; This may be called as a Wimp post filter, so preserve all registers,
+	; all processor flags and don't return any errors.
 	NAME	start_call_every
 |start_call_every|
-	STMFD	sp!, {lr}
+	STMFD	sp!, {a1-v1, lr}
+	MRS	v1, CPSR
 	LDR	a4, =|ticker_started|
 	LDR	a1, [a4]
 	TEQ	a1, #0
-	LDMNEFD	sp!, {pc}
+	BNE	start_call_every_end
 
 	MOV	a1, #1
 	ADR	a2, |pthread_call_every|
@@ -116,27 +150,29 @@ filter_name
 
 	MOVVC	a1, #1
 	STRVC	a1, [a4]
-	LDMVCFD	sp!, {pc}
-	ADD	a1, a1, #4
-	B	|__pthread_fatal_error|
+start_call_every_end
+	MSR	CPSR_f, v1
+	LDMFD	sp!, {a1-v1, pc}
 
 
 	; Stop the RISC OS CallEvery ticker
+	; This may be called as a Wimp pre filter, so preserve all registers,
+	; all processor flags and don't return any errors.
 	NAME	stop_call_every
 |stop_call_every|
-	STMFD	sp!, {lr}
+	STMFD	sp!, {a1-a3, lr}
+	MRS	a3, CPSR
 	; Don't stop it if it isn't enabled yet
-	LDR	a3, =|ticker_started|
-	LDR	a2, [a3]
-	TEQ	a2, #1
-	LDMNEFD	sp!, {pc}
-	MOV	a2, #0
-	STR	a2, [a3]
+	LDR	lr, =|ticker_started|
+	LDR	a2, [lr]
+	SUBS	a2, a2, #1
+	STREQ	a2, [lr]
 
-	ADR	a1, |pthread_call_every|
-	MOV	a2, #0
-	SWI	XOS_RemoveTickerEvent
-	LDMFD	sp!, {pc}
+	ADREQ	a1, |pthread_call_every|
+	; a2 is still 0
+	SWIEQ	XOS_RemoveTickerEvent
+	MSR	CPSR_f, a3
+	LDMFD	sp!, {a1-a3, pc}
 
 
 ;
@@ -144,16 +180,16 @@ filter_name
 ;
 	NAME	__pthread_stop_ticker
 |__pthread_stop_ticker|
-	STMFD	sp!, {v1, v2, lr}
+	STMFD	sp!, {v1-v3, lr}
 	; Don't bother if thread system is not running
 	LDR	a2, =|__ul_global|
 	LDR	a1, [a2, #GBL_PTH_SYSTEM_RUNNING]
 	TEQ	a1, #0
-	LDMEQFD	sp!, {v1, v2, pc}
+	LDMEQFD	sp!, {v1-v3, pc}
 
 	; Need to remove the filters ?
-	LDR	a1, [a2, #GBL_TASKHANDLE]
-	TEQ	a1, #0
+	LDR	a4, [a2, #GBL_TASKHANDLE]
+	TEQ	a4, #0
 	BEQ	|stop_ticker_core|
 
 	; Remove the filter routines (a4 = WIMP taskhandle) :
@@ -163,19 +199,33 @@ filter_name
 	TEQ	a1, #0
 	BEQ	|stop_ticker_core|
 
-	ADR	a1, |filter_name|
+	LDR	v3, =|filter_name_rma_ptr|
+
+	LDR	a1, [v3]
 	ADR	a2, |stop_call_every|
 	MOV	a3, #0
+	; a4 is still equal to taskhandle
 	SWI	XFilter_DeRegisterPreFilter
-	ADR	a1, |filter_name|	; a1 can be corrupted, so re-init
+
+	LDR	a1, [v3]	; a1 can be corrupted, so re-init
 	ADR	a2, |start_call_every|
-	MVN	v1, #0
+	; a3 is still 0
+	; a4 is still equal to taskhandle
+	MOV	v1, #0
 	SWI	XFilter_DeRegisterPostFilter
-	STR	a3, [v2]
+
+	STR	a3, [v2]	; Mark we no longer have filter installed
+
+	; Release RMA containing filter name
+	MOV	a1, #7
+	LDR	a3, [v3]
+	SWI	XOS_Module
+	MOV	a3, #0
+	STR	a3, [v3]
 
 stop_ticker_core
 	BL	|stop_call_every|
-	LDMFD	sp!, {v1, v2, pc}
+	LDMFD	sp!, {v1-v3, pc}
 
 
 ; The ticker calls this every clock tick, note that it is every *two*
@@ -184,7 +234,6 @@ stop_ticker_core
 	NAME	pthread_call_every
 |pthread_call_every|
 	STMFD	sp!, {a1-a4, lr}
-
 	; First check that our upcall handler is paged in. If it is not
 	; then it is likely that the taskwindow module is in the process
 	; of paging us out/in so setting a callback would be a bad idea.
@@ -365,11 +414,16 @@ stop_ticker_core
 	AREA	|C$data|, DATA
 
 	; Have we registered the CallEvery ticker ?
+	; Value 1 : yes CallEvery ticker is enabled
 |ticker_started|
 	DCD	0
 
 	; Have we installed Filter ?
 |filter_installed|
+	DCD	0
+
+	; Pointer to filter name in RMA
+|filter_name_rma_ptr|
 	DCD	0
 
 	END
