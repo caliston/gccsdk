@@ -5,12 +5,13 @@ Sun Jul  8 19:14:58 CEST 2007  John-Mark Bell  <jmb202@ecs.soton.ac.uk>
 	fixing following:
 	(start_call_every,stop_call_every) full register + processor flag
 	preserve.
-	(__pthread_start_ticker,__pthread_stop_ticker) post filter mask was
+	(__pthread_start_ticker, __pthread_stop_ticker) post filter mask was
 	inverted.
 	(__pthread_start_ticker) recheck if we're not yet a task since last
 	check.
 	* source/sys/_syslib.s: don't write bogus GBL_TASKHANDLE when
 	Wimp_ReadSysInfo fails.
+	* source/test/pthread/create-join.c: new pthread test case.
 
 Wed May 23 20:31:26 2007  Alex Waugh  <alex@alexwaugh.com>
 
