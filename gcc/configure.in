@@ -3,8 +3,8 @@
 # Written by Nick Burrett <nick@sqrt.co.uk>
 
 AC_PREREQ(2.50)
-AC_INIT([GCCSDK],[3.4.6 Release 2],[http://gccsdk.riscos.info/])
-AC_COPYRIGHT([(c) 2000, 2001, 2002, 2003, 2004, 2005, 2006 GCCSDK Developers])
+AC_INIT([GCCSDK],[3.4.6 Release 3],[http://gccsdk.riscos.info/])
+AC_COPYRIGHT([(c) 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007 GCCSDK Developers])
 AC_CONFIG_HEADER(sdk-config.h)
 AC_CANONICAL_SYSTEM
 AC_ARG_PROGRAM

@@ -1,4 +1,4 @@
-            Welcome to GCCSDK GCC 3.4.6 Release 2 for RISC OS
+            Welcome to GCCSDK GCC 3.4.6 Release 3 for RISC OS
                      http://gccsdk.riscos.info/
 
 This document covers important notes for new users and existing users alike.
@@ -39,8 +39,8 @@ Future Versions of GCC:
   consider another interim release based on 3.4.6 before the next series of
   major GCCSDK releases which will be based on GCC 4.1/4.2.
 
-  Those future 4.1/4.2 GCCSDK developments will be ELF and possibly soft-float
-  based.  We are also working on a shared library system.
+  Those future 4.1/4.2 GCCSDK developments will be ELF and soft-float based.
+  We are also working on a shared library system.
 
 
 License:
@@ -71,20 +71,21 @@ Credits:
 
   Primary Developers today :
 
+  - John Tytgat - Release management, allround GCCSDK hacking.
   - Peter Naulls - UnixLib (All areas, especially glibc compatibility),
-     release management, AOF tools.
-  - John Tytgat - 'random' GCCSDK hacking.
+     AOF tools.
   - Alex Waugh - UnixLib (especially signals, pthreads, file handling).
 
   An enormous amount of porting and testing work was done by Nick Burrett.
   Without his contribution GCCSDK wouldn't exist.
 
-  The following people have also made contributions over the last three years :
+  The following people have also made contributions over the last three years
+  (in alphabetic order) :
 
-  - Graham Shaw, John-Mark Bell, James Bursa, Stefan Bellon,
-    David Marston, Steve Ellacott, Rich Hudson, Jeffrey Lee,
-    Alex Macfarlane Smith, Christian Ludlam, Tony van der Hoff,
-    Theo Markettos, Philip Pemberton, Alan Buckley
+    John-Mark Bell, Stefan Bellon, Alan Buckley, James Bursa, Steve Ellacott,
+    Rich Hudson, Rob Kendrick, Jeffrey Lee, Christian Ludlam,
+    Alex Macfarlane Smith, Theo Markettos, David Marston, Philip Pemberton,
+    Graham Shaw, Tony van der Hoff, Martin Wuerthner.
 
   Special thanks to the following people having written programs which are
   used in the GCCSDK project :
@@ -104,4 +105,4 @@ Credits:
 
   And last but not least, all the GCC contributers.
 
-GCCSDK Developers, 2006
+GCCSDK Developers, 2007

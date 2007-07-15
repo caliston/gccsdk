@@ -2,6 +2,60 @@ Noteworthy changes to the RISC OS GCCSDK releases made.
 
 For specific UnixLib changes, see !gcc.docs.UnixLib.Changes too.
 
+GCCSDK GCC 3.4.6 Release 3 (released XXX July 2007)
+==========================
+
+This is only a summery of the most important changes made.
+
+* GCC compiler fixes:
+
+  - The dependency paths were never converted to RISC OS filepaths when
+    option -mamu was specified.  Bug #151
+    <URL:http://www.riscos.info/bugzilla/show_bug.cgi?id=151>.
+  - Fixed incorrect stack size checking in -O3 compiled binaries. Bug #143
+    <URL:http://www.riscos.info/bugzilla/show_bug.cgi?id=143> and Bug #156
+    <URL:http://www.riscos.info/bugzilla/show_bug.cgi?id=156>.
+
+* Assembler fixes:
+
+  - Removed the built-in limit of 40 include directories.
+
+* UnixLib fixes:
+
+  - mktime: Fix corruption of its input structure.  Bug #152
+    <URL:http://www.riscos.info/bugzilla/show_bug.cgi?id=152>.
+  - regex.h: Made it usable for C++ programs.
+  - Fixed incorrect program name determination for programs run as
+    "*Run MyLibrary:myprog".
+  - fsync: Don't error on files open with O_RDWR.
+  - strnicmp: Compare lowercased versions of strings rather than uppercase.
+  - Change EAGAIN value to the same as EWOULDBLOCK, to match TCPIPLibs and
+    Linux. Change EDEADLK value for TCPIPLibs compatibility and add ENOTSUP.
+  - uname: changed utsname.sysname from "riscos" into "RISC OS" and
+    utsname.machine from "arm-acorn" into "armvxl" with 'x' the major ARM
+    architecture digit.
+  - Fixed memory access problem when using redirection.
+  - pthreads can now be used in binaries run under TaskWindow or in Wimp
+    applications with special support code needed.
+
+* SharedCLibrary stub fixes:
+
+  - vfscanf, vscanf and vsscanf: made it available.
+  - fdopen: implemented.
+  - fileno: fixed which allows C++ fstreams to work.
+
+* Librarian fixes:
+
+  - Fixed spurious problem when creating a new library and when run on
+    RISC OS.
+
+GCCSDK cross-compilation improvements:
+
+* Provided -mthrowback option instructing the cross-compiler to sends its
+  warnings and errors via syslog messages to a given RISC OS host.  A
+  RISC OS syslogd implementation will then generated normal throwback
+  messages.
+
 GCCSDK GCC 3.4.6 Release 2 (released 17 September 2006)
 ==========================
 
