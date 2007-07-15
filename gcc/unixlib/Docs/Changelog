@@ -1,3 +1,8 @@
+Sun Jul 15 13:52:59 CEST 2007  John Tytgat  <John.Tytgat@aaug.net>
+
+	* !Help: Update version to 4.6.
+	* source/clib/features.h (__ULIBC_MINOR__): Bump minor version to 6.
+
 Sun Jul  8 19:14:58 CEST 2007  John-Mark Bell  <jmb202@ecs.soton.ac.uk>
                                John Tytgat  <John.Tytgat@aaug.net>
 
