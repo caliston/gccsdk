@@ -173,6 +173,24 @@ directory for those headers, simply define the variable:
   $ export DESKLIB_PATH=/home/riscos/env/include/DeskLib
 
 
+Throwback
+---------
+
+When used in conjuction with the SysLogD module, the cross-compiler can
+produce throwback messages on a RISC OS machine when cross-compiling on
+a different machine. This allows you to edit in RISC OS files stored on
+a network filing system, cross-compile, and get throwback as if the
+compiler was running on the RISC OS machine. It can also be used if the
+cross-compiler is invoked by distcc.
+
+To use throwback:
+Install the SysLogD module and set up a mappings file as described in its
+help file.
+On the machine running the cross-compiler, set the THROWBACK_HOST
+environment variable to the hostname or IP address of the RISC OS machine.
+Add -mthrowback to the compiler command line.
+
+
 Bug reporting
 -------------
 
