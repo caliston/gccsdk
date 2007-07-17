@@ -156,11 +156,16 @@ cpp_error (cpp_reader * pfile, int level, const char *msgid, ...)
     }
 
   if (_cpp_begin_message (pfile, level, line, column)) {
-    char buffer[256];
-    v_message (msgid, ap);
 #ifdef ERROR_THROWBACK
-    vsnprintf (buffer, sizeof(buffer), _(msgid), ap);
+    char buffer[256];
+    va_list ap2;
+
+    va_copy (ap2, ap);
+    v_message (msgid, ap);
+    vsnprintf (buffer, sizeof(buffer), _(msgid), ap2);
     ERROR_THROWBACK (throwback_file, throwback_line, CPP_DL_WARNING_P (level) ? "warning" : "", buffer);
+#else
+    v_message (msgid, ap);
 #endif
   }
 
@@ -178,11 +183,16 @@ cpp_error_with_line (cpp_reader *pfile, int level,
   va_start (ap, msgid);
 
   if (_cpp_begin_message (pfile, level, line, column)) {
-    char buffer[256];
-    v_message (msgid, ap);
 #ifdef ERROR_THROWBACK
-    vsnprintf (buffer, sizeof(buffer), _(msgid), ap);
+    char buffer[256];
+    va_list ap2;
+
+    va_copy (ap2, ap);
+    v_message (msgid, ap);
+    vsnprintf (buffer, sizeof(buffer), _(msgid), ap2);
     ERROR_THROWBACK (throwback_file, throwback_line, CPP_DL_WARNING_P (level) ? "warning" : "", buffer);
+#else
+    v_message (msgid, ap);
 #endif
   }
 
