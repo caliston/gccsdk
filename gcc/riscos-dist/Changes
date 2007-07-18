@@ -2,7 +2,7 @@ Noteworthy changes to the RISC OS GCCSDK releases made.
 
 For specific UnixLib changes, see !gcc.docs.UnixLib.Changes too.
 
-GCCSDK GCC 3.4.6 Release 3 (released XXX July 2007)
+GCCSDK GCC 3.4.6 Release 3 (released 17 July 2007)
 ==========================
 
 This is only a summery of the most important changes made.
@@ -36,7 +36,7 @@ This is only a summery of the most important changes made.
     architecture digit.
   - Fixed memory access problem when using redirection.
   - pthreads can now be used in binaries run under TaskWindow or in Wimp
-    applications with special support code needed.
+    applications without special support code needed.
 
 * SharedCLibrary stub fixes:
 
