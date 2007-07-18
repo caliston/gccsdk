@@ -12,8 +12,8 @@ This is only a summery of the most important changes made.
   - The dependency paths were never converted to RISC OS filepaths when
     option -mamu was specified.  Bug #151
     <URL:http://www.riscos.info/bugzilla/show_bug.cgi?id=151>.
-  - Fixed incorrect stack size checking in -O3 compiled binaries. Bug #143
-    <URL:http://www.riscos.info/bugzilla/show_bug.cgi?id=143> and Bug #156
+  - Fixed incorrect stack size checking in -O3 compiled binaries. Bug #148
+    <URL:http://www.riscos.info/bugzilla/show_bug.cgi?id=148> and Bug #156
     <URL:http://www.riscos.info/bugzilla/show_bug.cgi?id=156>.
 
 * Assembler fixes:
