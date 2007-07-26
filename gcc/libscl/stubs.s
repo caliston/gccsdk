@@ -665,6 +665,10 @@ language_name
 |__main|
 	MOV	r0, #1
 	LDR	r1, stub_data
+	[ {MODULE}={TRUE}
+	LDR	r2, [sl, #-536]
+	ADD	r1, r1, r2
+	]
 	STRB	r0, [r1, #_stub_kallocExtendsWS - kernel_statics]
 
 	MOV	r0, sp			; (historical??)
