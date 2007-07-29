@@ -1,3 +1,8 @@
+Sun Jul 29 15:00:17 CEST 2007  John-Mark Bell  <jmb202@ecs.soton.ac.uk>
+
+	* source/sys/__getcpuarch.s(__get_cpu_arch): wrong result for ARM
+	architecture 3 processors.
+
 Sun Jul 15 13:52:59 CEST 2007  John Tytgat  <John.Tytgat@aaug.net>
 
 	* !Help: Update version to 4.6.
