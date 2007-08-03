@@ -9,6 +9,11 @@ CROSS_CFLAGS += $(CFL)
 CROSS_CFLAGS += -D$(targetsystem)
 CROSS_CFLAGS += -DIN_GCC -DHAVE_CONFIG_H -DIN_LIBGCC2 -D__GCC_FLOAT_NOT_NEEDED -DDONT_USE_BUILTIN_SETJMP
 
+ifneq (,$(findstring unixlib,$(TRG)))
+# For unixlib builds, enable thread safety in C++ exception handling
+CROSS_CFLAGS += -D_PTHREADS
+endif
+
 FPBIT_FLAGS=-DFINE_GRAINED_LIBRARIES -I. -I../../include -I../gcc -I../gcc/config
 
 # fpbit.c flags for single precision float.  The ordering of bits for
