@@ -1,0 +1,30 @@
+@ Call alloca thread free functions as necessary
+@ Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007 UnixLib Developers
+
+#include "unixlib/asm_dec.s"
+
+	.text
+
+	.weak	__gcc_alloca_thread_free_all
+
+	.global	__pthread_exit
+
+	@ For the shared library, we assume that __pthread_exit is only ever
+	@ called by pthread_exit() and that v4 already contains the GOT pointer.
+	NAME	__pthread_exit
+__pthread_exit:
+	STMFD	sp!, {v1,lr}
+
+	LDR	a1, funcs
+ PICEQ "LDR	a1, [v4, a1]"
+	TEQ	a1, #0
+	MOVNE	lr, pc
+	MOVNE	pc, a1
+
+	LDMFD	sp!, {v1,pc}
+
+funcs:
+	WORD	__gcc_alloca_thread_free_all
+	DECLARE_FUNCTION __pthread_exit
+
+	.end

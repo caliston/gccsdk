@@ -1,0 +1,240 @@
+The RISC OS Software Development Kit [GCCSDK GCC 4.1.1 Prerelease 1 ]
+====================================
+
+This is a lightweight build environment which combines a GCC 4.1.1 release,
+binutils 2.17 release, UnixLib 5.0 and libscl 2.0 into one directory which can
+be used to build a RISC OS cross-compiler and native RISC OS compiler with
+target arm-unknown-riscos.
+
+We expect that the current set of GCCSDK patches for GCC and binutils can
+be applied to later versions than GCC 4.1.1 and binutils 2.17 as is, or at
+least with a minimum of changes of those patches.  However this still needs to
+be verified if that's really going to be the case as we're currently focusing
+to get all GCCSDK specific development done for GCC 4.1.1 and binutils 2.17.
+
+Currently it might be necessary to define LTCONFIG_VERSION as:
+
+  $ export LTCONFIG_VERSION=1.4a-GCC3.0
+
+0. Required build tools
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The following is a non exhaustive list of programs which are needed to compile
+and work with GCCSDK on top of a typical recent standard Unix distribution.
+
+- svn v1.2 or later (only to be used to checkout GCCSDK source code)
+- gcc v3.4.x or v4.x (other versions might work too)
+- make v3.81 (other versions might work too)
+- libtool v1.5.22 (other versions might work too)
+- automake v1.9 (no other version !)
+- autogen v5.8.8 (other versions might work too)
+
+Prerequisites for building GCC can be found at
+<URL:http://gcc.gnu.org/install/prerequisites.html>.
+
+1. Checking out
+~~~~~~~~~~~~~~~
+
+To check out GCCSDK 4 build code:
+
+  $ mkdir gccsdk4
+  $ cd gccsdk4
+  $ svn co svn://svn.riscos.info/gccsdk/trunk/gcc4
+
+We have now in 'gcc4' directory the GCCSDK 4 code.
+
+2. Build steps
+~~~~~~~~~~~~~~
+
+The build steps are the following:
+
+1. Build cross-compiler.
+2. Build RISC OS ELF loader.
+3. Build the native RISC OS compiler and GCCSDK kit creation.
+
+However, people only interested in having the cross-compiler only need to
+do step 1 and they might also be interested in "5. Porting tools" section
+mentioned below.
+
+Build steps 2 and 3 are only of interest for the GCCSDK developer.
+
+2.1. Build cross-compiler
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The setup-gccsdk-params file contains several definitions as environment
+variables which you can change if really desired.  Like with GCCSDK 3.4.6, we
+recommend setting up $GCCSDK_INSTALL_CROSSBIN which then can be used by
+setup-gccsdk-params files to determine where the cross-compiler will be
+installed during 'make install' (note: $GCCSDK_INSTALL_CROSSBIN actually
+specifies the pathname 'bin' subdirectory of the directory where the complete
+cross-compiler will be installed).
+
+1. Place an official GCC 4.1 release in 'orig.gcc' directory and official
+   binutils 2.17 release in 'orig.binutils' by running:
+
+     $ ./download-gcc-binutils gcc
+     $ ./download-gcc-binutils binutils
+
+   You only need to do this once as the contents of 'orig.gcc' and
+   'orig.binutils' is considered read-only from now on and used in the scripts
+   'create-srcdir' (see step 3) and 'create-patch' (to update or create
+   patches).
+
+2. Combine the contents of 'orig.gcc', parts of 'orig.binutils', UnixLib 5.0
+   and libscl 2.0 support into 'srcdir' directory, do the configuration and
+   apply the necessary patches for the arm-unknown-riscos target by running:
+
+     $ ./create-srcdir
+
+   At this point the source tree at 'srcdir' is used to do the real build.
+
+   Developer changes can and should be done in 'srcdir' and when those changes
+   are ready to be commited, either patches need to be created, either full
+   file copy needs to be made in the correct subdirector in 'recipe' directory.
+   This can easily done by:
+
+     $ cd srcdir
+     $ ../create-patch <file to patch or file to copy>
+
+3. Build and install the cross-compiler into $GCCSDK_INSTALL_CROSSBIN/..
+   directory:
+
+     $ ./build-it > build-output.txt 2>&1
+
+   Note that 'build-it' can take some useful options, use -h option to have an
+   option list.
+
+   When the configuration part has been successfully done during ./build-it,
+   you can restart the build by:
+
+     $ cd builddir-cross
+     $ make
+     $ make install
+
+   When you want specific compiler options for target libraries, you can
+   specify them like (e.g. taking the options "-O3 -march=armv4"):
+
+     $ cd builddir-cross
+     $ make CFLAGS_FOR_TARGET="-O3 -march=armv4" CXXFLAGS_FOR_TARGET="-O3 -march=armv4"
+     $ make install
+
+2.2. Build RISC OS ELF loader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   $ cd riscos/soloader
+   $ ./build-it > build-output.txt 2>&1
+
+2.3. Build the native RISC OS compiler
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The native RISC OS compiler is built with the cross-compiler.  It is using
+the same build-it script with "riscos" as argument given.
+
+   $ ./build-it riscos > build-output.txt 2>&1
+
+Note that 'build-it' can take some useful options, use -h option to have an
+option list.
+
+The RISC OS GCC release consists of several kits.  These are prepared using:
+
+   $ ./create-gcckit
+
+And you can find the result in the 'release-area' subdirectory.  The directory
+and file structure there are exactly what will be packaged in a couple of zip
+files.  This packaging in zip files happens by:
+
+   $ ./create-gcckit -pkg
+
+3. Developing
+~~~~~~~~~~~~~
+
+GCCSDK specific changes for the original gcc/binutils sources are done via
+patches (recipe/patches directory), copying full source files (recipe/files)
+or via scripts (recipe/scripts).  Easy patch (re)creation can be done using the
+'create-patch' script.
+
+4. Testing
+~~~~~~~~~~
+
+After building the cross-compiler you can run the GCC testsuite.  This can be
+easily done under Linux using its binfmt_misc kernel module and QEMU
+containing RISC OS specific changes
+(cfr. <URL:http://www.riscos.info/index.php/QEMU>) as those together allow
+you to run unmodified ELF RISC OS binaries under Linux.
+
+The GCC testsuite requires the installation of at least DejaGnu, Tcl and
+Expect and can be started using:
+
+  $ cd builddir-cross/gcc
+  $ make check
+
+More information on running GCC testsuite can be found at
+<URL:http://gcc.gnu.org/install/test.html>.
+
+5. Porting tools
+~~~~~~~~~~~~~~~~
+
+The files in the subdirectory 'porting-scripts' can help you to easily use the
+cross-compiler for porting of existing programs.  More information can be
+found in the 'PortingTools.html' file how this works.
+
+To install those scripts:
+
+  1. Define GCCSDK_INSTALL_ENV as the directory where those porting scripts can
+     be installed.  E.g.:
+
+       $ export GCCSDK_INSTALL_ENV=/home/riscos/env
+
+  2. GCCSDK_INSTALL_CROSSBIN still needs to be defined where the cross-compiler
+     has been instaled (see above).
+
+  3. Run 'install-env':
+
+       $ ./install-env
+
+Note that the GCCSDK Autobuilder framework will use these porting-scripts in
+order to do its job, cfr. <URL:http://www.riscos.info/index.php/Using_GCCSDK>
+for more information.
+
+[ vvv Only temporary vvv ]
+Some GCCSDK Autobuilder projects still have AOF based assembler and currently
+the best way to handle these (and remain GCCSDK 3.4.6 compatible until GCCSDK
+4.x is completely selfhosting) is to temporary use GCCSDK 3.4.6 and instructing
+its assembler to write ELF output instead of AOF.  This requires:
+
+  1. Building GCCSDK 3.4.6 in gccsdk/gcc cross-compiler ('make build-cross')
+     using the same GCCSDK_INSTALL_CROSSBIN as above.
+  2. Rename the GCCSDK 3.4.6 binaries using 'move-3-4-6-away' (actually they
+     get prefixed with 'arm-riscos-aof-'.
+  3. AOF assembler based project need to use in their Makefile:
+
+       AS = $(GCCSDK_INSTALL_CROSSBIN)/arm-riscos-aof-gcc
+       ASFLAGS = -Wa,-elf,-ILibraries,-I$(@D) -c
+
+     It is advised to do this only when AB_ELFBUILD is defined as "yes".
+[ ^^^ Only temporary ^^^ ]
+
+6. Credits
+~~~~~~~~~~
+
+The initial static ELF RISC OS work for GCC 4.1 was done by Nick Burrett (Jun
+2005). Integrating Nick's work in a GCCSDK build environment and bringing it
+up-to-date was done by John Tytgat and John-Mark Bell (Oct 2006).
+
+Lee Noar contributed his RISC OS ELF loader work together with the necessary
+dynamic ELF changes for RISC OS (originally developed for GCCSDK 3.4)
+(Oct 2006).
+
+Peter Naulls wrote the Autobuilder and Porting tools, and contributed
+most of the ports in the Autobuilder.
+
+The riscos.info Wiki is run by Peter Naulls and John Tytgat, and credit for
+additional GCCSDK information also goes to Theo Markettos and Adam Richardson.
+
+All of the work in GCC 4.1 for RISC OS would never have been possible without
+important contributions from many people in the original GCC 3.x GCCSDK;
+in particular, endless improvements to UnixLib which made it practical to
+run a wide range of software on RISC OS.  See those versions for full details.
+
+Copyright (c) 2005, 2006, 2007 GCCSDK Developers
+<URL:http://gccsdk.riscos.info/>
