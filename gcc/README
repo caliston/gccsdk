@@ -172,6 +172,10 @@ such as /home/riscos/env/include/DeskLib.  To get GCC to search in that
 directory for those headers, simply define the variable:
   $ export DESKLIB_PATH=/home/riscos/env/include/DeskLib
 
+The xxx_PATH environment variable is in fact a search path containing one
+or more directories separated by a comma where the part after "xxx:" in
+the #include line is being searched for.
+
 
 Throwback
 ---------
