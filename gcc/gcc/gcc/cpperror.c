@@ -138,7 +138,7 @@ cpp_error (cpp_reader * pfile, int level, const char *msgid, ...)
   fileline line;
   unsigned int column;
   va_list ap;
-
+  
   va_start (ap, msgid);
 
   if (CPP_OPTION (pfile, traditional))
@@ -155,19 +155,20 @@ cpp_error (cpp_reader * pfile, int level, const char *msgid, ...)
       column = pfile->cur_token[-1].col;
     }
 
-  if (_cpp_begin_message (pfile, level, line, column)) {
+  if (_cpp_begin_message (pfile, level, line, column))
+    {
 #ifdef ERROR_THROWBACK
-    char buffer[256];
-    va_list ap2;
+      char buffer[256];
+      va_list ap2;
 
-    va_copy (ap2, ap);
-    v_message (msgid, ap);
-    vsnprintf (buffer, sizeof(buffer), _(msgid), ap2);
-    ERROR_THROWBACK (throwback_file, throwback_line, CPP_DL_WARNING_P (level) ? "warning" : "", buffer);
+      va_copy (ap2, ap);
+      v_message (msgid, ap);
+      vsnprintf (buffer, sizeof(buffer), _(msgid), ap2);
+      ERROR_THROWBACK (throwback_file, throwback_line, CPP_DL_WARNING_P (level) ? "warning" : "", buffer);
 #else
-    v_message (msgid, ap);
+      v_message (msgid, ap);
 #endif
-  }
+    }
 
   va_end (ap);
 }
@@ -179,22 +180,23 @@ cpp_error_with_line (cpp_reader *pfile, int level,
 		     const char *msgid, ...)
 {
   va_list ap;
-
+  
   va_start (ap, msgid);
 
-  if (_cpp_begin_message (pfile, level, line, column)) {
+  if (_cpp_begin_message (pfile, level, line, column))
+    {
 #ifdef ERROR_THROWBACK
-    char buffer[256];
-    va_list ap2;
+      char buffer[256];
+      va_list ap2;
 
-    va_copy (ap2, ap);
-    v_message (msgid, ap);
-    vsnprintf (buffer, sizeof(buffer), _(msgid), ap2);
-    ERROR_THROWBACK (throwback_file, throwback_line, CPP_DL_WARNING_P (level) ? "warning" : "", buffer);
+      va_copy (ap2, ap);
+      v_message (msgid, ap);
+      vsnprintf (buffer, sizeof(buffer), _(msgid), ap2);
+      ERROR_THROWBACK (throwback_file, throwback_line, CPP_DL_WARNING_P (level) ? "warning" : "", buffer);
 #else
-    v_message (msgid, ap);
+      v_message (msgid, ap);
 #endif
-  }
+    }
 
   va_end (ap);
 }

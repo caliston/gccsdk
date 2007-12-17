@@ -1,5 +1,5 @@
 --- ../../../../gcc3.4.6/gcc-3.4.6/gcc/cpperror.c	2003-11-01 23:56:54.000000000 +0100
-+++ ./cpperror.c	2006-08-14 14:41:39.000000000 +0200
++++ cpperror.c	2007-12-17 23:01:09.000000000 +0100
 @@ -29,8 +29,15 @@
  #include "cpphash.h"
  #include "intl.h"
@@ -26,48 +26,45 @@
        fputc (' ', stderr);
      }
  }
-@@ -128,7 +138,7 @@
-   fileline line;
-   unsigned int column;
-   va_list ap;
--  
-+
-   va_start (ap, msgid);
- 
-   if (CPP_OPTION (pfile, traditional))
-@@ -145,8 +155,14 @@
-       column = pfile->cur_token[-1].col;
+@@ -146,7 +156,19 @@
      }
  
--  if (_cpp_begin_message (pfile, level, line, column))
-+  if (_cpp_begin_message (pfile, level, line, column)) {
-+    char buffer[256];
-     v_message (msgid, ap);
+   if (_cpp_begin_message (pfile, level, line, column))
+-    v_message (msgid, ap);
++    {
 +#ifdef ERROR_THROWBACK
-+    vsnprintf (buffer, sizeof(buffer), _(msgid), ap);
-+    ERROR_THROWBACK (throwback_file, throwback_line, CPP_DL_WARNING_P (level) ? "warning" : "", buffer);
++      char buffer[256];
++      va_list ap2;
++
++      va_copy (ap2, ap);
++      v_message (msgid, ap);
++      vsnprintf (buffer, sizeof(buffer), _(msgid), ap2);
++      ERROR_THROWBACK (throwback_file, throwback_line, CPP_DL_WARNING_P (level) ? "warning" : "", buffer);
++#else
++      v_message (msgid, ap);
 +#endif
-+  }
++    }
  
    va_end (ap);
  }
-@@ -158,11 +174,17 @@
- 		     const char *msgid, ...)
- {
-   va_list ap;
--  
-+
+@@ -162,7 +184,19 @@
    va_start (ap, msgid);
  
--  if (_cpp_begin_message (pfile, level, line, column))
-+  if (_cpp_begin_message (pfile, level, line, column)) {
-+    char buffer[256];
-     v_message (msgid, ap);
+   if (_cpp_begin_message (pfile, level, line, column))
+-    v_message (msgid, ap);
++    {
 +#ifdef ERROR_THROWBACK
-+    vsnprintf (buffer, sizeof(buffer), _(msgid), ap);
-+    ERROR_THROWBACK (throwback_file, throwback_line, CPP_DL_WARNING_P (level) ? "warning" : "", buffer);
++      char buffer[256];
++      va_list ap2;
++
++      va_copy (ap2, ap);
++      v_message (msgid, ap);
++      vsnprintf (buffer, sizeof(buffer), _(msgid), ap2);
++      ERROR_THROWBACK (throwback_file, throwback_line, CPP_DL_WARNING_P (level) ? "warning" : "", buffer);
++#else
++      v_message (msgid, ap);
 +#endif
-+  }
++    }
  
    va_end (ap);
  }
