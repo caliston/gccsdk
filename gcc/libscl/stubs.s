@@ -523,6 +523,9 @@ zibase	DCD	|Image$$ZI$$Base|
         EXPORT |_Mod$Reloc$Off|
 |_Mod$Reloc$Off|        EQU &218
 
+        EXPORT |_Lib$Reloc$Off|
+|_Lib$Reloc$Off|        EQU &21C
+
 	IMPORT	|__RelocCode|, WEAK
 reloccode	DCD	|__RelocCode|
 
