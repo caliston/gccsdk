@@ -158,7 +158,7 @@ getInclude (const char *file, const char *mode, const char **strdupFilename)
       else if (strchr(filename, ':'))
         {
           /* Try presuming everything is a directory.  This is for the benefit of paths like Hdr:APCS.Common */
-          file = apcs = rname(filename);
+          apcs = file;
 
           while (*apcs)
             {
