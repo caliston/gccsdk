@@ -619,7 +619,16 @@ decode (Lex * label)
 	}
       break;
     case 'o':
-      M_FINISH_STR ("rr", m_orr, optionCondS);	/* orr CC s */
+      switch (inputGetUC ())
+	{
+	case 'p':
+	  C_FINISH_STR ("t", c_opt);	/* opt */
+	case 'r':
+	  M_FINISH_STR ("r", m_orr, optionCondS);	/* orr CC s */
+	default:
+	  goto illegal;
+	}
+      break;
     case 'p':
       switch (inputGetUC ())
 	{

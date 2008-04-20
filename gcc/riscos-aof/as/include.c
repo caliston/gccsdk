@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #if defined(CROSS_COMPILE) || defined(UNIXLIB)
 # include <sys/param.h>		/* for MAXPATHLEN */
@@ -122,16 +123,28 @@ openInclude (const char *filename, const char *mode, const char **strdupFilename
 
 
 FILE *
-getInclude (const char *filename, const char *mode, const char **strdupFilename)
+getInclude (const char *file, const char *mode, const char **strdupFilename)
 {
   int i;
 #ifndef CROSS_COMPILE
   FILE *fp;
+#else  
+  const char *filename = file;
 #endif
+  char *apcs;
+
+  if ((apcs = strstr(file, "<APCS>")))
+    {
+      char *apcs_path = alloca(strlen(file) + 1);
+      strncpy(apcs_path, file, apcs - file);
+      strcpy(apcs_path + (apcs - file), apcs_32bit ? "APCS-32" : "APCS-26");
+      file = apcs_path;
+
+      strcat(apcs_path, apcs + 6);
+    }
+
 #if defined (CROSS_COMPILE)
-  const char *file = rname (filename);
-#else
-  const char *file = filename;
+  file = rname (file);
 #endif
 
   *strdupFilename = NULL;
@@ -142,6 +155,20 @@ getInclude (const char *filename, const char *mode, const char **strdupFilename)
     {
       if (file[0] == '.' && file[1] == '/')
 	file += 2;		/* Skip ./ */
+      else if (strchr(filename, ':'))
+        {
+          /* Try presuming everything is a directory.  This is for the benefit of paths like Hdr:APCS.Common */
+          file = apcs = rname(filename);
+
+          while (*apcs)
+            {
+              if (*apcs == '.') *apcs = '/';
+              apcs++;
+            }
+
+            if (access (file, F_OK) == 0)
+              return openInclude (file, mode, strdupFilename);
+        }
     }
 #else
   if ((fp = openInclude (file, mode, strdupFilename)) != NULL)

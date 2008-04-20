@@ -206,6 +206,11 @@ lexAcornPrim (Lex * lex)
       FINISH_STR_PRIM ("ar}");
       lex->tag = LexStorage;
       return 1;
+    case 'o':
+      FINISH_STR_PRIM ("pt}");
+      lex->tag = LexInt;
+      lex->LexInt.value = 2;
+      return 1;
     default:
     illegal:;
       break;

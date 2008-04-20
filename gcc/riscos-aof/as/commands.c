@@ -441,9 +441,11 @@ c_get (void)
       free ((void *)newInputName);
       return;
     }
+
+  inputName = newInputName;
   push_file (asmfile);
   inputLineNo = 0;
-  inputName = newInputName;
+
 #ifndef CROSS_COMPILE
   dependWrite (filename);
 #endif
@@ -571,3 +573,11 @@ c_assert (void)
   else if (!value.ValueBool.b)
     error (ErrorError, TRUE, "Assertion failed");
 }
+
+void
+c_opt (void)
+{
+  inputRest();
+  /* Do nothing.  This is for compatiblity with objasm */
+}
+

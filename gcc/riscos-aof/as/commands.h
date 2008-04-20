@@ -34,6 +34,7 @@ void c_fn (Symbol * symbol);
 void c_cn (Symbol * symbol);
 void c_cp (Symbol * symbol);
 void c_equ (Symbol * symbol);
+
 void c_reserve (void);
 
 void c_ltorg (void);
@@ -58,6 +59,7 @@ void c_get (void);		/* get <filename> */
 void c_lnk (void);		/* lnk <filename> */
 void c_idfn (void);		/* idfn <text> */
 void c_bin (void);
+void c_opt (void);
 
 void c_end (void);
 
