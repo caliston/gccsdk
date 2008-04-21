@@ -370,6 +370,109 @@ ret:
   return inputArgSub ();
 }
 
+
+static int
+inputVarSub(int ptr, int *trunc) {
+  char *rb = input_pos;
+  int len = ptr;
+  Lex label;
+  Symbol *sym = NULL;
+
+  if (*input_pos == '$')
+    {
+      input_buff[ptr++] = '$';
+      input_pos++;
+      return ptr;
+    }
+
+  /* replace symbol by its definition */
+  label = lexGetId ();
+
+  if (label.tag == LexId)
+    {
+      if (/*c &&*/ *input_pos == '.')
+        input_pos++;
+      if (local && label.LexId.len == 1 && toupper (*label.LexId.str) == 'L')
+        {
+          input_buff[ptr++] = '$';
+          input_buff[ptr++] = *label.LexId.str;
+          return ptr;
+       }
+      sym = symbolFind (&label);
+    }
+
+  if (sym)
+    {
+      switch (sym->value.Tag.t)
+	{
+	case ValueInt:
+	  sprintf (input_buff + ptr, "%i", sym->value.ValueInt.i);
+	  ptr += strlen (input_buff + ptr);
+	  break;
+	case ValueFloat:
+	  sprintf (input_buff + ptr, "%f", sym->value.ValueFloat.f);
+	  ptr += strlen (input_buff + ptr);
+	  break;
+	case ValueString:
+	  if (ptr + sym->value.ValueString.len >= MAX_LINE)
+	    ptr = MAX_LINE + 1;
+	  else
+	    {
+	      strcpy (input_buff + ptr, sym->value.ValueString.s);
+	      ptr += sym->value.ValueString.len;
+	    }
+	  break;
+	case ValueBool:
+	  strcpy (input_buff + ptr, sym->value.ValueBool.b ? "{TRUE}" : "{FALSE}");
+	  ptr += strlen (input_buff + ptr);
+	  break;
+	case ValueCode:
+	case ValueLateLabel:
+	case ValueAddr:
+	  {
+	    const char *s;
+	    if ((s = strndup(label.LexId.str, label.LexId.len)) == NULL)
+	      {
+	        errorOutOfMem("inputArgSub");
+	        return -1;
+	      }
+	    error (ErrorError, TRUE, "$ expansion '%s' is a pointer",
+		   s);
+	    free((void *)s);
+	  }
+	  break;
+	default:
+	  input_buff[ptr++] = '$';
+          strcpy (input_buff + ptr, label.LexId.str);
+          ptr += (len = label.LexId.len);
+	}
+    }
+  else
+    {
+      input_buff[ptr++] = '$';
+      strcpy (input_buff + ptr, label.LexId.str);
+      ptr += (len = label.LexId.len);
+    }
+
+  /* substitution complete or not found; copy the rest of the line */
+  while (*input_pos && ptr < MAX_LINE)
+    input_buff[ptr++] = *input_pos++;
+  if (ptr >= MAX_LINE)
+    {
+      *trunc = 1;
+      input_buff[MAX_LINE - 1] = 0;
+    }
+  else
+   input_buff[ptr] = 0;
+
+  ptr = len;
+  strcpy (input_pos = rb, input_buff + ptr);	/* only copy what's necessary */
+
+  return ptr;
+}
+
+
+
 /****************************************************************
 * copy the line from |workBuff| to |input_buff|, while performing any
 * substitutions.
@@ -381,8 +484,6 @@ ret:
 static BOOL
 inputArgSub (void)
 {
-  Lex label;
-  Symbol *sym;
   int ptr = 0, trunc = 0, len;
   char c, *rb;
 
@@ -445,9 +546,19 @@ inputArgSub (void)
 	    input_buff[ptr++] = *input_pos++;	/* some special case stuff */
 	  /* fall through to '"' */
 	case '\"':
+	  //printf("string here: \"%s\"\n", input_pos);
 	  do
 	    {
-	      char cc = input_buff[ptr++] = *input_pos++;
+	      char cc = *input_pos++;
+	      if (cc == '$')
+	        {
+	          if ((ptr = inputVarSub(ptr, &trunc)) < 0)
+                    return FALSE;
+                  continue;
+                }
+
+               input_buff[ptr++] = cc;
+
 	      if (cc == '\\' && *input_pos)
 		input_buff[ptr++] = *input_pos++;
 	    }
@@ -462,114 +573,9 @@ inputArgSub (void)
 	/* Do variable substitution - $
 	*/
 	case '$':
-/*        if (!inputExpand) {
-   input_buff[ptr++]='$';
-   if (*++input_pos=='$') {
-   input_buff[ptr++]='$'; break;
-   } else {
-   char *c=inputSymbol(&len,0);
-   memcpy(input_buff+ptr,c,len);
-   ptr+=len;
-   }
-   break;
-   } else */
-	  rb = input_pos;
-	  len = ptr;
-	  if (*++input_pos == '$')
-	    {
-	      input_buff[ptr++] = '$';
-	      input_pos++;
-	      break;
-	    }
-
-	  /* replace symbol by its definition */
-	  label = lexGetId ();
-	  if (label.tag != LexId)
-	    {
-	      error (ErrorWarning, TRUE, "Non-ID in $ expansion");
-	      input_buff[ptr++] = '$';
-	      break;
-	    }
-	  if (c && *input_pos == '.')
-	    input_pos++;
-	  if (local && label.LexId.len == 1 && toupper (*label.LexId.str) == 'L')
-	    {
-	      input_buff[ptr++] = '$';
-	      input_buff[ptr++] = *label.LexId.str;
-	      break;
-	    }
-	  sym = symbolFind (&label);
-	  if (sym)
-	    {
-	      switch (sym->value.Tag.t)
-		{
-		case ValueInt:
-		  sprintf (input_buff + ptr, "%i", sym->value.ValueInt.i);
-		  ptr += strlen (input_buff + ptr);
-		  break;
-		case ValueFloat:
-		  sprintf (input_buff + ptr, "%f", sym->value.ValueFloat.f);
-		  ptr += strlen (input_buff + ptr);
-		  break;
-		case ValueString:
-		  if (ptr + sym->value.ValueString.len >= MAX_LINE)
-		    ptr = MAX_LINE + 1;
-		  else
-		    {
-		      strcpy (input_buff + ptr, sym->value.ValueString.s);
-		      ptr += sym->value.ValueString.len;
-		    }
-		  break;
-		case ValueBool:
-		  strcpy (input_buff + ptr, sym->value.ValueBool.b ? "{TRUE}" : "{FALSE}");
-		  ptr += strlen (input_buff + ptr);
-		  break;
-		case ValueCode:
-		case ValueLateLabel:
-		case ValueAddr:
-		  {
-		    const char *s;
-		    if ((s = strndup(label.LexId.str, label.LexId.len)) == NULL)
-		      {
-		        errorOutOfMem("inputArgSub");
-		        return FALSE;
-		      }
-		    error (ErrorError, TRUE, "$ expansion '%s' is a pointer",
-			   s);
-		    free((void *)s);
-		  }
-		  break;
-		default:
-		  goto unknown;
-		}
-
-		/* substitution complete; copy the rest of the line */
-	      while (*input_pos && ptr < MAX_LINE)
-		input_buff[ptr++] = *input_pos++;
-	      if (ptr >= MAX_LINE)
-		{
-		  trunc = 1;
-		  input_buff[MAX_LINE - 1] = 0;
-		}
-	      else
-		input_buff[ptr] = 0;
-	      ptr = len;
-	      strcpy (input_pos = rb, input_buff + ptr);	/* only copy what's necessary */
-	    }
-	  else
-	    {
-	      const char *s;
-	    unknown:
-	      if ((s = strndup(label.LexId.str, label.LexId.len)) == NULL)
-	        {
-	          errorOutOfMem("inputArgSub");
-	          return FALSE;
-	        }
-	      error (ErrorError, TRUE, "Unknown value '%s' for $ expansion",
-		     s);
-	      free((void *)s);
-	      input_buff[ptr++] = '$';
-	    }
+	  input_pos++;
+          if ((ptr = inputVarSub(ptr, &trunc)) < 0)
+            return FALSE;
 	}
     }
   if (ptr >= MAX_LINE || trunc)
