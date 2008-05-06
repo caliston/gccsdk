@@ -204,7 +204,7 @@ symbolFix (void)		/* Returns number of symbols */
 		      else if (sscanf (sym->str + sizeof ("Local$$")-1, "%i$$%s", &i, routine) > 0)
 			{
 			  localFindLocal (i, &file, &lineno);
-			  errorLine (lineno, file, ErrorError, FALSE, "Missing local label '%s'%s", routine ? routine : "<anonymous>", lineno ? " in block starting" : " (unknown location)");
+			  errorLine (lineno, file, ErrorError, FALSE, "Missing local label '%s'%s", *routine ? routine : "<anonymous>", lineno ? " in block starting" : " (unknown location)");
 			}
 		      return 0;
 		    }

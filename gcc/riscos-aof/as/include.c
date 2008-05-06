@@ -128,8 +128,8 @@ getInclude (const char *file, const char *mode, const char **strdupFilename)
   int i;
 #ifndef CROSS_COMPILE
   FILE *fp;
-#else  
-  const char *filename = file;
+#else
+  char *filename;
 #endif
   char *apcs;
 
@@ -143,22 +143,22 @@ getInclude (const char *file, const char *mode, const char **strdupFilename)
       strcat(apcs_path, apcs + 6);
     }
 
-#if defined (CROSS_COMPILE)
-  file = rname (file);
+#ifdef CROSS_COMPILE
+  filename = rname (file);
 #endif
 
   *strdupFilename = NULL;
 #ifdef CROSS_COMPILE
-  if (access (file, F_OK) == 0)
-    return openInclude (file, mode, strdupFilename);
+  if (access (filename, F_OK) == 0)
+    return openInclude (filename, mode, strdupFilename);
   else
     {
-      if (file[0] == '.' && file[1] == '/')
-	file += 2;		/* Skip ./ */
-      else if (strchr(filename, ':'))
+      if (filename[0] == '.' && filename[1] == '/')
+        filename += 2; /* Skip / */
+      else if (strchr(file, ':'))
         {
           /* Try presuming everything is a directory.  This is for the benefit of paths like Hdr:APCS.Common */
-          apcs = file;
+          apcs = filename;
 
           while (*apcs)
             {
@@ -166,8 +166,8 @@ getInclude (const char *file, const char *mode, const char **strdupFilename)
               apcs++;
             }
 
-            if (access (file, F_OK) == 0)
-              return openInclude (file, mode, strdupFilename);
+            if (access (filename, F_OK) == 0)
+              return openInclude (filename, mode, strdupFilename);
         }
     }
 #else

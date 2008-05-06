@@ -136,6 +136,10 @@ fixup (ErrorTag t)
 static void
 doline (int t, long int line, int sameline)
 {
+#ifdef CROSS_COMPILE
+  t = t;
+#endif
+
   if (line > 0)
     {
       TB (t, line, errbuf, inputName);
