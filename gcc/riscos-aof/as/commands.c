@@ -581,3 +581,12 @@ c_opt (void)
   /* Do nothing.  This is for compatiblity with objasm */
 }
 
+void
+c_title (void)
+{
+  inputRest();
+  /* Do nothing right now.  This command is for the benefit of error reporting */
+}
+
+
+

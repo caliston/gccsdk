@@ -908,7 +908,15 @@ decode (Lex * label)
 	  switch (inputGetUC ())
 	    {
 	    case 'b':
-	      M_FINISH (m_sub, optionCondS);	/* sub CC s */
+               switch (c = inputGetUC ())
+                 {
+                 case 't':
+                   C_FINISH (c_title);                  /* SUBT */
+                 default:
+                   inputUnGet (c);
+                   M_FINISH (m_sub, optionCondS);	/* sub CC s */
+                 }
+               break;
 	    case 'f':
 	      M_FINISH (m_suf, optionCondPrecRound);	/* suf CC P R */
 	    default:
@@ -948,6 +956,8 @@ decode (Lex * label)
 	  M_FINISH_CHR ('q', m_teq, optionCondSP);	/* teq CC sp */
 	case 's':
 	  M_FINISH_CHR ('t', m_tst, optionCondSP);	/* tst CC sp */
+	case 't':
+	  C_FINISH_CHR ('l', c_title);			/* TTL */
 	default:
 	  goto illegal;
 	}

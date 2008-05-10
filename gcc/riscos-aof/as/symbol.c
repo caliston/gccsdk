@@ -93,7 +93,7 @@ symbolAdd (Lex l)
       Symbol *search = *isearch;
       if (EqSymLex (search, &l))
 	{
-	  if (search->type & SYMBOL_DEFINED)
+	  if ((search->type & SYMBOL_DEFINED) && !SYMBOL_GETREG(search->type))
 	    error (ErrorError, TRUE, "Redefinition of %.*s",
 	           l.LexId.len, l.LexId.str);
 	  else

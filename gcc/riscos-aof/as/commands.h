@@ -61,6 +61,8 @@ void c_idfn (void);		/* idfn <text> */
 void c_bin (void);
 void c_opt (void);
 
+void c_title (void);
+
 void c_end (void);
 
 #endif
