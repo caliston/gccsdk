@@ -1796,7 +1796,7 @@ parse_args (int argc, char **argv)
      the ordering of the two.  We describe each non-option ARGV-element
      as if it were the argument of an option with character code 1.  */
 
-  const char *shortopts = "-c:h::L:l:o:Vv";
+  const char *shortopts = "-c:h::L:l:o:sVv";
   int a = 0;
   char *extra;
   /* 150 isn't special; it's just an arbitrary non-ASCII char value.  */
@@ -1921,6 +1921,9 @@ parse_args (int argc, char **argv)
 	  add_option ("-rescan");
 	  a |= (1<<1);
 	  break;
+        case 's':
+          /* Ignore strip option.  */
+          break;
 	case OPTION_SYMBOLS:
 	  add_option_file("-symbols", optarg);
 	  break;
