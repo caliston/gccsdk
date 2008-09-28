@@ -1,0 +1,4 @@
+	AREA	|test|, DATA, COMMON, NOINIT
+	%	4
+
+	END

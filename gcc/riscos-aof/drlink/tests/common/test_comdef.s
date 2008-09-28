@@ -1,0 +1,4 @@
+	AREA	|test|, DATA, COMDEF
+	DCD	42
+
+	END
