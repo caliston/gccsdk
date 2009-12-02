@@ -77,6 +77,14 @@ cross: $(BUILDSTEPSDIR)/buildstep-gcc-full-cross
 
 clean:
 	-rm -rf $(BUILDDIR)
+	-rm -rf $(SRCDIR)
+	-rm -rf $(BUILDSTEPSDIR)
+
+distclean:
+	-rm -rf $(BUILDDIR)
+	-rm -rf $(SRCDIR)
+	-rm -rf $(BUILDSTEPSDIR)
+	-rm -rf $(ORIGSRCDIR)
 
 # -- Source building
 
@@ -100,7 +108,7 @@ endif
 ifneq ($(TARGET),arm-unknown-riscos)
 $(BUILDSTEPSDIR)/buildstep-gcc-full-cross: $(BUILDSTEPSDIR)/buildstep-newlib-cross
 endif
-$(BUILDSTEPSDIR)/buildstep-gcc-full-cross: $(BUILDSTEPSDIR)/buildstep-gcc-src
+$(BUILDSTEPSDIR)/buildstep-gcc-full-cross: $(BUILDSTEPSDIR)/buildstep-gcc-src $(BUILDSTEPSDIR)/buildstep-binutils-cross
 	-rm -rf $(BUILDDIR)/gcc-full-cross
 	mkdir -p $(BUILDDIR)/gcc-full-cross
 	cd $(BUILDDIR)/gcc-full-cross && PATH="$(PREFIX)/bin:$(PATH)" && $(SRCDIR)/gcc/configure --target=$(TARGET) --prefix=$(PREFIX) --enable-languages=$(GCC_LANGUAGES) $(GCC_CONFIGURE_ARGS) && make $(PARALLEL) $(GCC_BUILD_FLAGS) && make install

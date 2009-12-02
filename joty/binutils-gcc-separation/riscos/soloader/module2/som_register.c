@@ -1,6 +1,6 @@
 /* som_register.c
  *
- * Copyright 2007 GCCSDK Developers
+ * Copyright 2007, 2009 GCCSDK Developers
  * Written by Lee Noar
  */
 
@@ -11,6 +11,7 @@
 #include "som_alloc.h"
 #include "som_workspace.h"
 #include "som_array.h"
+#include "som_history.h"
 
 static _kernel_oserror *
 init_object (som_object *object, const som_objinfo *objinfo)
@@ -304,13 +305,9 @@ som_register_object (_kernel_swi_regs *regs)
 }
 
 static _kernel_oserror *
-deregister_shared_object (unsigned int handle)
+deregister_shared_object (som_client *client,
+			  unsigned int handle)
 {
-  som_client *client;
-
-  if ((client = FIND_CLIENT ()) == NULL)
-    return somerr_unknown_client;
-
   /* First find the object in the client's list.  */
   som_object *client_obj;
   for (client_obj = linklist_first_som_object (&client->object_list);
@@ -381,12 +378,17 @@ som_deregister_client (void)
   if ((client = FIND_CLIENT ()) == NULL)
     return somerr_unknown_client;
 
+  rt_workspace_set (rt_workspace_CLIENT_STRUCT_PTR, 0);
+
+  /* From now on, FIND_CLIENT() will fail.  */
+
+  som_history_add_client (client);
+
   /* The first link in the client's object list should be the application
      itself. This is treated differently as it is not a shared object as
      such (ie. it doesn't exist in the global list). This means that it
      should not be deregistered like normal objects.  */
   som_object *object = linklist_first_som_object (&client->object_list), *next_obj;
-  _kernel_oserror *err = NULL;
 
   if (object->flags.type == object_flag_type_CLIENT)
     {
@@ -408,13 +410,11 @@ som_deregister_client (void)
     {
       next_obj = linklist_next_som_object (object);
 
-      if ((err = deregister_shared_object (object->handle)) != NULL)
-	return err;
+      deregister_shared_object (client, object->handle);
+      /* Ignore any errors from above.  */
 
       object = next_obj;
     }
-
-  rt_workspace_set (rt_workspace_CLIENT_STRUCT_PTR, 0);
 
   /* Unlink from the list of clients. */
   linklist_remove (&global.client_list, &client->link);
@@ -432,5 +432,10 @@ som_deregister_client (void)
 _kernel_oserror *
 som_deregister_shared_object (_kernel_swi_regs *regs)
 {
-  return deregister_shared_object (regs->r[0]);
+  som_client *client;
+
+  if ((client = FIND_CLIENT ()) == NULL)
+    return somerr_unknown_client;
+
+  return deregister_shared_object (client, regs->r[0]);
 }

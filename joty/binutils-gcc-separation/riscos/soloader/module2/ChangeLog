@@ -1,3 +1,48 @@
+Sun Nov 22 16:06:14 2009  Lee Noar  <leenoar@sky.com>
+
+	* som_register.c(deregister_shared_object): Don't
+	bother finding the client when the only caller already
+	knows it.
+	(som_deregister_client): If an error occurs when
+	deregistering a library, continue to deregister the
+	client rather than aborting the process.
+
+	* dist/!SharedLibs/docs/!ReadMe: Update docs.
+
+Wed Oct 21 19:55:01 2009  Lee Noar  <leenoar@sky.com>
+
+	* som_final.c(module_finalisation): If things really
+	go wrong and we end up with a negative client count,
+	then we still want to be able to quit.
+
+Tue Oct 13 19:35:23 2009  Lee Noar  <leenoar@sky.com>
+
+	* som_runcom.c(read_ld_env): Looks like my logic
+	got a bit mixed up here. Only worked for !runimage
+	and *-bin. Simplify and fix.
+
+Sun Oct 11 14:10:45 2009  Lee Noar  <leenoar@sky.com>
+
+	New feature addition. Record basic details of last
+	five clients to deregister. *SOMHistory displays
+	the list. Useful for debugging when you need to know
+	where an address lies within the client. If the
+	client exits normally, then *SOMStatus will not show
+	it. Saves having to keep commenting out
+	SWI "SOM_DeregisterClient" in UnixLib to retain client
+	data.
+
+	* somanager.cmhg: Add *SOMHistory to command table.
+	Bump module version number to V2.02.
+	* som_command.c(module_command): Handle new command.
+	* som_history.c, som_history.h: Implementation of new
+	command.
+	* som_register.c(som_deregister_client): Record details
+	of deregistering clients.
+	* som.h(som_globals): Add history list.
+	* som_command.h: Make global strings more widely available.
+	* Makefile.am: Add som_history.c to source files.
+
 Fri Jul 04 20:04:09 2009  Lee Noar  <leenoar@sky.com>
 
 	* somanager.cmhg: Add new SWI (SOM_Reloc) to SWI table,
