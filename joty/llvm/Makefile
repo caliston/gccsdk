@@ -1,17 +1,20 @@
 # Makefile building llvm world:
 
-TARGET := arm-non-eabi
+TARGET := arm-unknown-eabi
 
 ROOT := $(shell pwd)
 PREFIX := $(ROOT)/install
 
 SRCDIR := $(ROOT)/src
+SRCDIR_BINUTILS := $(SRCDIR)/binutils
 SRCDIR_LLVM := $(SRCDIR)/svn-llvm
+SRCDIR_LLVMCLANG := $(SRCDIR)/svn-llvm-clang
 SRCDIR_LLVMGCC := $(SRCDIR)/svn-llvm-gcc-4.2
 SRCORIGDIR := $(ROOT)/src.orig
 
 BUILDDIR := $(ROOT)/build
 BUILDDIR_LLVM := $(BUILDDIR)/llvm
+BUILDDIR_LLVMCLANG := $(BUILDDIR)/llvm-clang
 BUILDDIR_LLVMGCC := $(BUILDDIR)/llvm-gcc
 BUILDSTEPSDIR := $(ROOT)/buildsteps
 
@@ -20,15 +23,21 @@ BINUTILS_VERSION := binutils-2.19.1
 BINUTILS_CONFIGURE_ARGS := --enable-interwork --disable-multilib --disable-shared --disable-werror --with-gcc --disable-nls
 GCC_CONFIGURE_ARGS := --disable-threads --with-newlib --enable-interwork --disable-multilib --disable-shared --disable-nls
 
-.PHONY: all distclean llvm-gcc
-all: llvm-gcc
+.PHONY: all clean distclean llvm-gcc clang
+# Either "llvm-gcc" or "clang":
+all: clang
+
+clean:
+	-rm -rf $(BUILDDIR) $(SRCDIR_BINUTILS) $(BUILDSTEPSDIR)
 
 distclean:
-	-rm -rf $(BUILDDIR) $(PREFIX) $(BUILDSTEPSDIR)
+	-rm -rf $(BUILDDIR) $(SRCDIR_BINUTILS) $(BUILDSTEPSDIR) $(PREFIX)
 
 llvm-gcc: $(BUILDSTEPSDIR)/buildstep-llvm-gcc-buildit
 
-# --- llvm:
+clang: $(BUILDSTEPSDIR)/buildstep-clang-buildit
+
+# --- llvm (for llvmgcc):
 
 # svn checkout/update llvm:
 $(SRCDIR_LLVM):
@@ -49,6 +58,20 @@ $(BUILDSTEPSDIR)/buildstep-llvm-buildit: $(BUILDSTEPSDIR)/buildstep-llvm-configu
 	cd $(BUILDDIR_LLVM) && make
 	cd $(BUILDDIR_LLVM) && make install
 	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildstep-llvm-buildit
+
+# --- clang:
+
+# Configure clang:
+$(BUILDSTEPSDIR)/buildstep-clang-configure: $(BUILDSTEPSDIR)/buildstep-binutils-cross-buildit
+	-rm -rf $(BUILDDIR_LLVMCLANG)
+	mkdir -p $(BUILDDIR_LLVMCLANG)
+	cd $(BUILDDIR_LLVMCLANG) && $(SRCDIR_LLVMCLANG)/configure --prefix=$(PREFIX) --target=$(TARGET) --enable-assertions --enable-targets=arm
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildstep-clang-configure
+
+# Build clang:
+$(BUILDSTEPSDIR)/buildstep-clang-buildit: $(BUILDSTEPSDIR)/buildstep-clang-configure
+	cd $(BUILDDIR_LLVMCLANG) && make
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildstep-clang-buildit
 
 # --- llvm-gcc:
 
@@ -81,9 +104,9 @@ $(SRCORIGDIR)/$(BINUTILS_VERSION).tar.bz2:
 
 # Unpack binutils source:
 $(BUILDSTEPSDIR)/buildstep-binutils-src: $(SRCORIGDIR)/$(BINUTILS_VERSION).tar.bz2
-	-rm -rf $(SRCORIGDIR)/$(BINUTILS_VERSION) $(SRCDIR)/binutils
+	-rm -rf $(SRCORIGDIR)/$(BINUTILS_VERSION) $(SRCDIR_BINUTILS)
 	cd $(SRCORIGDIR) && tar xfj $(BINUTILS_VERSION).tar.bz2
-	cp -r $(SRCORIGDIR)/$(BINUTILS_VERSION) $(SRCDIR)/binutils
+	cp -r $(SRCORIGDIR)/$(BINUTILS_VERSION) $(SRCDIR_BINUTILS)
 	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildstep-binutils-src
 
 # Configure binutils cross:
