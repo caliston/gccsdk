@@ -20,41 +20,44 @@ GDB_VERSION=6.8
 
 ifeq ($(TARGET),arm-unknown-riscos)
 # Case GCCSDK arm-unknown-riscos target:
-GCC_CONFIGURE_ARGS := --enable-threads=posix \
-	--enable-sjlj-exceptions=yes \
+GCC_CONFIG_ARGS := \
+	--enable-threads=posix \
+	--enable-sjlj-exceptions=no \
+	--enable-c99 \
+	--enable-cmath \
+	--enable-maintainer-mode \
 	--disable-c-mbchar \
 	--disable-libstdcxx-pch \
 	--disable-tls \
-	--enable-c99 --enable-cmath \
+	--disable-nls \
+	--without-pic \
 	--with-cross-host \
 	--with-pkgversion=GCCSDK-$(GCC_VERSION)-Release1-Alpha1 \
 	--with-bugurl=http://gccsdk.riscos.info/
+# FIXME: for shared lib support: --enable-shared=libunixlib,libgcc,libstdc++
+# FIXME: for Java support: --without-x --enable-libgcj
 
 # When debugging/testing/validating GCCSDK cross-compiler add "-enable-checking=all",
-# otherwise add "--enable-checking=release"
-GCC_CONFIGURE_ARGS += --enable-checking=all
-
-# For debugging:
-GCC_BUILD_FLAGS = CFLAGS="-O0 -g" LIBCFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g"
-
-# For shared lib support: --enable-shared=libunixlib,libgcc,libstdc++
-# For Java --without-x  --enable-libgcj
-
+# otherwise add "--enable-checking=release" or even "--enable-checking=no"
+GCC_CONFIG_ARGS += --enable-checking=no
 else
 # Case arm-elf, arm-non-eabi target (use newlib):
-GCC_CONFIGURE_ARGS = --disable-threads --with-newlib
+GCC_CONFIG_ARGS = --disable-threads --with-newlib
 endif
-# Common configure args:
-BINUTILS_CONFIGURE_ARGS += --enable-interwork --disable-multilib --disable-shared --disable-werror --with-gcc --disable-nls
-GCC_CONFIGURE_ARGS += --enable-interwork --disable-multilib --disable-shared --disable-nls
-NEWLIB_CONFIGURE_ARGS += --enable-interwork --disable-multilib --disable-shared --disable-nls
-GDB_CONFIGURE_ARGS += --enable-interwork --disable-multilib --disable-werror --disable-nls
+# For debugging:
+GCC_BUILD_FLAGS = CFLAGS="-O0 -g" LIBCFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g"
+# Configure args shared between different targets:
+BINUTILS_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-shared --disable-werror --with-gcc --disable-nls
+GCC_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-shared --disable-nls
+NEWLIB_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-shared --disable-nls
+GDB_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-werror --disable-nls
 
 # Environment variable needed during building:
 export LTCONFIG_VERSION=1.4a-GCC3.0
 
 ROOT := $(shell pwd)
-PREFIX := $(ROOT)/cross
+PREFIX_CROSS := $(ROOT)/cross
+PREFIX_RONATIVE := $(ROOT)/ronative
 BUILDDIR := $(ROOT)/builddir
 SRCDIR := $(ROOT)/srcdir
 ORIGSRCDIR := $(ROOT)/srcdir.orig
@@ -62,18 +65,27 @@ BUILDSTEPSDIR := $(ROOT)/buildsteps
 SCRIPTSDIR := $(ROOT)/scripts
 RECIPEDIR := $(ROOT)/recipe
 
-.PHONY: all cross
+# Configure args unique for cross-compiling & unique to building for RISC OS native
+CROSS_CONFIG_ARGS := --target=$(TARGET) --prefix=$(PREFIX_CROSS)
+# Note: --build argument can only be determined when SRCDIR is populated.
+RONATIVE_CONFIG_ARGS = --build=`$(SRCDIR)/gcc/config.guess` --host=$(TARGET) --target=$(TARGET) --prefix=$(PREFIX_RONATIVE)
 
-all: cross
+.PHONY: all cross ronative
 
-cross: $(BUILDSTEPSDIR)/buildstep-gcc-full-cross
+all: cross ronative
+
+cross: $(BUILDSTEPSDIR)/buildstep-cross-gcc-full
 # Steps:
-# $(BUILDSTEPSDIR)/buildstep-binutils-src
-# $(BUILDSTEPSDIR)/buildstep-binutils-cross
-# $(BUILDSTEPSDIR)/buildstep-gcc-src
-# $(BUILDSTEPSDIR)/buildstep-gcc-bootstrap-cross
-# $(BUILDSTEPSDIR)/buildstep-gcc-full-cross
-# $(BUILDSTEPSDIR)/buildstep-gdb-cross
+# $(BUILDSTEPSDIR)/buildstep-src-binutils
+# $(BUILDSTEPSDIR)/buildstep-cross-binutils
+# $(BUILDSTEPSDIR)/buildstep-src-gcc
+# $(BUILDSTEPSDIR)/buildstep-cross-gcc-bootstrap
+# $(BUILDSTEPSDIR)/buildstep-cross-gcc-full
+# $(BUILDSTEPSDIR)/buildstep-cross-gdb
+
+ronative: $(BUILDSTEPSDIR)/buildstep-ronative-gcc-full
+# Steps:
+# $(BUILDSTEPSDIR)/buildstep-ronative-binutils
 
 clean:
 	-rm -rf $(BUILDDIR)
@@ -86,87 +98,106 @@ distclean:
 	-rm -rf $(BUILDSTEPSDIR)
 	-rm -rf $(ORIGSRCDIR)
 
-# -- Source building
+# -- Building
 
 # Build binutils cross:
-$(BUILDSTEPSDIR)/buildstep-binutils-cross: $(BUILDSTEPSDIR)/buildstep-binutils-src
-	-rm -rf $(BUILDDIR)/binutils-cross
-	mkdir -p $(BUILDDIR)/binutils-cross
-	cd $(BUILDDIR)/binutils-cross && $(SRCDIR)/binutils/configure --target=$(TARGET) --prefix=$(PREFIX) $(BINUTILS_CONFIGURE_ARGS) && make $(PARALLEL) && make install
-	touch $(BUILDSTEPSDIR)/buildstep-binutils-cross
+$(BUILDSTEPSDIR)/buildstep-cross-binutils: $(BUILDSTEPSDIR)/buildstep-src-binutils
+	-rm -rf $(BUILDDIR)/cross-binutils
+	mkdir -p $(BUILDDIR)/cross-binutils
+	cd $(BUILDDIR)/cross-binutils && $(SRCDIR)/binutils/configure $(CROSS_CONFIG_ARGS) $(BINUTILS_CONFIG_ARGS) && make $(PARALLEL) && make install
+	touch $(BUILDSTEPSDIR)/buildstep-cross-binutils
 
-# Build minimal gcc (without target runtime support):
-$(BUILDSTEPSDIR)/buildstep-gcc-bootstrap-cross: $(BUILDSTEPSDIR)/buildstep-gcc-src $(BUILDSTEPSDIR)/buildstep-binutils-cross
-	-rm -rf $(BUILDDIR)/gcc-bootstrap-cross
-ifneq ($(TARGET),arm-unknown-riscos)
-	mkdir -p $(BUILDDIR)/gcc-bootstrap-cross
-	cd $(BUILDDIR)/gcc-bootstrap-cross && PATH="$(PREFIX)/bin:$(PATH)" && $(SRCDIR)/gcc/configure --target=$(TARGET) --prefix=$(PREFIX) --enable-languages="c" --without-headers $(GCC_CONFIGURE_ARGS) && make $(PARALLEL) all-gcc && make install-gcc
-endif
-	touch $(BUILDSTEPSDIR)/buildstep-gcc-bootstrap-cross
+# Build binutils ronative:
+$(BUILDSTEPSDIR)/buildstep-ronative-binutils: $(BUILDSTEPSDIR)/buildstep-src-binutils cross
+	-rm -rf $(BUILDDIR)/ronative-binutils
+	mkdir -p $(BUILDDIR)/ronative-binutils
+	cd $(BUILDDIR)/ronative-binutils && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/binutils/configure $(RONATIVE_CONFIG_ARGS) $(BINUTILS_CONFIG_ARGS) && make $(PARALLEL) && make install
+	touch $(BUILDSTEPSDIR)/buildstep-ronative-binutils
 
-# Build full gcc (we need target runtime support now):
+# Build minimal gcc cross (without target runtime support):
 ifneq ($(TARGET),arm-unknown-riscos)
-$(BUILDSTEPSDIR)/buildstep-gcc-full-cross: $(BUILDSTEPSDIR)/buildstep-newlib-cross
+$(BUILDSTEPSDIR)/buildstep-cross-gcc-bootstrap: $(BUILDSTEPSDIR)/buildstep-src-gcc $(BUILDSTEPSDIR)/buildstep-cross-binutils
+	-rm -rf $(BUILDDIR)/cross-gcc-bootstrap
+	mkdir -p $(BUILDDIR)/cross-gcc-bootstrap
+	cd $(BUILDDIR)/cross-gcc-bootstrap && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gcc/configure $(CROSS_CONFIG_ARGS) $(GCC_CONFIG_ARGS) --enable-languages="c" --without-headers && make $(PARALLEL) all-gcc && make install-gcc
+	touch $(BUILDSTEPSDIR)/buildstep-cross-gcc-bootstrap
+else
+$(BUILDSTEPSDIR)/buildstep-cross-gcc-bootstrap: $(BUILDSTEPSDIR)/buildstep-src-gcc $(BUILDSTEPSDIR)/buildstep-cross-binutils
+	-rm -rf $(BUILDDIR)/cross-gcc-bootstrap
+	touch $(BUILDSTEPSDIR)/buildstep-cross-gcc-bootstrap
 endif
-$(BUILDSTEPSDIR)/buildstep-gcc-full-cross: $(BUILDSTEPSDIR)/buildstep-gcc-src $(BUILDSTEPSDIR)/buildstep-binutils-cross
-	-rm -rf $(BUILDDIR)/gcc-full-cross
-	mkdir -p $(BUILDDIR)/gcc-full-cross
-	cd $(BUILDDIR)/gcc-full-cross && PATH="$(PREFIX)/bin:$(PATH)" && $(SRCDIR)/gcc/configure --target=$(TARGET) --prefix=$(PREFIX) --enable-languages=$(GCC_LANGUAGES) $(GCC_CONFIGURE_ARGS) && make $(PARALLEL) $(GCC_BUILD_FLAGS) && make install
-	touch $(BUILDSTEPSDIR)/buildstep-gcc-full-cross
+
+# Build full gcc cross (we need target runtime support by now):
+ifneq ($(TARGET),arm-unknown-riscos)
+$(BUILDSTEPSDIR)/buildstep-cross-gcc-full: $(BUILDSTEPSDIR)/buildstep-cross-newlib
+endif
+$(BUILDSTEPSDIR)/buildstep-cross-gcc-full: $(BUILDSTEPSDIR)/buildstep-src-gcc $(BUILDSTEPSDIR)/buildstep-cross-binutils
+	-rm -rf $(BUILDDIR)/cross-gcc-full
+	mkdir -p $(BUILDDIR)/cross-gcc-full
+	cd $(BUILDDIR)/cross-gcc-full && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gcc/configure $(CROSS_CONFIG_ARGS) $(GCC_CONFIG_ARGS) --enable-languages=$(GCC_LANGUAGES) && make $(PARALLEL) $(GCC_BUILD_FLAGS) && make install
+	touch $(BUILDSTEPSDIR)/buildstep-cross-gcc-full
+
+# Build full gcc ronative (we need target runtime support by now):
+ifneq ($(TARGET),arm-unknown-riscos)
+$(BUILDSTEPSDIR)/buildstep-ronative-gcc-full: $(BUILDSTEPSDIR)/buildstep-ronative-newlib
+endif
+$(BUILDSTEPSDIR)/buildstep-ronative-gcc-full: $(BUILDSTEPSDIR)/buildstep-src-gcc cross
+	-rm -rf $(BUILDDIR)/ronative-gcc-full
+	mkdir -p $(BUILDDIR)/ronative-gcc-full
+	cd $(BUILDDIR)/ronative-gcc-full && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gcc/configure $(RONATIVE_CONFIG_ARGS) $(GCC_CONFIG_ARGS) --enable-languages=$(GCC_LANGUAGES) && make $(PARALLEL) $(GCC_BUILD_FLAGS) && make install
+	touch $(BUILDSTEPSDIR)/buildstep-ronative-gcc-full
 
 # Build newlib with minimal gcc:
-$(BUILDSTEPSDIR)/buildstep-newlib-cross: $(BUILDSTEPSDIR)/buildstep-newlib-src $(BUILDSTEPSDIR)/buildstep-gcc-bootstrap-cross
-	-rm -rf $(BUILDDIR)/newlib-cross
-ifneq ($(TARGET),arm-unknown-riscos)
-	mkdir -p $(BUILDDIR)/newlib-cross
-	cd $(BUILDDIR)/newlib-cross && PATH="$(PREFIX)/bin:$(PATH)" && $(SRCDIR)/newlib/configure --target=$(TARGET) --prefix=$(PREFIX) --enable-languages=$(GCC_LANGUAGES) $(NEWLIB_CONFIGURE_ARGS) && make $(PARALLEL) $(GCC_BUILD_FLAGS) && make install
-endif
-	touch $(BUILDSTEPSDIR)/buildstep-newlib-cross
+$(BUILDSTEPSDIR)/buildstep-cross-newlib: $(BUILDSTEPSDIR)/buildstep-src-newlib $(BUILDSTEPSDIR)/buildstep-cross-gcc-bootstrap
+	-rm -rf $(BUILDDIR)/cross-newlib
+	mkdir -p $(BUILDDIR)/cross-newlib
+	cd $(BUILDDIR)/cross-newlib && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/newlib/configure $(CROSS_CONFIG_ARGS) $(NEWLIB_CONFIG_ARGS) --enable-languages=$(GCC_LANGUAGES) && make $(PARALLEL) $(GCC_BUILD_FLAGS) && make install
+	touch $(BUILDSTEPSDIR)/buildstep-cross-newlib
 
 # Build gdb:
-$(BUILDSTEPSDIR)/buildstep-gdb-cross: $(BUILDSTEPSDIR)/buildstep-gdb-src $(BUILDSTEPSDIR)/buildstep-gcc-full-cross
-	-rm -rf $(BUILDDIR)/gdb-cross
-	mkdir -p $(BUILDDIR)/gdb-cross
-	cd $(BUILDDIR)/gdb-cross && PATH="$(PREFIX)/bin:$(PATH)" && $(ORIGSRCDIR)/gdb/configure --target=$(TARGET) --prefix=$(PREFIX) && make $(PARALLEL) $(GDB_CONFIGURE_ARGS) && make install
-	touch $(BUILDSTEPSDIR)/buildstep-gdb-cross
+$(BUILDSTEPSDIR)/buildstep-cross-gdb: $(BUILDSTEPSDIR)/buildstep-src-gdb $(BUILDSTEPSDIR)/buildstep-cross-gcc-full
+	-rm -rf $(BUILDDIR)/cross-gdb
+	mkdir -p $(BUILDDIR)/cross-gdb
+	cd $(BUILDDIR)/cross-gdb && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(ORIGSRCDIR)/gdb/configure $(CROSS_CONFIG_ARGS) $(GDB_CONFIG_ARGS) && make $(PARALLEL) && make install
+	touch $(BUILDSTEPSDIR)/buildstep-cross-gdb
 
 # -- Source unpacking.
 
 # Unpack binutils source:
-$(BUILDSTEPSDIR)/buildstep-binutils-src: $(ORIGSRCDIR)/binutils-$(BINUTILS_VERSION).tar.bz2
+$(BUILDSTEPSDIR)/buildstep-src-binutils: $(ORIGSRCDIR)/binutils-$(BINUTILS_VERSION).tar.bz2
 	-rm -rf $(ORIGSRCDIR)/binutils-$(BINUTILS_VERSION) $(SRCDIR)/binutils
 	cd $(ORIGSRCDIR) && tar xfj binutils-$(BINUTILS_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/binutils
 	cp -T -r $(ORIGSRCDIR)/binutils-$(BINUTILS_VERSION) $(SRCDIR)/binutils
 	cd $(SRCDIR)/binutils && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 	-mkdir -p $(BUILDSTEPSDIR)
-	touch $(BUILDSTEPSDIR)/buildstep-binutils-src
+	touch $(BUILDSTEPSDIR)/buildstep-src-binutils
 
 # Unpack gcc source:
-$(BUILDSTEPSDIR)/buildstep-gcc-src: $(ORIGSRCDIR)/gcc-$(GCC_VERSION).tar.bz2
+$(BUILDSTEPSDIR)/buildstep-src-gcc: $(ORIGSRCDIR)/gcc-$(GCC_VERSION).tar.bz2
 	-rm -rf $(ORIGSRCDIR)/gcc-$(GCC_VERSION) $(SRCDIR)/gcc
 	cd $(ORIGSRCDIR) && tar xfj gcc-$(GCC_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/gcc
 	cp -T -r $(ORIGSRCDIR)/gcc-$(GCC_VERSION) $(SRCDIR)/gcc
 	cd $(SRCDIR)/gcc && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 	-mkdir -p $(BUILDSTEPSDIR)
-	touch $(BUILDSTEPSDIR)/buildstep-gcc-src
+	touch $(BUILDSTEPSDIR)/buildstep-src-gcc
 
 # Unpack newlib source:
-$(BUILDSTEPSDIR)/buildstep-newlib-src: $(ORIGSRCDIR)/newlib-$(NEWLIB_VERSION).tar.gz
+$(BUILDSTEPSDIR)/buildstep-src-newlib: $(ORIGSRCDIR)/newlib-$(NEWLIB_VERSION).tar.gz
 	-rm -rf $(ORIGSRCDIR)/newlib-$(NEWLIB_VERSION) $(SRCDIR)/newlib
 	cd $(ORIGSRCDIR) && tar xfz newlib-$(NEWLIB_VERSION).tar.gz
 	# FIXME: add stuff
 	-mkdir -p $(BUILDSTEPSDIR)
-	touch $(BUILDSTEPSDIR)/buildstep-newlib-src
+	touch $(BUILDSTEPSDIR)/buildstep-src-newlib
 
 # Unpack gdb source:
-$(BUILDSTEPSDIR)/buildstep-gdb-src: $(ORIGSRCDIR)/gdb-$(GDB_VERSION).tar.bz2
+$(BUILDSTEPSDIR)/buildstep-src-gdb: $(ORIGSRCDIR)/gdb-$(GDB_VERSION).tar.bz2
 	-rm -rf $(ORIGSRCDIR)/gdb-$(GDB_VERSION) $(SRCDIR)/gdb
 	cd $(ORIGSRCDIR) && tar xfj gdb-$(GDB_VERSION).tar.bz2
 	# FIXME: add stuff
 	-mkdir -p $(BUILDSTEPSDIR)
-	touch $(BUILDSTEPSDIR)/buildstep-gdb-src
+	touch $(BUILDSTEPSDIR)/buildstep-src-gdb
 
 # -- Source downloading.
 
