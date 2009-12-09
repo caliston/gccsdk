@@ -6,9 +6,9 @@
 #   - apt-get install flex bison libgmp3-dev libmpfr-dev autoconf texinfo build-essential automake1.9 autoconf2.59
 #   - gdb requires libncurses5-dev
 
-# TARGET can have following values: arm-unknown-riscos, arm-non-eabi, arm-elf
+# TARGET can have following values: arm-unknown-riscos, arm-unknown-eabi
 TARGET=arm-unknown-riscos
-GCC_LANGUAGES="c"
+GCC_LANGUAGES="c,c++"
 PARALLEL=
 
 ##BINUTILS_VERSION=2.19.1
@@ -26,38 +26,39 @@ GCC_CONFIG_ARGS := \
 	--enable-c99 \
 	--enable-cmath \
 	--enable-maintainer-mode \
+	--enable-shared=libunixlib,libgcc,libstdc++ \
+	--enable-multilib \
 	--disable-c-mbchar \
 	--disable-libstdcxx-pch \
 	--disable-tls \
-	--disable-nls \
 	--without-pic \
 	--with-cross-host \
 	--with-pkgversion=GCCSDK-$(GCC_VERSION)-Release1-Alpha1 \
 	--with-bugurl=http://gccsdk.riscos.info/
-# FIXME: for shared lib support: --enable-shared=libunixlib,libgcc,libstdc++
 # FIXME: for Java support: --without-x --enable-libgcj
-
-# When debugging/testing/validating GCCSDK cross-compiler add "-enable-checking=all",
+BINUTILS_CONFIG_ARGS =
+else
+# Case arm-unknown-eabi target (use newlib):
+GCC_CONFIG_ARGS := --disable-threads --disable-multilib --disable-shared --with-newlib
+BINUTILS_CONFIG_ARGS := --disable-multilib --disable-shared
+endif
+# When debugging/testing/validating the compiler add "-enable-checking=all",
 # otherwise add "--enable-checking=release" or even "--enable-checking=no"
 GCC_CONFIG_ARGS += --enable-checking=no
-else
-# Case arm-elf, arm-non-eabi target (use newlib):
-GCC_CONFIG_ARGS = --disable-threads --with-newlib
-endif
-# For debugging:
-GCC_BUILD_FLAGS = CFLAGS="-O0 -g" LIBCFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g"
 # Configure args shared between different targets:
-BINUTILS_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-shared --disable-werror --with-gcc --disable-nls
-GCC_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-shared --disable-nls
+BINUTILS_CONFIG_ARGS += --enable-interwork --disable-werror --with-gcc --disable-nls
+GCC_CONFIG_ARGS += --enable-interwork --disable-nls
 NEWLIB_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-shared --disable-nls
 GDB_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-werror --disable-nls
+# For debugging:
+GCC_BUILD_FLAGS = CFLAGS="-O0 -g" LIBCFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g"
 
 # Environment variable needed during building:
 export LTCONFIG_VERSION=1.4a-GCC3.0
 
 ROOT := $(shell pwd)
 PREFIX_CROSS := $(ROOT)/cross
-PREFIX_RONATIVE := $(ROOT)/ronative
+PREFIX_RONATIVE := $(ROOT)/release-area/full/\!GCC
 BUILDDIR := $(ROOT)/builddir
 SRCDIR := $(ROOT)/srcdir
 ORIGSRCDIR := $(ROOT)/srcdir.orig
@@ -72,7 +73,7 @@ RONATIVE_CONFIG_ARGS = --build=`$(SRCDIR)/gcc/config.guess` --host=$(TARGET) --t
 
 .PHONY: all cross ronative
 
-all: cross ronative
+all: cross
 
 cross: $(BUILDSTEPSDIR)/buildstep-cross-gcc-full
 # Steps:
@@ -96,7 +97,7 @@ distclean:
 	-rm -rf $(BUILDDIR)
 	-rm -rf $(SRCDIR)
 	-rm -rf $(BUILDSTEPSDIR)
-	-rm -rf $(ORIGSRCDIR)
+	-rm -rf $(PREFIX_CROSS) $(PREFIX_RONATIVE)
 
 # -- Building
 
