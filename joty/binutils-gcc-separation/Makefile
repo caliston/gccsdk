@@ -97,7 +97,7 @@ distclean:
 	-rm -rf $(BUILDDIR)
 	-rm -rf $(SRCDIR)
 	-rm -rf $(BUILDSTEPSDIR)
-	-rm -rf $(PREFIX_CROSS) $(PREFIX_RONATIVE)
+	-rm -rf $(ORIGSRCDIR) $(PREFIX_CROSS) $(PREFIX_RONATIVE)
 
 # -- Building
 
