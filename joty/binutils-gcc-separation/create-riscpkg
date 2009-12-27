@@ -19,9 +19,9 @@ source $GCCSDK_ROOT/setup-gccsdk-params
 RPKG_VERSION=1
 
 # Non GCCSDK named packages
-RPKG_SHAREDLIBS_NAME=SharedLibs
-RPKG_UNIXLIB_NAME=SharedUnixLibrary
-RPKG_DRENDERER_NAME=DRenderer
+RPKG_SHAREDLIBS_NAME=sharedlibs
+RPKG_UNIXLIB_NAME=sharedunixlibrary
+RPKG_DRENDERER_NAME=drenderer
 
 # Set versions
 . ./riscpkg-versions
@@ -30,23 +30,29 @@ RPKG_DRENDERER_NAME=DRenderer
 GCCSDK_UNPACKED=$GCCSDK_RELEASE_AREA/kits
 GCCSDK_RISCPKG=$GCCSDK_RELEASE_AREA/riscpkg
 
-# Location in kites folder
+# Location in kits folder
 BKIT_GCCCORE_NAME=gccsdk-gcc-core-bin-$GCCSDK_FULL_RELEASE_NAME
 BKIT_GCCGPP_NAME=gccsdk-gcc-g++-bin-$GCCSDK_FULL_RELEASE_NAME
 BKIT_SYSTEM_NAME=system
 BKIT_SHAREDLIBSCORE_NAME=gccsdk-sharedlibs-core
 BKIT_SHAREDLIBSGPP_NAME=gccsdk-sharedlibs-g++
 
-RPKG_GCCCORE_NAME=GCCSDK4
-RPKG_GCCGPP_NAME=GCCSDK4-C++
-RPKG_SHAREDLIBSC_NAME=SharedLibs-C
-RPKG_SHAREDLIBSGPP_NAME=SharedLibs-C++
+RPKG_GCCCORE_NAME=gcc4
+RPKG_GCCGPP_NAME=gcc4-c++
+RPKG_SHAREDLIBSC_NAME=sharedlibs-c
+RPKG_SHAREDLIBSGPP_NAME=sharedlibs-c++
 
 GCCSDK_MAINTAINER="GCCSDK mailing list <gcc@gccsdk.riscos.info>"
 
-if [ ! -f $GCCSDK_INSTALL_ENV/bin/zip ] ; then
-   echo Unable to create RISC OS Packages because of missing zip executable.
-   exit 1
+ZIP=$GCCSDK_INSTALL_ENV/bin/zip
+if ! [ -f "$ZIP" ] ; then
+  echo Unable to create RISC OS Packages because of missing zip executable 1>&2
+  exit 1
+fi
+
+if ! [ -e $GCCSDK_UNPACKED ] ; then
+  echo Please run `dirname $0`/create-gcckit first 1>&2
+  exit 1
 fi
 
 # Standard header for copyright
@@ -110,9 +116,19 @@ scan_boot_file() {
   done
 }
 
+# Convert static ELF binaries to AIF binaries.
 # Set file types of all files not already set to be html or text
 # as current version of RiscPkg needs this
 set_file_types() {
+  local elf=$(find . -name \*,e1f)
+
+  for exe in $elf; do
+    if file $exe | grep -q statically ; then
+      $GCCSDK_INSTALL_CROSSBIN/elf2aif $exe $(sed s#,e1f#,ff8# <<< $exe)
+      rm -f $exe
+    fi
+  done
+
   find . -iname \*.html -type f -execdir mv {} {},faf \;
   find . ! -iname \*,??? -type f -execdir mv {} {},fff \;
 }
@@ -130,11 +146,11 @@ cd $GCCSDK_RISCPKG
 
 mkdir temp
 cd temp
-mkdir -p Apps/Development
-cp -r $GCCSDK_UNPACKED/$BKIT_GCCCORE_NAME/\!GCC Apps/Development
+mkdir -p Apps/Develop
+cp -r $GCCSDK_UNPACKED/$BKIT_GCCCORE_NAME/\!GCC Apps/Develop
 
 # Add Examples
-cp -r $GCCSDK_UNPACKED/$BKIT_GCCCORE_NAME/Examples Apps/Development/\!GCC
+cp -r $GCCSDK_UNPACKED/$BKIT_GCCCORE_NAME/Examples Apps/Develop/\!GCC
 
 mkdir RiscPkg
 
@@ -142,13 +158,13 @@ mkdir RiscPkg
 echo "Package: $RPKG_GCCCORE_NAME" > RiscPkg/Control
 echo "Version: $GCCSDK_FULL_RELEASE_NAME-$RPKG_VERSION" >> RiscPkg/Control
 echo "Priority: Optional" >> RiscPkg/Control
-echo "Section: Programming" >> RiscPkg/Control
+echo "Section: Develop" >> RiscPkg/Control
 echo "Maintainer: $GCCSDK_MAINTAINER" >> RiscPkg/Control
 echo "Standards-Version: 0.1.0" >> RiscPkg/Control
 echo "Licence: Free" >> RiscPkg/Control
 echo "Depends: $RPKG_SHAREDLIBSC_NAME (>= $RPKG_SHAREDLIBSC_VERSION)" >> RiscPkg/Control
 echo "Conflicts: GCC-Common" >> RiscPkg/Control
-echo "Description: The GNU GCCSDK including the C Compiler and various tools" >> RiscPkg/Control
+echo "Description: RISC OS port of the GNU Compiler Connection including the C Compiler and core tools" >> RiscPkg/Control
 
 # Create copyright
 echo "GCC4 Core components" > RiscPkg/Copyright
@@ -179,7 +195,7 @@ cat  $GCCSDK_UNPACKED/$BKIT_GCCCORE_NAME/\!GCC/docs/libunixlib/COPYING >> RiscPk
 set_file_types
 
 # Zip it all up
-$GCCSDK_CROSS_PREFIX/bin/zip -, -9rq ../$RPKG_GCCCORE_NAME\_$GCCSDK_FULL_RELEASE_NAME-$RPKG_VERSION.zip *
+$ZIP -, -9rq ../$RPKG_GCCCORE_NAME\_$GCCSDK_FULL_RELEASE_NAME-$RPKG_VERSION.zip *
 
 cd ..
 rm -rf temp
@@ -190,8 +206,8 @@ rm -rf temp
 
 mkdir temp
 cd temp
-mkdir -p Apps/Development
-cp -r $GCCSDK_UNPACKED/$BKIT_GCCGPP_NAME/\!GCC Apps/Development
+mkdir -p Apps/Develop
+cp -r $GCCSDK_UNPACKED/$BKIT_GCCGPP_NAME/\!GCC Apps/Develop
 
 mkdir RiscPkg
 
@@ -199,12 +215,12 @@ mkdir RiscPkg
 echo "Package: $RPKG_GCCGPP_NAME" > RiscPkg/Control
 echo "Version: $GCCSDK_FULL_RELEASE_NAME-$RPKG_VERSION" >> RiscPkg/Control
 echo "Priority: Optional" >> RiscPkg/Control
-echo "Section: Programming" >> RiscPkg/Control
+echo "Section: Develop" >> RiscPkg/Control
 echo "Maintainer: $GCCSDK_MAINTAINER" >> RiscPkg/Control
 echo "Standards-Version: 0.1.0" >> RiscPkg/Control
 echo "Licence: Free" >> RiscPkg/Control
 echo "Depends: $RPKG_GCCCORE_NAME (>=$GCCSDK_FULL_RELEASE_NAME), $RPKG_SHAREDLIBSGPP_NAME (>=$RPKG_SHAREDLIBSGPP_VERSION)" >> RiscPkg/Control
-echo "Description: The GNU C++ Compiler" >> RiscPkg/Control
+echo "Description: RISC OS port of the GNU C++ Compiler" >> RiscPkg/Control
 
 # Create copyright
 echo "GCC4 C++ Compiler" > RiscPkg/Copyright
@@ -216,7 +232,7 @@ gpl_copyright
 
 set_file_types
 
-$GCCSDK_CROSS_PREFIX/bin/zip -, -9rq ../$RPKG_GCCGPP_NAME\_$GCCSDK_FULL_RELEASE_NAME-$RPKG_VERSION.zip *
+$ZIP -, -9rq ../$RPKG_GCCGPP_NAME\_$GCCSDK_FULL_RELEASE_NAME-$RPKG_VERSION.zip *
 
 cd ..
 rm -rf temp
@@ -268,7 +284,7 @@ echo '<Packages$@Resources.!SharedLibs>.!Sprites' > Sprites/\!sharedlibs
 
 set_file_types
 
-$GCCSDK_CROSS_PREFIX/bin/zip -, -9rq ../$RPKG_SHAREDLIBS_NAME\_$RPKG_SHAREDLIBS_VERSION.zip *
+$ZIP -, -9rq ../$RPKG_SHAREDLIBS_NAME\_$RPKG_SHAREDLIBS_VERSION.zip *
 
 cd ..
 rm -rf temp
@@ -310,7 +326,7 @@ cat $GCCSDK_UNPACKED/$BKIT_SHAREDLIBSCORE_NAME/\!SharedLibs/docs/COPYRIGHT >> Ri
 
 set_file_types
 
-$GCCSDK_CROSS_PREFIX/bin/zip -, -9rq ../$RPKG_SHAREDLIBSC_NAME\_$RPKG_SHAREDLIBSC_VERSION.zip *
+$ZIP -, -9rq ../$RPKG_SHAREDLIBSC_NAME\_$RPKG_SHAREDLIBSC_VERSION.zip *
 
 cd ..
 rm -rf temp
@@ -345,7 +361,7 @@ gpl_copyright
 
 set_file_types
 
-$GCCSDK_CROSS_PREFIX/bin/zip -, -9rq ../$RPKG_SHAREDLIBSGPP_NAME\_$RPKG_SHAREDLIBSGPP_VERSION.zip *
+$ZIP -, -9rq ../$RPKG_SHAREDLIBSGPP_NAME\_$RPKG_SHAREDLIBSGPP_VERSION.zip *
 
 cd ..
 rm -rf temp
@@ -358,29 +374,21 @@ cd temp
 
 unixlibdir=System/310/Modules
 mkdir -p $unixlibdir
-cp $GCCSDK_UNPACKED/$BKIT_GCCCORE_NAME/\!System/310/Modules/SharedULib,ffa $unixlibdir
+cp $GCCSDK_UNPACKED/$BKIT_SYSTEM_NAME/\!System/310/Modules/SharedULib,ffa $unixlibdir
 
 mkdir RiscPkg
 
 echo "Package: SharedUnixLibrary" > RiscPkg/Control
 echo "Priority: Required" >> RiscPkg/Control
-echo "Section: Library" >> RiscPkg/Control
+echo "Section: Support" >> RiscPkg/Control
 echo "Maintainer: $GCCSDK_MAINTAINER" >> RiscPkg/Control
 echo "Standards-Version: 0.1.0" >> RiscPkg/Control
 echo "Version: $RPKG_UNIXLIB_VERSION" >> RiscPkg/Control
 echo "Licence: Free" >> RiscPkg/Control
-echo "Description: A C run-time library for RISC OS." >> RiscPkg/Control
-echo " This is the standard run-time library used by GCC on RISC OS." >> RiscPkg/Control
+echo "Description: A C runtime support module for UnixLib." >> RiscPkg/Control
+echo " This package provides the SharedULib module, which provides essential" >> RiscPkg/Control
+echo " services to UnixLib that are not possible in a user space application." >> RiscPkg/Control
 echo " ." >> RiscPkg/Control
-echo " In addition to the standard C library, UnixLib includes many features" >> RiscPkg/Control
-echo " which make it easier to port UNIX programs to RISC OS.  These include:" >> RiscPkg/Control
-echo " - filename translation;" >> RiscPkg/Control
-echo " - regular expressions;" >> RiscPkg/Control
-echo " - sockets; and" >> RiscPkg/Control
-echo " - pthreads." >> RiscPkg/Control
-echo " ." >> RiscPkg/Control
-echo " The package UnixLib contains the files needed to run programs that have" >> RiscPkg/Control
-echo " been compiled with UnixLib (currently just the module SharedULib)." >> RiscPkg/Control
 
 # Create copyright
 echo "UnixLib" > RiscPkg/Copyright
@@ -391,7 +399,7 @@ cat  $GCCSDK_UNPACKED/$BKIT_GCCCORE_NAME/\!GCC/docs/libunixlib/COPYING >> RiscPk
 
 set_file_types
 
-$GCCSDK_CROSS_PREFIX/bin/zip -, -9rq ../$RPKG_UNIXLIB_NAME\_$RPKG_UNIXLIB_VERSION.zip *
+$ZIP -, -9rq ../$RPKG_UNIXLIB_NAME\_$RPKG_UNIXLIB_VERSION.zip *
 
 cd ..
 rm -rf temp
@@ -406,13 +414,13 @@ cd temp
 drenddir=System/310/Modules
 mkdir -p $drenddir
 
-cp $GCCSDK_UNPACKED/$BKIT_GCCCORE_NAME/\!System/310/Modules/DRenderer,ffa $drenddir
+cp $GCCSDK_UNPACKED/$BKIT_SYSTEM_NAME/\!System/310/Modules/DRenderer,ffa $drenddir
 
 mkdir RiscPkg
 
 echo "Package: $RPKG_DRENDERER_NAME" > RiscPkg/Control
 echo "Priority: Optional" >> RiscPkg/Control
-echo "Section: Module" >> RiscPkg/Control
+echo "Section: Support" >> RiscPkg/Control
 echo "Maintainer: Alan Buckley <alan_baa@hotmail.com>" >> RiscPkg/Control
 echo "Standards-Version: 0.1.0" >> RiscPkg/Control
 echo "Version: $RPG_DRENDERER_VERSION" >> RiscPkg/Control
@@ -431,7 +439,10 @@ lgpl_copyright
 
 set_file_types
 
-$GCCSDK_CROSS_PREFIX/bin/zip -, -9rq ../$RPKG_DRENDERER_NAME\_$RPKG_DRENDERER_VERSION.zip *
+$ZIP -, -9rq ../$RPKG_DRENDERER_NAME\_$RPKG_DRENDERER_VERSION.zip *
 
 cd ..
 rm -rf temp
+
+echo "Package creation complete.  Contents of $GCCSDK_RISCPKG:"
+ls -l $GCCSDK_RISCPKG
