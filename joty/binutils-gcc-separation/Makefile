@@ -51,6 +51,7 @@ GCC_CONFIG_ARGS += --enable-interwork --disable-nls
 NEWLIB_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-shared --disable-nls
 GDB_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-werror --disable-nls
 # For debugging:
+# FIXME: add to GCC_BUILD_FLAGS for optimized ARM libraries: CFLAGS_FOR_TARGET="-O3 -march=armv5" CXXFLAGS_FOR_TARGET="-O3 -march=armv5"
 GCC_BUILD_FLAGS = CFLAGS="-O0 -g" LIBCFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g"
 
 # Environment variable needed during building:
