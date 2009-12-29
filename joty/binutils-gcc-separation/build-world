@@ -1,5 +1,18 @@
 #!/bin/bash -e
 
+cd `dirname $0`
+
+. setup-gccsdk-params
+
+for tool in \
+  gcc make libtool automake-1.9 autogen patch makeinfo ; do
+
+  if ! type $tool >/dev/null 2>&1 ; then
+    echo "'$tool' couldn't be found.  This needs to be installed for GCCSDK".
+    exit 1
+  fi
+done
+
 function error_handler {
   echo ""
   echo "Looks like the build failed.  You might want to check out the README for what to do now."
@@ -12,32 +25,7 @@ function error_handler {
 
 trap error_handler ERR
 
-
-GCCSDK_ROOT=`pwd`
-
-for tool in \
-  gcc make libtool automake-1.9 autogen patch makeinfo ; do
-
-  if ! type $tool >/dev/null 2>&1 ; then
-    echo "'$tool' couldn't be found.  This needs to be installed for GCCSDK".
-    exit 1
-  fi
-done
-
-
-. setup-gccsdk-params
-
-if ! [ -e orig.gcc ] ; then
-  ./download-gcc-binutils gcc
-fi
-
-if ! [ -e orig.binutils ] ; then
-  ./download-gcc-binutils binutils
-fi
-
-./create-srcdir
-
-./build-it 2>&1 | tee build-cross-output.txt
+make 2>&1 | tee build-cross-output.txt
 
 ./install-env
 

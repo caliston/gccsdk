@@ -1,10 +1,13 @@
+pushd `dirname $0` > /dev/null
+GCCSDK_ROOT=`pwd`
+popd > /dev/null
 
-if [ -n "$GCCSDK_ROOT" ] ; then
-  params=$GCCSDK_ROOT/gccsdk-params
-else
-  params=$(dirname $0)/gccsdk-params
+if [ -z "$GCCSDK_ROOT" ] || [ ! -d $GCCSDK_ROOT ] ; then
+  echo \$GCCSDK_ROOT is wrongly defined \(being \'$GCCSDK_ROOT\'\)
+  return 1
 fi
 
+params=$(dirname $0)/gccsdk-params
 if [ -e "$params" ] ; then
   . $params
 else
@@ -23,11 +26,6 @@ else
   echo ""
   cat $params
   echo ""
-  exit 0
-fi
-
-if [ -z "$GCCSDK_ROOT" ] || [ ! -d $GCCSDK_ROOT ] ; then
-  echo \$GCCSDK_ROOT is wrongly defined \(being \'$GCCSDK_ROOT\'\)
   return 1
 fi
 
