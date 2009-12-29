@@ -18,6 +18,15 @@ GCC_VERSION=4.1.1
 NEWLIB_VERSION=1.17.0
 GDB_VERSION=6.8
 
+# FIXME: invoke riscos/build-it somehow
+
+# Notes:
+#   1) --with-cross-host is needed to correctly find the target libraries in
+#      $GCCSDK_{CROSS|RISCOS}_PREFIX/arm-unknown-riscos/lib instead of
+#      $GCCSDK_{CROSS|RISCOS}_PREFIX/lib.
+#   2) Configure options are explained at http://gcc.gnu.org/install/configure.html
+#      but note that this explanation is for the latest gcc version released and
+#      not necessary the gcc version we're building here.
 ifeq ($(TARGET),arm-unknown-riscos)
 # Case GCCSDK arm-unknown-riscos target:
 GCC_CONFIG_ARGS := \
@@ -58,6 +67,7 @@ GCC_BUILD_FLAGS = CFLAGS="-O0 -g" LIBCFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g"
 export LTCONFIG_VERSION=1.4a-GCC3.0
 
 ROOT := $(shell pwd)
+# FIXME: PREFIX_CROSS needs to take $GCCSDK_INSTALL_CROSSBIN/bin instead
 PREFIX_CROSS := $(ROOT)/cross
 PREFIX_RONATIVE := $(ROOT)/release-area/full/\!GCC
 BUILDDIR := $(ROOT)/builddir
