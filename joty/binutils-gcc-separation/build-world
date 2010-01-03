@@ -2,10 +2,8 @@
 
 cd `dirname $0`
 
-. setup-gccsdk-params
-
 for tool in \
-  gcc make libtool automake-1.9 autogen patch makeinfo ; do
+  gcc make libtool autogen patch makeinfo ; do
 
   if ! type $tool >/dev/null 2>&1 ; then
     echo "'$tool' couldn't be found.  This needs to be installed for GCCSDK".

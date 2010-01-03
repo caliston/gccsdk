@@ -60,6 +60,7 @@ for param in $@ ; do
   esac
 done
 
+GCCSDK_TARGET_NAME=arm-unknown-riscos
 if [ "$GCCSDK_BUILD_ACTION" == "" ] || [ "$GCCSDK_BUILD_ACTION" == "cross" ] ; then
   # Build binaries suited for cross-compilation
   GCCSDK_BUILDDIR=$GCCSDK_BUILDDIR/cross
@@ -67,6 +68,10 @@ if [ "$GCCSDK_BUILD_ACTION" == "" ] || [ "$GCCSDK_BUILD_ACTION" == "cross" ] ; t
   GCCSDK_CONFIGURE_ARGS="--target=$GCCSDK_TARGET_NAME"
 elif [ "$GCCSDK_BUILD_ACTION" == "riscos" ] ; then
   # Build binaries suites for native RISC OS usage
+  GCCSDK_RISCOS_GCCPREFIX=$GCCSDK_RISCOS_PREFIX/\!GCC
+  GCCSDK_RISCOS_DSOPREFIX=$GCCSDK_RISCOS_PREFIX/\!SharedLibs
+  GCCSDK_RISCOS_SYSTEMPREFIX=$GCCSDK_RISCOS_PREFIX/system
+
   GCCSDK_BUILDDIR=$GCCSDK_BUILDDIR/ronative
   GCCSDK_PREFIX=$GCCSDK_RISCOS_GCCPREFIX
   GCCSDK_CONFIGURE_ARGS="--build=`$GCCSDK_SRCDIR/binutils/config.guess` --host=$GCCSDK_TARGET_NAME --target=$GCCSDK_TARGET_NAME"
