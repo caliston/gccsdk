@@ -16,7 +16,7 @@ function error_handler {
   echo "Looks like the build failed.  You might want to check out the README for what to do now."
   echo ""
   echo "If 'build-cross-output.txt' exists, this will contain a record of the failure.  You can send the end of it to the GCCSDK mailing list for help."
-  echo "Once you fix the problem, you can simply run this script again."
+  echo "Once you fix the problem, you can simply run this script again.  Note doing this will overwrite 'build-cross-output.txt' log file."
   echo ""
   exit 1
 }
@@ -24,6 +24,7 @@ function error_handler {
 trap error_handler ERR
 
 make 2>&1 | tee build-cross-output.txt
+test ${PIPESTATUS[0]} -ne 0 && error_handler
 
 ./install-env
 
