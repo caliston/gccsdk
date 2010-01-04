@@ -3,7 +3,7 @@
 cd `dirname $0`
 
 for tool in \
-  gcc make libtool autogen patch makeinfo ; do
+  gcc make m4 autoconf libtool bison autogen patch makeinfo wget ; do
 
   if ! type $tool >/dev/null 2>&1 ; then
     echo "'$tool' couldn't be found.  This needs to be installed for GCCSDK".
