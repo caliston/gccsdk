@@ -13,11 +13,14 @@ params=$GCCSDK_ROOT/gccsdk-params
 if [ -e "$params" ] ; then
   . $params
 else
+  # Used to be /home/riscos
+  work_dir=`dirname $GCCSDK_ROOT`
+
   echo "# -- Following section is user configurable:" > $params
   echo "# This is where the cross compiler will be installed.  It needs to end in 'bin'." >> $params
-  echo "export GCCSDK_INSTALL_CROSSBIN=/home/riscos/cross/bin" >> $params
+  echo "export GCCSDK_INSTALL_CROSSBIN=$work_dir/cross/bin" >> $params
   echo "# This is where the porting tools and any libraries you build will be installed."  >> $params
-  echo "export GCCSDK_INSTALL_ENV=/home/riscos/env" >> $params
+  echo "export GCCSDK_INSTALL_ENV=$work_dir/env" >> $params
   echo "" >> $params
   echo "# -- Do not change following section:" >> $params
   echo "# Required by the build." >> $params

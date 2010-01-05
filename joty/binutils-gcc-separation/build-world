@@ -21,6 +21,8 @@ function error_handler {
   exit 1
 }
 
+. ./setup-gccsdk-params
+
 trap error_handler ERR
 
 make 2>&1 | tee build-cross-output.txt
