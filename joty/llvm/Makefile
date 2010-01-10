@@ -1,9 +1,16 @@
-# Makefile building llvm world:
+# Makefile building llvm world (experimental)
+# Written by John Tytgat <John.Tytgat@aaug.net>
 
 TARGET := arm-unknown-eabi
 
 ROOT := $(shell pwd)
 PREFIX := $(ROOT)/install
+
+# In order to get access to gcc (for assembling & linking) and libunixlib (runtime headers/lib):
+# FIXME: this is a gross hack:
+GCCSDK_PREFIX := $(GCCSDK_INSTALL_CROSSBIN)/..
+TARGET_RT_INCLUDE := $(GCCSDK_PREFIX)/arm-unknown-riscos/include/libunixlib/
+TARGET_GCC := $(GCCSDK_PREFIX)/bin/arm-unknown-riscos-gcc
 
 SRCDIR := $(ROOT)/src
 SRCDIR_BINUTILS := $(SRCDIR)/binutils
@@ -18,7 +25,7 @@ BUILDDIR_LLVMCLANG := $(BUILDDIR)/llvm-clang
 BUILDDIR_LLVMGCC := $(BUILDDIR)/llvm-gcc
 BUILDSTEPSDIR := $(ROOT)/buildsteps
 
-BINUTILS_VERSION := binutils-2.19.1
+BINUTILS_VERSION := binutils-2.20
 
 BINUTILS_CONFIGURE_ARGS := --enable-interwork --disable-multilib --disable-shared --disable-werror --with-gcc --disable-nls
 GCC_CONFIGURE_ARGS := --disable-threads --with-newlib --enable-interwork --disable-multilib --disable-shared --disable-nls
@@ -62,15 +69,19 @@ $(BUILDSTEPSDIR)/buildstep-llvm-buildit: $(BUILDSTEPSDIR)/buildstep-llvm-configu
 # --- clang:
 
 # Configure clang:
+# FIXME: current no opt:  --enable-optimized
 $(BUILDSTEPSDIR)/buildstep-clang-configure: $(BUILDSTEPSDIR)/buildstep-binutils-cross-buildit
 	-rm -rf $(BUILDDIR_LLVMCLANG)
 	mkdir -p $(BUILDDIR_LLVMCLANG)
-	cd $(BUILDDIR_LLVMCLANG) && $(SRCDIR_LLVMCLANG)/configure --prefix=$(PREFIX) --target=$(TARGET) --enable-assertions --enable-targets=arm
+	cd $(BUILDDIR_LLVMCLANG) && $(SRCDIR_LLVMCLANG)/configure --prefix=$(PREFIX) --target=$(TARGET) --enable-assertions --enable-targets=arm --with-c-include-dirs=$(TARGET_RT_INCLUDE)
 	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildstep-clang-configure
 
 # Build clang:
 $(BUILDSTEPSDIR)/buildstep-clang-buildit: $(BUILDSTEPSDIR)/buildstep-clang-configure
+	mkdir -p $(PREFIX)/bin
+	if [ ! -f $(PREFIX)/bin/gcc ] ; then ln -s $(TARGET_GCC) $(PREFIX)/bin/gcc ; fi
 	cd $(BUILDDIR_LLVMCLANG) && make
+	cd $(BUILDDIR_LLVMCLANG) && make install
 	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildstep-clang-buildit
 
 # --- llvm-gcc:
