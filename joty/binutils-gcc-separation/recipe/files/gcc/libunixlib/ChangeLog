@@ -1,3 +1,95 @@
+Sat Jan  9 20:22:18 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* stdlib/system.c(system): Avoid store which is never going to be
+	read.
+	* stdlib/msort.c(qsort_r): Likewise.
+	* stdio/fpos.c(fseek): Likewise.
+	* unix/features.c(env): Likewise.
+	* unix/unix.c(__unixinit): Likewise.
+	* signal/post.c(post_signal): Likewise.
+	* termios/termcap.c(t_tgetnam): Likewise.
+	* common/unixify.c(__unixify): Likewise.
+	* stdio/popen.c(__pexec): Avoid NULL dereference.
+	* unix/dirent.c(scandir): Likewise.
+	* pthread/key.c(pthread_key_create): Likewise.
+	* common/serial.c(__get_file_ino): Likewise.
+	* time/clk_gettime.c(clock_gettime): case CLOCK_REALTIME, tv_nsec is
+	no longer garbage.
+	* unix/putenv.c(putenv): strncpy() -> memcpy() micro-optimisation.
+	* time/stdtime.c(__standard_time): Avoid pointless ptr arithmetic.
+	* include/wchar.h: Upgrade with glibc 2.11 version.
+	* include/wctypes.h: Likewise.
+	* include/sys/cdefs.h: Likewise.
+	* include/features.h: Likewise.
+	* include/features.h: Likewise.
+	* include/bits/wchar.h: Add glibc 2.11 version.
+	* include/bits/wordsize.h: Likewise.
+	* include/stdio.h(__FILE): Typedef.
+	* wchar/mbsinit.c(mbsinit): Follow wchar.h/wctypes.h header changes.
+	* wchar/wcwidth.c(wcwidth): Likewise.
+	* wchar/wctype.c(towupper,towlower): Likewise.
+	* wchar/mbrtowc.c(mbrtowc): Likewise.
+	* incl-local/sys/cdefs.h: Follow sys/cdef.h changes.
+	* pwd/getpwnam_r.c(getpwnam_r): Avoid 1 line if statements.
+	* incl-local/internal/os.h(__ul_seterr): It is allowed to call this
+	with NULL argument.
+
+Thu Jan  7 13:47:15 PST 2010  Peter Naulls  <peter@chocky.org>
+
+	* pwd/getpwnam_r.c(getpwnam_r): Return values weren't being properly
+	  set in default case.  Rewrite to do what man page says.
+
+Thu Jan  7 21:54:12 2010  Lee Noar  <leenoar@sky.com>
+
+	* Generally:
+	Ideally we want to remove the need for pthread_call_every to
+	access the task address space in order to validate it and 
+	decide whether to continue setting the callback or not. Once
+	pthread_call_every knows that it has the right task it is free
+	to access its variables.
+	Previously, the GOT pointer was passed around the interrupt
+	functions in r12 and used to access __ul_global to retrieve
+	the SUL upcall handler address and r12 value, however, despite
+	the WimpPoll filters, this was still prone to crashes in
+	pthread_call_every (especially in the shared library).
+	To overcome this, a small block of RMA is allocated during
+	initialisation containing the SUL upcall handler address, r12
+	value and in the case of the shared library, UnixLib's GOT.
+	These remain constant throughout the life of the program. A
+	pointer to this RMA block is instead passed to the interrupt
+	routines, in r12, allowing pthread_call_every safe access to
+	the data it needs to make a decision on whether it has the right
+	task.
+
+	* Specifically:
+	* pthread/_context.s(__pthread_start_ticker): Move filter name
+	copy to initialisation function - we only need to do this once,
+	and it will reduce RMA fragmentation.
+	(pthread_call_every): Use upcall address and r12 value in RMA
+	block passed in r12 to determine if we have the correct task.
+	Generally ensure pointer to RMA block is passed to interrupt
+	routines and change code where necessary to use GOT from RMA
+	block.
+	* unix/unix.c(_exit): Slightly more work to do when shutting down
+	pthreads, so call a function instead.
+	* pthread/pthinit.c(__pthread_prog_init): Allocate a small block
+	of RMA to hold items of data that remain constant over the life of
+	the program. A pointer to this block will be passed to
+	pthread_call_every in r12.
+	(__pthread_prog_fini): New function to close down pthreads, ie,
+	stop timers and free RMA block. Called by _exit as mentioned above.
+	* incl-local/internal/unix.h(ul_global): Add pthread_callevery_rma
+	member.
+	* incl-local/internal/asm_dec.s: Define GBL_PTH_CALLEVERY_RMA.
+	* incl-local/pthread.h(__pthread_callevery_block): Declare new
+	structure to define layout of RMA block as passed to
+	pthread_call_every.
+	* sys/_syslib.s(__ul_global): Add pthread_callevery_rma.
+
+Wed Jan  6 00:24:46 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* vscript(__write_backtrace): Export symbol as it is public API.
+
 Sat Jan  2 18:15:54 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 	* stdio/newstream.c(__newstream): Zero reinitialisation is not needed.
