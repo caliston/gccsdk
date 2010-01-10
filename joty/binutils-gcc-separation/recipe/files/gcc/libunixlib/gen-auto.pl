@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Create UnixLib Makefile.am and include/unixlib/stubs.h.
-# Copyright (c) 2005-2009 UnixLib developers
+# Copyright (c) 2005-2010 UnixLib developers
 
 use File::Basename;
 $sourceunixlibtree = dirname($0);

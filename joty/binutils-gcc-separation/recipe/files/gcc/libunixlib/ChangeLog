@@ -1,3 +1,7 @@
+John Tytgat  <John.Tytgat@aaug.net>
+
+	* gen-auto.pl: Get rid of GCCSDK_SRCDIR.
+
 Sat Jan  9 20:22:18 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 	* stdlib/system.c(system): Avoid store which is never going to be
