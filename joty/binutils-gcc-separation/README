@@ -118,15 +118,19 @@ simple name convention: <type>-<subtype>
 
 Following <type> values are in use:
 
-  cross    : Build & installation of that part of cross-compiler is done.
-             Parts are 'binutils', 'gcc-bootstrap' and 'gcc-full'.
-  ronative : Build & installation of that part of the RISC OS native compiler
-             is done.  Parts are 'binutils' and 'gcc-full'.
-  src      : Source downloaded in srcdir.orig directory.  Those sources are
-             binutils, gcc, autoconf & automake (possibly different versions
-             for binutils and gcc).
-  tool     : Build & installed tool needed during the build.  Thost tools are
-             currently autoconf and automake.
+  cross     : Build & installation of that part of cross-compiler is done.
+              Parts are 'binutils', 'gcc-bootstrap' and 'gcc-full'.
+  ronative  : Build & installation of that part of the RISC OS native compiler
+              is done.  Parts are 'binutils' and 'gcc-full'.
+  src       : Source downloaded in srcdir.orig directory.  Those sources are
+              binutils, gcc, autoconf & automake (possibly different versions
+              for binutils and gcc).
+  tool      : Build & installed tool needed during the build.  Thost tools are
+              currently autoconf and automake.
+  clean     : Removes temporary build produced files but not the installed
+              compiler.
+  distclean : Removes temporary build produced files including the installed
+              compiler.
 
 The 'make' command will always fully rebuild the next uncompleted step even if
 that step was nearly done (nothing will be reused of that step).  If you
