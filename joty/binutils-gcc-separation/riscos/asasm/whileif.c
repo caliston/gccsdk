@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1997 Darren Salt
- * Copyright (c) 2000-2008 GCCSDK Developers
+ * Copyright (c) 2000-2010 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,9 +43,6 @@
 #include "value.h"
 #include "whileif.h"
 
-int if_depth = 0;
-WhileBlock *whileCurrent = NULL;
-
 static BOOL ignore_else = FALSE;
 
 static void if_skip (const char *onerror);
@@ -56,7 +53,6 @@ static BOOL whileReEval (void);
 static void
 if_skip (const char *onerror)
 {
-  char *str;
   int c;
   int nested = 0;
   int tmp_inputExpand = inputExpand;
@@ -66,7 +62,7 @@ if_skip (const char *onerror)
       if (inputLook () && !isspace (c = inputGet ()))
 	{
 	  char del = c == '|' ? c : 0;
-	  str = inputSymbol (&c, del);
+	  inputSymbol (&c, del);
 	  if (del && inputLook () == del)
 	    inputSkip ();
 	}
@@ -88,7 +84,7 @@ if_skip (const char *onerror)
 	  nested++;
 	}
     }
-  error (ErrorSerious, TRUE, onerror);
+  error (ErrorError, "%s", onerror);
   inputExpand = tmp_inputExpand;
   return;
 
@@ -102,16 +98,13 @@ skipped:
 void
 c_if (void)
 {
-  Value flag;
-  if_depth++;
-/*  if (label->tag!=LexNone)
- *   error(ErrorWarning,TRUE,"Label not allowed with [ - ignored"); */
+  gCurPObjP->if_depth++;
+
   exprBuild ();
-  flag = exprEval (ValueBool);
+  Value flag = exprEval (ValueBool);
   if (flag.Tag.t != ValueBool)
     {
-      error (ErrorError, TRUE,
-	     "IF expression must be boolean (treating as TRUE)");
+      error (ErrorError, "IF expression must be boolean (treating as TRUE)");
       return;
     }
   if (!flag.ValueBool.b)
@@ -120,13 +113,13 @@ c_if (void)
 
 
 void
-c_else (Lex * label)
+c_else (Lex *label)
 {
-  if (!if_depth)
-    error (ErrorSerious, TRUE, "Mismatched |");
+  if (!gCurPObjP->if_depth)
+    error (ErrorError, "Mismatched |");
   if (label->tag != LexNone)
     {
-      error (ErrorError, TRUE, "Label not allowed with |");
+      error (ErrorError, "Label not allowed with |");
       ignore_else = FALSE;
       return;
     }
@@ -137,14 +130,14 @@ c_else (Lex * label)
 
 
 void
-c_endif (Lex * label)
+c_endif (Lex *label)
 {
-  if (!if_depth)
-    error (ErrorSerious, TRUE, "Mismatched ]");
+  if (!gCurPObjP->if_depth)
+    errorAbort ("Mismatched ]");
   else
-    if_depth--;
+    gCurPObjP->if_depth--;
   if (label->tag != LexNone)
-    error (ErrorError, TRUE, "Label not allowed with ]");
+    error (ErrorError, "Label not allowed with ]");
   ignore_else = FALSE;
 }
 
@@ -152,58 +145,55 @@ c_endif (Lex * label)
 static void
 while_skip (void)
 {
-  char *str;
-  int c;
   int nested = 0;
   while (inputNextLine ())
     {
       if (inputLook () && !isspace (inputGet ()))
-	str = inputSymbol (&c, 0);
+	{
+	  int c;
+	  inputSymbol (&c, 0);
+	}
       skipblanks ();
       if (inputGetLower () == 'w')
 	{
 	  switch (inputGetLower ())
 	    {
-	    case 'h':		/* WHILE? */
-	      if (!(notinput ("ile") || (inputLook () && !isspace (inputGet ()))))
-		nested++;
-	      break;
-	    case 'e':		/* WEND? */
-	      if (!(notinput ("nd") || (inputLook () && !isspace (inputGet ()))))
-		if (nested-- == 0)
+	      case 'h':		/* WHILE? */
+		if (!(notinput ("ile") || (inputLook () && !isspace (inputGet ()))))
+		  nested++;
+		break;
+	      case 'e':		/* WEND? */
+		if (!(notinput ("nd") || (inputLook () && !isspace (inputGet ())))
+		    && nested-- == 0)
 		  return;
+	        break;
 	    }
 	}
       skiprest ();
     }
-  error (ErrorSerious, TRUE, "Missing WEND");
+  error (ErrorError, "Missing WEND");
 }
 
 
 
 void
-c_while (Lex * label)
+c_while (Lex *label)
 {
-  WhileBlock *whileNew;
-  Value flag;
-
   label = label;
 
   inputMark ();
   /* Evaluate expression */
   exprBuild ();
-  flag = exprEval (ValueBool);
+  Value flag = exprEval (ValueBool);
   if (flag.Tag.t != ValueBool)
     {
-      error (ErrorError, TRUE,
-	     "WHILE expression must be boolean (treating as FALSE)");
+      error (ErrorError, "WHILE expression must be boolean (treating as FALSE)");
       while_skip ();
       return;
     }
   if (!exprNotConst)
     {
-      error (ErrorError, TRUE,
-	     "WHILE expression is constant (treating as FALSE)");
+      error (ErrorError, "WHILE expression is constant (treating as FALSE)");
       while_skip ();
       return;
     }
@@ -215,42 +205,37 @@ c_while (Lex * label)
       while_skip ();
       return;
     }
+
+  WhileBlock *whileNew;
   if ((whileNew = malloc (sizeof (WhileBlock))) == NULL)
-    {
-    nomem:
-      errorOutOfMem ("c_while");
-      return;
-    }
+    errorOutOfMem ();
   /* Copy expression */
   inputRollback ();
   if ((whileNew->expr = strdup (inputRest ())) == NULL)
-    {
-      free (whileNew);
-      goto nomem;
-    }
+    errorOutOfMem ();
   /* Put on stack */
-  whileNew->prev = whileCurrent;
-  whileNew->lineno = inputLineNo;
-  if (macroCurrent)
+  whileNew->prev = gCurPObjP->whilestack;
+  whileNew->lineno = gCurPObjP->lineNum;
+  switch (gCurPObjP->type)
     {
-      whileNew->tag = WhileInMacro;
-      whileNew->ptr.macro.callno = macroCurrentCallNo;
-      whileNew->ptr.macro.offset = macroPtr;
+      case POType_eMacro:
+	whileNew->tag = WhileInMacro;
+	whileNew->ptr.macro.offset = gCurPObjP->d.macro.curPtr;
+	break;
+      case POType_eFile:
+	whileNew->tag = WhileInFile;
+	whileNew->ptr.file.offset = ftell (gCurPObjP->d.file.fhandle);
+	break;
     }
-  else
-    {
-      whileNew->tag = WhileInFile;
-      whileNew->ptr.file.offset = ftell (asmfile);
-    }
-  whileCurrent = whileNew;
+  gCurPObjP->whilestack = whileNew;
 }
 
 
 static void
 whileFree (void)
 {
-  WhileBlock *p = whileCurrent;
-  whileCurrent = p->prev;
+  WhileBlock *p = gCurPObjP->whilestack;
+  gCurPObjP->whilestack = p->prev;
   free ((void *)p->expr);
   free (p);
 }
@@ -259,76 +244,76 @@ whileFree (void)
 static BOOL
 whileReEval (void)
 {
-  Value flag;
-
-  inputThisInstead (whileCurrent->expr);
+  inputThisInstead (gCurPObjP->whilestack->expr);
   exprBuild ();
-  flag = exprEval (ValueBool);
+  Value flag = exprEval (ValueBool);
   if (flag.Tag.t != ValueBool)
     {
-      error (ErrorError, TRUE,
-	     "WHILE expression must be boolean (treating as FALSE)");
+      error (ErrorError, "WHILE expression must be boolean (treating as FALSE)");
       return FALSE;
     }
 #ifdef DEBUG
   printf("whileReEval() : expr is <%s>\n", flag.ValueBool.b ? "TRUE" : "FALSE");
 #endif
   if (flag.ValueBool.b)
-    switch (whileCurrent->tag)
-      {
-      case WhileInFile:
-	fseek (asmfile, whileCurrent->ptr.file.offset, SEEK_SET);
-	inputLineNo = whileCurrent->lineno;
-	return TRUE;
-      case WhileInMacro:
-	macroPtr = whileCurrent->ptr.macro.offset;
-	inputLineNo = whileCurrent->lineno;
-	return TRUE;
-      default:
-	error (ErrorError, TRUE, "Internal whileReEval: unrecognised WHILE type");
-	break;
-      }
+    {
+      switch (gCurPObjP->whilestack->tag)
+	{
+	  case WhileInFile:
+	    fseek (gCurPObjP->d.file.fhandle, gCurPObjP->whilestack->ptr.file.offset, SEEK_SET);
+	    gCurPObjP->lineNum = gCurPObjP->whilestack->lineno;
+	    return TRUE;
+	  case WhileInMacro:
+	    gCurPObjP->d.macro.curPtr = gCurPObjP->whilestack->ptr.macro.offset;
+	    gCurPObjP->lineNum = gCurPObjP->whilestack->lineno;
+	    return TRUE;
+	  default:
+	    errorAbort ("Internal whileReEval: unrecognised WHILE type");
+	    break;
+	}
+    }
   return FALSE;
 }
 
 
 void
-c_wend (Lex * label)
+c_wend (Lex *label)
 {
   label = label;
 
-  if (!whileCurrent)
+  if (!gCurPObjP->whilestack)
     {
-      error (ErrorError, TRUE, "Mismatched WEND");
+      error (ErrorError, "Mismatched WEND");
       return;
     }
-  switch (whileCurrent->tag)
+  switch (gCurPObjP->whilestack->tag)
     {
-    case WhileInFile:
-    case WhileInMacro:
-      if (whileReEval ())
-	return;
-      break;
-    default:
-      error (ErrorError, TRUE, "Internal c_wend: unrecognised WHILE type");
-      break;
+      case WhileInFile:
+      case WhileInMacro:
+	if (whileReEval ())
+	  return;
+	break;
+      default:
+	errorAbort ("Internal c_wend: unrecognised WHILE type");
+	break;
     }
   whileFree ();
 }
 
 
 void
-testUnmatched (void)
+FS_PopIfWhile (bool noCheck)
 {
-  if (if_depth)
+  if (gCurPObjP->if_depth)
     {
-      error (ErrorSerious, TRUE, "Unmatched IF%s", "s" + (if_depth > 1));
-      if_depth = 0;
+      if (!noCheck)
+	errorAbort ("Unmatched IF%s", "s" + (gCurPObjP->if_depth > 1));
+      gCurPObjP->if_depth = 0;
     }
 
   int i;
-  for (i = 0; whileCurrent != NULL; ++i)
+  for (i = 0; gCurPObjP->whilestack != NULL; ++i)
     whileFree ();
-  if (i)
-    error (ErrorSerious, TRUE, "Unmatched WHILE%s", "s" + (i > 1));
+  if (i && !noCheck)
+    errorAbort ("Unmatched WHILE%s", "s" + (i > 1));
 }

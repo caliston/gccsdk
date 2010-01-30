@@ -2,7 +2,7 @@
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
  * Copyright (c) 1997 Nick Burrett
- * Copyright (c) 2000-2008 GCCSDK Developers
+ * Copyright (c) 2000-2010 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -48,10 +48,6 @@
 #if !defined(__TARGET_SCL__)
 #  include <ctype.h>
 #  include <errno.h>
-#endif
-
-#ifdef __riscos__
-#  include "depend.h"
 #endif
 
 static FILE *objfile;
@@ -121,15 +117,11 @@ outputInit (const char *outfile)
       if ((objfile = fopen (outname, "wb")) == NULL)
 	{
 #if !defined(__TARGET_SCL__)
-	  error (ErrorAbort, FALSE, PACKAGE_NAME " can't write %s: %s",
-		 outname, strerror (errno));
+	  errorAbort (PACKAGE_NAME " can't write %s: %s", outname, strerror (errno));
 #else
-	  error (ErrorAbort, FALSE, PACKAGE_NAME " can't write %s", outname);
+	  errorAbort (PACKAGE_NAME " can't write %s", outname);
 #endif
 	}
-#ifdef __riscos__
-      dependOpen (outname);
-#endif
     }
   else
     {
@@ -160,6 +152,8 @@ outputFinish (void)
       }
 #endif
     }
+  if (outname[0])
+    dependWrite (outname);
 }
 
 void
@@ -248,8 +242,7 @@ outputAof (void)
 
   if (written != (sizeof (chunk_header) + 5 * sizeof (chunk_entry)))
     {
-      errorLine (0, NULL, ErrorSerious, FALSE,
-		 "Internal outputAof: error when writing chunk file header");
+      errorAbortLine (0, NULL, "Internal outputAof: error when writing chunk file header");
       return;
     }
 
@@ -263,8 +256,7 @@ outputAof (void)
       aof_entry.Size = armword (FIX (ap->value.ValueInt.i));
       aof_entry.noRelocations = armword(ap->area.info->norelocs);
       if (aof_entry.noRelocations != 0 && !AREA_IMAGE (ap->area.info))
-	errorLine (0, NULL, ErrorSerious, FALSE,
-		   "Internal outputAof: relocations in uninitialised area");
+	errorAbortLine (0, NULL, "Internal outputAof: relocations in uninitialised area");
       aof_entry.Unused = 0;
       fwrite (&aof_entry, 1, sizeof (aof_entry), objfile);
     }
@@ -272,16 +264,14 @@ outputAof (void)
 /******** Chunk 1 Identification *********/
   if (idfn_size != fwrite (GET_IDFN, 1, idfn_size, objfile))
     {
-      errorLine (0, NULL, ErrorSerious, FALSE,
-		 "Internal outputAof: error when writing identification");
+      errorAbortLine (0, NULL, "Internal outputAof: error when writing identification");
       return;
     }
 /******** Chunk 2 String Table ***********/
   unsigned int strt_size = armword(stringSizeNeeded + 4);
   if (fwrite (&strt_size, 1, 4, objfile) != sizeof (strt_size))
     {
-      errorLine (0, NULL, ErrorSerious, FALSE,
-		 "Internal outputAof: error when writing string table size");
+      errorAbortLine (0, NULL, "Internal outputAof: error when writing string table size");
       return;
     }
   symbolStringOutput (objfile);
@@ -299,8 +289,7 @@ outputAof (void)
 	  if ((size_t)ap->value.ValueInt.i !=
 	      fwrite (ap->area.info->image, 1, ap->value.ValueInt.i, objfile))
 	    {
-	      errorLine (0, NULL, ErrorSerious, FALSE,
-		"Internal outputAof: error when writing %s image", ap->str);
+	      errorAbortLine (0, NULL, "Internal outputAof: error when writing %s image", ap->str);
 	      return;
 	    }
 	  /* Word align the written area.  */
@@ -324,7 +313,7 @@ countRels (Symbol * ap)
   return i;
 }
 
-static int
+static void
 writeElfSH (int nmoffset, int type, int flags, int size,
             int link, int info, int addralign, int entsize, int *offset)
 {
@@ -342,7 +331,8 @@ writeElfSH (int nmoffset, int type, int flags, int size,
   sect_hdr.sh_entsize = entsize;
   if (type != SHT_NOBITS)
     *offset += size;
-  return fwrite (&sect_hdr, 1, sizeof (sect_hdr), objfile);
+  if (fwrite (&sect_hdr, sizeof (sect_hdr), 1, objfile) != 1)
+    errorAbortLine (0, NULL, "Internal writeElfSH: error when writing chunk file header");
 }
 
 void
@@ -350,13 +340,12 @@ outputElf (void)
 {
   int noareas = countAreas ();
   int norels;
-  int written, offset, obj_area_size, pad, strsize;
+  int offset, pad, strsize;
   int elfIndex, nsyms, shstrsize;
   int i, sectionSize, sectionType;
   Symbol *ap;
 
   /* We must call relocFix() before anything else.  */
-  obj_area_size = 0;
   for (ap = areaHeadSymbol; ap != NULL; ap = ap->area.info->next)
     ap->area.info->norelocs = relocFix (ap);
   norels = countRels(areaHeadSymbol);
@@ -396,29 +385,27 @@ outputElf (void)
       elf_head.e_shnum = (noareas + norels) + 4;
       elf_head.e_shstrndx = (noareas + norels) + 3;
       
-      written = fwrite (&elf_head, 1, sizeof (elf_head), objfile);
+      fwrite (&elf_head, 1, sizeof (elf_head), objfile);
       
       offset = sizeof (elf_head) + elf_head.e_shnum * sizeof (Elf32_Shdr);
     }
   shstrsize = 0;
   
   /* Section headers - index 0 */
-  written += writeElfSH(shstrsize, SHT_NULL, 0, 0, SHN_UNDEF, 0, 0, 0, &offset);
+  writeElfSH(shstrsize, SHT_NULL, 0, 0, SHN_UNDEF, 0, 0, 0, &offset);
   shstrsize += 1; /* Null */
 
   /* Symbol table - index 1 */
   int stringSizeNeeded;
   nsyms = symbolFix(&stringSizeNeeded);
-  written += writeElfSH(shstrsize, SHT_SYMTAB, 0,
-                        (nsyms + 1) * sizeof (Elf32_Sym),
-                        2, 0, 4, sizeof (Elf32_Sym), &offset);
+  writeElfSH(shstrsize, SHT_SYMTAB, 0, (nsyms + 1) * sizeof (Elf32_Sym),
+	     2, 0, 4, sizeof (Elf32_Sym), &offset);
   shstrsize += 8; /* .symtab */
 
   strsize = stringSizeNeeded + 1; /* Add extra NUL terminator at start. */
 
   /* String table - index 2 */
-  written += writeElfSH(shstrsize, SHT_STRTAB, 0, FIX (strsize),
-                        0, 0, 1, 0, &offset);
+  writeElfSH(shstrsize, SHT_STRTAB, 0, FIX (strsize), 0, 0, 1, 0, &offset);
   shstrsize += 8; /* .strtab */
 
   /* Area headers - index 3 */
@@ -455,8 +442,7 @@ outputElf (void)
 
   /* Section head string table */
   shstrsize += 10; /* .shstrtab */
-  written += writeElfSH(shstrsize-10, SHT_STRTAB, 0, shstrsize, 0,
-                        0, 1, 0, &offset);
+  writeElfSH(shstrsize-10, SHT_STRTAB, 0, shstrsize, 0, 0, 1, 0, &offset);
 
   /* Write out the sections */
   /* Symbol table */
@@ -476,8 +462,7 @@ outputElf (void)
           if ((size_t)ap->value.ValueInt.i !=
               fwrite (ap->area.info->image, 1, ap->value.ValueInt.i, objfile))
             {
-              errorLine (0, NULL, ErrorSerious, FALSE,
-                "Internal outputElf: error when writing %s image", ap->str);
+              errorAbortLine (0, NULL, "Internal outputElf: error when writing %s image", ap->str);
               return;
             }
 	  /* Word align the written area.  */

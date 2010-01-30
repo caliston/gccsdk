@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2008 GCCSDK Developers
+ * Copyright (c) 2000-2010 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -37,6 +37,7 @@
 #include "code.h"
 #include "decode.h"
 #include "error.h"
+#include "filestack.h"
 #include "input.h"
 #include "lex.h"
 
@@ -48,7 +49,7 @@ assemble (void)
 {
   /* Read each line from the input into input.c:workBuff, if inputExpand is
      true, then expand the input line into where necessary.  */
-  while (inputNextLine ())
+  while (gCurPObjP != NULL && inputNextLine ())
     {
       Lex label;
       Symbol *symbol;
@@ -71,10 +72,7 @@ assemble (void)
 	}
       skipblanks ();
       if (!inputComment ())
-	{
-	  if (decode (&label))
-	    break;
-	}
+	decode (&label);
       else
 	asm_label (&label);
 
@@ -86,10 +84,10 @@ assemble (void)
 Symbol *
 asm_label (const Lex *label)
 {
-  Symbol *symbol;
   if (label->tag != LexId)
-    return 0;
-  symbol = symbolAdd (label);
+    return NULL;
+
+  Symbol *symbol = symbolAdd (label);
   if (areaCurrentSymbol)
     {
       symbol->value = valueLateToCode (areaCurrentSymbol->value.ValueInt.i,
