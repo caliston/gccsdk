@@ -238,7 +238,7 @@ buildstepsdir/src-autoconf-for-binutils: $(ORIGSRCDIR)/autoconf-$(AUTOCONF_FOR_B
 	-rm -rf $(ORIGSRCDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION) $(SRCDIR)/autoconf
 	cd $(ORIGSRCDIR) && tar xfj autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/autoconf-for-binutils
-	cp -T -r $(ORIGSRCDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION) $(SRCDIR)/autoconf-for-binutils
+	cp -T -p -r $(ORIGSRCDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION) $(SRCDIR)/autoconf-for-binutils
 	## cd $(SRCDIR)/autoconf-for-binutils && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 	-mkdir -p buildstepsdir
 	touch buildstepsdir/src-autoconf-for-binutils
@@ -248,7 +248,7 @@ buildstepsdir/src-automake-for-binutils: $(ORIGSRCDIR)/automake-$(AUTOMAKE_FOR_B
 	-rm -rf $(ORIGSRCDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION) $(SRCDIR)/automake
 	cd $(ORIGSRCDIR) && tar xfj automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/automake-for-binutils
-	cp -T -r $(ORIGSRCDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION) $(SRCDIR)/automake-for-binutils
+	cp -T -p -r $(ORIGSRCDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION) $(SRCDIR)/automake-for-binutils
 	## cd $(SRCDIR)/automake-for-binutils && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 	-mkdir -p buildstepsdir
 	touch buildstepsdir/src-automake-for-binutils
@@ -258,7 +258,7 @@ buildstepsdir/src-binutils: $(ORIGSRCDIR)/binutils-$(BINUTILS_VERSION).tar.bz2 b
 	-rm -rf $(ORIGSRCDIR)/binutils-$(BINUTILS_VERSION) $(SRCDIR)/binutils
 	cd $(ORIGSRCDIR) && tar xfj binutils-$(BINUTILS_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/binutils
-	cp -T -r $(ORIGSRCDIR)/binutils-$(BINUTILS_VERSION) $(SRCDIR)/binutils
+	cp -T -p -r $(ORIGSRCDIR)/binutils-$(BINUTILS_VERSION) $(SRCDIR)/binutils
 	cd $(SRCDIR)/binutils && PATH="$(PREFIX_BUILDTOOL_BINUTILS)/bin:$(PATH)" && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 	-mkdir -p buildstepsdir
 	touch buildstepsdir/src-binutils
@@ -268,7 +268,7 @@ buildstepsdir/src-autoconf-for-gcc: $(ORIGSRCDIR)/autoconf-$(AUTOCONF_FOR_GCC_VE
 	-rm -rf $(ORIGSRCDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION) $(SRCDIR)/autoconf
 	cd $(ORIGSRCDIR) && tar xfj autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/autoconf-for-gcc
-	cp -T -r $(ORIGSRCDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION) $(SRCDIR)/autoconf-for-gcc
+	cp -T -p -r $(ORIGSRCDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION) $(SRCDIR)/autoconf-for-gcc
 	## cd $(SRCDIR)/autoconf-for-gcc && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 	-mkdir -p buildstepsdir
 	touch buildstepsdir/src-autoconf-for-gcc
@@ -278,7 +278,7 @@ buildstepsdir/src-automake-for-gcc: $(ORIGSRCDIR)/automake-$(AUTOMAKE_FOR_GCC_VE
 	-rm -rf $(ORIGSRCDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION) $(SRCDIR)/automake
 	cd $(ORIGSRCDIR) && tar xfj automake-$(AUTOMAKE_FOR_GCC_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/automake-for-gcc
-	cp -T -r $(ORIGSRCDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION) $(SRCDIR)/automake-for-gcc
+	cp -T -p -r $(ORIGSRCDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION) $(SRCDIR)/automake-for-gcc
 	## cd $(SRCDIR)/automake-for-gcc && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 	-mkdir -p buildstepsdir
 	touch buildstepsdir/src-automake-for-gcc
@@ -288,7 +288,7 @@ buildstepsdir/src-gcc: $(ORIGSRCDIR)/gcc-$(GCC_VERSION).tar.bz2 buildstepsdir/to
 	-rm -rf $(ORIGSRCDIR)/gcc-$(GCC_VERSION) $(SRCDIR)/gcc
 	cd $(ORIGSRCDIR) && tar xfj gcc-$(GCC_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/gcc
-	cp -T -r $(ORIGSRCDIR)/gcc-$(GCC_VERSION) $(SRCDIR)/gcc
+	cp -T -p -r $(ORIGSRCDIR)/gcc-$(GCC_VERSION) $(SRCDIR)/gcc
 	cd $(SRCDIR)/gcc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 	-mkdir -p buildstepsdir
 	touch buildstepsdir/src-gcc
