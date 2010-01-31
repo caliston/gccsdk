@@ -117,7 +117,7 @@ $(SRCORIGDIR)/$(BINUTILS_VERSION).tar.bz2:
 $(BUILDSTEPSDIR)/buildstep-binutils-src: $(SRCORIGDIR)/$(BINUTILS_VERSION).tar.bz2
 	-rm -rf $(SRCORIGDIR)/$(BINUTILS_VERSION) $(SRCDIR_BINUTILS)
 	cd $(SRCORIGDIR) && tar xfj $(BINUTILS_VERSION).tar.bz2
-	cp -r $(SRCORIGDIR)/$(BINUTILS_VERSION) $(SRCDIR_BINUTILS)
+	cp -r -p $(SRCORIGDIR)/$(BINUTILS_VERSION) $(SRCDIR_BINUTILS)
 	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildstep-binutils-src
 
 # Configure binutils cross:
