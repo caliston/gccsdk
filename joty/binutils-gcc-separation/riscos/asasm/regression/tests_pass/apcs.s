@@ -1,2 +1,0 @@
-	GET	Hdr:<APCS>.Common
-
