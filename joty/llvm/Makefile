@@ -95,7 +95,7 @@ $(BUILDSTEPSDIR)/buildstep-llvm-gcc-configure: $(BUILDSTEPSDIR)/buildstep-binuti
 	-rm -rf $(BUILDDIR_LLVMGCC)
 	mkdir -p $(BUILDDIR_LLVMGCC)
 	if [ ! -h $(SRCDIR_LLVMGCC)/newlib ] ; then ln -s $(SRCDIR_NEWLIB)/newlib $(SRCDIR_LLVMGCC)/newlib ; fi
-	if [ ! -h $(SRCDIR_LLVMGCC)/libgloss ] ; then ln -s $(SRCDIR_NEWLIB)/newlib $(SRCDIR_LLVMGCC)/libgloss ; fi
+	if [ ! -h $(SRCDIR_LLVMGCC)/libgloss ] ; then ln -s $(SRCDIR_NEWLIB)/libgloss $(SRCDIR_LLVMGCC)/libgloss ; fi
 	cd $(BUILDDIR_LLVMGCC) && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR_LLVMGCC)/configure $(GCC_CONFIGURE_ARGS) $(CROSS_CONFIG_ARGS) --program-prefix=llvm- --enable-languages=c,c++ --without-headers --enable-checking --enable-llvm=$(BUILDDIR_LLVM)
 	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildstep-llvm-gcc-configure
 
@@ -141,7 +141,7 @@ $(SRCORIGDIR)/$(NEWLIB_VERSION).tar.gz:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c ftp://sourceware.org/pub/newlib/$(NEWLIB_VERSION).tar.gz
 
-# Unpack newlib source in $(BUILDDIR_LLVMGCC)/newlib :
+# Unpack newlib source in $(SRCDIR_NEWLIB) :
 $(BUILDSTEPSDIR)/buildstep-newlib-src: $(SRCORIGDIR)/$(NEWLIB_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/$(NEWLIB_VERSION) $(SRCDIR_NEWLIB)
 	cd $(SRCORIGDIR) && tar xzf $(NEWLIB_VERSION).tar.gz
