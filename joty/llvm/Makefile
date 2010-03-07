@@ -5,6 +5,8 @@
 COMPILERFE := llvm-gcc
 # Target to use:
 TARGET := arm-unknown-eabi
+# Runtime lib, either "unixlib" or "newlib":
+RTLIB := unixlib
 
 ROOT := $(shell pwd)
 
@@ -16,6 +18,7 @@ TARGET_GCC := $(GCCSDK_PREFIX)/bin/arm-unknown-riscos-gcc
 
 SRCDIR := $(ROOT)/src
 SRCDIR_BINUTILS := $(SRCDIR)/binutils
+SRCDIR_UNIXLIB := $(SRCDIR)/libunixlib
 SRCDIR_LLVMBASE := $(SRCDIR)/svn-llvm-base
 SRCDIR_LLVMCLANG := $(SRCDIR)/svn-llvm-clang
 SRCDIR_LLVMGCC := $(SRCDIR)/svn-llvm-gcc
@@ -36,8 +39,12 @@ NEWLIB_VERSION := newlib-1.18.0
 # Configure args unique for cross-compiling & unique to building for RISC OS native
 CROSS_CONFIG_ARGS := --target=$(TARGET) --prefix=$(PREFIX_CROSS)
 BINUTILS_CONFIGURE_ARGS := --enable-interwork --disable-multilib --disable-shared --disable-werror --with-gcc --disable-nls
-GCC_CONFIGURE_ARGS := --disable-threads --with-newlib --enable-interwork --disable-multilib --disable-shared --disable-nls --with-arch=armv4
+GCC_CONFIGURE_ARGS := --disable-threads --enable-interwork --disable-multilib --disable-shared --disable-nls --with-arch=armv4
 # --with-tune=strongarm --with-float=softfp --with-mode=arm
+# FIXME: GCC_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 3 Development' --with-bugurl=http://gccsdk.riscos.info/
+ifeq ($(RTLIB),newlib)
+GCC_CONFIGURE_ARGS += --with-newlib
+endif
 
 GCC_BUILD_FLAGS := CFLAGS="-O0 -g" LIBCFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g" CFLAGS_FOR_TARGET="-O3" CXXFLAGS_FOR_TARGET="-O3"
 
@@ -91,11 +98,27 @@ $(BUILDSTEPSDIR)/buildstep-llvm-buildit: $(BUILDSTEPSDIR)/buildstep-llvm-configu
 # --- llvm-gcc:
 
 # Configure gcc:
-$(BUILDSTEPSDIR)/buildstep-llvm-gcc-configure: $(BUILDSTEPSDIR)/buildstep-binutils-cross-buildit $(BUILDSTEPSDIR)/buildstep-newlib-src
+ifeq ($(RTLIB),newlib)
+$(BUILDSTEPSDIR)/buildstep-llvm-gcc-configure: $(BUILDSTEPSDIR)/buildstep-newlib-src
+else ifeq ($(RTLIB),unixlib)
+$(BUILDSTEPSDIR)/buildstep-llvm-gcc-configure: $(SRCDIR_UNIXLIB)/Makefile.am
+endif
+$(BUILDSTEPSDIR)/buildstep-llvm-gcc-configure: $(BUILDSTEPSDIR)/buildstep-binutils-cross-buildit
 	-rm -rf $(BUILDDIR_LLVMGCC)
 	mkdir -p $(BUILDDIR_LLVMGCC)
+ifeq ($(RTLIB),newlib)
+	-rm $(SRCDIR_LLVMGCC)/libunixlib
 	if [ ! -h $(SRCDIR_LLVMGCC)/newlib ] ; then ln -s $(SRCDIR_NEWLIB)/newlib $(SRCDIR_LLVMGCC)/newlib ; fi
 	if [ ! -h $(SRCDIR_LLVMGCC)/libgloss ] ; then ln -s $(SRCDIR_NEWLIB)/libgloss $(SRCDIR_LLVMGCC)/libgloss ; fi
+else ifeq ($(RTLIB),unixlib)
+	-rm $(SRCDIR_LLVMGCC)/newlib $(SRCDIR_LLVMGCC)/libgloss
+	if [ ! -h $(SRCDIR_LLVMGCC)/libunixlib ] ; then ln -s $(SRCDIR_UNIXLIB) $(SRCDIR_LLVMGCC)/libunixlib ; fi
+	cd $(SRCDIR_LLVMGCC) && autogen Makefile.def && autoconf
+	##cd $(SRCDIR_LLVMGCC)/libunixlib && cp libtool-org.m4 libtool.m4 && patch -p0 < libtool.m4.p
+	cd $(SRCDIR_LLVMGCC)/libunixlib && aclocal -I ./ && autoheader && automake -a && autoconf
+	# Patch llvm-gcc to use UnixLib:
+	#cd $(BUILDDIR_LLVMGCC) && patch -p0 < $(PATCHES)/llvm-gcc.patch
+endif
 	cd $(BUILDDIR_LLVMGCC) && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR_LLVMGCC)/configure $(GCC_CONFIGURE_ARGS) $(CROSS_CONFIG_ARGS) --program-prefix=llvm- --enable-languages=c,c++ --without-headers --enable-checking --enable-llvm=$(BUILDDIR_LLVM)
 	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildstep-llvm-gcc-configure
 
@@ -132,6 +155,12 @@ $(BUILDSTEPSDIR)/buildstep-binutils-cross-buildit: $(BUILDSTEPSDIR)/buildstep-bi
 	cd $(BUILDDIR)/binutils-cross && make
 	cd $(BUILDDIR)/binutils-cross && make install
 	touch $(BUILDSTEPSDIR)/buildstep-binutils-cross-buildit
+
+# --- unixlib:
+
+# Configure libunixlib:
+$(SRCDIR_UNIXLIB)/Makefile.am:
+	$(SRCDIR_UNIXLIB)/gen-auto.pl
 
 # --- newlib:
 
