@@ -1,0 +1,13 @@
+#!/bin/bash -e
+# Softlinks directory contents recursively
+#   do-softlink-dir <to-dir> <from-dir>
+
+TODIR=$1
+FROMDIR=$2
+
+echo GCCSDK: Symlinking from $FROMDIR to $TODIR
+pushd $TODIR > /dev/null
+for dir in `find . -type d | grep -v "\.svn" ` ; do mkdir -p $FROMDIR/$dir ; done
+for file in `find . -type f -o -type l | grep -v "\.svn" ` ; do rm -f $FROMDIR/$file; ln -s $TODIR/$file $FROMDIR/$file ; done
+popd > /dev/null
+

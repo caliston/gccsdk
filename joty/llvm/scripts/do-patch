@@ -1,0 +1,20 @@
+#!/bin/bash -e
+# Patches a subtree.
+# The sub-tree is the working directory when run.
+#   ./do-patch <reciperoot dir>
+# This is supposed to be run from Makefile, not by hand.
+
+DSTDIR=`pwd`
+SUBTREE=`basename $DSTDIR`
+PATCHESDIR=$1/patches/$SUBTREE
+
+# Patching:
+if [ ! -d "$PATCHESDIR" ] ; then
+  echo "Directory \"$PATCHESDIR\" does not exist, no patching is done."
+else
+  echo GCCSDK: Applying patches at $PATCHESDIR
+  for p in `ls $PATCHESDIR/*.p` ; do
+    patch -p0 < $p || true
+  done
+fi
+
