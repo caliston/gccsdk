@@ -123,13 +123,15 @@ buildstepsdir/cross-binutils-builddone: buildstepsdir/cross-binutils-configure
 buildstepsdir/cross-clang-configure: buildstepsdir/cross-binutils-builddone buildstepsdir/cross-llvm-gcc-builddone
 	-rm -rf $(BUILDDIR_CROSS_LLVMCLANG)
 	mkdir -p $(BUILDDIR_CROSS_LLVMCLANG)
+	svn revert -R $(SRCDIR_LLVMCLANG)
+	cd $(SRCDIR_LLVMCLANG) && $(SCRIPTSDIR)/do-patch $(RECIPEDIR)
 	cd $(BUILDDIR_CROSS_LLVMCLANG) && $(SRCDIR_LLVMCLANG)/configure $(CROSS_CONFIG_ARGS) --enable-assertions --enable-targets=arm --with-c-include-dirs=$(PREFIX_CROSS)/$(TARGET)/include
 	mkdir -p buildstepsdir && touch buildstepsdir/cross-clang-configure
 
 # Build clang:
 buildstepsdir/cross-clang-builddone: buildstepsdir/cross-clang-configure
 	mkdir -p $(PREFIX_CROSS)/bin
-	##FIXME: not sure if this is still necessary: if [ ! -f $(PREFIX_CROSS)/bin/gcc ] ; then ln -s $(PREFIX_CROSS)/bin/$(TARGET)-gcc $(PREFIX_CROSS)/bin/gcc ; fi
+	if [ ! -f $(PREFIX_CROSS)/bin/gcc ] ; then ln -s $(PREFIX_CROSS)/bin/$(TARGET)-gcc $(PREFIX_CROSS)/bin/gcc ; fi
 	cd $(BUILDDIR_CROSS_LLVMCLANG) && make
 	cd $(BUILDDIR_CROSS_LLVMCLANG) && make install
 	mkdir -p buildstepsdir && touch buildstepsdir/cross-clang-builddone
@@ -170,7 +172,7 @@ ifeq ($(RTLIB),unixlib)
 	cd $(SRCDIR_LLVMGCC)/libstdc++-v3 && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PATH)" && aclocal -I . -I .. -I ../config && autoheader && automake -a && autoconf
 	cd $(SRCDIR_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PATH)" && autogen Makefile.def && autoconf
 endif
-	cd $(BUILDDIR_CROSS_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR_LLVMGCC)/configure $(GCC_CONFIGURE_ARGS) $(CROSS_CONFIG_ARGS) --program-prefix=llvm- --enable-languages=c,c++ --without-headers --enable-checking --enable-llvm=$(BUILDDIR_CROSS_LLVM)
+	cd $(BUILDDIR_CROSS_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR_LLVMGCC)/configure $(GCC_CONFIGURE_ARGS) $(CROSS_CONFIG_ARGS) --enable-languages=c,c++ --without-headers --enable-checking --enable-llvm=$(BUILDDIR_CROSS_LLVM)
 	mkdir -p buildstepsdir && touch buildstepsdir/cross-llvm-gcc-configure
 
 # Build gcc:
