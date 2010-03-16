@@ -2,15 +2,6 @@ Index: gen-auto.pl
 ===================================================================
 --- gen-auto.pl	(revision 4508)
 +++ gen-auto.pl	(working copy)
-@@ -118,7 +118,7 @@
- # of GNU C Library files we're using.
- # The NO_LONG_DOUBLE and NO_LONG_DOUBLE_MATH definitions results in having the
- # 'long double' math routines aliased as the normal 'double' onces.
--AM_CFLAGS = -D__GNU_LIBRARY__ -DNO_LONG_DOUBLE -D__NO_LONG_DOUBLE_MATH -D_GNU_SOURCE=1 -std=c99 \$(LIBM_FLAGS)
-+AM_CFLAGS = -D__GNU_LIBRARY__ -DNO_LONG_DOUBLE -D__NO_LONG_DOUBLE_MATH -D_GNU_SOURCE=1 -std=gnu99 -fgnu89-inline \$(LIBM_FLAGS)
- 
- # Assembler files rely heavily on the C preprocessor to keep structures
- # referred to by both languages in sync.
 @@ -180,10 +180,9 @@
  output_make_var ("nobase_noinst_HEADERS", \@noinst_headers, "incl-local");
  print MAKE "\n";
