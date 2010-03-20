@@ -87,9 +87,7 @@
 
 #undef SUBTARGET_CPP_SPEC
 #define SUBTARGET_CPP_SPEC \
-  "%{mmodule:-D__TARGET_SCL__ -D__TARGET_MODULE__ -icrossdirafter /libscl; " \
-  "mlibscl:-D__TARGET_SCL__ -icrossdirafter /libscl; " \
-  ":-D__TARGET_UNIXLIB__ -icrossdirafter /libunixlib} "
+  "%{mmodule:-D__TARGET_SCL__ -D__TARGET_MODULE__;mlibscl:-D__TARGET_SCL__;:-D__TARGET_UNIXLIB__} "
 
 /* The GNU C++ standard library requires that these macros be defined.  */
 #undef CPLUSPLUS_CPP_SPEC
@@ -98,7 +96,7 @@
 /* Now we define the strings used to build the spec file.  */
 #undef  LIB_SPEC
 #define LIB_SPEC \
-  "%{!nostdlib:%{mlibscl:-lscl; :-lunixlib }}"
+  "%{!nostdlib:-lunixlib }"
 
 #define LIBGCC_SPEC	"-lgcc"
 
