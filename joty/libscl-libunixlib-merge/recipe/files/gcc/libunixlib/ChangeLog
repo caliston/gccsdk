@@ -1,9 +1,10 @@
-John Tytgat <John.Tytgat@aaug.net>
+John Tytgat  <John.Tytgat@aaug.net>
 
 	Merge libscl into libunixlib:
 	* configure.ac: Added (generated from gen-auto.pl + added
 	BUILDING_SCL conditional).
 	* {,test/*/}Makefile.am: Added.
+	* configure.template: Removed.
 	* crt/crt0-scl.s: Moved from libscl/crt to here.
 
 Wed Mar 17 00:19:35 CET 2010  John Tytgat  <John.Tytgat@aaug.net>

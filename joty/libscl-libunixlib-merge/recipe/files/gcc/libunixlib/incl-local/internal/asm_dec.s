@@ -1,5 +1,5 @@
 @ Global definitions used by all assembler files.
-@ Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2009, 2010 UnixLib Developers.
+@ Copyright (c) 2002-2010 UnixLib Developers.
 
 @ Bits that control which bits are compiled into UnixLib. Note, this must be
 @ kept in sync with <sys/syslib.h>, <signal.h> and <errno.h>.
@@ -7,6 +7,7 @@
 	@ Include the UnixLib build options.
 #include "unixlib/buildoptions.h"
 
+#ifndef __TARGET_SCL__
 	@ The offset of various members of the __pthread_thread structure
 	@ This should be kept in sync with pthread.h.
 .set	__PTHREAD_MAGIC_OFFSET, 0
@@ -14,6 +15,7 @@
 .set	__PTHREAD_ALLOCA_OFFSET, 8
 .set	__PTHREAD_ERRNO_OFFSET, 12
 .set	__PTHREAD_ERRBUF_OFFSET, 16
+#endif
 
 .set	USR_Mode, 0x0
 .set	FIQ_Mode, 0x1
@@ -282,6 +284,7 @@
 .set	SharedUnixLibrary_Initialise, 0x55c84
 .set	XSharedUnixLibrary_Initialise, 0x55c84 + X_Bit
 
+#ifndef __TARGET_SCL__
 	@ Entries into the struct proc structure.  Must be kept in sync with
 	@ incl-local/internal/unix.h.
 .set	PROC_ARGC, 0			@ = __u->argc
@@ -337,6 +340,7 @@
 .set	MEM_DALIMIT, 40		@ = __ul_memory.dalimit
 .set	MEM_APPSPACE_LIMIT, 44	@ = __ul_memory.appspace_limit
 .set	MEM_OLD_HIMEM, 48	@ = __ul_memory.old_himem
+#endif
 
 	@ Entries in the struct __stack_chunk.  Must be kept in sync with
 	@ unix.h definition.
@@ -347,11 +351,18 @@
 .set	CHUNK_PREV, 8		@ Ptr to previous chunk
 .set	CHUNK_SIZE, 12		@ Size of chunk, including header
 .set	CHUNK_DEALLOC, 16	@ Function to call to free the chunk
+#ifdef __TARGET_SCL__
+.set	CHUNK_DEALLOC, 16	@ Function to call to free the chunk
+
+.set	CHUNK_OVERHEAD, 20	@ Size of chunk header
+#else
 .set	CHUNK_RETURN, 20	@ Return address after freeing this chunk
 
 .set	CHUNK_OVERHEAD, 24	@ Size of chunk header
+#endif
 
-	@ Entries in the data block passed from crt1.o
+#ifndef __TARGET_SCL__
+	@ Entries in the data block passed from crt/(g)crt0.o
 .set	CRT1_EXEC_INIT, 0	@ Ptr to program _init section
 .set	CRT1_EXEC_FINI, 4	@ Ptr to program _fini section
 .set	CRT1_EXEC_START, 8	@ Ptr to R/O base
@@ -361,3 +372,4 @@
 .set	CRT1_FLAGS, 24
 .set	CRT1_RESERVED1, 28
 .set	CRT1_RESERVED2, 32
+#endif

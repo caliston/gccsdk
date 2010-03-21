@@ -1,6 +1,3 @@
-dnl This file 'configure.ac' is generated from 'configure.template'
-dnl by 'gen-auto.pl'
-
 dnl UnixLib RISC OS C Runtime Library
 dnl Derived from libgfortran and designed to fit into the GCC build
 dnl structure and be automatically built as it is.
@@ -169,5 +166,4 @@ fi
 
 #AC_CONFIG_FILES
 
-# The parameters for AC_OUTPUT will be filled in by 'gen-auto.pl'.
 AC_OUTPUT(Makefile test/Makefile  test/setjmp/Makefile test/grp/Makefile test/dirent/Makefile test/stdio/Makefile test/strings/Makefile test/sys/Makefile test/env/Makefile test/string/Makefile test/scl/Makefile test/math/Makefile test/process-redirect/Makefile test/pthread/Makefile test/assert/Makefile test/unix/Makefile test/stdlib/Makefile test/basic/Makefile test/filename/Makefile)

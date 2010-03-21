@@ -36,13 +36,14 @@ GCC_CONFIG_ARGS := \
 	--enable-sjlj-exceptions=no \
 	--enable-c99 \
 	--enable-cmath \
-	--enable-shared=libunixlib,libgcc,libstdc++ \
 	--enable-multilib \
 	--disable-c-mbchar \
 	--disable-libstdcxx-pch \
 	--disable-tls \
+	--disable-shared \
 	--without-pic \
 	--with-cross-host
+# FIXME: --disable-shared => --enable-shared=libunixlib,libgcc,libstdc++ \
 # FIXME: for Java support: --without-x --enable-libgcj
 BINUTILS_CONFIG_ARGS =
 else
