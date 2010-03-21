@@ -1,9 +1,19 @@
 # Makefile building llvm world (llvm, clang, llvm-gcc)
 # Status: Experimental
 # Written by John Tytgat <John.Tytgat@aaug.net>
+#
+# To build (llvm-gcc is default):
+#   $ make llvm-gcc
+# or
+#   $ make clang
+#
+# Possibly with argument: "RTLIB=newlib" (unixlib is default).
+#
+# To clean:
+#   $ make clean
+# or
+#   $ make distclean
 
-# Define compiler frontend (either "llvm-gcc" or "clang"):
-COMPILERFE := llvm-gcc
 # Define runtime lib (either "unixlib" or "newlib"):
 RTLIB := unixlib
 
@@ -69,7 +79,7 @@ endif
 GCC_BUILD_FLAGS := CFLAGS="-O0 -g" LIBCFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g" CFLAGS_FOR_TARGET="-O3" CXXFLAGS_FOR_TARGET="-O3"
 
 .PHONY: all clean distclean clang llvm-gcc
-all: $(COMPILERFE)
+all: llvm-gcc
 
 clean:
 	-rm -rf $(BUILDDIR) $(SRCDIR_BINUTILS) buildstepsdir
