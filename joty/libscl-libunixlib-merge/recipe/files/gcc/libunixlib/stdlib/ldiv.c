@@ -1,18 +1,19 @@
-/* div ()
+/* ldiv ()
  * Copyright (c) 2000-2010 UnixLib Developers
  */
 
 #include <stdlib.h>
 
-div_t
-div (int numer, int denom)
+ldiv_t
+ldiv (long numer, long denom)
 {
-  div_t r;
-  int i;
+  ldiv_t r;
+  long i;
 
   r.quot = i = numer / denom;
   r.rem = numer - (i * denom);
 
   return r;
 }
+
 

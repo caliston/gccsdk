@@ -32,14 +32,6 @@ AM_CCASFLAGS = -xassembler-with-cpp -mlibscl -isystem $(top_srcdir)/include -I $
 includedir = $(prefix)
 
 # FIXME: math_src: not done yet
-stdio_src = \
-	stdio/fdopen.c stdio/fileno.c
-# FIXME: stdlib_src: not done yet
-string_src = \
-	string/strdup.c \
-	string/stricmp.c \
-	string/strnicmp.c
-# FIXME: time_src: not done yet
 
 # All files in the 'include' directory.
 libc_headers = 	\

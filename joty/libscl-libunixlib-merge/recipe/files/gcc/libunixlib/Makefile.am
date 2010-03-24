@@ -83,8 +83,24 @@ if BUILDING_SCL
 ctype_src =
 else
 ctype_src = \
-	ctype/ctype.c \
-	ctype/ctypeproc.c
+	ctype/ctypetable.c \
+	ctype/isalnum.c \
+	ctype/isalpha.c \
+	ctype/isascii.c \
+	ctype/iscntrl.c \
+	ctype/isdigit.c \
+	ctype/isgraph.c \
+	ctype/islower.c \
+	ctype/isprint.c \
+	ctype/ispunct.c \
+	ctype/isspace.c \
+	ctype/isupper.c \
+	ctype/isxdigit.c \
+	ctype/toascii.c \
+	ctype/_tolower.c \
+	ctype/tolower.c \
+	ctype/_toupper.c \
+	ctype/toupper.c
 endif
 
 if BUILDING_SCL
@@ -526,7 +542,6 @@ if BUILDING_SCL
 locale_src =
 else
 locale_src = \
-	locale/ctypetable.c \
 	locale/iconv.c \
 	locale/localeconv.c \
 	locale/nl_langinfo.c \
@@ -872,6 +887,8 @@ stdlib_src = \
 	stdlib/labs.c \
 	stdlib/lcong48.c \
 	stdlib/llabs.c \
+	stdlib/ldiv.c \
+	stdlib/lldiv.c \
 	stdlib/lrand48.c \
 	stdlib/mrand48.c \
 	stdlib/msort.c \
@@ -896,44 +913,45 @@ string_src =
 else
 string_src = \
 	string/basename.c \
-	string/memccpy.c \
-	string/memchr.c \
 	string/memcmp.c \
 	string/memrchr.c \
 	string/rawmemchr.c \
-	string/stpcpy.c \
-	string/stpncpy.c \
 	string/strcat.c \
 	string/strchr.c \
 	string/strchrnul.c \
 	string/strcmp.c \
 	string/strcspn.c \
-	string/strdup.c \
-	string/strichr.c \
-	string/stricmp.c \
 	string/strncat.c \
 	string/strncmp.c \
 	string/strncpy.c \
 	string/strndup.c \
-	string/strnicmp.c \
 	string/strnlen.c \
 	string/strpbrk.c \
 	string/strrchr.c \
-	string/strrichr.c \
-	string/strsep.c \
 	string/strsignal.c \
 	string/strspn.c \
 	string/strstr.c \
 	string/strtok.c \
-	string/strtok_r.c \
 	string/swab.c \
-	string/_ffs.s \
-	string/_ffsll.s \
 	string/_memcpy.s \
 	string/_memset.s \
 	string/_strcpy.s \
 	string/_strlen.s
 endif
+string_src += \
+	string/memccpy.c \
+	string/memchr.c \
+	string/stpcpy.c \
+	string/stpncpy.c \
+	string/strdup.c \
+	string/strichr.c \
+	string/stricmp.c \
+	string/strnicmp.c \
+	string/strrichr.c \
+	string/strsep.c \
+	string/strtok_r.c \
+	string/_ffs.s \
+	string/_ffsll.s
 
 if BUILDING_SCL
 sys_src =
@@ -1014,11 +1032,12 @@ time_src = \
 	time/strftime.c \
 	time/time.c \
 	time/timegm.c \
-	time/times.c \
 	time/tzset.c \
 	time/utimes.c \
 	time/_clock.s
 endif
+time_src += \
+	time/times.c
 
 if BUILDING_SCL
 unistd_src =
