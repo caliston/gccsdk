@@ -227,12 +227,9 @@ __flsbuf:			MOV	PC, #0
 	DefSCLFnc	feof
 	DefSCLFnc	ferror
 	DefSCLFnc	perror
-	.global	__ignore_signal_handler
-__ignore_signal_handler:	MOV	PC, #0
-	.global	__error_signal_marker
-__error_signal_marker:		MOV	PC, #0
-	.global	__default_signal_handler
-__default_signal_handler:	MOV	PC, #0
+	DefSCLFnc	__ignore_signal_handler
+	DefSCLFnc	__error_signal_marker
+	DefSCLFnc	__default_signal_handler
 	DefSCLFnc	signal
 	DefSCLFnc	raise
 
