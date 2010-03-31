@@ -1,5 +1,5 @@
 @ libscl specific macros used by all its assembler files.
-@ Copyright (c) 2008 UnixLib Developers
+@ Copyright (c) 2008-2010 UnixLib Developers
 @ All rights reserved.
 
 @ Redistribution and use in source and binary forms, with or without
@@ -32,9 +32,9 @@
 #endif
 	.endm
 
-	@ Add a function stub entry with labels 'fncname' and '__fncname'
+	@ Add global labels 'fncname' and '__fncname'
 	@ whom the former one is weak definition.
-	.macro	DefSCLFnc fncname
+	.macro	DefSCLGbl fncname
 	.global	__\fncname
 	.type	__\fncname, %function
 	.global	\fncname
@@ -42,6 +42,12 @@
 	.weak	\fncname
 \fncname:
 __\fncname:
+	.endm
+
+	@ Add a function stub entry with labels 'fncname' and '__fncname'
+	@ whom the former one is weak definition.
+	.macro	DefSCLFnc fncname
+	DefSCLGbl \fncname
 	MOV	PC, #0
 	.endm
 

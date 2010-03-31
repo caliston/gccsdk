@@ -219,9 +219,15 @@ __flsbuf:			MOV	PC, #0
 	DefSCLFnc	fread
 	DefSCLFnc	fwrite
 	DefSCLFnc	fgetpos
+
+	DefSCLGbl	fseeko
 	DefSCLFnc	fseek
+
 	DefSCLFnc	fsetpos
+
+	DefSCLGbl	ftello
 	DefSCLFnc	ftell
+
 	DefSCLFnc	rewind
 	DefSCLFnc	clearerr
 	DefSCLFnc	feof
