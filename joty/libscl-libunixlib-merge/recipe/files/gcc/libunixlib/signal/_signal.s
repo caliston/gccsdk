@@ -1,5 +1,5 @@
 @ Signal exception handling
-@ Copyright (c) 2002, 2003, 2004, 2005, 2006, 2007, 2008 UnixLib Developers
+@ Copyright (c) 2002-2010 UnixLib Developers
 
 @ This file handles all the hairy exceptions that can occur when a
 @ program runs. This includes hardware exceptions like data abort and
@@ -578,7 +578,11 @@ __h_error:
 	WORD	__ul_callbackfp
 	WORD	__ul_errbuf_errblock
 	WORD	__ul_errbuf_valid
+#ifndef __SOFTFP__
 	WORD	__ul_fp_registers
+#else
+	WORD	0
+#endif
 	WORD	__pthread_running_thread
 
 unrecoverable_error:
@@ -1324,9 +1328,11 @@ __ul_errbuf_valid:
 	.word	0	@ Valid flag for errbuf
 	DECLARE_OBJECT __ul_errbuf_valid
 
+#ifndef __SOFTFP__
 	.global	__ul_fp_registers
 __ul_fp_registers:
 	.space	68	@ (4 + 8*8)  FPSR and 8 double-precision registers
 	DECLARE_OBJECT __ul_fp_registers
+#endif
 
 	.end
