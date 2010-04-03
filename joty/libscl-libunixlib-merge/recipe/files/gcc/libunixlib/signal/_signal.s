@@ -153,47 +153,6 @@ seterr_fatal:
 	DECLARE_FUNCTION __ul_seterr
 
 @-----------------------------------------------------------------------
-@ _kernel_oserror *_kernel_last_oserror (void)
-@
-@ On exit:
-@	APCS-32 compliant.
-@	a1 returns ptr to last RISC OS error for current thread or
-@	   0 when non did happen.
-@	a2 corrupted.
-@
-@ Provide access to the last operating system error.  This is a
-@ SharedCLibrary compatibility function.  It appears in here because
-@ it is associated with the __seterr function above.  It is also not
-@ very big.
-@
-	.global	_kernel_last_oserror
-	NAME	_kernel_last_oserror
-_kernel_last_oserror:
- PICEQ "LDR	a2, .L15"		@ _GLOBAL_OFFET_TABLE_+4
-.LPIC9:
- PICEQ "ADD	a2, pc, a2"
- PICEQ "LDMIA	a2, {a2, a3}"
- PICEQ "LDR	a3, [a3, #0]"
- PICEQ "LDR	a2, [a3, a2, LSL#4]"
-
-	LDR	a1, .L1			@=__pthread_running_thread
- PICEQ "LDR	a1, [a2, a1]"
-	LDR	a1, [a1, #0]
-	LDR	a2, [a1, #__PTHREAD_ERRBUF_OFFSET]!
-	TEQ	a2, #0
-	MOVEQ	a1, #0
-	MOV	pc, lr
-.L15:
- PICEQ ".word	_GLOBAL_OFFSET_TABLE_-(.LPIC9+4)"
-	DECLARE_FUNCTION _kernel_last_oserror
-
-	@ The following code is in a writable area because we need access to
-	@ the callback register save area without corrupting any registers
-	@ or needing to stack any registers. Thus, the callback register
-	@ save area must be within the reach of PC offset addressing.
-	.text
-
-@-----------------------------------------------------------------------
 @ The hardware exception handlers (PRM 1-111).
 @
 @ We are interested in some hardware exceptions and convert them into
