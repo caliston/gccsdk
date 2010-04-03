@@ -102,19 +102,6 @@
 
 #else
 
-void __SIG_DFL(int);
-void __SIG_ERR(int);
-void __SIG_IGN(int);
-
-/* Specifies the default action for the particular signal.  */
-#define SIG_DFL __SIG_DFL
-
-/* Used to flag error return from signal.  */
-#define SIG_ERR __SIG_ERR
-
-/* Specifies that the signal should be ignored.  */
-#define SIG_IGN __SIG_IGN
-
 /* Defined signals.  */
 
 /* Indicates an error detected by the program itself and reported
@@ -151,6 +138,24 @@ void __SIG_IGN(int);
 
 /* Operating system error.  */
 #define SIGOSERROR 10
+
+/* Total number of signals defined. This should be one greater than
+   the largest defined signal number.  */
+#define _NSIG 11
+#define NSIG _NSIG
+
+void __SIG_DFL(int);
+void __SIG_ERR(int);
+void __SIG_IGN(int);
+
+/* Specifies the default action for the particular signal.  */
+#define SIG_DFL __SIG_DFL
+
+/* Used to flag error return from signal.  */
+#define SIG_ERR __SIG_ERR
+
+/* Specifies that the signal should be ignored.  */
+#define SIG_IGN __SIG_IGN
 #endif
 
 #endif /* __BITS_SIGNAL_H */

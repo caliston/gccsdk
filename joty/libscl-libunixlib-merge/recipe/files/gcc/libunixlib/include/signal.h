@@ -18,8 +18,10 @@
 #include <stddef.h>
 #endif
 
-#define __need_pthread_t
-#include <pthread.h>
+#ifndef __TARGET_SCL__
+#  define __need_pthread_t
+#  include <pthread.h>
+#endif
 
 __BEGIN_DECLS
 
@@ -31,10 +33,8 @@ typedef void (*__sighandler_t)(int);
 typedef __sighandler_t sighandler_t;
 #endif
 
-#ifndef __TARGET_SCL__
 extern int sys_nsig;		/* = NSIG */
 extern const char * const sys_siglist[NSIG];	/* signal messages */
-#endif
 
 /* Define the function 'action' to be called when 'signum' is raised.  */
 extern __sighandler_t signal (int __sig, __sighandler_t __handler) __THROW;
