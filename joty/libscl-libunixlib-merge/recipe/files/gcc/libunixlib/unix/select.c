@@ -1,10 +1,11 @@
 /* Unixlib select() implementation.
-   Copyright 1997-2008 UnixLib Developers.  */
+   Copyright 1997-2010 UnixLib Developers.  */
 
 #include <errno.h>
 #include <string.h>
 #include <time.h>
 #include <sys/select.h>
+#include <sys/socket.h>
 #include <swis.h>
 #include <sys/time.h>
 
@@ -22,7 +23,6 @@
 
 fd_set __socket_fd_set;
 static int __socket_fd_set_initialised = 0;
-
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -55,17 +55,13 @@ __convert_fd_set (int nfds, const fd_set *iset, fd_set *oset, int *max_fd)
 
   while (words-- > 0)
     {
-      int bothset;
-
       /* Check for bits set in both passed in set to select() and socket
          fds.  */
-      bothset = ((const int *)iset)[words] & ((int *)&__socket_fd_set)[words];
-
+      int bothset = ((const int *)iset)[words] & ((int *)&__socket_fd_set)[words];
       if (bothset)
         {
-          int bits;
-
           /* Cast to 'unsigned int' in order to have more efficient code.  */
+          int bits;
           if ((bits = ((unsigned int)nfds % WORD_BITS)) == 0)
             bits = WORD_BITS;
 
@@ -108,9 +104,8 @@ __return_fd_set (int nfds, fd_set *iset, const fd_set *oset)
 
       if (bothset)
         {
-          int bits;
-
           /* Cast to 'unsigned int' in order to have more efficient code.  */
+          int bits;
           if ((bits = ((unsigned int)nfds % WORD_BITS)) == 0)
             bits = WORD_BITS;
 
@@ -140,17 +135,7 @@ int
 select (int nfds, fd_set *readfds, fd_set *writefds,
 	fd_set *exceptfds, struct timeval *timeout)
 {
-  int sock_nfds = 0;
-  int live_fds = 0;
-  fd_set new_readfds, new_writefds, new_exceptfds;
-  fd_set sock_readfds, sock_writefds, sock_exceptfds;
-  fd_set newsock_readfds, newsock_writefds, newsock_exceptfds;
-  unsigned int end = 0, now = 0;
-  signed int remain;
-  struct timeval poll = {0, 0};
-  int zerotime = 0;
-  struct ul_global *gbl = &__ul_global;
-  struct __sul_process *sulproc = gbl->sulproc;
+  const struct ul_global *gbl = &__ul_global;
 
 #ifdef DEBUG
   fprintf (stderr, "Entry:\t%d\t%p\t%p\t%p\t%p\n"
@@ -162,17 +147,18 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
     {
       /* We need to scan all file descriptors to initialise as we could be
          a child program with sockets already open */
-      unsigned int i;
-
       FD_ZERO (&__socket_fd_set);
 
-      for (i = 0; i < sulproc->maxfd; i++)
+      const struct __sul_process *sulproc = gbl->sulproc;
+      for (unsigned int i = 0; i < sulproc->maxfd; i++)
         if (getfd (i)->devicehandle && getfd (i)->devicehandle->type == DEV_SOCKET)
           FD_SET (i, &__socket_fd_set);
 
       __socket_fd_set_initialised = 1;
     }
 
+  int zerotime = 0;
+  unsigned int end = 0, now = 0;
   if (timeout)
     {
       if (!timeout->tv_usec && !timeout->tv_sec)
@@ -185,8 +171,8 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
 
           /* OK, so we can't cope with anything more than roughly 248.55 days!  */
           now = clock ();
-          end = now
-                  + timeout->tv_sec * 100 + (50000 + timeout->tv_usec) / 1000000;
+          end = now + timeout->tv_sec * 100
+		    + (50000 + timeout->tv_usec) / 1000000;
         }
     }
 
@@ -202,7 +188,10 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
   dump_fd_set (nfds, writefds, stderr);
 #endif
 
-  /* Convert the individual fdsets and set highest*/
+  /* Convert the individual fdsets and set highest.  */
+  int sock_nfds = 0;
+  fd_set sock_readfds, sock_writefds, sock_exceptfds;
+  fd_set new_readfds, new_writefds, new_exceptfds;
   if (readfds)
     {
       __convert_fd_set (nfds, readfds, &sock_readfds, &sock_nfds);
@@ -237,17 +226,17 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
      1,1,1 for read,write,except but 0 live, so that __return_fd_set will
      merge socknew_readfds properly.  */
 
+  fd_set newsock_readfds, newsock_writefds, newsock_exceptfds;
+  int live_fds = 0;
   for (;;)
     {
       int fd = nfds;
-      int result;
 
       /* At this point live_fds is 0, as are all new fd sets.  */
 
       while (fd-- > 0)
 	{
-	  struct __unixlib_fd *file_desc = getfd (fd);
-          fd_set *read_p, *write_p, *except_p;
+	  const struct __unixlib_fd *file_desc = getfd (fd);
 
           if (file_desc->devicehandle)
             {
@@ -255,10 +244,8 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
                   fd_set *__write, fd_set *__except) =
                   __dev[file_desc->devicehandle->type < NDEV ? file_desc->devicehandle->type : DEV_NULL].select;
 
-              read_p   = (readfds && FD_ISSET(fd, readfds)) ?
-                &new_readfds : NULL;
-              write_p  = (writefds && FD_ISSET(fd, writefds)) ?
-                &new_writefds : NULL;
+              fd_set *read_p = (readfds && FD_ISSET(fd, readfds)) ? &new_readfds : NULL;
+              fd_set *write_p = (writefds && FD_ISSET(fd, writefds)) ? &new_writefds : NULL;
 
               if (select_func == __nullselect)
                 {
@@ -275,14 +262,16 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
                 }
               else
                 {
-                  except_p = (exceptfds && FD_ISSET(fd, exceptfds)) ?
-                    &new_exceptfds : NULL;
+                  fd_set *except_p = (exceptfds && FD_ISSET(fd, exceptfds)) ? &new_exceptfds : NULL;
 
                   if (select_func == __sockselect)
                     {
-                      if (read_p)   FD_SET (fd, read_p);
-                      if (write_p)  FD_SET (fd, write_p);
-                      if (except_p) FD_SET (fd, except_p);
+                      if (read_p)
+			FD_SET (fd, read_p);
+                      if (write_p)
+			FD_SET (fd, write_p);
+                      if (except_p)
+			FD_SET (fd, except_p);
                       continue;
                     }
 
@@ -292,7 +281,7 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
 #ifdef DEBUG
 	              __os_print ("/");
 #endif
-	              result = __funcall (*select_func, (file_desc, fd, read_p, write_p, except_p));
+	              int result = __funcall (*select_func, (file_desc, fd, read_p, write_p, except_p));
 #ifdef DEBUG
 	              __os_print ("\\");
 #endif
@@ -318,22 +307,21 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
       newsock_exceptfds = sock_exceptfds;
 
 #ifdef DEBUG
-      fprintf (stderr, "%d %p %p %p %p %d %d\n", sock_nfds,
+      fprintf (stderr, "%d %p %p %p\n", sock_nfds,
 	       readfds ? &newsock_readfds : readfds,
 	       writefds ? &newsock_writefds : writefds,
-	       exceptfds ? &newsock_exceptfds : exceptfds,
-	       &poll, poll.tv_sec, poll.tv_usec );
+	       exceptfds ? &newsock_exceptfds : exceptfds);
 #endif
 
       /* Internet 5.02 gets very very upset if you try to wait with
 	 R0 = 0. It occasionally sets R13_user -= 4, and appears to mess up
-	 the SVC stack too
-       */
-      result = sock_nfds ? _select (sock_nfds,
-				    readfds ? &newsock_readfds : readfds,
-				    writefds ? &newsock_writefds : writefds,
-				    exceptfds ? &newsock_exceptfds : exceptfds,
-				    &poll) : sock_nfds;
+	 the SVC stack too.  */
+      struct timeval poll = {0, 0};
+      int result = sock_nfds ? _sselect (sock_nfds,
+					 readfds ? &newsock_readfds : readfds,
+					 writefds ? &newsock_writefds : writefds,
+					 exceptfds ? &newsock_exceptfds : exceptfds,
+					 &poll) : sock_nfds;
 #ifdef DEBUG
       fprintf (stderr, "%d\n", result);
 #endif
@@ -351,15 +339,14 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
 #ifdef DEBUG
 	  __os_print ("Select is live/immediate return\n\r");
 #endif
-	  break;	/* Something is live. Break and return.  */
+	  /* Something is live. Break and return.  */
+	  break;
 	}
 
       if (timeout)
 	{
 	  /* Difference will always be < 2^31  */
-	  remain = (int) end - clock ();
-
-	  if (remain < 0)
+	  if (end < clock ())
 	    {
 #ifdef DEBUG
 	      __os_print ("Select timeout\n\r");
@@ -425,6 +412,7 @@ select (int nfds, fd_set *readfds, fd_set *writefds,
     {
       now = clock () - now;
 
+      struct timeval poll;
       poll.tv_sec = now / 100;
       poll.tv_usec = (now % 100) * 10000;
 
