@@ -49,8 +49,10 @@ typedef struct __iobuf __FILE;
 #define __need___va_list
 #include <stdarg.h>
 
-#define __need_pthread_t
-#include <pthread.h>
+#ifndef __TARGET_SCL__
+#  define __need_pthread_t
+#  include <pthread.h>
+#endif
 
 __BEGIN_NAMESPACE_STD
 typedef __off_t fpos_t;
@@ -64,6 +66,10 @@ __END_NAMESPACE_STD
 #  define FOPEN_MAX	8
 #else
 #  define FOPEN_MAX	64
+#endif
+#ifdef __TARGET_SCL__
+/* Number of open files that is supported by SCL.  */
+#  define _SYS_OPEN 16
 #endif
 
 /* Maximum length of a filename.
@@ -204,24 +210,27 @@ __BEGIN_NAMESPACE_STD
 extern int feof (FILE *__stream) __THROW;
 #ifdef __TARGET_SCL__
 #  define feof(stream) ((stream)->__flag & _IOEOF)
+#else
+#  define feof(stream) ((stream)->__eof != 0)
 #endif
 
 /* Return nonzero if the error indicator for the stream 'stream' is set.  */
 extern int ferror (FILE *__stream) __THROW;
 #ifdef __TARGET_SCL__
 #  define ferror(stream) ((stream)->__flag & _IOERR)
+#else
+#  define ferror(stream) ((stream)->__error != 0)
 #endif
 
 /* Clears the end-of-file and error indicators for the stream
    'stream'.  */
 extern void clearerr (FILE *__stream) __THROW;
 
-#define feof(stream) ((stream)->__eof != 0)
-#define ferror(stream) ((stream)->__error != 0)
-
 #ifdef __USE_MISC
+#  ifndef __TARGET_SCL__
 /* Faster versions when locking is not required.  */
 extern void clearerr_unlocked (FILE *__stream) __THROW;
+#  endif
 #endif
 
 /* Print a message describing the meaning of the value of errno.
@@ -312,7 +321,7 @@ extern int fseek (FILE *__stream, long int __off, int __whence);
 /* Return the current file position of the stream 'stream'.
    If a failure occurs, -1 is returned.
    This function is a cancellation point.  */
-extern long ftell (FILE *__stream);
+extern long ftell (FILE *__stream) __wur;
 
 /* Positions the stream 'stream' at the beginning of the file.
    Equivalent to fseek (stream, 0, SEEK_SET).
@@ -321,11 +330,13 @@ extern void rewind (FILE *__stream);
 __END_NAMESPACE_STD
 
 #if defined __USE_LARGEFILE || defined __USE_XOPEN2K
-/* This function is a cancellation point.  */
+/* Seek to a position in given stream.
+   This function is a cancellation point.  */
 extern int fseeko (FILE *__stream, __off_t __off, int __whence);
 
-/* This function is a cancellation point.  */
-extern __off_t ftello (FILE *__stream) __nonnull ((1));
+/* Get the current position of stream.
+   This function is a cancellation point.  */
+extern __off_t ftello (FILE *__stream) __nonnull ((1)) __wur;
 #endif
 
 __BEGIN_NAMESPACE_STD
@@ -348,24 +359,28 @@ __END_NAMESPACE_STD
 
 #if defined __USE_POSIX || defined __USE_MISC
 
+#  ifndef __TARGET_SCL__
 /* These functions are cancellation points.  */
 extern int getc_unlocked (FILE *__stream) __nonnull ((1));
 extern int getchar_unlocked (void);
+#  endif
 
 /* Read a character from stream.  */
-#ifdef __TARGET_SCL__
-#  define getc(p) \
+#  ifdef __TARGET_SCL__
+#    define getc(p) \
 	(--((p)->__icnt) >= 0 ? *((p)->__ptr)++ : __filbuf(p))
-#  define getc_unlocked(p) getc(p)
-#else
-#  define getc_unlocked(f) \
+#    define getc_unlocked(p) getc(p)
+#  else
+#    define getc_unlocked(f) \
 	((--((f)->i_cnt) >= 0 ? *((f)->i_ptr)++ : __filbuf(f)))
-#endif
-#define getchar_unlocked() getc_unlocked(stdin)
+#  endif
+#  define getchar_unlocked() getc_unlocked(stdin)
 
+#  ifdef __TARGET_SCL__
 extern int fputc_unlocked (int __c, FILE *__stream) __nonnull ((2));
 
 extern int putc_unlocked (int __c, FILE *__stream) __nonnull ((2));
+#  endif
 #endif
 
 __BEGIN_NAMESPACE_STD
@@ -408,8 +423,10 @@ extern int puts (const char *__s) __THROW __nonnull ((1));
 __END_NAMESPACE_STD
 
 #ifdef __USE_GNU
+#  ifdef __TARGET_SCL__
 extern char *fgets_unlocked (char *__restrict __s, int __n,
 			     FILE *__restrict __stream);
+#  endif
 #define fgets_unlocked fgets
 #endif
 
@@ -594,6 +611,7 @@ extern char *tmpnam (char *__result) __THROW;
 
 __END_NAMESPACE_STD
 
+#ifndef __TARGET_SCL__
 #ifdef __USE_MISC
 /* Re-entrant version of tmpnam(). 's' must not be null.  */
 extern char *tmpnam_r (char *__result) __THROW __nonnull ((1));
@@ -611,6 +629,7 @@ extern char *mktemp(char *__temp) __THROW;
 
 /* As for mktemp but returns an open file descriptor on the file.  */
 extern int mkstemp(char *__temp) __THROW;
+#endif
 
 /* System V enhancements.  */
 
@@ -652,24 +671,29 @@ extern FILE *fdopen (int __fd, const char *__modes) __THROW;
 
 /* Return the system file descriptor for stream.  */
 extern int fileno (FILE *__stream) __THROW;
-#define fileno(f)	((f)->fd)
+#  ifndef __TARGET_SCL__
+#    define fileno(f)	((f)->fd)
 
-#define L_ctermid 16
+#    define L_ctermid 16
 
 /* Return the name of the controlling terminal.  */
 extern char *ctermid (char *__s) __THROW;
+#  endif
 
 #endif
 
 #ifdef __USE_XOPEN
+#  ifndef __TARGET_SCL__
 /* Return the name of the current user.  */
 extern char *cuserid (char *__s);
+#  endif
 #endif
 
 /* POSIX 2 enhancements.  */
 
 #if (defined __USE_POSIX2 || defined __USE_SVID  || defined __USE_BSD || \
      defined __USE_MISC)
+#  ifndef __TARGET_SCL__
 /* Create a new stream connected to a pipe running the given command.
    This function is a cancellation point.  */
 extern FILE *popen (const char *__command, const char *__modes);
@@ -677,6 +701,7 @@ extern FILE *popen (const char *__command, const char *__modes);
 /* Close a stream opened by popen and return the status of its child.
    This function is a cancellation point.  */
 extern int pclose (FILE *__stream);
+#  endif
 #endif
 
 /* GNU extenstions.  */

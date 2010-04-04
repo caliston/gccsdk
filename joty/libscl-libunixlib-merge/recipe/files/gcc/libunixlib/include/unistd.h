@@ -1,6 +1,6 @@
 /*
  * POSIX Standard 2.10: Symbolic Constants <unistd.h>.
- * Copyright (c) 2000-2008 UnixLib Developers
+ * Copyright (c) 2000-2010 UnixLib Developers
  */
 
 #ifndef __UNISTD_H
@@ -131,8 +131,10 @@ typedef __socklen_t socklen_t;
 #endif
 
 /* Test for access to name.  */
+#ifndef __TARGET_SCL__
 extern int access (const char *__name, int __type)
      __THROW __nonnull ((1)) __wur;
+#endif
 
 /* Values for the WHENCE argument to lseek.  */
 #ifndef	__STDIO_H		/* <stdio.h> has the same definitions.  */
@@ -146,8 +148,10 @@ extern int access (const char *__name, int __type)
    the current position (if SEEK_CUR),
    or the end of the file (SEEK_END).
    Return the new file position.  */
+#ifndef __TARGET_SCL__
 extern __off_t lseek (int __fd, __off_t __offset, int __whence) __THROW;
 extern __off_t lseek64 (int __fd, __off_t __offset, int __whence) __THROW;
+#endif
 
 /* Close the file descriptor fd.  This is a cancellation point.  */
 extern int close (int __fd);
@@ -160,6 +164,7 @@ extern __ssize_t read (int __fd, void *__buf, size_t __nbytes)
 extern __ssize_t write (int __fd, const void *__buf, size_t __nbytes)
      __nonnull ((2)) __wur;
 
+#ifndef __TARGET_SCL__
 /* Create a one way communication channel (pipe). */
 extern int pipe (int __pipedes[2]) __THROW __wur;
 
@@ -173,7 +178,6 @@ extern unsigned int alarm (unsigned int __seconds) __THROW;
    SIGALRM signal while inside `sleep' call, the handling of the SIGALRM
    signal afterwards is undefined.  There is no return value to indicate
    error, but if `sleep' returns '__seconds', it probably didn't work.
-
    This is a cancellation point.  */
 extern unsigned int sleep (unsigned int __seconds);
 
@@ -258,10 +262,12 @@ extern int execvp (const char *__file, char *const __argv[])
    NULL pointer and environment from `environ'.  */
 extern int execlp (const char *__file, const char *__arg, ...)
      __THROW __nonnull ((1));
+#endif /* __TARGET_SCL__ */
 
 /* Terminate program execution with the low-order 8 bits of status.  */
 extern void _exit (int __status) __attribute__ ((__noreturn__));
 
+#ifndef __TARGET_SCL__
 /* Values for the NAME argument to `pathconf' and `fpathconf'.  */
 enum
   {
@@ -468,6 +474,7 @@ extern int __REDIRECT (lockf, (int __fd, int __cmd, __off64_t __len),
 extern int lockf64 (int __fd, int __cmd, __off64_t __len);
 # endif
 #endif /* Use misc and F_LOCK not already defined.  */
+#endif /* __TARGET_SCL__ */
 
 
 #if defined __USE_BSD || defined __USE_UNIX98
@@ -510,6 +517,7 @@ extern int revoke (__const char *__file) __THROW;
 #endif
 
 
+#ifndef __TARGET_SCL__
 /* Enable statistical profiling, writing samples of the PC into at most
    SIZE bytes of SAMPLE_BUFFER; every processor clock tick while profiling
    is enabled, the system examines the user PC and increments
@@ -517,6 +525,7 @@ extern int revoke (__const char *__file) __THROW;
    disable profiling.  Returns zero on success, -1 on error.  */
 extern int __profil (unsigned short int *__sample_buffer, size_t __size,
 		     size_t __offset, unsigned int __scale) __THROW;
+#endif
 
 
 #if 0
@@ -535,13 +544,16 @@ extern void setusershell (void) __THROW; /* Rewind and re-read the file.  */
 #endif
 
 
+#if 0
 /* Put the program in the background, and dissociate from the controlling
    terminal.  If NOCHDIR is zero, do `chdir ("/")'.  If NOCLOSE is zero,
    redirects stdin, stdout, and stderr to /dev/null.  */
 extern int daemon (int __nochdir, int __noclose) __THROW;
+#endif
 #endif /* Use BSD || X/Open.  */
 
 
+#ifndef __TARGET_SCL__
 /* Make all changes done to all files actually appear on disk.  */
 extern void sync (void) __THROW;
 
@@ -625,6 +637,7 @@ extern void swab (const void *__restrict  __from, void *__restrict  __to,
 /* Alter the priority of the current process by 'increment'.  */
 extern int nice (int __increment) __THROW __wur;
 #endif
+#endif /* __TARGET_SCL__ */
 
 #define __need_getopt
 #include <getopt.h>
