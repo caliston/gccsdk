@@ -96,6 +96,7 @@ const char *sys_errlist[__SYS_NERR + 1] =
   "Inappropriate file type or format",		/* EFTYPE */
   "Authentication error",			/* (80) EAUTH */
   "Need authenticator",				/* ENEEDAUTH */
+  "RISC OS error",				/* EOPSYS */
   "Invalid multibyte sequence"			/* EILSEQ */
 #else
   "Not a stream device",			/* ENOSTR */

@@ -155,9 +155,10 @@
 #  define EFTYPE		79 /* Inappropriate file type or format */
 #  define EAUTH			80 /* Authentication error */
 #  define ENEEDAUTH		81 /* Need authenticator */
-#  define EILSEQ		82 /* Invalid multibyte sequence.  */
+#  define EOPSYS		82 /* RISC OS operating system error.  */
+#  define EILSEQ		83 /* Invalid multibyte sequence.  */
 
-#  define __SYS_NERR	82
+#  define __SYS_NERR	83
 #else
 #  define ENOSTR		72 /* Not a stream device.  */
 #  define ETIME			73 /* Timer expired.  */

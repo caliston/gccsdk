@@ -181,9 +181,15 @@ kernel_statics_end:
 .set	_stub_initialised, kernel_statics_begin + 0x0119
 .set	_stub_callbackInactive, kernel_statics_begin + 0x011a
 .set	_stub_unused_byte_2, kernel_statics_begin + 0x011b
+
+	@ When non-zero, _stub_errorNumber and _stub_errorString are valid.
+	.global _stub_errorBuffer
 .set	_stub_errorBuffer, kernel_statics_begin + 0x011c
+	@ Last RISC OS error happened via a call through these stubs.
+	.global _stub_errorNumber
 .set	_stub_errorNumber, kernel_statics_begin + 0x0120
 .set	_stub_errorString, kernel_statics_begin + 0x0124
+
 .set	_stub_FatalErrorBuffer, kernel_statics_begin + 0x0220
 .set	_stub_eventCode, kernel_statics_begin + 0x0220
 .set	_stub_eventUserR13, kernel_statics_begin + 0x0224

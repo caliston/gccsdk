@@ -10,7 +10,17 @@
 _kernel_oserror *
 _kernel_last_oserror (void)
 {
-  _kernel_oserror *err = &__pthread_running_thread->errbuf;
-  return err->errnum ? err : NULL;
+  _kernel_oserror *err;
+  if (__pthread_running_thread->errbuf_valid)
+    {
+      /* Calling _kernel_last_oserror makes it invalidating the RISC OS
+	 error buffer.  */
+      __pthread_running_thread->errbuf_valid = '\0';
+      err = &__pthread_running_thread->errbuf;
+    }
+  else
+    err = NULL;
+
+  return err;
 }
 

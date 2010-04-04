@@ -4,6 +4,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 AM_CPPFLAGS = -isystem $(top_srcdir)/include -I $(top_srcdir)/test -D_GNU_SOURCE=1 -std=c99
 LDADD = -L$(top_builddir)
 
-check_PROGRAMS = test-kernel_current_stack_chunk 
+check_PROGRAMS = test-kernel_current_stack_chunk \
+	test-kernel_oserror
 
 TESTS = $(check_PROGRAMS)
