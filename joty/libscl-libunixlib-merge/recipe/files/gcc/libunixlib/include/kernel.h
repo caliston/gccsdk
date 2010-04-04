@@ -16,6 +16,11 @@
 #include <features.h>
 #endif
 
+#ifdef __TARGET_SCL__
+#  define __need_size_t
+#  include <stddef.h>
+#endif
+
 __BEGIN_DECLS
 
 typedef struct
@@ -58,7 +63,7 @@ extern _kernel_oserror *_kernel_last_oserror (void) __THROW __wur;
      When -1, the call failed but there is no OS error (like pressing Escape
        during _kernel_osrdch), related to C flag set.
      When -2, the call failed and the OS error can be queried using
-       _kernel_last_error.  */
+       _kernel_last_oserror.  */
 #define _kernel_ERROR (-2)
 
 /* Perform an OS_Byte operation.
@@ -294,11 +299,11 @@ typedef int _kernel_ExtendProc (int __n, void **__p);
 
 _kernel_ExtendProc *_kernel_register_slotextend (_kernel_ExtendProc *__proc);
 
-extern void *_kernel_RMAalloc(size_t size);
+extern void *_kernel_RMAalloc (size_t size);
 
-extern void *_kernel_RMAextend(void *p, size_t size);
+extern void *_kernel_RMAextend (void *p, size_t size);
 
-extern void _kernel_RMAfree(void *p);
+extern void _kernel_RMAfree (void *p);
 #endif
 
 __END_DECLS
