@@ -26,7 +26,7 @@ loop:
 	LDMVCFD	sp!, {v1, pc}
 
 	MOV	v1, a1
-	MOV	a2, #0
+	MOV	a2, #1
 	BL	__ul_seterr
 	MOV	a1, v1
 	LDMFD	sp!, {v1, pc}

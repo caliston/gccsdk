@@ -1,5 +1,5 @@
 @ _kernel_osargs
-@ Copyright (c) 2000-2008 UnixLib Developers
+@ Copyright (c) 2000-2010 UnixLib Developers
 
 #include "internal/asm_dec.s"
 
@@ -17,7 +17,7 @@ _kernel_osargs:
 	MOVNE	a1, a3
 	LDMFD	sp!, {pc}
 error:
-	MOV	a2, #0
+	MOV	a2, #1
 	BL	__ul_seterr
 	MOV	a1, #-2
 	LDMFD	sp!, {pc}

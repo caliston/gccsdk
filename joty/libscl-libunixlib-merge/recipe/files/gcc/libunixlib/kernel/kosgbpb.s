@@ -1,5 +1,5 @@
 @ _kernel_osgbpb
-@ Copyright (c) 2000-2008 UnixLib Developers
+@ Copyright (c) 2000-2010 UnixLib Developers
 
 #include "internal/asm_dec.s"
 
@@ -20,7 +20,7 @@ _kernel_osgbpb:
 	LDMCSFD	sp!, {v1, v2, v3, v4, pc}
 
 _kernel_osgbpb_err:
-	MOV	a2, #0
+	MOV	a2, #1
 	BL	__ul_seterr
 	MOV	a1, #-2
 	LDMFD	sp!, {v1, v2, v3, v4, pc}
