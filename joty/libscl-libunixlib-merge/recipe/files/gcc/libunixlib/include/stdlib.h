@@ -91,20 +91,26 @@ __END_NAMESPACE_STD
 extern int setenv (const char *__name, const char *__value, int __replace)
      __THROW __nonnull ((2));
 
+#  ifndef __TARGET_SCL__
 /* Remove NAME from the environment.  */
 extern int unsetenv (const char *__name) __THROW;
+#  endif
 #endif
 
 #ifdef __USE_MISC
+#  ifndef __TARGET_SCL__
 /* The `clearenv' was planned to be added to POSIX.1 but probably
    never made it.  Nevertheless the POSIX.9 standard (POSIX bindings
    for Fortran 77) requires this function.  */
 extern int clearenv (void) __THROW;
+#  endif
 #endif
 
 #if defined __USE_SVID || defined __USE_XOPEN
+#  ifndef __TARGET_SCL__
 /* Put string, which is of the form "NAME=VALUE" in the environment.  */
 extern int putenv (char *__string) __THROW __nonnull ((1));
+#  endif
 #endif
 
 __BEGIN_NAMESPACE_STD
@@ -113,9 +119,11 @@ extern int system (const char *__command) __THROW __wur;
 __END_NAMESPACE_STD
 
 #if defined __USE_BSD || defined __USE_XOPEN_EXTENDED
+#  ifndef __TARGET_SCL__
 /* Canonicalise a filename */
 extern char *realpath (const char *__file_name, char *__resolved_name)
      __THROW __wur;
+#  endif
 #endif
 
 __BEGIN_NAMESPACE_STD
@@ -138,15 +146,18 @@ __END_NAMESPACE_STD
 
 
 #if defined __USE_BSD || defined __USE_XOPEN_EXTENDED
+#  ifndef __TARGET_SCL__
 /* Allocate size bytes on a page boundary. The storage cannot be freed.  */
 extern void *valloc (size_t __bytes) __THROW __attribute_malloc__ __wur;
+#  endif
 #endif
 
-/* src.c.alloc thinks these are in stdio.h, but that feels wrong ... */
+#ifndef __TARGET_SCL__
 extern void *memalign (size_t __alignment,
 		       size_t __bytes) __THROW __attribute_malloc__ __wur;
 extern void cfree (void *__mem) __THROW;
 extern int malloc_trim (size_t) __THROW;
+#endif
 
 __BEGIN_NAMESPACE_STD
 /* Return a random integer between 0 and RAND_MAX (System V interface).  */
@@ -170,6 +181,7 @@ __END_NAMESPACE_STD
 
 
 #if defined __USE_SVID || defined __USE_XOPEN_EXTENDED || defined __USE_BSD
+#  ifndef __TARGET_SCL__
 # include <sys/types.h> /* we need int32_t... */
 /* Return a random integer between 0 and RAND_MAX (BSD interface).  */
 extern long int random (void) __THROW;
@@ -187,6 +199,7 @@ extern char *initstate (unsigned int __seed, char *__statebuf,
 /* Switch the random number generator to state buffer STATEBUF,
    which should have been previously initialized by `initstate'.  */
 extern char *setstate (char *__statebuf) __THROW __nonnull ((1));
+#  endif
 #endif
 
 __BEGIN_NAMESPACE_STD
@@ -390,6 +403,7 @@ extern char *__dtoa(double __d, int __mode, int __ndigits,
 		    int *__decpt, int *__sign, char **__rve) __THROW;
 
 #ifdef __USE_XOPEN_EXTENDED
+#  ifndef __TARGET_SCL__
 /* Parse comma separated suboption from 'option' and match against
    strings in 'tokens'. Return index with *value set to optional value.  */
 extern int getsubopt (char **__restrict __option,
@@ -397,9 +411,11 @@ extern int getsubopt (char **__restrict __option,
 		      char **__restrict __value)
      __THROW __nonnull ((1, 2, 3)) __wur;
 extern char *suboptarg;
+#  endif
 #endif
 
 #if defined __USE_SVID || defined __USE_XOPEN
+#  ifndef __TARGET_SCL__
 /* System V style 48-bit random number generator functions.  */
 
 /* Return a non-negative, double-precision floating-point value in
@@ -424,6 +440,7 @@ extern unsigned short int *seed48 (unsigned short int __seed16v[3])
      __THROW __nonnull ((1));
 
 extern void lcong48 (unsigned short int __param[7]) __THROW __nonnull ((1));
+#  endif
 #endif
 
 __END_DECLS
