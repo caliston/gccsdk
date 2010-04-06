@@ -84,10 +84,7 @@ typedef __quad_t __ino64_t;	/* Type of file serial numbers (LFS).  */
 typedef unsigned int __mode_t;	/* Type of file attribute bitmasks.  */
 typedef unsigned short int __nlink_t; /* Type of file link counts.  */
 #ifdef __TARGET_SCL__
-typedef struct
-{
-  unsigned long __lo;
-} __off_t;
+typedef unsigned long __off_t;
 #else
 __extension__ 
 typedef long long __off_t;	/* Type of file sizes and offsets.  */
