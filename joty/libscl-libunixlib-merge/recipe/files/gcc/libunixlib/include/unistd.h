@@ -383,8 +383,14 @@ extern __pid_t fork (void) __THROW __wur;
    space (from BSD).  */
 extern __pid_t vfork (void) __THROW __wur;
 
-/* Return the pathname of the terminal fd is open on.  */
-extern char *ttyname (int __fd) __THROW __wur;
+/* Return the pathname of the terminal fd is open on, or NULL on errors.
+   The returned storage is good only until the next call to this function.  */
+extern char *ttyname (int __fd) __THROW;
+
+/* Store at most buflen characters of the pathname of the terminal fd is
+   open on in buf.  Return 0 on success, otherwise an error number.  */
+extern int ttyname_r (int __fd, char *__buf, size_t __buflen)
+     __THROW __nonnull ((2)) __wur;
 
 /* Return 1 if fd is a valid descriptor associated with a terminal.  */
 extern int isatty (int __fd) __THROW __wur;
