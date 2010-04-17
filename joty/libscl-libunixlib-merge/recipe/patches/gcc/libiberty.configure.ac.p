@@ -1,5 +1,5 @@
---- libiberty/configure.ac.orig	2010-04-05 17:22:10.590958470 +0200
-+++ libiberty/configure.ac	2010-04-05 17:21:54.468455261 +0200
+--- libiberty/configure.ac.orig	2010-04-17 22:17:32.325383538 +0200
++++ libiberty/configure.ac	2010-04-17 22:15:43.112883021 +0200
 @@ -109,9 +109,34 @@ dnl to call AC_CHECK_PROG.
  AC_CHECK_TOOL(AR, ar)
  AC_CHECK_TOOL(RANLIB, ranlib, :)
@@ -35,3 +35,19 @@
  
  if test x$GCC = xyes; then
    ac_libiberty_warn_cflags='-W -Wall -pedantic -Wwrite-strings -Wstrict-prototypes'
+@@ -157,6 +182,15 @@ if [[ -n "${with_build_subdir}" ]]; then
+   enable_shared=no
+ fi
+ 
++case "${host}" in
++  arm-unknown-riscos)
++    # Don't build a shared library for SCL:
++    if [[ -n "`echo $CC | grep -- -mlibscl`" ]]; then
++      enable_shared=no
++    fi
++    ;;
++esac
++
+ frag=
+ case "${host}" in
+   rs6000-ibm-aix3.1 | rs6000-ibm-aix)
