@@ -10,8 +10,7 @@
 
 # TARGET can have following values: arm-unknown-riscos (stable), arm-unknown-eabi (work in progress)
 TARGET=arm-unknown-riscos
-GCC_LANGUAGES="c"
-# FIXME: enable c++ again
+GCC_LANGUAGES="c,c++"
 
 AUTOCONF_FOR_BINUTILS_VERSION=2.64
 AUTOMAKE_FOR_BINUTILS_VERSION=1.11
