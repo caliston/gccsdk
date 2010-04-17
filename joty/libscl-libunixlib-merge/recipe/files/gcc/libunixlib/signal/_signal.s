@@ -418,7 +418,7 @@ __h_error:
 	__set_errno	a2, a1
 
 	@ Copy error buffer into thread specific storage
-	LDR	a1, .L6+20	@=__pthread_running_thread
+	LDR	a1, .L6+16	@=__pthread_running_thread
  PICEQ "LDR	a1, [v4, a1]"
 	LDR	a1, [a1]
 	ADD	a1, a1, #__PTHREAD_ERRBUF_OFFSET
@@ -456,12 +456,10 @@ __h_error:
 	WORD	__ul_callbackfp
 	WORD	__ul_errbuf_errblock
 	WORD	__ul_errbuf_valid
+	WORD	__pthread_running_thread
 #ifndef __SOFTFP__
 	WORD	__ul_fp_registers
-#else
-	WORD	0
 #endif
-	WORD	__pthread_running_thread
 
 unrecoverable_error:
 	@ Bit 31-was set, therefore it was a hardware error.
@@ -480,7 +478,7 @@ unrecoverable_error:
 	BNE	non_fp_exception
 
 	@ Store FP registers.
-	LDR	a1, .L6+16	@=__ul_fp_registers
+	LDR	a1, .L6+20	@=__ul_fp_registers
  PICEQ "LDR	a1, [v4, a1]"
 	RFS	a2		@ Read FP status register
 	STR	a2, [a1], #4
