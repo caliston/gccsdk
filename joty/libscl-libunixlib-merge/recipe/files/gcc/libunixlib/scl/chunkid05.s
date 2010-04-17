@@ -46,11 +46,11 @@ extra_vectors_begin:
 	@ int __fpclassifyf(float);
 	@ Returns a classification of the floating point argument passed, as
 	@ specified below :
-	@   1. = Value is zero
-	@   2. = Value is a sub-normal FP value
-	@   3. = Value is a normal FP value
-	@   4. = Value is an infinity FP value
-	@   5. = Value is Not-A-Number (NAN) FP value
+	@   0 (FP_ZERO) = Value is zero
+	@   1 (FP_SUBNORMAL) = Value is a sub-normal FP value
+	@   2 (FP_NORMAL) = Value is a normal FP value
+	@   3 (FP_INFINITY) = Value is an infinity FP value
+	@   4 (FP_NAN) = Value is Not-A-Number (NAN) FP value
 	@ Note: FP values are passed in FP registers.
 	@.global	__fpclassifyf
 __fpclassifyf_FIXME_float_arg:	MOV	PC, #0
@@ -59,11 +59,11 @@ __fpclassifyf_FIXME_float_arg:	MOV	PC, #0
 	@ int __fpclassifyd(double);
 	@ Returns a classification of the floating point argument passed, as
 	@ specified below :
-	@   1. = Value is zero
-	@   2. = Value is a sub-normal FP value
-	@   3. = Value is a normal FP value
-	@   4. = Value is an infinity FP value
-	@   5. = Value is Not-A-Number (NAN) FP value
+	@   0 (FP_ZERO) = Value is zero
+	@   1 (FP_SUBNORMAL) = Value is a sub-normal FP value
+	@   2 (FP_NORMAL) = Value is a normal FP value
+	@   3 (FP_INFINITY) = Value is an infinity FP value
+	@   4 (FP_NAN) = Value is Not-A-Number (NAN) FP value
 	@ Note: FP values are passed in FP registers.
 	.global	__fpclassifyd
 __fpclassifyd:
