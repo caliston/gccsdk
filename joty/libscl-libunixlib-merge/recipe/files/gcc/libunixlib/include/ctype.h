@@ -78,7 +78,14 @@ extern const short * const __ctype_upper;
 #  define isxdigit(c) (__ctype[(int) (c)] & ___ctype_xdigit)
 #else
 /* Characteristics. */
+#  ifdef __TARGET_MODULE__
+/* As __ctype is a non-const .bss array, we can not declare it const for
+   module code.  */
+extern unsigned char __ctype[];
+#  else
+/* We can safely make this a const array.  */
 extern const unsigned char __ctype[];
+#  endif
 
 #  define isspace(c) (__ctype[(int) (c)] & 1)
 #  define ispunct(c) (__ctype[(int) (c)] & 2)
