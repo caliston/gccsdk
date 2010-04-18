@@ -30,19 +30,19 @@ GDB_VERSION=6.8
 #      not necessary the gcc version we're building here.
 ifeq ($(TARGET),arm-unknown-riscos)
 # Case GCCSDK arm-unknown-riscos target:
+# Variations: --disable-shared vs --enable-shared=libunixlib,libgcc,libstdc++
 GCC_CONFIG_ARGS := \
 	--enable-threads=posix \
 	--enable-sjlj-exceptions=no \
 	--enable-c99 \
 	--enable-cmath \
 	--enable-multilib \
+	--enable-shared=libunixlib,libgcc,libstdc++ \
 	--disable-c-mbchar \
 	--disable-libstdcxx-pch \
 	--disable-tls \
-	--disable-shared \
 	--without-pic \
 	--with-cross-host
-# FIXME: --disable-shared => --enable-shared=libunixlib,libgcc,libstdc++ \
 # FIXME: for Java support: --without-x --enable-libgcj
 BINUTILS_CONFIG_ARGS =
 else
