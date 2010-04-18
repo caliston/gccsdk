@@ -150,6 +150,11 @@ esac
 AC_SUBST(toolexecdir)
 AC_SUBST(toolexeclibdir)
 
+# Don't build a shared library for SCL:
+if [[ -n "`echo $CC | grep -- -mlibscl`" ]]; then
+  enable_shared=no
+fi
+
 # For libtool support
 AC_LIBTOOL_DLOPEN
 AM_PROG_LIBTOOL
