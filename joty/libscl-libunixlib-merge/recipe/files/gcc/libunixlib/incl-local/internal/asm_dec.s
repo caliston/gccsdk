@@ -186,12 +186,6 @@
 
 .set	XFPEmulator_Version, 0x040480 + X_Bit
 
-.set	Internet_GetHostByName, 0x46000
-.set	Internet_GetHostByAddr, 0x46001
-
-.set	XInternet_GetHostByName, Internet_GetHostByName + X_Bit
-.set	XInternet_GetHostByAddr, Internet_GetHostByAddr + X_Bit
-
 .set	XMessageTrans_ErrorLookup, 0x041506 + X_Bit
 
 .set	XTaskWindow_TaskInfo, 0x043380 + X_Bit
