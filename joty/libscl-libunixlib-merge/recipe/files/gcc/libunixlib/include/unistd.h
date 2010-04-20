@@ -148,8 +148,8 @@ extern int access (const char *__name, int __type)
    the current position (if SEEK_CUR),
    or the end of the file (SEEK_END).
    Return the new file position.  */
-#ifndef __TARGET_SCL__
 extern __off_t lseek (int __fd, __off_t __offset, int __whence) __THROW;
+#ifndef __TARGET_SCL__
 extern __off_t lseek64 (int __fd, __off_t __offset, int __whence) __THROW;
 #endif
 

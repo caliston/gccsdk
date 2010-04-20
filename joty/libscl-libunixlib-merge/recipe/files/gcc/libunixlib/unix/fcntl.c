@@ -3,16 +3,16 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <netdb.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <netdb.h>
 
 #include <internal/unix.h>
 #include <internal/fd.h>
 #include <internal/dev.h>
-#include <pthread.h>
 
 int
 fcntl (int fd, int cmd, ...)
@@ -137,7 +137,8 @@ fcntl (int fd, int cmd, ...)
     case F_SETLK:
     case F_SETLKW:
       return 0; /* Dummy functionality */
-    }
 
-  return __set_errno (EINVAL);
+    default:
+      return __set_errno (EINVAL);
+    }
 }

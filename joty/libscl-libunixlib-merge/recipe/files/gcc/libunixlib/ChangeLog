@@ -2,7 +2,8 @@ John Tytgat  <John.Tytgat@aaug.net>
 
 	Merge libscl into libunixlib:
 	* configure.ac: Added (generated from gen-auto.pl + added
-	BUILDING_SCL conditional).
+	BUILDING_SCL conditional); don't enable shared library building when
+	configured for SCL building via multilib.
 	* {,test/*/}Makefile.am: Added.
 	* configure.template: Removed.
 	* crt/crt0-scl.s: Moved from libscl/crt to here.
@@ -21,6 +22,104 @@ John Tytgat  <John.Tytgat@aaug.net>
 	* include/ctype.h: Support SCL.
 	(isprint): Fixed.
 	* test/ctype: Added test.
+	* include/*.h: Merge libscl header contents.
+	* ChangeLog-SCL: libscl ChangeLog just before its merge.
+	* scl/chunkid02.s(__ignore_signal_handler,__error_signal_marker,
+	__default_signal_handler): No longer export these symbols.
+	* incl-local/internal/defines.h: Added arch 7 case.
+	* scl/chunkid02.s: Define fseeko/ftello.
+	* incl-local/internal/scl-macros.s(DefSCLGbl): Added.
+	* string/strsignal.c,include/bits/signum.h,signal/signame.c: Enable
+	for SCL usage.
+	* include/stdint.h(UINT8_MAX,UINT16_MAX,UINT8_C,UINT16_C): Make signed
+	instead of unsigned.
+	* wchar/wctype.c: Reimplemented and added iswcntrl, iswdigit,
+	iswgraph, iswpunct, iswxdigit.
+	* include/errno.h,sys/errlist.c: Merge SCL/UL errno codes.
+	* unix/dev.c,unix/select.c,unix/fcntl.c: Add include socket.h and
+	do minor source cleanup.
+	* locale/iconv.c: Enable for SCL usage.
+	* stdio/getdelim.c: Likewise
+	* incl-local/internal/fd.h: Poison for SCL usage.
+	* incl-local/internal/dev.h: Likewise.
+	* incl-local/internal/sigstate.h: Likewise.
+	* wchar/wcstod.c,wchar/wcstof.c,wchar/wcstol.c,wchar/wcstold.c,
+	wchar/wcsxfrm.c: Removed dummy implementations.
+	* incl-local/errno.h,signal/_signal.s,signal/post.c(__ul_fp_registers):
+	Disable in soft-float builds.
+	* signal/_signal.s(_kernel_last_oserror): Move to...
+	* kernel/koserror.c: ...here as C implementation.  Invalidate RISC OS
+	error block when called.
+	* kernel/ksetenv.s,kernel/kosbyte.s,kernel/koscli.s,kernel/kosbput.s,
+	kernel/kosgbpb.s,kernel/kosfind.s,kernel/kosargs.s: call __ul_seterr
+	with non-zero seterr parameter.
+	* signal/_signal.s(__ul_seterr): Move to...
+	* unix/seterr.c: ...here as C implementation.  Add support for SCL
+	usage.
+	* incl-local/pthread.h: Poison for SCL use.
+	(pthread::errbuf_valid): Added.
+	(__pthread_invalid): Better macro parameter protection.
+	* pthread/newnode.c(__pthread_new_node): initialise
+	pthread_t::errbuf_valid.
+	* test/scl/Makefile.am,test/scl/test-kernel_oserror.c: Add test for
+	_kernel_last_oserror code.
+	* scl/chunkid01.s(_stub_errorBuffer,_stub_errorNumber): Export.
+	* incl-local/internal/os.h(__ul_seterr): Fix parameter typo.
+	* include/errno.h(EOPSYS): Added for SCL use.
+	* sys/errlist.c(EOPSYS): Likewise.
+	* unix/getdomain.c(setdomainname): Move implementation to...
+	* unix/setdomain.c: ...here.
+	* unix/gethostnam.c(sethostname): Move implementation to...
+	* unix/sethostnam.c: ...here.
+	* sys/_os.s(__os_word): Remove.
+	(_kernel_osword): Move to...
+	* kernel/kosword: ...here.  Add call to __ul_seterr when there is an
+	error.
+	* time/time.c(time): use _kernel_osworld instead of __os_word.
+	* time/clk_gettime.c(clock_gettime): Likewise.
+	* time/ctime.c(ctime): Reimplement using ctime_r.
+	(ctime_r): Move to...
+	* time/ctime_r.c: ...here.
+	* time/asctime.c(asctime): Reimplement using asctime_r.
+	(asctime_r): Move to...
+	* time/asctime_r.c: ...here.
+	* time/localtime.c(localtime): Reimplement using localtime_r.
+	* time/gtime.c(gtime): Reimplement using gmtime_r.
+	* time/gmtime_r.c(gmtime_r): Enable for SCL usage.
+	* time/localtime_r.c(localtime_r): Likewise.
+	* time/ftime(ftime): Likewise.
+	* time/tzset(tzet): Likewise.
+	* time/dysize.c: Reimplement.
+	* time/mktime.c(timelocal): Made strong alias of mktime.
+	* include/sys/netdb.h: Remove, was an internal header.
+	* include/unistd.h(ttyname_r): Add prototype.
+	* unix/open.c(ttyname): Move to...
+	* unix/ttyname_r: ...here as ttyname_r.
+	* unix/ttyname(ttyname): Added.
+	* include/feature.h(__NO_LONG_DOUBLE_MATH): Define it here (instead of
+	gen-auto.pl/Makefile.am) as it is used in our public include/math.h.
+	* include/resolv.h: Move to...
+	* incl-local/resolv.h: ...here and make it fetch include/resolv.h.
+	* include/resolv/resolv.h: Move to...
+	* include/resolv.h: ...here.
+	* stdio/{fdopen.c,fileno.c,fopen.c}: Prefixed with ul_.
+	* unix/{close.c,ioctl.c,lseek.c,read.c,readv.c,select.c,write.c,
+	writev.c}: Likewise.
+	* netlib/{getaddrinfo.c,in6_addr.c,inet_lnaof.c,inet_mkad.c,
+	inet_netof.c,inet_netwo.c,inet_ntoa.c,net.c,proto.c,readline.c,
+	serv.c,socketpair.c}: Likewise.
+	* resolv/*.c: Likewise.
+	* stdio/{scl_fdopen.c,scl_fileno}: Added.
+	* unix/{scl_close.c,scl_ioctl.c,scl_lseek.c,scl_read.c,scl_readv.c,
+	scl_select.c,scl_write.c,scl_writev.c}: Likewise.
+	* revolv/scl_gethostbyname.c: Likewise.
+	* incl-local/bits/netdb.h: Removed.
+	* incl-local/internal/elf-macros.s(NetSWI,NetSWIsimple,NetSWI0,
+	NetSWIsimple0): Removed, no longer needed as we're using inline
+	assembler now.
+	* incl-local/internal/asm_dec.s: Removed socket SWI numbers.
+	* incl-local/sys/socket.h: turn socket SWI prototypes into inline
+	assembler routines.
 
 Wed Mar 17 00:19:35 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
 

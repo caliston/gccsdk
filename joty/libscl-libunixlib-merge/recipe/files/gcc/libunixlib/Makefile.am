@@ -26,9 +26,10 @@ AM_CPPFLAGS = -isystem $(top_srcdir)/include -I $(top_srcdir)/incl-local
 # a lot of C99 features.
 # The __GNU_LIBRARY__ definition is for matching the expectation of the couple
 # of GNU C Library files we're using.
-# The NO_LONG_DOUBLE and NO_LONG_DOUBLE_MATH definitions results in having the
-# 'long double' math routines aliased as the normal 'double' onces.
-AM_CFLAGS = -D__GNU_LIBRARY__ -DNO_LONG_DOUBLE -D__NO_LONG_DOUBLE_MATH -D_GNU_SOURCE=1 -std=c99 $(LIBM_FLAGS)
+# The NO_LONG_DOUBLE definition here and the __NO_LONG_DOUBLE_MATH definition
+# include features.h results in having the 'long double' math routines aliased
+# as the normal 'double' onces.
+AM_CFLAGS = -D__GNU_LIBRARY__ -DNO_LONG_DOUBLE -D_GNU_SOURCE=1 -std=c99 $(LIBM_FLAGS)
 
 # Assembler files rely heavily on the C preprocessor to keep structures
 # referred to by both languages in sync.
@@ -132,13 +133,14 @@ endif
 if BUILDING_SCL
 gcccompat_src =
 else
-gcccompat_src = \
+gcccompat_src =
+endif
+gcccompat_src += \
 	gcccompat/galloca.c \
 	gcccompat/_b_frame.s \
 	gcccompat/_b_return.s \
 	gcccompat/_eh_support.s \
 	gcccompat/_galloca.s
-endif
 
 if BUILDING_SCL
 gdtoa_src =
@@ -240,10 +242,12 @@ kernel_src = \
 	kernel/kosbput.s \
 	kernel/kosbyte.s \
 	kernel/koscli.s \
+	kernel/koserror.c \
 	kernel/kosfile.s \
 	kernel/kosfind.s \
 	kernel/kosgbpb.s \
 	kernel/kosrdch.s \
+	kernel/kosword.s \
 	kernel/ksetenv.s \
 	kernel/kswi.s \
 	kernel/kswi_c.s
@@ -542,7 +546,6 @@ if BUILDING_SCL
 locale_src =
 else
 locale_src = \
-	locale/iconv.c \
 	locale/localeconv.c \
 	locale/nl_langinfo.c \
 	locale/setlocale.c \
@@ -550,6 +553,8 @@ locale_src = \
 	locale/strxfrm.c \
 	locale/territory.c
 endif
+locale_src += \
+	locale/iconv.c
 
 if BUILDING_SCL
 misc_src =
@@ -559,66 +564,43 @@ misc_src = \
 endif
 
 if BUILDING_SCL
-netlib_src =
+netlib_src = \
+	netlib/scl_getservbyname.c \
+	netlib/scl_getservbyport.c
 else
 netlib_src = \
+	netlib/ul_getaddrinfo.c \
+	netlib/ul_in6_addr.c \
+	netlib/ul_inet_lnaof.c \
+	netlib/ul_inet_mkad.c \
+	netlib/ul_inet_netof.c \
+	netlib/ul_inet_netwo.c \
+	netlib/ul_inet_ntoa.c \
+	netlib/ul_net.c \
+	netlib/ul_proto.c \
+	netlib/ul_readline.c \
+	netlib/ul_serv.c \
+	netlib/ul_socketpair.c
+endif
+netlib_src += \
 	netlib/accept.c \
 	netlib/bind.c \
 	netlib/connect.c \
-	netlib/getaddrinfo.c \
 	netlib/getpeernam.c \
 	netlib/getsocknam.c \
 	netlib/getsockopt.c \
 	netlib/h_errno.c \
-	netlib/in6_addr.c \
-	netlib/inet_lnaof.c \
-	netlib/inet_mkad.c \
-	netlib/inet_netof.c \
-	netlib/inet_netwo.c \
-	netlib/inet_ntoa.c \
 	netlib/listen.c \
-	netlib/net.c \
-	netlib/proto.c \
-	netlib/readline.c \
+	netlib/net_error.c \
 	netlib/recv.c \
 	netlib/recvfrom.c \
 	netlib/recvmsg.c \
 	netlib/send.c \
 	netlib/sendmsg.c \
 	netlib/sendto.c \
-	netlib/serv.c \
 	netlib/setsockopt.c \
 	netlib/shutdown.c \
-	netlib/socket.c \
-	netlib/socketpair.c \
-	netlib/_accept.s \
-	netlib/_bind.s \
-	netlib/_connect.s \
-	netlib/_getpeerna.s \
-	netlib/_getsockna.s \
-	netlib/_getsockop.s \
-	netlib/_gettsize.s \
-	netlib/_listen.s \
-	netlib/_net_error.s \
-	netlib/_readv.s \
-	netlib/_recv.s \
-	netlib/_recvfrom.s \
-	netlib/_recvmsg.s \
-	netlib/_sclose.s \
-	netlib/_select.s \
-	netlib/_send.s \
-	netlib/_sendmsg.s \
-	netlib/_sendto.s \
-	netlib/_sendtosm.s \
-	netlib/_setsockop.s \
-	netlib/_shutdown.s \
-	netlib/_sioctl.s \
-	netlib/_socket.s \
-	netlib/_sockstat.s \
-	netlib/_sread.s \
-	netlib/_swrite.s \
-	netlib/_writev.s
-endif
+	netlib/socket.c
 
 # No pthread support for SharedCLibrary:
 if BUILDING_SCL
@@ -688,34 +670,35 @@ regexp_src = \
 endif
 
 if BUILDING_SCL
-resolv_src =
+resolv_src = \
+	resolv/scl_gethostbyname.c
 else
 resolv_src = \
-	resolv/base64.c \
-	resolv/gethnamaddr.c \
-	resolv/herror.c \
-	resolv/inet_addr.c \
-	resolv/inet_neta.c \
-	resolv/inet_net_ntop.c \
-	resolv/inet_net_pton.c \
-	resolv/inet_ntop.c \
-	resolv/inet_pton.c \
-	resolv/nsap_addr.c \
-	resolv/ns_name.c \
-	resolv/ns_netint.c \
-	resolv/ns_parse.c \
-	resolv/ns_print.c \
-	resolv/ns_samedomain.c \
-	resolv/ns_ttl.c \
-	resolv/opensock.c \
-	resolv/res_comp.c \
-	resolv/res_data.c \
-	resolv/res_debug.c \
-	resolv/res_hconf.c \
-	resolv/res_init.c \
-	resolv/res_mkquery.c \
-	resolv/res_query.c \
-	resolv/res_send.c
+	resolv/ul_base64.c \
+	resolv/ul_gethnamaddr.c \
+	resolv/ul_herror.c \
+	resolv/ul_inet_addr.c \
+	resolv/ul_inet_neta.c \
+	resolv/ul_inet_net_ntop.c \
+	resolv/ul_inet_net_pton.c \
+	resolv/ul_inet_ntop.c \
+	resolv/ul_inet_pton.c \
+	resolv/ul_nsap_addr.c \
+	resolv/ul_ns_name.c \
+	resolv/ul_ns_netint.c \
+	resolv/ul_ns_parse.c \
+	resolv/ul_ns_print.c \
+	resolv/ul_ns_samedomain.c \
+	resolv/ul_ns_ttl.c \
+	resolv/ul_opensock.c \
+	resolv/ul_res_comp.c \
+	resolv/ul_res_data.c \
+	resolv/ul_res_debug.c \
+	resolv/ul_res_hconf.c \
+	resolv/ul_res_init.c \
+	resolv/ul_res_mkquery.c \
+	resolv/ul_res_query.c \
+	resolv/ul_res_send.c
 endif
 
 if BUILDING_SCL
@@ -751,7 +734,7 @@ sched_src = \
 	sched/syield.c
 endif
 
-# SharedCLibrary stubs:
+# SharedCLibrary stub interface:
 if BUILDING_SCL
 scl_src = \
 	scl/chunkid01.s \
@@ -794,7 +777,6 @@ signal_src = \
 	signal/siginfo.c \
 	signal/sigismembe.c \
 	signal/signal.c \
-	signal/signame.c \
 	signal/sigpause.c \
 	signal/sigpending.c \
 	signal/sigprocmsk.c \
@@ -807,6 +789,8 @@ signal_src = \
 	signal/_demangle.s \
 	signal/_signal.s
 endif
+signal_src += \
+	signal/signame.c
 
 if BUILDING_SCL
 sound_src =
@@ -824,20 +808,23 @@ stat_src = \
 endif
 
 if BUILDING_SCL
-stdio_src =
+stdio_src = \
+	stdio/scl_fdopen.c \
+	stdio/scl_fileno.c
 else
 stdio_src = \
 	stdio/asprintf.c \
 	stdio/clearerr.c \
 	stdio/fclose.c \
+	stdio/ul_fdopen.c \
 	stdio/feof.c \
 	stdio/ferror.c \
 	stdio/fflush.c \
 	stdio/fgets.c \
 	stdio/filbuf.c \
-	stdio/fileno.c \
+	stdio/ul_fileno.c \
 	stdio/flsbuf.c \
-	stdio/fopen.c \
+	stdio/ul_fopen.c \
 	stdio/fpos.c \
 	stdio/fpurge.c \
 	stdio/fputs.c \
@@ -845,7 +832,6 @@ stdio_src = \
 	stdio/freopen.c \
 	stdio/fwrite.c \
 	stdio/getc.c \
-	stdio/getdelim.c \
 	stdio/gets.c \
 	stdio/getw.c \
 	stdio/newstream.c \
@@ -865,6 +851,8 @@ stdio_src = \
 	stdio/vasprintf.c \
 	stdio/vfprintf.c
 endif
+stdio_src += \
+	stdio/getdelim.c
 
 if BUILDING_SCL
 stdlib_src =
@@ -928,7 +916,6 @@ string_src = \
 	string/strnlen.c \
 	string/strpbrk.c \
 	string/strrchr.c \
-	string/strsignal.c \
 	string/strspn.c \
 	string/strstr.c \
 	string/strtok.c \
@@ -949,6 +936,7 @@ string_src += \
 	string/strnicmp.c \
 	string/strrichr.c \
 	string/strsep.c \
+	string/strsignal.c \
 	string/strtok_r.c \
 	string/_ffs.s \
 	string/_ffsll.s
@@ -959,7 +947,6 @@ else
 sys_src = \
 	sys/alarm.c \
 	sys/brk.c \
-	sys/errlist.c \
 	sys/exec.c \
 	sys/execl.c \
 	sys/execle.c \
@@ -980,6 +967,8 @@ sys_src = \
 	sys/_syslib.s \
 	sys/_vfork.s
 endif
+sys_src += \
+	sys/errlist.c
 
 if BUILDING_SCL
 termios_src =
@@ -1008,36 +997,38 @@ if BUILDING_SCL
 time_src =
 else
 time_src = \
-	time/adjtime.c \
 	time/asctime.c \
+	time/difftime.c \
+	time/ctime.c \
+	time/getitmr.c \
+	time/gmtime.c \
+	time/localtime.c \
+	time/mktime.c \
+	time/setitmr.c \
+	time/strftime.c \
+	time/time.c \
+	time/_clock.s
+endif
+time_src += \
+	time/adjtime.c \
+	time/asctime_r.c \
 	time/broken.c \
 	time/calendconv.c \
 	time/clk_getres.c \
 	time/clk_gettime.c \
 	time/clk_settime.c \
-	time/ctime.c \
-	time/difftime.c \
+	time/ctime_r.c \
 	time/dysize.c \
 	time/ftime.c \
-	time/getitmr.c \
 	time/gettod.c \
-	time/gmtime.c \
 	time/gmtime_r.c \
-	time/localtime.c \
 	time/localtime_r.c \
-	time/mktime.c \
-	time/setitmr.c \
 	time/settod.c \
 	time/stdtime.c \
-	time/strftime.c \
-	time/time.c \
 	time/timegm.c \
+	time/times.c \
 	time/tzset.c \
-	time/utimes.c \
-	time/_clock.s
-endif
-time_src += \
-	time/times.c
+	time/utimes.c
 
 if BUILDING_SCL
 unistd_src =
@@ -1057,14 +1048,22 @@ unistd_src = \
 endif
 
 if BUILDING_SCL
-unix_src =
+unix_src = \
+	unix/scl_close.c \
+	unix/scl_ioctl.c \
+	unix/scl_lseek.c \
+	unix/scl_read.c \
+	unix/scl_readv.c \
+	unix/scl_select.c \
+	unix/scl_write.c \
+	unix/scl_writev.c
 else
 unix_src = \
 	unix/access.c \
 	unix/alphasort.c \
 	unix/chdir.c \
 	unix/chmod.c \
-	unix/close.c \
+	unix/ul_close.c \
 	unix/creat.c \
 	unix/custom.c \
 	unix/dev.c \
@@ -1075,21 +1074,18 @@ unix_src = \
 	unix/fchmod.c \
 	unix/fcntl.c \
 	unix/features.c \
-	unix/fnmatch.c \
 	unix/fstat.c \
 	unix/getcwd.c \
-	unix/getdomain.c \
 	unix/getdtables.c \
 	unix/getenv.c \
-	unix/gethostnam.c \
 	unix/getopt.c \
 	unix/getopt1.c \
 	unix/getsubopt.c \
 	unix/glob.c \
-	unix/ioctl.c \
+	unix/ul_ioctl.c \
 	unix/isatty.c \
 	unix/ispipe.c \
-	unix/lseek.c \
+	unix/ul_lseek.c \
 	unix/lstat.c \
 	unix/mkdir.c \
 	unix/nice.c \
@@ -1100,11 +1096,11 @@ unix_src = \
 	unix/proc.c \
 	unix/pselect.c \
 	unix/putenv.c \
-	unix/read.c \
-	unix/readv.c \
+	unix/ul_read.c \
+	unix/ul_readv.c \
 	unix/reopen.c \
 	unix/rmdir.c \
-	unix/select.c \
+	unix/ul_select.c \
 	unix/setenv.c \
 	unix/stat.c \
 	unix/statfs.c \
@@ -1113,6 +1109,8 @@ unix_src = \
 	unix/syslog.c \
 	unix/truncate.c \
 	unix/tty.c \
+	unix/ttyname.c \
+	unix/ttyname_r.c \
 	unix/umask.c \
 	unix/uname.c \
 	unix/unix.c \
@@ -1122,23 +1120,27 @@ unix_src = \
 	unix/wait3.c \
 	unix/wait4.c \
 	unix/waitpid.c \
-	unix/write.c \
-	unix/writev.c
+	unix/ul_write.c \
+	unix/ul_writev.c
 endif
+unix_src += \
+	unix/fnmatch.c \
+	unix/getdomain.c \
+	unix/gethostnam.c \
+	unix/setdomain.c \
+	unix/seterr.c \
+	unix/sethostnam.c
 
 if BUILDING_SCL
 wchar_src =
 else
 wchar_src = \
 	wchar/btowc.c \
-	wchar/mblen.c \
 	wchar/mbrlen.c \
 	wchar/mbrtowc.c \
 	wchar/mbsinit.c \
 	wchar/mbsnrtowcs.c \
 	wchar/mbsrtowcs.c \
-	wchar/mbstowcs.c \
-	wchar/mbtowc.c \
 	wchar/wcpcpy.c \
 	wchar/wcpncpy.c \
 	wchar/wcrtomb.c \
@@ -1159,17 +1161,9 @@ wchar_src = \
 	wchar/wcsrtombs.c \
 	wchar/wcsspn.c \
 	wchar/wcsstr.c \
-	wchar/wcstod.c \
-	wchar/wcstof.c \
 	wchar/wcstok.c \
-	wchar/wcstol.c \
-	wchar/wcstold.c \
-	wchar/wcstombs.c \
 	wchar/wcswidth.c \
-	wchar/wcsxfrm.c \
 	wchar/wctob.c \
-	wchar/wctomb.c \
-	wchar/wctype.c \
 	wchar/wcwidth.c \
 	wchar/wmemchr.c \
 	wchar/wmemcmp.c \
@@ -1177,6 +1171,13 @@ wchar_src = \
 	wchar/wmemmove.c \
 	wchar/wmemset.c
 endif
+wchar_src += \
+	wchar/mblen.c \
+	wchar/mbstowcs.c \
+	wchar/mbtowc.c \
+	wchar/wcstombs.c \
+	wchar/wctomb.c \
+	wchar/wctype.c
 
 libc_headers = \
 	alloca.h \
@@ -1254,7 +1255,6 @@ libc_headers = \
 	regex.h \
 	regexp.h \
 	resolv.h \
-	resolv/resolv.h \
 	rpc/netdb.h \
 	sched.h \
 	search.h \
@@ -1325,7 +1325,6 @@ libc_headers = \
 libc_headers += unixlib/stubs.h
 
 nobase_noinst_HEADERS = \
-	incl-local/bits/netdb.h \
 	incl-local/dirent.h \
 	incl-local/errno.h \
 	incl-local/features.h \
@@ -1350,6 +1349,7 @@ nobase_noinst_HEADERS = \
 	incl-local/memcopy.h \
 	incl-local/pthread.h \
 	incl-local/pwd.h \
+	incl-local/resolv.h \
 	incl-local/setjmp.h \
 	incl-local/signal.h \
 	incl-local/stdio.h \
@@ -1410,10 +1410,8 @@ sul$(EXEEXT): sul.o
 	$(STRIP) -O binary -o sul$(EXEEXT) sul.o
 
 # These rules are copied direct from a generated Makefile.
-# The only difference is that stack checking is turned off
-# for these targets.
-# Automake doesn't seem to provide a per-object file flag
-# setting function.
+# The only difference is that stack checking is turned off for these targets.
+# Automake doesn't seem to provide a per-object file flag setting function.
 brk.lo: sys/brk.c
 	if $(LTCOMPILE) -Wc,-mno-apcs-stack-check \
 	-MT brk.lo -MD -MP -MF "$(DEPDIR)/brk.Tpo" -c -o brk.lo \
