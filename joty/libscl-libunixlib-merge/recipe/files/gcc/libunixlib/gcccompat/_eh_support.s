@@ -159,7 +159,11 @@ __ehs_trim_stack:
 
 	@ Save registers that __trim_stack may corrupt
 	STMFD	sp!, {a1-a4, ip}
+#ifndef __TARGET_SCL__
 	BL	__trim_stack
+#else
+@ FIXME: not sure what to do here.
+#endif
 	LDMFD	sp!, {a1-a4, ip}
 	MOV	pc, ip
 	DECLARE_FUNCTION __ehs_trim_stack
