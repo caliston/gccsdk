@@ -9,16 +9,18 @@
 struct servent *
 getservbyport (int __port, const char *__proto)
 {
-  register int port __asm ("r0") = __port;
+  /* Given port number is network byte order, the
+     InetServices_GetServiceByPort SWI needs host order.  */
+  register int port __asm ("r0") = ntohs (__port);
   register int proto __asm ("r1") = __proto;
   struct servent *rtrn;
   __asm volatile ("SWI\t%[SWI_XInetServices_GetServiceByPort]\n\t"
-		  "MOVVC\t%[rtrn], r3\n\t"
+		  "MOVVC\t%[rtrn], r2\n\t"
 		  "MOVVS\t%[rtrn], #0\n\t"
 		  : [rtrn] "=r" (rtrn)
 		  : "r" (port), "r" (proto),
 		    [SWI_XInetServices_GetServiceByPort] "i" (InetServices_GetServiceByPort | (1<<17))
-		  : "r3", "r14", "cc");
+		  : "r2", "r14", "cc");
   return rtrn;
 }
 
