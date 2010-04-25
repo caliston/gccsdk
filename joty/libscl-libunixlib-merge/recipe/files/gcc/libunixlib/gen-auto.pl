@@ -17,6 +17,9 @@ while ($dir = readdir (ROOT)) {
     # Do not look at .svn directories.
     next if ($dir eq '.' or $dir eq '..' or $dir eq ".svn");
     next if (! -d "$sourceunixlibtree/test/$dir");
+    # When there is already a Makefile, don't generate another autotool's
+    # generated one:
+    next if (-f "$sourceunixlibtree/test/$dir/Makefile");
 
     push (@testdirs, $dir);
 }
