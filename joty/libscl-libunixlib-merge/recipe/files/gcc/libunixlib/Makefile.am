@@ -878,6 +878,7 @@ stdlib_src = \
 	stdlib/ldiv.c \
 	stdlib/lldiv.c \
 	stdlib/lrand48.c \
+	stdlib/mkstemp.c \
 	stdlib/mrand48.c \
 	stdlib/msort.c \
 	stdlib/nrand48.c \

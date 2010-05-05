@@ -85,6 +85,13 @@ __BEGIN_NAMESPACE_STD
 extern char *getenv (const char *__name) __THROW __nonnull ((1)) __wur;
 __END_NAMESPACE_STD
 
+#if defined __USE_SVID || defined __USE_XOPEN
+#  ifndef __TARGET_SCL__
+/* Put string, which is of the form "NAME=VALUE" in the environment.  */
+extern int putenv (char *__string) __THROW __nonnull ((1));
+#  endif
+#endif
+
 #if defined __USE_BSD || defined __USE_XOPEN2K
 /* Set NAME to VALUE in the environment.
    If REPLACE is nonzero, overwrite an existing value.  */
@@ -106,10 +113,15 @@ extern int clearenv (void) __THROW;
 #  endif
 #endif
 
-#if defined __USE_SVID || defined __USE_XOPEN
+#if defined __USE_MISC || defined __USE_XOPEN_EXTENDED
 #  ifndef __TARGET_SCL__
-/* Put string, which is of the form "NAME=VALUE" in the environment.  */
-extern int putenv (char *__string) __THROW __nonnull ((1));
+/* Generate a unique temporary file name for temp.  */
+extern char *mktemp (char *__template) __THROW __nonnull ((1)) __wur;
+
+/* As for mktemp but returns an open file descriptor on the file.
+   This function is a possible cancellation points and therefore not
+   marked with __THROW.  */
+extern int mkstemp(char *__template) __nonnull ((1)) __wur;
 #  endif
 #endif
 

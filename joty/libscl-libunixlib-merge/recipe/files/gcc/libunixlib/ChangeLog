@@ -120,6 +120,10 @@ John Tytgat  <John.Tytgat@aaug.net>
 	* incl-local/internal/asm_dec.s: Removed socket SWI numbers.
 	* incl-local/sys/socket.h: turn socket SWI prototypes into inline
 	assembler routines.
+	* include/stdio.h(mktemp,mkstemp): Moved prototypes to...
+	* include/stdlib.h: ...here.
+	* stdio/tmpfile.c(mkstemp): Moved implementation to...
+	* stdlib/mkstemp.c: ...here.
 
 Wed Mar 17 00:19:35 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
 

@@ -623,12 +623,6 @@ extern char *tmpnam_r (char *__result) __THROW __nonnull ((1));
 extern char *tempnam (const char *__dir, const char *__prefix)
      __THROW __attribute_malloc__;
 #endif
-
-/* Generate a unique temporary file name for temp.  */
-extern char *mktemp(char *__temp) __THROW;
-
-/* As for mktemp but returns an open file descriptor on the file.  */
-extern int mkstemp(char *__temp) __THROW;
 #endif
 
 /* System V enhancements.  */
