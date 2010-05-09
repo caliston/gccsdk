@@ -275,10 +275,8 @@
 .set	CHUNK_PREV, 8		@ Ptr to previous chunk
 .set	CHUNK_SIZE, 12		@ Size of chunk, including header
 .set	CHUNK_DEALLOC, 16	@ Function to call to free the chunk
-#ifdef __TARGET_SCL__
-.set	CHUNK_DEALLOC, 16	@ Function to call to free the chunk
-
-.set	CHUNK_OVERHEAD, 20	@ Size of chunk header
+#if __TARGET_SCL__
+.set	CHUNK_OVERHEAD, 48	@ Size of chunk header
 #else
 .set	CHUNK_RETURN, 20	@ Return address after freeing this chunk
 

@@ -349,7 +349,7 @@ c_run:					@ Ptr into .text
 	.asciz	"___init"
 	.align
 	.word	0xff000008
-	.type	c_next, %function
+	.type	___init, %function
 ___init:
 	MOV	IP, SP
 	STMFD	SP!, {FP, IP, LR, PC}
