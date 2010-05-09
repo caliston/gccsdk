@@ -60,7 +60,7 @@ GCC_CONFIG_ARGS += --enable-maintainer-mode --enable-interwork --disable-nls
 NEWLIB_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-shared --disable-nls
 GDB_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-werror --disable-nls
 
-# When debugging/testing/validating the compiler add "-enable-checking=all",
+# When debugging/testing/validating the compiler add "--enable-checking=all",
 # otherwise add "--enable-checking=release" or even "--enable-checking=no"
 GCC_CONFIG_ARGS += --enable-checking=no
 # Configure args shared between different targets:
