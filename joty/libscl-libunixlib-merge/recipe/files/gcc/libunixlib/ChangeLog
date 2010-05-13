@@ -1,4 +1,17 @@
-Sun May  9 17:02:23 2010   Lee Noar <leenoar@sky.com>
+Thu May 13 16:20:41 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* recipe/files/gcc/libunixlib/crt/crt0-scl.s(_start): Merge into __main
+	eliminating the latter symbol.
+	Removed unnecessary .text lines.
+	(c_run): Renamed to __c_run.
+	( ___main): Renamed to __main; Register _fini with atexit() after the
+	call to _init instead of before so when we have an exit called in
+	_init, the _fini is not called.
+	(_start,__c_run): Add size info.
+	(__gccmain): Added for the module case (being the the equivalent of
+	__main for absolute files.
+
+Sun May  9 17:02:23 2010   Lee Noar  <leenoar@sky.com>
 
 	* crt/crt0-scl.s: Fix .type parameter to match function it
 	belongs to.

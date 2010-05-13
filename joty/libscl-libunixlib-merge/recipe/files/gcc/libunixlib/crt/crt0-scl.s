@@ -45,21 +45,16 @@
 #endif
 	.endm
 
-#ifndef __TARGET_MODULE__
-	.global	_start
-	.type	_start, %function
-_start:
-	B	__main
-#endif
-
 	.text
 
 #ifndef __TARGET_MODULE__
 	@ For application code only.
+	@ For module code _start is defined by the CMunge generated object
+	@ file as the start of the module header.
 
-	.global	__main
-	.type	__main, %function
-__main:
+	.global	_start
+	.type	_start, %function
+_start:
 	SWI	OS_GetEnv
 	MOV	R2, R1			@ workspace limit
 	LDR	R0, stubs		@ list of stubs
@@ -92,7 +87,9 @@ __main:
 
 	ADR	R0, out_of_date_error
 	SWI	OS_GenerateError
+	.size	_start, . - _start
 #endif
+
 	@ Used by application and module code.
 out_of_date_error:
 	.word	0x800e91
@@ -255,7 +252,6 @@ _clib_initialisemodule_error:
 	CMNVC	R0, #1<<31
 	LDR	PC, [SP], #4	@ Exit
 
-	.text
 	@ Called by CMunge module start code.
 	.global	_clib_entermodule
 	.type	_clib_entermodule, %function
@@ -274,14 +270,13 @@ _clib_entermodule:
 #endif
 
 	@@ Area: RTSK$$Data
-	.text
 RTSK$$Data$$Base:
 	.word	RTSK$$Data$$Limit - RTSK$$Data$$Base
 	MakePtr	Image$$RO$$Base		@ C$$code$$Base
 	MakePtr	Image$$RO$$Limit	@ C$$code$$Limit
 	MakePtr	language_name		@ Must be "C"
 	MakePtr	__sclmain		@ Our PROC-returning InitProc
-	.word	0				@ Finaliser
+	.word	0			@ Finaliser
 	@ These are the "optionals"...
 	MakePtr	TrapHandler		@ SCL's own trap handler...
 	MakePtr	UncaughtTrapHandler	@ ...and uncaught trap proc
@@ -296,7 +291,6 @@ language_name:
 	.asciz	"C"
 	.align
 
-	.text
 	.type	__sclmain, %function
 __sclmain:
 	@ Allow malloc() to grow the WimpSlot in Absolute and Module
@@ -326,6 +320,7 @@ __sclmain:
 	ADR	R0, ___init
 #endif
 	LDR	PC, [R13], #4
+	.size	__sclmain, . - __sclmain
 
 kallocextendsws_data:			@ Ptr into .data, so needs static relocation data offset
 	MakePtr	_stub_kallocExtendsWS
@@ -336,13 +331,19 @@ c_run_weak:				@ Ptr into .text
 	.weak	main
 	.word	main			@ *NO* GOTOFF as it breaks .weak test
 #endif
-c_run:					@ Ptr into .text
+
+__c_run:				@ Ptr into .text
 #ifdef __TARGET_MODULE__
+	@ Jump to user supplied main() routine.  Our _init routines have
+	@ already been executed by module's initialisation code calling
+	@ __gccmain
 	MakePtr	main
 #else
-	MakePtr	___main
+	@ Jump to stub code executing _init routine (and making sure _fini
+	@ will be called) before the user supplied main() routine is called.
+	MakePtr	__main
 #endif
-	.size	__sclmain, . - __sclmain
+	.size	__c_run, . - __c_run
 
 	@ This is called when all RTL blocks have been initialised via their
 	@ InitProc
@@ -355,29 +356,52 @@ ___init:
 	STMFD	SP!, {FP, IP, LR, PC}
 	SUB	FP, IP, #4
 	BL	_kernel_command_string	@ Get R0 = command string
-	LDR	R1, c_run		@ Get ptr to main() function
+	LDR	R1, __c_run		@ Get ptr to main() function
 	BL	_main			@ Call clib to enter it.  SHOULD never return from here.
 	LDMDB	FP, {FP, SP, PC}
 	.size	___init, . - ___init
 
 #ifndef __TARGET_MODULE__
-	.asciz	"___main"
+	.asciz	"__main"
 	.align
 	.word	0xff000008
-	.type	___main, %function
-___main:
+	.type	__main, %function
+__main:
 	MOV	IP, SP
 	STMFD	SP!, {R0-R3, FP, IP, LR, PC}
 	SUB	FP, IP, #4
 
-	@ R0-R3 are saved on the stack to prevent the arguments to main() from being corrupted.
+	@ R0-R3 are saved on the stack to prevent the arguments to main()
+	@ from being corrupted.
+	BL	_init			@ Call static global constructors.
 	LDR	R0, =_fini
 	BL	atexit			@ Register static global destructors for calling on exit.
-	BL	_init			@ Call static global constructors.
 
 	LDMDB	FP, {R0-R3, FP, SP, LR}
 	B	main
-	.size	___main, . - ___main
+	.size	__main, . - __main
+#else
+	@ No need to preserve R0-R3.
+	@ __gccmain needs to be global as it is called directly from the
+	@ CMunge generated code.
+	.global	__gccmain
+	.asciz	"__gccmain"
+	.align
+	.word	0xff00000c
+	.type	__gccmain, %function
+__gccmain:
+	MOV	IP, SP
+	STMFD	SP!, {FP, IP, LR, PC}
+	SUB	FP, IP, #4
+
+	BL	_init			@ Call static global constructors.
+	LDR	R0, __fini_section
+	BL	atexit			@ Register static global destructors for calling on exit.
+
+	LDMDB	FP, {FP, SP, PC}
+	.size	__gccmain, . - __gccmain
+__fini_section:
+	MakePtr	_fini
 #endif
 
 	.end

@@ -122,9 +122,9 @@
    provides part of the support for getting C++ file-scope static
    object constructed before entering `main'.  */
 #undef STARTFILE_SPEC
-#define STARTFILE_SPEC	" %{!mmodule:crti.o%s}" \
+#define STARTFILE_SPEC	" crti.o%s" \
 			" %{!shared:%{mmodule|mlibscl:crt0-scl.o%s;:%{pg:gcrt0.o%s;:crt0.o%s}}}" \
-			" %{!mmodule:%{shared:crtbeginS.o%s;:crtbegin.o%s}}"
+			" %{shared:crtbeginS.o%s;:crtbegin.o%s}"
 
 /* Provide a ENDFILE_SPEC appropriate for GNU/Linux.  Here we tack on
    the GNU/Linux magical crtend.o file (see crtstuff.c) which
@@ -132,7 +132,8 @@
    object constructed before entering `main', followed by a normal
    GNU/Linux "finalizer" file, `crtn.o'.  */
 #undef ENDFILE_SPEC
-#define ENDFILE_SPEC	" %{!mmodule:%{shared:crtendS.o%s;:crtend.o%s} crtn.o%s}"
+#define ENDFILE_SPEC	" %{shared:crtendS.o%s;:crtend.o%s}" \
+			" crtn.o%s"
 
 #undef  LINK_SPEC
 #define LINK_SPEC "%{h*} %{version:-v} \
@@ -164,6 +165,10 @@
 #undef FINI_SECTION_ASM_OP
 #define FINI_SECTION_ASM_OP	".section\t.fini"
 #define HAVE_INIT_SECTION
+
+/* We don't support Java and the .jcr section gives troubles in crtstuff.c
+   for module code when initialising via frame_dummy().  */
+#define TARGET_USE_JCR_SECTION 0
 
 /* Select a format to encode pointers in exception handling data.  CODE
    is 0 for data, 1 for code labels, 2 for function pointers.  GLOBAL is
