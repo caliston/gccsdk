@@ -1,3 +1,39 @@
+Sun May  9 17:02:23 2010   Lee Noar <leenoar@sky.com>
+
+	* crt/crt0-scl.s: Fix .type parameter to match function it
+	belongs to.
+
+	Fixes for C++ exception handling in SCL (not module code):
+
+	* gcccompat/_b_return.s: Add separate implementation of
+	__builtin_return_address for SCL. This differs from the UnixLib
+	version in that an SCL stack chunk does not contain a return
+	address for when a stack chunk is freed. Instead it creates a
+	dummy stack frame to store it.
+	* gcccompat/_b_frame.s: Add separate implementation of
+	__builtin_frame_address for SCL to help simplify the code.
+	* gcccompat/_eh_support.s(__ehs_return_address): The SCL presents
+	a problem for __ehs_return_address because it can't know what the
+	address of the stack chunk freeing routine is as we do for
+	__free_stack_chunk in UnixLib. It needs to be able to test for it
+	so that it can substitute the real return address. To overcome this
+	a new function, __ehs_init, is called to determine the start and end
+	addresses of the SCL. This only needs to be done once - the results
+	are saved for future use. If a return address is found to lie within
+	the SCL, then it is assumed to be the stack chunk freeing routine.
+	Where UnixLib stores the real return address in the stack chunk, the
+	SCL creates a dummy frame to store it instead. Because of these
+	differences, __ehs_return_address is divided into two separate
+	implementations to simplify the code.
+	(__ehs_trim_stack): In UnixLib, there is already a __trim_stack function
+	we can use to clean up after C++ exception handling. It only requires
+	a wrapper to save any registers it may use. For the SCL, we have to
+	do the work ourselves, i.e., terminating the stack chain at the current
+	chunk and freeing any unused chunks using the SCL supplied routine.
+	* incl-local/internal/asm_dec.s: Make CHUNK_OVERHEAD 48 for SCL so that
+	512 + CHUNK_OVERHEAD adds up to 560. Remove redundant CHUNK_DEALLOC
+	definition.
+
 John Tytgat  <John.Tytgat@aaug.net>
 
 	Merge libscl into libunixlib:
