@@ -1,6 +1,6 @@
 Index: gmon/gmon-start.c
 ===================================================================
---- gmon/gmon-start.c	(revision 4508)
+--- gmon/gmon-start.c	(revision 4658)
 +++ gmon/gmon-start.c	(working copy)
 @@ -26,10 +26,10 @@
     as the external functions since we want the addresses of those
