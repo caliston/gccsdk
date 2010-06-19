@@ -1,0 +1,1189 @@
+Tue Feb 2  18:29:10 2010  Lee Noar  <leenoar@sky.com>
+
+	Fix build errors:
+
+	* filestack.c: #include header that defines riscosify related
+	bits.
+	* os.h: Make sure declaration of CanonicalisePath matches
+	definition.
+
+Wed Jan 27 00:31:34 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.c/filestack.h: Merged the macro, external linked,
+	'if'/'while' code all together so that nested usage works and
+	results also in much cleaner code (too many changes to mention in
+	detail).
+	* depend.c: Proper dependency generation (all input files are
+	taken into account).
+	* symbol.h(SYMBOL_MACRO_LOCAL): Set when symbol is only defined
+	as macro local variable.
+	* m_cpuctrl.c(fixBranchT,fixAdrl,fixInt): Drop inputLineNo parameter.
+	* help_cop.c(fixCopOffset): Likewise.
+	* decode.h(returnvalue): Removed.
+	(decode): Made return parameter void.
+	* error.c(source,errorInit): Remove.
+	(TB): Rename to DoThrowback.
+	* error.c/error.h(errorAbort,errorAbortLine): Created to report the
+	final error and use this where applicable.
+	(ErrorSerious): Removed.
+	(error): Drop c parameter.
+	(errorLine): Drop c parameter.
+	(errorOutOfMem): Drop fn parameter.
+	* riscos_c.c(CanonicalisePath): Constify return pointer.
+	* regression/Makefile: Added comments.
+	* regression/tests_pass/variables.s: Added.
+
+Sun Jan 17 15:23:22 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* error.c(doline): Fix RISC OS native build.  Bug #188.
+
+Sun Jan 10 04:41:35 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* configure.ac: Version 1.48
+	* decode.c(decode): Avoid variable being written but not read
+	afterwards.  Follow constification of macro functions.
+	* error.c(doline): Likewise.
+	* rname.c(riscos_to_unix): Likewise.
+	* whileif.c(if_skip,while_skip): Likewise.
+	* variables.c(declare_var,c_lcl): Warn when same variable get
+	defined but when type changes, give an error.
+	* value.c,value.h(valueTagAsString): Added.
+	* value.h(ValueSingle,ValueDouble,ValueExtended,ValuePacked): Removed.
+	* macros.c,macros.h(macroCurrent,macroFind,macroCall,Macro::next,
+	MacroStack::macro): Constify.
+	* output.c(writeElfSH): Drop return value.
+	* asm.c(asm_label): Use NULL iso 0.
+	* lex.c(lexReadLocal): Likewise.
+
+Tue Oct  6 02:22:15 CEST 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* storate.c(c_alloc): Revert previous change as it introduces a
+	regression in the register_based_maps.s test.
+	* configure.ac: Revert back to 1.47.
+	* regression/tests_pass/record_basic.s: Uncomment part that now no
+	longer works.
+	* regression/tests_pass/record_basic.s,
+	regression/tests_fail/record_basic_fail.s: Update reference.
+
+Tue Sep 29 00:21:05 CEST 2009  Christopher Martin  <belles@internode.on.net>
+
+	* storage.c(c_alloc): Enable expression evaluation that includes
+	symbols defined in record layouts.
+	* regression/tests_pass/record_basic.s,
+	regression/tests_fail/record_basic_fail.s: Added test case.
+	* configure.ac: Bumped version to 1.48.
+
+Wed May 27 20:28:55 PDT 2009  Peter Naulls  <peter@chocky.org>
+
+	* input.c, input.h, main.c: Approximate the -PD flag to objasm
+	to allow the SETx syntax to be passed on the command line.
+	This is largely a hack for the benefit of ROOL source.
+
+Mon May 11 23:17:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c(inputVarSub): Permit verbatim '$' in string literals.
+
+Mon Feb 23 15:40:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* eval.c(evalUnop): Stub implementations of :fload: and :fexec:. These
+	aren't particularly useful, but are better than bailing out.
+	* lexAcorn.c(lexAcornUnop): Fix decode of :fexec:.
+	(lexAcornPrim): Add {ASASM}, so existing code can work around our
+	deficiencies (specifically ?A and ASSERT using late labels in the code
+	I'm currently assembling). Comments about this welcome.
+
+Mon Feb 23 13:37:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpumem.c: Revert r3747 -- LDR|STR Rd,[Rm,#xxx] may have xxx as a
+	register-relative expression if xxx is a field in a map.
+	* regression/{Makefile,ldr_from_addr.s}: Test data for the above.
+
+Mon Feb 23 12:15:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* decode.c, commands.[ch]: Add support for the INFO directive and the
+	! shorthand.
+	* regression/{info.s,Makefile}: Test case for the above.
+
+Mon Feb 23 11:35:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpuctrl.c(m_adr): Permit use of ADR(L) to obtain address of fields
+	in register-based maps.
+	* regression/register_based_map.s: Expand test data to cover the
+	above.
+
+Mon Feb 23 04:54:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* include.c(getInclude): Consult the original filespec to determine
+	whether to perform '.' -> '/' conversion on Unix.
+	* filestack.c: Duplicate filename strings when pushing onto the stack.
+	Free the current input name when popping off the stack. This avoids
+	double freeing of data when an included file includes multiple files
+	itself.
+
+Mon Feb 23 03:51:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpumem.c: Partial support for LDR/STR to fields in register-based
+	maps. Currently, the map must be defined before it is used.
+
+Mon Feb 23 01:19:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpumem.c: LDR|STR Rd,[Rm,#xxx] has no business expecting "xxx" 
+	to be a register-relative expression.
+
+Sun Feb 22 18:47:47 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.c: Added GPL license header.
+	* filestack.h: Likewise.
+
+Sun Feb 22 13:21:55 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* decode.c: ENTRY must be all caps, treat as macro otherwise.
+
+Mon Jan 26 01:46:49 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c(c_get,c_lnk,c_idfn): Fix memory leaks.
+	* riscos_c.c: Define __riscosify_control.
+	* input.c(inputInit): Don't use the internal UnixLib
+	__set_riscosify_control and __get_riscosify_control routines; Use
+	static 16K input buffer instead of malloced one.
+	(inputFinish): Support setting new input stream.
+	(inputComment): Change return type from int into BOOL.
+	* input.h: Likewise.
+	* include.c(openInclude): Drop mode parameter; Don't use the internal
+	UnixLib __set_riscosify_control and __get_riscosify_control routines.
+	(getInclude): Simplify.
+	* symbol.h(symbolSymbolELFOutput): Disable prototype for non ELF
+	output build.
+	* reloc.h(relocELFOutput): Likewise.
+	* decode.c(decode): Support INCLUDE keyword (synonym for GET).
+	* os.h: Define CanonicalisePath as strdup() instead of
+	OSCanonicalisePath.
+	* error.c(LF): Remove, wasn't used.
+	* output.c(idfn_text): Is now a pointer to malloced block holding a
+	user defined identification string. Use DEFAULT_IDFN is there is none
+	defined. Use GET_IDFN to get the identification string under all
+	circumstances.
+	* output.h(DEFAULT_IDFN): Define.
+	* main.c(as_help): Use DEFAULT_IDFN.
+	+ minor source cleanups.
+
+Sun Jan 25 23:08:47 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lex.h(lexAcornBinop,lexAcornUnop,lexAcornPrim): Move too...
+	* lexAcorn.h: ...here and change return value into void; new file.
+	* lexAcorn.c(lexAcornBinop,lexAcornUnop,lexAcornPrim): Change return
+	value into void.
+	(lexAcornPrim): Support {ENDIAN}
+	* regression/{builtinvar_endian.s,Makefile}: Add test for {ENDIAN}
+	support.
+	* lex.c,lexAcorn.c: Minor source cleanup.
+
+Sat Jan 24 14:33:32 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* riscos_c.c(switonum): Return -1 on error.
+	(ThrowbackSendError): Rename error into errstr avoiding a compiler
+	warning.
+	* help_cop.c,m_cpumem.c,lit.c: Pass Value parameter by const reference,
+	not by copy.
+	* put.c,code.c,code.h,error.c,error.h,area.c,value.c,area.h,value.h,
+	input.c,reloc.c,reloc.h,asm.c,main.c,lit.c,lex.c,lit.h,lex.h: Minor
+	source cleanups.
+
+Thu Jan 22 03:34:31 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* fix.c(fixInt): Upper limit for 1 or 2 byte sized words was one off.
+
+Tue Jan 13 03:42:37 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c: Previous fix wasn't correct.
+	* code.h(codeFixReloc): Remove prototype, this wasn't defined.
+	* value.c: Minor reidentation.
+
+Mon Jan 12 21:20:52 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c: Define OS_File etc SWI numbers for native RISC OS build
+	and using UnixLib.
+
+Mon Jan 12 01:58:02 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/Makefile: Output OK when all tests passed succesfully.
+	* regression/branch.s: Output local label 'label' otherwise ELF output
+	differs.
+	* symbol.c(SYMBOL_ELF_OUTPUT): Symplify and make it more bulletproof.
+	* Makefile.am: Add comment.
+
+Mon Jan 12 01:09:31 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/Makefile: Remake all references and redo all tests when
+	Makefile changes; A failed test should be redone when retrying.
+
+Sun Jan 11 22:48:00 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpuctrl.c,expr.c,help_eval.c: Minor source cleanup.
+	* reloc.c(relocWrite): R_ARM_PC24 ELF reloc needs to happen for a
+	"B + PC - 8" instruction, while in AOF this needs to happen for a
+	"B 0" one.
+
+Sun Jan 11 21:35:31 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.h: Have SYMBOL_CPUREG, SYMBOL_FPUREG, SYMBOL_COPREG and
+	SYMBOL_COPNUM defined as values not individual bits. Define
+	SYMBOL_DECLARED as a new bit and remove Symbol::declared.
+	* commands.c(c_define,symFlag), symbol.c(symbolNew,symbolInit,
+	symbolPrint),area.c(c_area): Follow previous changes.
+	* symbol.c(symbolPrint): Skip the internally defined register and
+	coprocessor number symbols.
+	* code.c: Add comments.
+	* reloc.c(relocShiftImm,relocImm8s4,relocImmFloat,relocBranch,
+	relocBranchT,relocSwi,relocCpuOffset,relocCopOffset,relocAdr,relocAdrl,
+	relocMask,relocInt,relocFloat,relocAdd),value.c(valueFree): Pass Value
+	parameter as reference, not by copy.
+	* reloc.h,commands.c(defineint,definereal),m_cpuctrl.c(m_branch,
+	m_blx,m_swi,m_adr),help_cop.c(help_copAddr),m_cpumem.c(dstmem,
+	dstreglist),value.c(valueEqual),m_fpu.c(getFloatRhs),reloc.c(relocNew),
+	get.c(getShift,getRhs): Follow previous change.
+	* output.c(countAreas): Get rid of parameter.
+	(outputAof,outputElf): Follow previous change.
+	* symbol.c(symbolFix,symbolStringOutput): Implicitly imported symbol
+	warning was wrongly given for some symbols in ELF output mode.
+	
+Sun Jan 11 18:32:47 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* docs/{AIF-1993,ALF-1989,ALF-1993,AOF-1989,AOF-2002,APCS,AIF-1989,
+	ASDTF}: Added.
+
+Sun Jan 11 18:21:17 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c(symbolSymbolELFOutput): Output local symbols in ELF mode.
+	(symbolPrint): Added for debug purposes.
+	* symbol.h: Added comments and symbolPrint prototype.
+
+Sun Jan 11 18:18:31 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* variables.c(var_inputSymbol): Make return type const char ptr.
+	* value.c(valuePrint), help_lex.c(lexChar2Int): Minor source
+	cleanup.
+
+Wed Jan  7 02:44:53 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c,riscos_c.c,symbol.c,put.c,code.c,decode.c,error.c,local.c,
+	m_cop.c,storage.c,option.c,area.c,output.c,m_cpu.c,m_fpumem.c,m_fpu.c,
+	input.c,help_lex.c,lexAcorn.c,main.c,fix.c,lex.c,main.h,lex.h:
+	Prefixed option verbose,pedantic,fussy,throwback,dde,autocast,
+	align,gas_backend,local,objasm,uc,apcs_32bit,apcs_fpv3,apcs_softfloat,
+	rma_module with "option_".
+
+Tue Jan  6 22:09:45 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile.am: Go for C99 and more warnings enabled.
+	* commands.c,symbol.c,decode.c,error.c,local.c,area.c,rname.c,input.c,
+	get.c,include.c,eval.c,lex.c,include.h: Lots of small cleanups.
+
+Tue Jan  6 21:50:41 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* main.c(main): Change default output format back to ELF (was wrongly
+	AOF since r3694 / Sun Jan  4 15:46:16 CET 2009).
+
+Mon Jan  5 02:17:02 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c(symbolFix): Let it return the offset in the symbol strings
+	array without the AOF 4 byte length included (as the ELF output only
+	needs one byte extra)
+	(symbolStringSize): Remove, no longer needed.
+	* symbol.h: Updated comments, removed symbolStringSize prototype.
+	* output.c(outputAlf,outputElf): Follow above changes.
+
+Sun Jan  4 21:36:15 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c(c_define): Remove return parameter, is the same as its
+	2nd one.
+
+Sun Jan  4 21:00:58 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c,symbol.h(symbolAdd,symbolGet): Pass Lex parameter by (const)
+	pointer, not by value.
+	* commands.c,area.c,variables.c,expr.c,get.c,asm.c,asm.h: Follow
+	change.
+
+Sun Jan  4 20:04:39 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c,symbol.c,put.c,m_cpuctrl.c,help_cop.c,m_cpumem.c,area.c,
+	area.h,expr.c,output.c,reloc.c,asm.c,lit.c,lex.c: Rename 
+	areaCurrent/areaEntry/areaHead to
+	areaCurrentSymbol/areaEntrySymbol/areaHeadSymbol.
+
+Sun Jan  4 17:21:39 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* global.h,area.c,area.h,fix.c: Small code cleanup.
+
+Sun Jan  4 17:14:00 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c,code.c,m_cpuctrl.c,m_cpumem.c,get.c: Put some extra brackets
+	around '&' tests where it improves readability.
+
+Sun Jan  4 15:46:16 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c,code.c,symbol.h,code.h,decode.c,variables.c,value.c
+	value.h,output.c,m_fpumem.c,m_fpu.c,targetcpu.c,main.c,main.h:
+	Small code cleanups; have option_aof available instead of
+	option_elf and drop the latter completely.
+
+Sun Jan  4 15:31:53 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* reloc.c,reloc.h,output: Small code cleanup.
+
+Sun Jan  4 03:26:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpuctrl.c: Permit ValueAddr as SWI value.
+
+Sun Jan  4 03:16:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c: Invalidate asmfile in inputFinish. This allows multiple
+	calls to inputFinish to occur (may happen if we longjmp to the abort
+	handler after inputFinish is called in normal execution).
+
+Sun Jan  4 03:02:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* decode.c: Treat SET[^ALS] as illegal.
+
+Sun Jan  4 03:58:08 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* configure.ac: Invoke AC_C_BIGENDIAN so we have WORDS_BIGENDIAN
+	defined when necessary.
+
+Sun Jan  4 03:37:05 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c(outputElf): Allow switch between softfloat vs hardfloat
+	ELF output.
+
+Sun Jan  4 02:24:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* storage.c: Permit use of ValueAddr in record base calculation.
+	For example:
+			^	0
+			#	1
+		foo	#	1
+			^	foo + 4
+		bar	#	1
+	should result in "bar" having a value of 5.
+	* input.c: Pedantic whitespace removal.
+
+Sun Jan  4 02:36:02 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* riscos_c.c: Use _kernel_swi instead of __os_swi.
+	* os.h, error.c, input.c: Minor source cleanup.
+	* output.c: Remaining as -> asasm renaming; write ELF filetyped files
+	in ELF output mode.
+	* rname.c: include rname.h instead of having double prototypes.
+	* main.c,main.h: make option ELF available to other files.
+
+Sat Jan  3 19:53:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c: Don't treat "<>" as an environment variable substitution.
+
+Sat Jan  3 19:47:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c: Prevent runaway execution when $foo is not substituted in
+	string literals.
+
+Sat Jan  3 18:52:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* eval.c: Allow :INDEX: to be used in storage declarations
+
+Sat Jan  3 19:24:38 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* version.h: Removed as the version info comes from config.h.
+	* main.c,output.c: Remove include of version.h.
+
+Sat Jan  3 18:14:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* symbol.c,symbol.h,get.c,main.c,lex.c,lex.h: Predefine register names
+	properly, so that "foo RN R10" works correctly. Remove special case
+	predefinitions from get.c, as the symbol system will handle these.
+
+Sat Jan  3 03:13:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* include.c: Use unixified filename when searching include paths and
+	cross compiling.
+
+Sat Jan  3 02:22:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c: Implement environment variable substitution in objasm mode.
+	* include.c: Remove <APCS> substitution -- define APCS as an
+	environment variable, instead.
+	* ChangeLog: Update my email address.
+
+Sat Jan  3 03:02:40 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/Makefile: follow objasm -> asasm name change.
+
+Sat Jan  3 01:08:33 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* configure.ac,Makefile.am: Instead of having 'as' known as 'objasm'
+	with all possible confusion, rename it to 'asasm'.
+	* *.c,*.h: Fixed several wrongly encoded instances of "Niklas Röjemo"
+	by using UTF-8 now.
+	* README: Added.
+
+2009-01-02 03:33  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c: Fix runaway execution and segfault when encountering
+	uses of undefined variables.
+	Also, more comments and rather more robustness here.
+
+2008-12-31 14:51  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* include.c: Fix buffer overflow. This entire thing needs replacing
+	with environment variable lookup, anyway.
+
+2008-12-31 14:15  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* decode.c: Fix handling of SUBS -- when you're potentially going
+	to put a character back on the input stream, you need to use
+	inputGet(), and not inputGetUC().
+
+2008-12-31 14:14  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* regression/Makefile: Fixup regression test makefile to not assume
+	that we're gcc's backend assembler.
+	Don't bother linking the output, as we can compare the intermediate
+	objects.
+
+2008-12-22 21:07  John Tytgat  <John.Tytgat@aaug.net>
+
+	* .: Ignore the autotool generated files.
+
+Sun Dec 14 16:56:28 CET 2008  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Migrated GCCSDK 3.4.6 'as' as 'objasm' in GCCSDK 4.1.1 and brought
+	its build up to date.
+	* Removed the unimplemented -gas option.
+	* Made ELF output format default and provided new option -aof for AOF
+	output format.
+
+2008-05-10 16:02  Peter Naulls  <peter@chocky.org>
+
+	* commands.c, commands.h, decode.c, symbol.c: Add dummy TTL and
+	SUBT commands (Title, Subtitle) for objasm comaptiblity
+	Allow register name symbosl to be redefined. This looks to be consistent
+	with objasm.
+
+2008-05-06 03:03  Peter Naulls  <peter@chocky.org>
+
+	* error.c, include.c, symbol.c: Warning fixes.
+
+2008-04-21 03:26  Peter Naulls  <peter@chocky.org>
+
+	* Makefile, input.c: The assebler wasn't correctly replacing
+	variables in strings. This caused some of the macros in use in the
+	RISC OS 5 source to break. This change makes it more like objasm -
+	variables in strings are replaced, and if they don't match, they're
+	left alone.
+	  
+	With this and previous improvements, I have been able to build a
+	working !Paint using GCC.
+	  
+	This change is a bit invasive, so any review is appreciated.
+
+2008-04-20 05:40  Peter Naulls  <peter@chocky.org>
+
+	* include.c: Correct logic, otherwise the APCS processing is missed
+	for second try.
+
+2008-04-20 05:14  Peter Naulls  <peter@chocky.org>
+
+	* commands.c, commands.h, decode.c, include.c, lexAcorn.c: objasm
+	compatibility improvements. Support <APCS> in include paths. Try
+	harder for variations on include filenames with no extension. Add
+	in dummy opt variable.
+
+2006-10-14 15:38  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c: Set the ARM EABI version to 0 (which is EF_ARM_ABI_UNKNOWN)
+	instead of EF_ARM_CURRENT (which was version 2) as we're not complying
+	to any of the ARM EABI versions.
+
+2006-10-02 01:58  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include.c, include.h, main.c, version.h: No longer using a fixed
+	limit on number of include directories (was 40); Increased version
+	number to 1.46.
+
+2006-09-17 15:49  Peter Naulls  <peter@chocky.org>
+
+	* include.c: Raise needlessly low limit (jmb's change meant that more
+	complex programs easily have more than 10 paths).
+
+2006-09-15 00:50  John Tytgat  <John.Tytgat@aaug.net>
+
+	* aoffile.h, area.c, area.h, asm.c, asm.h, chunkfile.h, code.c,
+	code.h, commands.c, commands.h, decode.c, decode.h, depend.c,
+	depend.h, error.c, error.h, eval.c, eval.h, expr.c, expr.h,
+	filestack.c, filestack.h, fix.c, fix.h, get.c, get.h, global.h,
+	help_cop.c, help_cop.h, help_cpu.c, help_cpu.h, help_eval.c,
+	help_eval.h, help_lex.c, help_lex.h, include.c, include.h,
+	input.c, input.h, lex.c, lex.h, lexAcorn.c, lit.c, lit.h,
+	local.c, local.h, m_cop.c, m_copmem.c, m_cpu.c, m_cpu.h,
+	m_cpuctrl.c, m_cpumem.c, m_fpu.c, m_fpu.h, m_fpumem.c, macros.c,
+	macros.h, main.c, main.h, mnemonics.h, option.c, option.h, os.h,
+	output.c, output.h, put.c, put.h, reloc.c, reloc.h, riscos_c.c,
+	storage.c, storage.h, strdup.c, symbol.c, symbol.h, targetcpu.c,
+	targetcpu.h, value.c, value.h, variables.c, variables.h,
+	whileif.c, whileif.h: Updated Copyright statements based on
+	contribution history in cvs/svn.
+
+2006-09-14 00:01  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* commands.c, include.c, input.c, lex.c, main.c, main.h, version.h:
+	Remove gcc_backend option & associated code. This was solely support
+	for @ as a comment indicator. It appears to be unnecessary now as
+	GCCSDK builds without it; Fix include processing to handle hdr.foo
+	and foo.hdr correctly; Bump version number.
+
+2006-09-06 21:47  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* code.c, decode.c, fix.c, fix.h, get.c, get.h, lex.c, lex.h,
+	m_cop.c, m_copmem.c, m_cpu.c, m_cpu.h, m_cpuctrl.c, m_cpumem.c,
+	mnemonics.h, option.c, regression/branch.s, regression/copro.s,
+	regression/dsp.s, regression/misc.s, reloc.c, reloc.h: Complete
+	ARMv5E support. This adds support for the following instructions:
+	  
+	  BKPT, BLX
+	  CDP2, CLZ
+	  LDC2, LDRD
+	  MCR2, MCRR, MRC2, MRRC
+	  QADD, QDADD, QDSUB, QSUB
+	  SMLAxy, SMLALxy, SMLAWy, STC2, STRD
+	  
+	Additionally:
+	  
+	  Fix BX detection to be case insensitive.
+	  Fix Coprocessor 1 detection for pedantic FP warning.
+	  Fix opcode1 generation for MCR/MRC.
+
+2006-09-06 21:43  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* help_cop.c: Tidy up numeric offset handling (no longer accepts
+	{+/-}#NN). Make FP stack handling (LFMFD etc) less intrusive.
+	Add support for Unindexed LDC/STC addressing (eg LDC p0,c0,[R0],{16})
+	* m_cop.c: Minor tidying.
+	* m_copmem.c: Fix coprocessor detection such that it actually works.
+	* m_cpumem.c: Tidy up numeric offset handling for LDR etc (no longer
+	accepts {+/-}#NN); Fix PLD encoding to assemble PLD [R0, #-4]
+	correctly.
+	* main.c: Fix ELF output to not append AOF output, too.
+
+2006-09-06 21:42  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	Testcases for instruction generation (up to, and including ARMv5TE):
+	* regression/Makefile: New, processes all regression tests.
+	* regression/arithmetic1.s: Data processing instructions using
+	addressing mode 1.
+	* regression/arithmetic2.s: Multiply/multiply accumulate.
+	* regression/branch.s: Branch instructions.
+	* regression/copro.s: Coprocessor instructions (addressing mode 5).
+	* regression/dsp.s: Enhanced DSP extensions.
+	* regression/fp.s: FPA instructions.
+	* regression/loadstore.s: A selection of LDR{B,H,SB,SH} instructions.
+	* regression/loadstore2.s: Load/Store instructions using addressing
+	modes 2 & 3.
+	* regression/loadstore3.s: Load/Store multiple (addressing mode 4).
+	* regression/misc.s: Miscellaneous other instructions.
+
+2006-09-06 21:41  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpumem.c: Fix LDR|STR{H,SH,SB} Rd,[Rn] - was encoding as
+	... Rd,[Rn,R0].
+	* regression/loadstore2.s: Add regression test for full set of
+	(non-multiple) load/store operations.
+
+2006-09-06 21:19  Peter Naulls  <peter@chocky.org>
+
+	* main.c, targetcpu.c, targetcpu.h: Create a TARGET_CPU assembler
+	variable.
+
+2006-07-16 16:43  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile: Add riscos-dist rule.
+
+2006-06-26 03:09  Peter Naulls  <peter@chocky.org>
+
+	* decode.c: Accidental removal.
+
+2006-06-26 01:56  Peter Naulls  <peter@chocky.org>
+
+	* decode.c, m_cpu.c, m_cpu.h, mnemonics.h: Support additiona ARMv5
+	instructions
+
+2006-06-08 09:28  Peter Naulls  <peter@chocky.org>
+
+	* input.c: Fall back for filenames like the compiler does
+
+2006-06-07 14:24  Peter Naulls  <peter@chocky.org>
+
+	* get.c: Fix range
+
+2006-06-06 22:20  John Tytgat  <John.Tytgat@aaug.net>
+
+	* fix.c (fixImm8s4): fussy output via errorLine	had missing printf
+	format specifiers which could lead to crashes.
+	(fixImm8s4, fixImmFloat): small constify change; upcasing opcodes.
+	* main.c (as_help): clarified -fussy and -soft-float options a bit
+	more.
+
+2006-06-06 05:55  Peter Naulls  <peter@chocky.org>
+
+	* fix.c, get.c: Support for rotated constants
+
+2006-05-16 00:07  John Tytgat  <John.Tytgat@aaug.net>
+
+	* main.c: Check on conflicting APCS options
+
+2006-05-10 23:02  John Tytgat  <John.Tytgat@aaug.net>
+
+	* help_cpu.c, lex.c, local.c, symbol.c: Remove compiler warnings
+
+2006-03-09 22:59  John Tytgat  <John.Tytgat@aaug.net>
+
+	* ChangeLog: Removed, was no longer kept up-to-date.
+	* area.c (c_align): ALIGN statement on its own in an uninitialised
+	area sets a non-zero area size without allocating area memory
+	leading to a crash at outputAof() time (solving bug 149); Support of
+	ALIGN <offset> parameter.
+	* area.c (c_reserve): reorganised code a bit so it looks more similar
+	to c_align().
+	* area.c (c_area): Support for ALIGN area attribute.
+	* area.h (AREA:type): Add comment.
+	* version.h (AS_VERSION): Bumped version to 1.44.
+	* output.c: A bit of code cleanup (like using AREA_IMAGE() macro);
+	(outputAof): pad unaligned data at end of area with zero bytes instead
+	of random bytes.
+
+2005-10-08 18:57  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile: Added -W for more compiler warnings.
+	* area.c: Added more checks for conflicting area attributes; Add
+	logic dealing when COMMON/COMREF and COMMON/NOINIT attributes are
+	specified.
+	* area.h: Defined AREA_MASKBASEREGS.
+	* commands.c (c_import): New IMPORT options "COMMON", "NOCASE" and
+	"FPREGARGS".
+	* input.c (inputUnGet/inputPutBack): Disabled debug printf.
+	* symbol.c (EqSymLex): use memcmp() instead of for() loop.
+	* symbol.c (symbolAdd): Changed printf '%*s' into '%.*s'; no longer
+	give an error when symbol is defined with a same name as an existing
+	area as long its value is the same.
+	* symbol.c (symbolSymbolOutout): Value of COMMON symbol was always
+	0 and not its real value.
+	* symbol.h: Updated the symbol attribute definitions.
+	* variables.c: Changed printf '%*s' into '%.*s'; Removed compiler
+	warning signed/unsigned.
+	* version.h: Bumped version to 1.43.
+	* Various src cleanups.
+
+2005-10-06 19:43  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c, area.h: Relocated the SOFTFLOAT AOF area attribute from
+	bit 27 to bit 31 as area bits 24 - 27 (incl) are already used for
+	specifying the 'base register for base area'.
+
+2005-08-10 00:25  John Tytgat  <John.Tytgat@aaug.net>
+
+	* main.c, output.c, version.h: Use __VERSION__ in version string
+	too so that it is more clear from which GCCSDK release the binaries
+	come from.
+
+2005-07-23 21:33  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile: Move the #define of _GNU_SOURCE to the individual
+	riscos-aof projects which require this. CMunge is explicitly not
+	compiled with _GNU_SOURCE because it is known to have slashes like
+	getline() and stricmp().
+
+2005-07-23 01:11  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c, symbol.c, symbol.h: Drop the "Creator: " part of the
+	IDFN string; The STRT first word should be the unaligned length of
+	the STRT chunk; Make a clear difference between the official AOF
+	symbol attributes and the internal AS AOF symbol attributes and only
+	write the former set of attributes in the AOF file.
+
+2005-06-22 21:40  John Tytgat  <John.Tytgat@aaug.net>
+
+	* fix.c: fix.c(fixImm8s4): fix for previous version which wrongly
+	assumed that MOV vs MVN and AND vs BIC immediate constants differ in
+	sign (they differ in two-complement).
+
+2005-06-17 10:10  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, input.c, main.c: Revert hacks that accidently made it
+	into the last commit.
+
+2005-06-17 10:05  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, area.c, commands.c, filestack.h, fix.c, hash.c, hash.h,
+	help_cpu.h, input.c, lex.c, m_fpu.h, main.c, reloc.c, reloc.h,
+	strdup.c, variables.c: Move hashstr function into lex.c for better
+	optimisation. Minor code factoring improvements.
+
+2005-05-31 21:34  John Tytgat  <John.Tytgat@aaug.net>
+
+	* config.h: Check for stricmp() existence: HAVE_STRICMP; Indicate
+	support cpu_type=POWERPC and os_type=DARWIN.
+
+2005-05-25 07:47  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.c, filestack.h: Removed useless const on return value
+	(resulting in a compiler warning anyway).
+
+2005-05-20 09:11  Nick Burrett  <nick@sqrt.co.uk>
+
+	* lexAcorn.c, main.c, main.h: RMA module support. Accept '-module'
+	option and set 'MODULE' to TRUE if switch passed on command line.
+
+2005-05-13 20:48  Peter Naulls  <peter@chocky.org>
+
+	* area.c: Ignore REL area attribute
+
+2005-05-11 15:45  Peter Naulls  <peter@chocky.org>
+
+	* m_cpuctrl.c: Correct BX bit pattern
+
+2005-05-04 13:20  Peter Naulls  <peter@chocky.org>
+
+	* error.c, riscos_c.c: Fix throwback reason code
+
+2005-05-04 09:22  Peter Naulls  <peter@chocky.org>
+
+	* m_cpuctrl.c: Add warnings for BX
+
+2005-05-03 22:42  Peter Naulls  <peter@chocky.org>
+
+	* decode.c, m_cpuctrl.c, mnemonics.h: Add BX instruction, which GCC
+	outputs for ARMv5 targets.
+
+2005-05-02 11:24  Peter Naulls  <peter@chocky.org>
+
+	* lexAcorn.c, m_fpu.c, m_fpumem.c: Complain about FP instructions
+	when -soft-float is specified. Add a soft-float macro value.
+
+2005-04-29 21:00  Peter Naulls  <peter@chocky.org>
+
+	* area.c, area.h, main.c, main.h: Add soft-float support to tools
+
+2005-04-29 10:51  Peter Naulls  <peter@chocky.org>
+
+	* depend.c, depend.h, help_cop.c, help_cop.h, local.c, local.h,
+	macros.c, macros.h, main.h, output.c, strdup.c, targetcpu.c,
+	targetcpu.h, whileif.c, whileif.h: Update copyright further.
+
+2005-04-25 14:47  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, config.h, error.c, main.c, os.h, os.s, riscos_c.c,
+	targetcpu.c: For stage 2 builds, use intermodule-analysis during
+	compilation. Delete assembler file and re-write functions in C.
+
+2005-04-24 10:11  Peter Naulls  <peter@chocky.org>
+
+	* COPYING, aoffile.h, area.c, area.h, asm.c, asm.h, chunkfile.h,
+	code.c, code.h, commands.c, commands.h, decode.c, decode.h,
+	error.c, error.h, eval.c, eval.h, expr.c, expr.h, fix.c, fix.h,
+	get.c, get.h, global.h, help_cpu.c, help_cpu.h, help_eval.c,
+	help_eval.h, help_lex.c, help_lex.h, input.c, input.h, lex.c,
+	lex.h, lexAcorn.c, lit.c, lit.h, m_cop.c, m_copmem.c, m_cpu.c,
+	m_cpu.h, m_cpuctrl.c, m_cpumem.c, m_fpu.c, m_fpu.h, m_fpumem.c,
+	main.c, mnemonics.h, option.c, option.h, output.c, output.h,
+	put.c, put.h, reloc.c, reloc.h, riscos_c.c, storage.c, storage.h,
+	symbol.c, symbol.h, value.c, value.h, variables.h: Relicense
+	where appropriate to GPL - permission given by Niklas Röjemo.
+
+2005-04-20 13:20  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, area.c, asm.c, code.c, commands.c, config.h, decode.c,
+	error.c, expr.c, filestack.c, get.c, help_cop.c, help_eval.c,
+	input.c, lex.c, lexAcorn.c, lit.c, local.c, m_cop.c, m_copmem.c,
+	m_cpu.c, m_cpuctrl.c, m_cpumem.c, m_fpu.c, m_fpumem.c, macros.c,
+	main.c, option.c, os.h, output.c, put.c, reloc.c, riscos_c.c,
+	storage.c, strdup.c, symbol.c, value.c, variables.c, whileif.c:
+	Work around a problem of building a native RISC OS binary by
+	supplying a default configuration that works for UnixLib and for
+	the SCL.
+
+2005-04-07 18:47  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, output.c: (outputFinish): Once objfile is closed, set
+	NULL to prevent a possible double free bug.
+
+2005-01-30 12:00  Peter Naulls  <peter@chocky.org>
+
+	* include.c: fix bracket placement
+
+Sun Jan 30 00:50:54 2005  John Tytgat  <John.Tytgat@aaug.net>
+	  
+	* Changed #define tests on __riscos__ into CROSS_COMPILE tests.
+	* Makefile: OBJS in alphabetic order.
+	* asm.{c,h}: asm_() -> assemble()
+	* commands.c, include.{c,h}: No longer using FILE ptr to
+	canonicalise to full path via OSArgs 7. This fixes bug #132.
+	* depend.c: Made it more robust; Added dependInit() and
+	dependFinish().
+	* error.c: Output Throwback errors when verbose is set.
+	* filestack.{c,h}, whileif.h: Removed fileNo, fileCurrentNo (wasn't
+	really used).
+	* os.{h,s}: Removed unused bits; Made APCS-32 compliant.
+	* version.h: Bumped version to 1.42.
+
+2004-12-20 18:07  Peter Naulls  <peter@chocky.org>
+
+	* get.c, m_cop.c: Co-processor register support, from John-Mark
+	Bell.
+
+2004-12-20 10:45  Peter Naulls  <peter@chocky.org>
+
+	* lex.c, local.c, output.c: Improve error messages. Set output
+	filetype to text when using SCL.
+
+2004-12-14 23:30  Peter Naulls  <peter@chocky.org>
+
+	* Makefile, include.c, input.c, output.c, riscos_c.c, strdup.c,
+	uname.c, uname.h: Use libscl instead of Unixlib. Remove some of
+	the complexity in filename handling.
+
+2004-11-30 19:54  Peter Naulls  <peter@chocky.org>
+
+	* decode.c, m_cpumem.c, mnemonics.h: Add support for ARMv5 PLD
+	instruction.
+
+2004-10-17 16:00  John Tytgat  <John.Tytgat@aaug.net>
+
+	* ChangeLog, aoffile.h, area.c, area.h, asm.c, asm.h, chunkfile.h,
+	code.c, code.h, commands.c, commands.h, decode.c, decode.h,
+	depend.c, depend.h, elf.h, error.c, error.h, eval.c, eval.h,
+	expr.c, expr.h, filestack.c, filestack.h, fix.c, fix.h, get.c,
+	get.h, global.h, hash.c, hash.h, help_cop.c, help_cop.h,
+	help_cpu.c, help_cpu.h, help_eval.c, help_eval.h, help_lex.c,
+	help_lex.h, include.c, include.h, input.c, input.h, lex.c, lex.h,
+	lexAcorn.c, lit.c, lit.h, local.c, local.h, m_cop.c, m_copmem.c,
+	m_cpu.c, m_cpu.h, m_cpuctrl.c, m_cpumem.c, m_fpu.c, m_fpu.h,
+	m_fpumem.c, macros.c, macros.h, main.c, main.h, mnemonics.h,
+	option.c, option.h, os.h, os.s, output.c, output.h, put.c, put.h,
+	reloc.c, reloc.h, riscos.s, riscos_c.c, rname.c, rname.h,
+	storage.c, storage.h, strdup.c, symbol.c, symbol.h, targetcpu.c,
+	targetcpu.h, uname.c, uname.h, value.c, value.h, variables.c,
+	variables.h, version.h, whileif.c, whileif.h: Various fixes &
+	cleanups.
+
+2004-09-23 10:31  Peter Naulls  <peter@chocky.org>
+
+	* output.c, output.h: Recorrect endian handling.
+
+2004-09-19 13:01  Peter Naulls  <peter@chocky.org>
+
+	* output.c, output.h: Fix for big endian.
+
+2004-08-16 14:30  Nick Burrett  <nick@sqrt.co.uk>
+
+	* area.c, area.h: Implement a new AREA attribute called LINKONCE
+	that merges COMDEF areas but does not compare the contents of the
+	COMDEF areas for a match.
+	This is to aid C++ vtables created by the compiler which can be
+	duplicated between different object files.
+
+2004-08-16 13:45  Nick Burrett  <nick@sqrt.co.uk>
+
+	* area.c: Fix COMDEF area definition.
+
+2004-08-13 10:52  Nick Burrett  <nick@sqrt.co.uk>
+
+	* main.c, output.c, output.h, riscos_c.c: Fixes for -funit-at-a-time
+	compilation.
+
+2004-06-18 16:54  Nick Burrett  <nick@sqrt.co.uk>
+
+	* input.s: Import GCC snapshot from 20040618.
+
+2004-01-21 20:16  Nick Burrett  <nick@sqrt.co.uk>
+
+	* main.c: Tony van der Hoff: Increase 'as' compatibility with
+	objasm when the -objasm flag is set on the command line:
+	  
+	The token '@' will be treated as the current location counter, as
+	used by objasm, instead of as an introduction to a comment, which is
+	required in GCC mode.
+
+2003-11-23 14:31  Nick Burrett  <nick@sqrt.co.uk>
+
+	* put.c: Fix a segfault caused by the attempted output of an
+	unaligned word at the start of the AREA e.g.
+	  
+	  AREA |foo|, DATA
+	  ALIGN 2
+	  DCD 1
+
+2003-10-29 08:11  Peter Naulls  <peter@chocky.org>
+
+	* area.c, reloc.c, symbol.c: Relocation fixes from David David
+	Marston.
+
+2003-10-25 20:51  Peter Naulls  <peter@chocky.org>
+
+	* output.c: Really fix it this time
+
+2003-10-25 20:44  Peter Naulls  <peter@chocky.org>
+
+	* output.c: Further fix for ELF output from David David Marston.
+
+2003-10-22 18:24  Peter Naulls  <peter@chocky.org>
+
+	* output.c, symbol.c, symbol.h: Fixes from David Marston to fix ELF
+	output after yesterday's general fixes.
+
+2003-10-22 14:05  Peter Naulls  <peter@chocky.org>
+
+	* asm.c, code.c, commands.c, symbol.c: David Marston's fixes for
+	area handling.
+
+2003-10-20 20:47  Peter Naulls  <peter@chocky.org>
+
+	* asm.c, code.c, elf.h, main.c, output.c, output.h, reloc.c,
+	reloc.h, symbol.c, symbol.h: 'as' ELF output by David Marston.
+	Please test.
+
+2003-10-06 09:25  Nick Burrett  <nick@sqrt.co.uk>
+
+	* commands.c: EXPORT should set the SYMBOL_GLOBAL flag rather than
+	SYMBOL_REFERENCE.
+
+2003-08-18 18:08  Nick Burrett  <nick@sqrt.co.uk>
+
+	* area.c, main.c, output.c, version.h: BUG 104: Bump version to
+	1.40 to differentiate from other distributions of 'as'. Clean up
+	description a little.
+
+2003-06-24 09:33  Peter Naulls  <peter@chocky.org>
+
+	* m_cpumem.c, regression, regression/loadstore.s, targetcpu.c,
+	targetcpu.h: Fix behaviour of ldr/str h/sb
+	Add some token XScale support
+	Add a regression test for ldr cases, since it has caused so much
+	trouble.
+
+2003-06-23 10:18  Peter Naulls  <peter@chocky.org>
+
+	* asm.c, commands.c, include.c, input.c, input.h, lex.c, main.c,
+	riscos_c.c, uname.h: as fixes from Tony van der Hoff:
+	  
+	Added various comments to the code, to help me understand it.
+	  
+	GET files were not being found via the -I path:
+	added some debuggging code in as/include.c; found that "." was
+	being used as directory separator.
+	- In as/uname.h changed switch from "#ifdef UNIX" to "#if defined
+	  CROSS_COMPILE"
+	  
+	Local labels with default scope were giving warning:
+	"Assumed 'a' in local label name". This is not a dodgy code
+	warning, but a warning that the range qualifiers for local labels is
+	not implemented.
+	- changed lex.c to produce more appropriate warning, and wrapped
+	warning under "pedantic".
+	  
+	AS barfed on variable substitution operator "$":
+	- inputUnGet() called from lexGetId() assumes that the input
+	buffer is pointed to by |input_buff|. It isn't in this case. The check
+	against the buffer seems superfluous anyway. Fixed by introducing a
+	variant form of inputUnGet(), imaginitively called inputPutBack().
+
+2003-06-02 22:29  Peter Naulls  <peter@chocky.org>
+
+	* lex.c, symbol.h: More spelling corrections.
+
+2003-06-02 22:22  Peter Naulls  <peter@chocky.org>
+
+	* symbol.c: Correct spelling of "table".
+
+2003-06-02 22:19  Peter Naulls  <peter@chocky.org>
+
+	* output.c, symbol.c: More corrections for Big Endian host output,
+	including endian function that actually works.
+
+2003-06-02 20:31  Peter Naulls  <peter@chocky.org>
+
+	* Makefile, output.c, output.h, reloc.c: Big Endian host support
+	for 'as' output. Add in liberty for stpcpy on IRIX
+
+2003-04-21 16:27  Peter Naulls  <peter@chocky.org>
+
+	* Makefile, decode.c, get.c, include.c, input.c, input.h, lex.c,
+	m_cpu.c, macros.c, os.h, riscos_c.c, rname.c, rname.h, rname2.c,
+	strdup.c, symbol.c, variables.c, whileif.c: Improved filename
+	handling for GET from 2.95 branch.
+	Reinstate strdup from branch.
+
+2003-04-20 22:30  Peter Naulls  <peter@chocky.org>
+
+	* get.c, main.c, uname.h: 32-bit changes.
+
+2003-04-15 09:17  Peter Naulls  <peter@chocky.org>
+
+	* m_cpu.c: Add 32-bit warning.
+
+2003-04-06 14:25  Peter Naulls  <peter@chocky.org>
+
+	* m_cpumem.c: Post increment warning from 2.95.4 branch.
+
+2003-01-02 10:24  Nick Burrett  <nick@sqrt.co.uk>
+
+	* m_cpumem.c: Peter Naulls: Fix incorrect generation of pre/post
+	index instructions.
+
+2002-12-22 21:38  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, os.h, strdup.c: Drop strdup. It is provided by Unixlib.
+
+2002-12-22 18:30  Nick Burrett  <nick@sqrt.co.uk>
+
+	* os.h: Changes for new UnixLib riscosify and resolver code.
+
+2002-09-24 21:05  Nick Burrett  <nick@sqrt.co.uk>
+
+	* code.c, commands.c, decode.c, decode.h, error.c, error.h,
+	filestack.c, get.c, hash.c, help_cop.c, help_cop.h, include.c,
+	lex.c, lex.h, lexAcorn.c, local.c, local.h, m_cop.c, m_cpu.c,
+	m_cpuctrl.c, m_fpu.c, macros.c, macros.h, main.c, main.h, os.h,
+	output.c, output.h, reloc.c, riscos_c.c, strdup.c, symbol.c,
+	targetcpu.h, value.c, version.h, whileif.c: Merge release_2_95
+	branch to mainline (20020924).
+
+2002-02-14 15:56  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, area.c, commands.c, decode.c, error.c, eval.c, get.c,
+	include.c, input.c, input.c.broke, lex.c, lexAcorn.c, local.c,
+	m_cpumem.c, macros.c, main.c, os.h, output.c, reloc.c,
+	riscos_c.c, strdup.c, strdup.h, symbol.c, targetcpu.c, uname.c,
+	value.c, variables.c, whileif.c: Merge all bug from the
+	release_2_95 branch to mainline (20020214).
+
+2001-08-01 07:59  Nick Burrett  <nick@sqrt.co.uk>
+
+	* decode.c, input.c, input.h, lex.c, macros.c, variables.c,
+	whileif.c: Accept dots in labels.
+
+2001-07-25 15:28  Nick Burrett  <nick@sqrt.co.uk>
+
+	* input.c: Support dots in labels without having to revert to
+	enclosing the label in |...|.
+
+2001-07-23 15:51  Nick Burrett  <nick@sqrt.co.uk>
+
+	* aoffile.h, area.h, chunkfile.h, os.h, symbol.h: Change uint32_t
+	to unsigned int.
+	Change int32_t to int.
+	This fixes a problem with older machines that don't support C99.
+
+2001-03-26 13:05  Nick Burrett  <nick@sqrt.co.uk>
+
+	* endian.c, endiandef.h, output.c: Use AUTOCONF based endian-ness
+	detection.
+
+2001-03-20 15:00  Nick Burrett  <nick@sqrt.co.uk>
+
+	* commands.c, os.h, os.s, riscos_c.c: Attempt to display correct
+	file names in error messages.
+
+2001-03-20 14:50  Nick Burrett  <nick@sqrt.co.uk>
+
+	* decode.c, macros.c, whileif.c: Darren Salt: Fix up some |label|
+	handling. Errors are generated for unterminated |...| e.g. |...\n.  
+	Replace some hard-coded limits with macros.
+
+2001-03-20 14:49  Nick Burrett  <nick@sqrt.co.uk>
+
+	* lex.c, lexAcorn.c: Darren Salt: Implement :DEF: and {var}
+	:DEF:foo = true if foo exists when the expression is evaluated.
+	{var} is a synonym for @.
+	Fault usage of ?, reporting that it is unimplemented.
+
+2001-03-20 14:47  Nick Burrett  <nick@sqrt.co.uk>
+
+	* get.c, hash.c, help_cpu.c: Make the cpu_regs, T and mask arrays
+	const.
+
+2001-01-04 10:27  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile: Add executable suffix (,ff8) support.
+
+2001-01-02 09:30  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile: Makefile and configuration re-structure.
+
+2000-12-27 16:10  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile: Autoconf configuration support.
+
+2000-12-27 14:31  Nick Burrett  <nick@sqrt.co.uk>
+
+	* endiandef.h: Add missing #if from last change.
+
+2000-12-27 14:30  Nick Burrett  <nick@sqrt.co.uk>
+
+	* endiandef.h: Include endian.h or machine/endian.h here. Fix to
+	work with header files that define BYTE_ORDER but not __BYTE_ORDER.
+
+2000-12-27 14:29  Nick Burrett  <nick@sqrt.co.uk>
+
+	* endian.c: Don't include endian.h or machine/endian.h
+
+2000-12-27 14:22  Nick Burrett  <nick@sqrt.co.uk>
+
+	* m_fpumem.c: Include sdk-config.h.
+
+2000-12-27 14:20  Nick Burrett  <nick@sqrt.co.uk>
+
+	* m_cpuctrl.c, m_fpu.c: Include sdk-config.h.
+
+2000-12-27 14:19  Nick Burrett  <nick@sqrt.co.uk>
+
+	* error.c: Include sdk-config.h and conditionally include stdint.h
+	or inttypes.h.
+
+2000-12-27 14:16  Nick Burrett  <nick@sqrt.co.uk>
+
+	* area.c, asm.c, code.c, commands.c, decode.c, endian.c, expr.c,
+	filestack.c, get.c, help_cop.c, help_eval.c, input.c, lex.c,
+	lexAcorn.c, lit.c, local.c, m_cop.c, m_copmem.c, m_cpu.c,
+	m_cpumem.c, macros.c, main.c, option.c, output.c, put.c, reloc.c,
+	storage.c, symbol.c, value.c, variables.c, whileif.c: Include
+	sdk-config.h. Conditionally include inttypes.h or stdint.h.
+
+2000-12-27 14:02  Nick Burrett  <nick@sqrt.co.uk>
+
+	* cabs.s: Junk file. Was used for debug.
+
+2000-12-27 14:01  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile: Add path to top-level directory to compiler command
+	line so that we may include the autoconf info.
+
+2000-12-27 12:56  Nick Burrett  <nick@sqrt.co.uk>
+
+	* test.c: A junk file.
+
+2000-11-08 09:38  Nick Burrett  <nick@sqrt.co.uk>
+
+	* ., Makefile, aoffile.h, area.c, area.h, asm.c, asm.h, cabs.s,
+	chunkfile.h, code.c, code.h, commands.c, commands.h, decode.c,
+	decode.h, depend.c, depend.h, endian.c, endiandef.h, error.c,
+	error.h, eval.c, eval.h, expr.c, expr.h, filestack.c,
+	filestack.h, fix.c, fix.h, get.c, get.h, global.h, hash.c,
+	hash.h, help_cop.c, help_cop.h, help_cpu.c, help_cpu.h,
+	help_eval.c, help_eval.h, help_lex.c, help_lex.h, include.c,
+	include.h, input.c, input.c.broke, input.h, input.s, lex.c,
+	lex.h, lexAcorn.c, lit.c, lit.h, local.c, local.h, m_cop.c,
+	m_copmem.c, m_cpu.c, m_cpu.h, m_cpuctrl.c, m_cpumem.c, m_fpu.c,
+	m_fpu.h, m_fpumem.c, macros.c, macros.h, main.c, mnemonics.h,
+	option.c, option.h, os.h, os.s, output.c, output.h, put.c, put.h,
+	reloc.c, reloc.h, riscos.s, riscos_c.c, storage.c, storage.h,
+	strdup.c, strdup.h, symbol.c, symbol.h, targetcpu.c, targetcpu.h,
+	test.c, uname.c, uname.h, value.c, value.h, variables.c,
+	variables.h, version.h, whileif.c, whileif.h: Initial revision
