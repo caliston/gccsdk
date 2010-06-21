@@ -1,6 +1,8 @@
---- gcc/gcc.c.orig	2007-07-03 00:58:30.000000000 +0200
-+++ gcc/gcc.c	2007-06-28 01:13:39.000000000 +0200
-@@ -343,7 +343,7 @@
+Index: gcc/gcc.c
+===================================================================
+--- gcc/gcc.c	(revision 161055)
++++ gcc/gcc.c	(working copy)
+@@ -388,7 +388,7 @@
  static void init_gcc_specs (struct obstack *, const char *, const char *,
  			    const char *);
  #endif
@@ -9,7 +11,7 @@
  static const char *convert_filename (const char *, int, int);
  #endif
  
-@@ -2978,7 +2983,7 @@
+@@ -3327,7 +3327,7 @@
  
  const char **outfiles;
  
@@ -18,7 +20,7 @@
  
  /* Convert NAME to a new name if it is the standard suffix.  DO_EXE
     is true if we should look for an executable suffix.  DO_OBJ
-@@ -2988,6 +2993,9 @@
+@@ -3337,6 +3337,9 @@
  convert_filename (const char *name, int do_exe ATTRIBUTE_UNUSED,
  		  int do_obj ATTRIBUTE_UNUSED)
  {
@@ -28,7 +30,7 @@
  #if defined(HAVE_TARGET_EXECUTABLE_SUFFIX)
    int i;
  #endif
-@@ -3031,6 +3039,7 @@
+@@ -3380,6 +3383,7 @@
  #endif
  
    return name;
@@ -36,7 +38,7 @@
  }
  #endif
  
-@@ -3734,7 +3744,7 @@
+@@ -4121,7 +4125,7 @@
  		    }
  		}
  #endif
@@ -45,12 +47,12 @@
  	      if (p[1] == 0)
  		argv[i + 1] = convert_filename (argv[i + 1], ! have_c, 0);
  	      else
-@@ -4084,7 +4094,7 @@
- 	}
-       else
- 	{
+@@ -4507,7 +4511,7 @@
+           char *fname;
+ 	  long offset;
+ 	  int consumed;
 -#ifdef HAVE_TARGET_OBJECT_SUFFIX
 +#if defined (HAVE_TARGET_OBJECT_SUFFIX) || defined (TARGET_CONVERT_FILENAME)
  	  argv[i] = convert_filename (argv[i], 0, access (argv[i], F_OK));
  #endif
- 
+ 	  /* For LTO static archive support we handle input file

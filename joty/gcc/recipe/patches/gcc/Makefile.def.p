@@ -1,18 +1,29 @@
---- Makefile.def.orig	2010-03-19 23:22:07.853949294 +0100
-+++ Makefile.def	2010-03-19 23:21:58.602482655 +0100
-@@ -113,6 +113,7 @@ host_modules= { module= libtermcap; no_c
- host_modules= { module= utils; no_check=true; };
- host_modules= { module= gnattools; };
- 
-+target_modules = { module= libunixlib; lib_path=.libs; };
- target_modules = { module= libstdc++-v3; lib_path=.libs; raw_cxx=true; };
+Index: Makefile.def
+===================================================================
+--- Makefile.def	(revision 161055)
++++ Makefile.def	(working copy)
+@@ -153,6 +153,7 @@
+ 		   raw_cxx=true; };
  target_modules = { module= libmudflap; lib_path=.libs; };
  target_modules = { module= libssp; lib_path=.libs; };
-@@ -433,6 +434,7 @@ dependencies = { module=all-target-libja
- dependencies = { module=all-target-libjava; on=all-target-libffi; };
- dependencies = { module=all-target-libobjc; on=all-target-libiberty; };
- dependencies = { module=all-target-libstdc++-v3; on=all-target-libiberty; };
-+dependencies = { module=configure-target-libiberty; on=all-target-libunixlib; };
++target_modules = { module= libunixlib; lib_path=.libs; };
+ target_modules = { module= newlib; };
+ target_modules = { module= libgcc; bootstrap=true; no_check=true; };
+ target_modules = { module= libgfortran; };
+@@ -521,6 +522,7 @@
+ // on libgcc and newlib/libgloss.
+ lang_env_dependencies = { module=gperf; cxx=true; };
+ lang_env_dependencies = { module=libjava; cxx=true; };
++lang_env_dependencies = { module=libunixlib; no_c=true; };
+ lang_env_dependencies = { module=newlib; no_c=true; };
+ lang_env_dependencies = { module=libgloss; no_c=true; };
+ lang_env_dependencies = { module=libgcc; no_gcc=true; no_c=true; };
+@@ -565,6 +567,8 @@
+ dependencies = { module=all-target-winsup; on=all-target-libtermcap; };
+ dependencies = { module=configure-target-libiberty; on=all-binutils; };
+ dependencies = { module=configure-target-libiberty; on=all-ld; };
++dependencies = { module=configure-target-libunixlib; on=all-binutils; };
++dependencies = { module=configure-target-libunixlib; on=all-ld; };
+ dependencies = { module=configure-target-newlib; on=all-binutils; };
+ dependencies = { module=configure-target-newlib; on=all-ld; };
  
- // Target modules in the 'src' repository.
- lang_env_dependencies = { module=examples; };

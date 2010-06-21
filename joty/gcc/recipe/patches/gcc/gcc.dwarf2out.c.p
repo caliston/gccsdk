@@ -1,6 +1,8 @@
---- gcc/dwarf2out.c.orig	2006-09-24 23:03:43.000000000 +0200
-+++ gcc/dwarf2out.c	2006-09-24 23:08:22.000000000 +0200
-@@ -1691,6 +1694,13 @@
+Index: gcc/dwarf2out.c
+===================================================================
+--- gcc/dwarf2out.c	(revision 161055)
++++ gcc/dwarf2out.c	(working copy)
+@@ -2381,6 +2381,13 @@
  		  cfa_temp.reg = REGNO (dest);
  		  cfa_temp.offset = INTVAL (XEXP (src, 1));
  		}

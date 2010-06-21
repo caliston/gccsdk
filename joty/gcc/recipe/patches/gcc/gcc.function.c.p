@@ -1,14 +1,15 @@
---- gcc/function.c.orig	2006-09-25 00:14:48.000000000 +0200
-+++ gcc/function.c	2006-09-24 23:57:44.000000000 +0200
-@@ -4380,6 +4380,18 @@
+Index: gcc/function.c
+===================================================================
+--- gcc/function.c	(revision 161055)
++++ gcc/function.c	(working copy)
+@@ -4757,6 +4757,17 @@
    force_next_line_note ();
-   emit_line_note (input_location);
+   set_curr_insn_source_location (input_location);
  
 +  /* If we had calls to alloca, and this machine needs
 +     an accurate stack pointer to exit the function,
 +     insert some code to save and restore the stack pointer.  */
-+  if (! EXIT_IGNORE_STACK
-+      && current_function_calls_alloca)
++  if (! EXIT_IGNORE_STACK && cfun->calls_alloca)
 +    {
 +      rtx tem = 0;
 +
