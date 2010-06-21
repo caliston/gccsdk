@@ -1,6 +1,8 @@
---- libstdc++-v3/crossconfig.m4.orig	2010-04-17 16:19:01.485384391 +0200
-+++ libstdc++-v3/crossconfig.m4	2010-04-17 16:06:46.625383771 +0200
-@@ -305,6 +305,35 @@ case "${host}" in
+Index: libstdc++-v3/crossconfig.m4
+===================================================================
+--- libstdc++-v3/crossconfig.m4	(revision 161061)
++++ libstdc++-v3/crossconfig.m4	(working copy)
+@@ -198,6 +198,35 @@
      AC_DEFINE(HAVE_SINHF)
      AC_DEFINE(HAVE_SINHL)
      ;;
@@ -35,4 +37,4 @@
 +    ;;
    *-solaris*)
      case "$target" in
-     #  *-solaris2.5)
+       *-solaris2.8 | *-solaris2.9 | *-solaris2.10)
