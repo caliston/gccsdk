@@ -1,6 +1,8 @@
---- gcc/collect2.c.orig	2008-03-31 23:53:11.000000000 +0200
-+++ gcc/collect2.c	2008-04-01 00:04:55.000000000 +0200
-@@ -47,6 +47,11 @@
+Index: gcc/collect2.c
+===================================================================
+--- gcc/collect2.c	(revision 161055)
++++ gcc/collect2.c	(working copy)
+@@ -52,6 +52,11 @@
  #include "intl.h"
  #include "version.h"
  
@@ -12,9 +14,9 @@
  /* On certain systems, we have code that works by scanning the object file
     directly.  But this code uses system-specific header files and library
     functions, so turn it off in a cross-compiler.  Likewise, the names of
-@@ -179,6 +184,11 @@
+@@ -202,6 +207,11 @@
  
- static int shared_obj;		        /* true if -shared */
+ static int shared_obj;			/* true if -shared */
  
 +#ifdef TARGET_RISCOSELF
 +static int riscos_libscl;		/* true if -mlibscl */
@@ -24,16 +26,18 @@
  static const char *c_file;		/* <xxx>.c for constructor/destructor list.  */
  static const char *o_file;		/* <xxx>.o for constructor/destructor list.  */
  #ifdef COLLECT_EXPORT_LIST
-@@ -192,6 +202,7 @@
+@@ -216,6 +226,9 @@
  static const char *ldd_file_name;	/* pathname of ldd (or equivalent) */
  #endif
  static const char *strip_file_name;		/* pathname of strip */
++#ifdef TARGET_RISCOSELF
 +static const char *elf2aif_file_name;	/* pathname of elf2aif */
- const char *c_file_name;	        /* pathname of gcc */
++#endif
+ const char *c_file_name;		/* pathname of gcc */
  static char *initname, *fininame;	/* names of init and fini funcs */
  
-@@ -729,6 +740,87 @@
- 	endp++;
+@@ -1066,6 +1079,87 @@
+       fork_execute  ("ld", lto_ld_argv);
      }
  }
 +
@@ -120,26 +124,30 @@
  
  /* Main program.  */
  
-@@ -745,6 +837,7 @@
+@@ -1083,6 +1177,9 @@
  #endif
    static const char *const strip_suffix = "strip";
    static const char *const gstrip_suffix = "gstrip";
++#ifdef TARGET_RISCOSELF
 +  static const char *const elf2aif_suffix = "elf2aif";
++#endif
  
- #ifdef CROSS_COMPILE
+ #ifdef CROSS_DIRECTORY_STRUCTURE
    /* If we look for a program in the compiler directories, we just use
-@@ -953,6 +1046,10 @@
+@@ -1357,6 +1454,12 @@
    if (strip_file_name == 0)
      strip_file_name = find_a_file (&path, full_strip_suffix);
  
++#ifdef TARGET_RISCOSELF
 +  elf2aif_file_name = find_a_file (&cpath, elf2aif_suffix);
 +  if (elf2aif_file_name == 0)
 +    elf2aif_file_name = find_a_file (&path, elf2aif_suffix);
++#endif
 +
    /* Determine the full path name of the C compiler to use.  */
    c_file_name = getenv ("COLLECT_GCC");
    if (c_file_name == 0)
-@@ -1015,6 +1112,12 @@
+@@ -1419,6 +1522,12 @@
  	*c_ptr++ = xstrdup (q);
        if (strcmp (q, "-shared") == 0)
  	shared_obj = 1;
@@ -152,16 +160,18 @@
        if (*q == '-' && q[1] == 'B')
  	{
  	  *c_ptr++ = xstrdup (q);
-@@ -1277,6 +1380,8 @@
+@@ -1727,6 +1836,10 @@
  #endif
        fprintf (stderr, "strip_file_name     = %s\n",
  	       (strip_file_name ? strip_file_name : "not found"));
++#ifdef TARGET_RISCOSELF
 +      fprintf (stderr, "elf2aif_file_name   = %s\n",
 +	       (elf2aif_file_name ? elf2aif_file_name : "not found"));
++#endif
        fprintf (stderr, "c_file              = %s\n",
  	       (c_file ? c_file : "not found"));
        fprintf (stderr, "o_file              = %s\n",
-@@ -1327,6 +1432,11 @@
+@@ -1854,6 +1967,11 @@
  #endif
        maybe_unlink (c_file);
        maybe_unlink (o_file);
@@ -173,19 +183,7 @@
        return 0;
      }
  
-@@ -1381,6 +1491,11 @@
- #endif
-       maybe_unlink (c_file);
-       maybe_unlink (o_file);
-+
-+#ifdef DO_BINARY_POSTPROCESSING
-+      DO_BINARY_POSTPROCESSING
-+#endif
-+
-       return 0;
-     }
- 
-@@ -1472,6 +1587,10 @@
+@@ -1951,6 +2069,10 @@
    maybe_unlink (export_file);
  #endif
  

@@ -1,7 +1,9 @@
---- gcc/c-incpath.c.orig	2008-12-13 20:14:12.000000000 +0100
-+++ gcc/c-incpath.c	2008-12-13 21:40:24.000000000 +0100
-@@ -340,6 +340,21 @@ add_path (char *path, int chain, int cxx
-     if (*c == '\\') *c = '/';
+Index: gcc/incpath.c
+===================================================================
+--- gcc/incpath.c	(revision 161055)
++++ gcc/incpath.c	(working copy)
+@@ -404,6 +404,21 @@
+     *end = 0;
  #endif
  
 +#ifdef __riscos__
@@ -19,6 +21,6 @@
 +      path = temp;
 +    }
 +#endif
-   p = xmalloc (sizeof (cpp_dir));
+   p = XNEW (cpp_dir);
    p->next = NULL;
    p->name = path;
