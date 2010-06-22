@@ -1,3 +1,10 @@
+Wed Jun 23 01:08:51 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* configure.ac (AC_PREREQ): Require at least Autotools 2.64 (like
+	gcc 4.6); m4_rename -> m4_rename_force
+
+// ------------------------------------ ^^^ gcc4.6trunk ^^^ port -----------------
+
 Wed Jun 16 15:17:11 2010  Lee Noar  <leenoar@sky.com>
 
 	* crt/(g)crt0.s(_start): Store pointers to shared library static
