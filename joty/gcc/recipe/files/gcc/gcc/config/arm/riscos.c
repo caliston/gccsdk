@@ -33,7 +33,7 @@ Boston, MA 02111-1307, USA.  */
 #include <stdlib.h>
 #include <unistd.h>
 
-#ifdef CROSS_COMPILE
+#ifdef CROSS_DIRECTORY_STRUCTURE
 # include <string.h>
 # include <limits.h>
 # include <time.h>
@@ -51,7 +51,7 @@ Boston, MA 02111-1307, USA.  */
 #define THROWBACK_WARNING 0
 #define THROWBACK_ERROR 1
 
-#ifdef CROSS_COMPILE
+#ifdef CROSS_DIRECTORY_STRUCTURE
 /* The syslog facilities and priorities.  */
 # define PRI_WARNING (1 * 8 + 4)
 # define PRI_ERROR   (1 * 8 + 3)
@@ -68,7 +68,7 @@ Boston, MA 02111-1307, USA.  */
 # define DDEUTILS_THROWBACK_REASON_INFO_DETAILS  2
 #endif
 
-#ifndef CROSS_COMPILE
+#ifndef CROSS_DIRECTORY_STRUCTURE
 /* The full RISC OS canonicalised pathname of the current error file.  */
 static char *arm_error_file = NULL;
 #endif
@@ -80,7 +80,7 @@ static char *arm_error_file = NULL;
 static int arm_error_file_ref = -1;
 #endif
 
-#ifdef CROSS_COMPILE
+#ifdef CROSS_DIRECTORY_STRUCTURE
 static int arm_throwback_socket = 0;
 #endif
 
@@ -96,7 +96,7 @@ static void arm_throwback_finish (void);
 static void
 arm_throwback_start (void)
 {
-#ifdef CROSS_COMPILE
+#ifdef CROSS_DIRECTORY_STRUCTURE
   struct hostent *hp;
   struct servent *servptr;
   struct sockaddr_in name;
@@ -151,7 +151,7 @@ arm_throwback_start (void)
 #endif
 }
 
-#ifndef CROSS_COMPILE
+#ifndef CROSS_DIRECTORY_STRUCTURE
 /* Tell DDEUtils that we are processing a new file.
    The DDE documentation is unclear, but does suggest that this
    message should be sent if the filename changes.  */
@@ -172,7 +172,7 @@ static void
 arm_throwback_error (const char *fname, int level,
 		     int line_number, const char *error, int errorlen)
 {
-#ifdef CROSS_COMPILE
+#ifdef CROSS_DIRECTORY_STRUCTURE
   char msg[1024];
   int len;
   char hostname[100];
@@ -225,7 +225,7 @@ arm_throwback_error (const char *fname, int level,
 static void
 arm_throwback_finish (void)
 {
-#ifdef CROSS_COMPILE
+#ifdef CROSS_DIRECTORY_STRUCTURE
   /* Close the socket.  */
   close (arm_throwback_socket);
   arm_throwback_socket = 0;
@@ -239,7 +239,7 @@ arm_throwback_finish (void)
 #endif
 }
 
-#ifndef CROSS_COMPILE
+#ifndef CROSS_DIRECTORY_STRUCTURE
 /* Convert from Unix name to RISC OS name and canonicalise the name
    so that throwback knows the full pathname of the file.
    Return the converted filename, stored in arm_error_file, or NULL.  */
@@ -307,7 +307,7 @@ arm_error_throwback (int lvl, const char *file, int line, const char *s,
     arm_throwback_start ();
 
   if (arm_throwback_started > 0
-#ifndef CROSS_COMPILE
+#ifndef CROSS_DIRECTORY_STRUCTURE
       && riscos_canonicalise_filename (file)
 #endif
      )
@@ -316,7 +316,7 @@ arm_error_throwback (int lvl, const char *file, int line, const char *s,
       char sline[16];
       const char *p;
 
-#ifndef CROSS_COMPILE
+#ifndef CROSS_DIRECTORY_STRUCTURE
       arm_throwback_new_file (arm_error_file);
 #endif
 
@@ -351,7 +351,7 @@ arm_error_throwback (int lvl, const char *file, int line, const char *s,
 	    p++;
 
 	  arm_throwback_error (
-#ifdef CROSS_COMPILE
+#ifdef CROSS_DIRECTORY_STRUCTURE
 			       file,
 #else
 			       arm_error_file,

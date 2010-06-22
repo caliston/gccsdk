@@ -1,12 +1,12 @@
 Index: gcc/collect2.c
 ===================================================================
---- gcc/collect2.c	(revision 161055)
+--- gcc/collect2.c	(revision 161116)
 +++ gcc/collect2.c	(working copy)
 @@ -52,6 +52,11 @@
  #include "intl.h"
  #include "version.h"
  
-+#if defined(TARGET_RISCOSELF) && !defined(CROSS_COMPILE)
++#if defined(TARGET_RISCOSELF) && !defined(CROSS_DIRECTORY_STRUCTURE)
 +#include <kernel.h>
 +#include <unixlib/local.h>
 +#endif
@@ -51,7 +51,7 @@ Index: gcc/collect2.c
 +  if (!shared_obj && riscos_module)
 +    {
 +      /* Take the binary only part of ELF binary.  */
-+#ifdef CROSS_COMPILE
++#ifdef CROSS_DIRECTORY_STRUCTURE
 +      /* When we are building the cross-compiler, we have strip-new built but
 +	 it is not yet installed.  */
 +      if (strip_file_name == NULL)
@@ -70,7 +70,7 @@ Index: gcc/collect2.c
 +	  fork_execute ("strip", real_strip_argv);
 +	}
 +
-+#ifndef CROSS_COMPILE
++#ifndef CROSS_DIRECTORY_STRUCTURE
 +      {
 +	char robuf[_POSIX_PATH_MAX];
 +	/* Set filetype Module.  */
@@ -87,9 +87,9 @@ Index: gcc/collect2.c
 +  else if (!shared_obj && riscos_libscl)
 +    {
 +      /* Run elf2aif on the ELF binary.  */
-+#ifdef CROSS_COMPILE
++#ifdef CROSS_DIRECTORY_STRUCTURE
 +      /* When we are building the cross-compiler, we don't have elf2aif in
-+	 our build-tree as it gets built later. The test on CROSS_COMPILE is
++	 our build-tree as it gets built later. The test on CROSS_DIRECTORY_STRUCTURE is
 +	 therefore a little bit too wide.  */
 +      if (elf2aif_file_name == NULL)
 +	notice ("'%s' has not been found so therefore not used.\n", "elf2aif");
@@ -107,7 +107,7 @@ Index: gcc/collect2.c
 +    }
 +  else
 +    {
-+#ifndef CROSS_COMPILE
++#ifndef CROSS_DIRECTORY_STRUCTURE
 +      char robuf[_POSIX_PATH_MAX];
 +      /* Set filetype ELF.  */
 +      if (__riscosify_std (output_file, 0, robuf, sizeof (robuf), NULL))

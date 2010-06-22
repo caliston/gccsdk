@@ -1,11 +1,12 @@
 Index: gcc/config/arm/arm-protos.h
 ===================================================================
---- gcc/config/arm/arm-protos.h	(revision 161061)
+--- gcc/config/arm/arm-protos.h	(revision 161116)
 +++ gcc/config/arm/arm-protos.h	(working copy)
-@@ -224,4 +224,12 @@
+@@ -224,4 +224,13 @@
  extern const struct tune_params *current_tune;
  #endif /* RTX_CODE */
  
++extern bool arm_apcs_frame_needed (void);
 +extern void arm_expand_save_stack_block (rtx, rtx);
 +extern void arm_expand_restore_stack_block (rtx, rtx);
 +extern void arm_expand_alloca_epilogue (void);

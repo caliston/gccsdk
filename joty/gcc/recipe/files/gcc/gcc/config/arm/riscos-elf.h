@@ -39,7 +39,7 @@
 
 /* RISC OS FPE always understands FPA instructions.  */
 #undef  FPUTYPE_DEFAULT
-#define FPUTYPE_DEFAULT FPUTYPE_FPA_EMU3
+#define FPUTYPE_DEFAULT "fpe3"
 
 /* RISC OS uses the APCS-32 ABI.  */
 #undef ARM_DEFAULT_ABI
@@ -62,7 +62,7 @@
      "%{fpic|fPIC: -k}"
 
 #undef SUBTARGET_EXTRA_LINK_SPEC
-#ifdef CROSS_COMPILE
+#ifdef CROSS_DIRECTORY_STRUCTURE
 #  define SUBTARGET_EXTRA_LINK_SPEC \
      "-m armelf_riscos -p %{!static:%{!fpic:-fPIC}} " \
      "%{fpic:-fpic} %{mmodule:--ro-module-reloc} "
@@ -308,7 +308,7 @@ extern void arm_error_throwback (int lvl, const char *file, int line,
 #define TARGET_ERROR_THROWBACK \
   arm_error_throwback
 
-#ifndef CROSS_COMPILE
+#ifndef CROSS_DIRECTORY_STRUCTURE
 /* This section defines all the specific features for GCC when running
    natively on RISC OS.  */
 
@@ -329,7 +329,7 @@ extern const char *riscos_convert_filename (void *obstack,
 #undef DIR_SEPARATOR
 #define DIR_SEPARATOR '/'
 
-#endif /* ! CROSS_COMPILE */
+#endif /* ! CROSS_DIRECTORY_STRUCTURE */
 
 /* Maths operation domain error number, EDOM.  For CLib it is 1, for UnixLib
    is is 33.  */

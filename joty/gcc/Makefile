@@ -36,6 +36,8 @@ ifeq ($(TARGET),arm-unknown-riscos)
 # Case GCCSDK arm-unknown-riscos target:
 # Variations: --disable-shared vs --enable-shared=libunixlib,libgcc,libstdc++
 ## FIXME: --enable-shared=libunixlib,libgcc,libstdc++
+# Added --with-system-zlib as otherwise zlib as multilib build fails (which shouldn't
+# so this is a hack).
 GCC_CONFIG_ARGS := \
 	--enable-threads=posix \
 	--enable-sjlj-exceptions=no \
@@ -47,6 +49,7 @@ GCC_CONFIG_ARGS := \
 	--disable-libstdcxx-pch \
 	--disable-tls \
 	--without-pic \
+	--with-system-zlib \
 	--with-cross-host
 # FIXME: for Java support: --without-x --enable-libgcj
 BINUTILS_CONFIG_ARGS =
@@ -211,21 +214,21 @@ buildstepsdir/cross-gdb: buildstepsdir/src-gdb buildstepsdir/cross-gcc
 buildstepsdir/cross-gmp: buildstepsdir/src-gmp
 	-rm -rf $(BUILDDIR)/cross-gmp
 	mkdir -p $(BUILDDIR)/cross-gmp
-	cd $(BUILDDIR)/cross-gmp && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/gmp/configure --prefix=$(PREFIX_CROSSGCC_LIBS) && $(MAKE) && $(MAKE) install
+	cd $(BUILDDIR)/cross-gmp && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/gmp/configure --disable-shared --prefix=$(PREFIX_CROSSGCC_LIBS) && $(MAKE) && $(MAKE) install
 	touch buildstepsdir/cross-gmp
 
 # Configure & build mpc cross:
 buildstepsdir/cross-mpc: buildstepsdir/src-mpc buildstepsdir/cross-gmp buildstepsdir/cross-mpfr
 	-rm -rf $(BUILDDIR)/cross-mpc
 	mkdir -p $(BUILDDIR)/cross-mpc
-	cd $(BUILDDIR)/cross-mpc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/mpc/configure --prefix=$(PREFIX_CROSSGCC_LIBS) --with-gmp=$(PREFIX_CROSSGCC_LIBS) && $(MAKE) && $(MAKE) install
+	cd $(BUILDDIR)/cross-mpc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/mpc/configure --disable-shared --prefix=$(PREFIX_CROSSGCC_LIBS) --with-gmp=$(PREFIX_CROSSGCC_LIBS) && $(MAKE) && $(MAKE) install
 	touch buildstepsdir/cross-mpc
 
 # Configure & build mpfr cross:
 buildstepsdir/cross-mpfr: buildstepsdir/src-mpfr buildstepsdir/cross-gmp
 	-rm -rf $(BUILDDIR)/cross-mpfr
 	mkdir -p $(BUILDDIR)/cross-mpfr
-	cd $(BUILDDIR)/cross-mpfr && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/mpfr/configure --with-gmp=$(PREFIX_CROSSGCC_LIBS) --prefix=$(PREFIX_CROSSGCC_LIBS) && $(MAKE) && $(MAKE) install
+	cd $(BUILDDIR)/cross-mpfr && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/mpfr/configure --disable-shared --with-gmp=$(PREFIX_CROSSGCC_LIBS) --prefix=$(PREFIX_CROSSGCC_LIBS) && $(MAKE) && $(MAKE) install
 	touch buildstepsdir/cross-mpfr
 
 # Build the RISC OS related tools (cmunge, elf2aif, asasm, etc) cross:
