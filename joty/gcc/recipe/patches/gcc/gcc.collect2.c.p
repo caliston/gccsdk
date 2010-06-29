@@ -1,6 +1,6 @@
 Index: gcc/collect2.c
 ===================================================================
---- gcc/collect2.c	(revision 161116)
+--- gcc/collect2.c	(revision 161568)
 +++ gcc/collect2.c	(working copy)
 @@ -52,6 +52,11 @@
  #include "intl.h"
@@ -160,7 +160,7 @@ Index: gcc/collect2.c
        if (*q == '-' && q[1] == 'B')
  	{
  	  *c_ptr++ = xstrdup (q);
-@@ -1727,6 +1836,10 @@
+@@ -1722,6 +1831,10 @@
  #endif
        fprintf (stderr, "strip_file_name     = %s\n",
  	       (strip_file_name ? strip_file_name : "not found"));
@@ -171,7 +171,7 @@ Index: gcc/collect2.c
        fprintf (stderr, "c_file              = %s\n",
  	       (c_file ? c_file : "not found"));
        fprintf (stderr, "o_file              = %s\n",
-@@ -1854,6 +1967,11 @@
+@@ -1849,6 +1962,11 @@
  #endif
        maybe_unlink (c_file);
        maybe_unlink (o_file);
@@ -183,7 +183,7 @@ Index: gcc/collect2.c
        return 0;
      }
  
-@@ -1951,6 +2069,10 @@
+@@ -1946,6 +2064,10 @@
    maybe_unlink (export_file);
  #endif
  

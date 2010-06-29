@@ -1,6 +1,6 @@
 Index: gcc/defaults.h
 ===================================================================
---- gcc/defaults.h	(revision 161055)
+--- gcc/defaults.h	(revision 161568)
 +++ gcc/defaults.h	(working copy)
 @@ -376,7 +376,7 @@
  #endif

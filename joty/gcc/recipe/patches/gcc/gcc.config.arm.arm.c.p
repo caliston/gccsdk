@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.c
 ===================================================================
---- gcc/config/arm/arm.c	(revision 161116)
+--- gcc/config/arm/arm.c	(revision 161568)
 +++ gcc/config/arm/arm.c	(working copy)
 @@ -121,6 +121,8 @@
  #if TARGET_DLLIMPORT_DECL_ATTRIBUTES

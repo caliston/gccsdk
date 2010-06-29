@@ -1,6 +1,6 @@
 Index: gcc/dwarf2out.c
 ===================================================================
---- gcc/dwarf2out.c	(revision 161055)
+--- gcc/dwarf2out.c	(revision 161568)
 +++ gcc/dwarf2out.c	(working copy)
 @@ -2381,6 +2381,13 @@
  		  cfa_temp.reg = REGNO (dest);
