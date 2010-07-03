@@ -1,6 +1,6 @@
 Index: configure.in
 ===================================================================
---- configure.in	(revision 97921)
+--- configure.in	(revision 107570)
 +++ configure.in	(working copy)
 @@ -25,6 +25,8 @@
  AC_CANONICAL_SYSTEM
@@ -28,7 +28,7 @@ Index: configure.in
  
  case $is_cross_compiler in
    no) skipdirs="${skipdirs} ${cross_only}" ;;
-@@ -2175,6 +2178,10 @@
+@@ -2181,6 +2184,10 @@
     ;;
    esac
    ;;
@@ -39,4 +39,3 @@ Index: configure.in
  esac
  case "$target" in
  *-mingw*)
-

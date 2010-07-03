@@ -1,6 +1,6 @@
 Index: gcc/Makefile.in
 ===================================================================
---- gcc/Makefile.in	(revision 97921)
+--- gcc/Makefile.in	(revision 107570)
 +++ gcc/Makefile.in	(working copy)
 @@ -472,6 +472,10 @@
  # Test to see whether <limits.h> exists in the system header files.
@@ -28,7 +28,7 @@ Index: gcc/Makefile.in
  # Install the README
  	rm -f include/README
  	cp $(srcdir)/../fixincludes/README-fixinc include/README
-@@ -4307,10 +4313,13 @@
+@@ -4312,10 +4318,13 @@
  	  $(INSTALL_DATA) $$file \
  	    $(DESTDIR)$(itoolsdatadir)/include/$$realfile ; \
  	done
