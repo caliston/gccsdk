@@ -178,7 +178,7 @@ buildstepsdir/cross-llvm-gcc-configure: buildstepsdir/cross-binutils-builddone b
 ifeq ($(RTLIB),unixlib)
 	svn revert -R $(SRCDIR_LLVMGCC)
 	cd $(SRCDIR_LLVMGCC) && $(SCRIPTSDIR)/do-patch $(RECIPEDIR)
-	cd $(SRCDIR_LLVMGCC)/libunixlib && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PATH)" && aclocal -I . -I .. -I ../config && autoheader && automake -a && autoconf
+	cd $(SRCDIR_LLVMGCC)/libunixlib && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PATH)" && aclocal -I .. -I ../config && autoheader && automake -a && autoconf
 	cd $(SRCDIR_LLVMGCC)/libstdc++-v3 && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PATH)" && aclocal -I . -I .. -I ../config && autoheader && automake -a && autoconf
 	cd $(SRCDIR_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PATH)" && autogen Makefile.def && autoconf
 endif
