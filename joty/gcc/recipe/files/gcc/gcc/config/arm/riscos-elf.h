@@ -300,6 +300,8 @@
       call_used_regs[SL_REGNUM] = 1;				\
     }								\
 
+#if 0
+/* FIXME: temporary disabled. */
 /* For the throwback of GCC errors to a text editor.  */
 extern void arm_error_throwback (int lvl, const char *file, int line,
   const char *s, va_list *va) ATTRIBUTE_FPTR_PRINTF(4,0);
@@ -307,6 +309,7 @@ extern void arm_error_throwback (int lvl, const char *file, int line,
 /* Define for the implementation of throwbacks.  */
 #define TARGET_ERROR_THROWBACK \
   arm_error_throwback
+#endif
 
 #ifndef CROSS_DIRECTORY_STRUCTURE
 /* This section defines all the specific features for GCC when running

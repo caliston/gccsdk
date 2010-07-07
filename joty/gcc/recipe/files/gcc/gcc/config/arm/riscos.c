@@ -286,6 +286,8 @@ riscos_canonicalise_filename (const char *sname)
 }
 #endif
 
+#if 0
+/* FIXME: temporary disabled. */
 /* Throwback interface to GNU family of compilers.  */
 void
 arm_error_throwback (int lvl, const char *file, int line, const char *s,
@@ -361,6 +363,7 @@ arm_error_throwback (int lvl, const char *file, int line, const char *s,
 	}
     }
 }
+#endif
 
 #if 0
 /* Error category mapping for GNAT errors.  */
