@@ -334,6 +334,8 @@ buildstepsdir/src-gcc-copied: buildstepsdir/buildtool-autoconf-for-gcc-built bui
 ifneq "$(findstring trunk,$(GCC_VERSION))" ""
 buildstepsdir/src-gcc-copied: $(SRCORIGDIR)/gcc-trunk
 	-rm -rf $(SRCDIR)/gcc
+	-svn revert -R $(SRCORIGDIR)/gcc-trunk
+	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "\$$?" | cut -b 9- | xargs rm -rf
 	ln -s $(SRCORIGDIR)/gcc-trunk $(SRCDIR)/gcc
 else
 buildstepsdir/src-gcc-copied: $(SRCORIGDIR)/gcc-$(GCC_VERSION).tar.bz2
