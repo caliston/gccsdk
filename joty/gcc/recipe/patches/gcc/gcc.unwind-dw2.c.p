@@ -1,6 +1,6 @@
 Index: gcc/unwind-dw2.c
 ===================================================================
---- gcc/unwind-dw2.c	(revision 161061)
+--- gcc/unwind-dw2.c	(revision 162037)
 +++ gcc/unwind-dw2.c	(working copy)
 @@ -55,6 +55,12 @@
  #define DWARF_REG_TO_UNWIND_COLUMN(REGNO) (REGNO)
@@ -50,7 +50,7 @@ Index: gcc/unwind-dw2.c
  }
  
  static void
-@@ -1500,15 +1525,41 @@
+@@ -1500,15 +1525,43 @@
     macro because __builtin_eh_return must be invoked in the context of
     our caller.  */
  
@@ -61,6 +61,7 @@ Index: gcc/unwind-dw2.c
        long offset = uw_install_context_1 ((CURRENT), (TARGET));		\
        void *handler = __builtin_frob_return_addr ((TARGET)->ra);	\
 +									\
++      /* vvv BEGIN RISC OS ELF */					\
 +      /* The stack pointer of the target context */			\
 +      void **sp = _Unwind_GetPtr (TARGET, 13);				\
 +									\
@@ -73,7 +74,8 @@ Index: gcc/unwind-dw2.c
 +      /* be restored.  */						\
 +      void *sl = __ehs_stack_limit(sp);	 				\
 +      asm volatile ("MOV r10, %0\n" : : "r" (sl));			\
-+
++      /* ^^^ END RISC OS ELF */						\
++									\
        _Unwind_DebugHook ((TARGET)->cfa, handler);			\
        __builtin_eh_return (offset, handler);				\
      }									\

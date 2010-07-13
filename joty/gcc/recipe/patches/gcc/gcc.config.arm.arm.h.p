@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.h
 ===================================================================
---- gcc/config/arm/arm.h	(revision 161568)
+--- gcc/config/arm/arm.h	(revision 162037)
 +++ gcc/config/arm/arm.h	(working copy)
 @@ -180,6 +180,12 @@
  #define SUBTARGET_CPP_SPEC      ""
@@ -34,15 +34,20 @@ Index: gcc/config/arm/arm.h
  };
  
  extern enum arm_abi_type arm_abi;
-@@ -841,7 +848,7 @@
+@@ -841,10 +848,10 @@
        fixed_regs[PIC_OFFSET_TABLE_REGNUM] = 1;			\
        call_used_regs[PIC_OFFSET_TABLE_REGNUM] = 1;		\
      }								\
 -  else if (TARGET_APCS_STACK)					\
 +  if (OPTION_APCS_STACK)					\
      {								\
-       fixed_regs[10]     = 1;					\
-       call_used_regs[10] = 1;					\
+-      fixed_regs[10]     = 1;					\
+-      call_used_regs[10] = 1;					\
++      fixed_regs[SL_REGNUM]     = 1;				\
++      call_used_regs[SL_REGNUM] = 1;				\
+     }								\
+   /* -mcaller-super-interworking reserves r11 for calls to	\
+      _interwork_r11_call_via_rN().  Making the register global	\
 @@ -913,9 +920,14 @@
  #define LAST_HI_REGNUM		11
  

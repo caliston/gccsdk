@@ -87,8 +87,8 @@
 })
 
 (define_insn "rt_stkovf"
-  [(unspec:SI [(match_operand:SI 0 "s_register_operand" "r")
-               (match_operand:SI 1 "s_register_operand" "r")
+  [(unspec:SI [(match_operand:SI 0 "s_register_operand" "")
+               (match_operand:SI 1 "s_register_operand" "")
                (match_operand 2 "" "")] UNSPEC_STK)
    (clobber (reg:SI SL_REGNUM))
    (clobber (reg:SI IP_REGNUM))
@@ -101,8 +101,8 @@
 
 ; 4th operand is ignored and included to make pattern different from rt_stkovf
 (define_insn "rt_stkovf_v5_clobbered"
-  [(unspec:SI [(match_operand:SI 0 "s_register_operand" "r")
-               (match_operand:SI 1 "s_register_operand" "r")
+  [(unspec:SI [(match_operand:SI 0 "s_register_operand" "")
+               (match_operand:SI 1 "s_register_operand" "")
                (match_operand 2 "" "")
 	       (match_operand 3 "" "")] UNSPEC_STK)
    (clobber (reg:SI 8))
