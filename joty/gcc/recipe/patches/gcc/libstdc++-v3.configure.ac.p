@@ -1,8 +1,8 @@
 Index: libstdc++-v3/configure.ac
 ===================================================================
---- libstdc++-v3/configure.ac	(revision 161061)
+--- libstdc++-v3/configure.ac	(revision 162269)
 +++ libstdc++-v3/configure.ac	(working copy)
-@@ -92,6 +92,11 @@
+@@ -92,6 +95,11 @@
  # up critical shell variables.
  GLIBCXX_CONFIGURE
  
@@ -14,7 +14,7 @@ Index: libstdc++-v3/configure.ac
  if test "x${with_newlib}" != "xyes"; then
    AC_LIBTOOL_DLOPEN
  fi
-@@ -110,7 +115,14 @@
+@@ -110,7 +118,14 @@
  # Enable compiler support that doesn't require linking.
  GLIBCXX_ENABLE_SJLJ_EXCEPTIONS
  GLIBCXX_ENABLE_PCH($is_hosted)
