@@ -152,7 +152,7 @@ fi
 
 # For libtool support
 AC_LIBTOOL_DLOPEN
-AC_PROG_LIBTOOL
+AM_PROG_LIBTOOL
 AC_SUBST(enable_shared)
 AC_SUBST(enable_static)
 
