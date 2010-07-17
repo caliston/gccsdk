@@ -7,7 +7,7 @@ Index: gcc/config.gcc
  	tmake_file="${tmake_file} arm/t-arm-softfp soft-fp/t-softfp"
  	;;
 +arm*-*-riscos)	# ARM RISC OS with ELF
-+	tm_file="dbxelf.h elfos.h arm/riscos-elf.h arm/unknown-elf.h arm/elf.h arm/aout.h arm/arm.h"
++	tm_file="dbxelf.h elfos.h arm/riscos-elf.h arm/elf.h arm/aout.h arm/arm.h"
 +	tmake_file="arm/t-arm arm/t-arm-riscos-elf"
 +	tmake_file="${tmake_file} arm/t-arm-softfp soft-fp/t-softfp"
 +	xm_file="arm/xm-riscos.h"
