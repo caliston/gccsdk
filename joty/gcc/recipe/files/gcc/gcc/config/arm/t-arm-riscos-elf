@@ -59,10 +59,6 @@ INSTALL_LIMITS_H = false
 LIBGCC = stmp-multilib
 INSTALL_LIBGCC = install-multilib
 
-# Do not run fixproto or fixinc
-STMP_FIXINC=
-STMP_FIXPROTO=
-
 # Make local_includedir relative to EXEC_PREFIX.  We don't want the RISC OS
 # compiler picking up UNIX system header files.
 local_includedir=$(exec_prefix)/include
