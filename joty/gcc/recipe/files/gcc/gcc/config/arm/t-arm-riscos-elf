@@ -29,12 +29,6 @@ endif
 # and therefore allows GCC to build successfully.
 LIMITS_H_TEST = true
 
-# Do not install GCC's limits.h
-INSTALL_LIMITS_H = false
-
-# If EXTRA_MULTILIB_PARTS is not defined above then define EXTRA_PARTS here
-# EXTRA_PARTS = crtbegin.o crtend.o crti.o crtn.o
-
 LIBGCC = stmp-multilib
 INSTALL_LIBGCC = install-multilib
 
