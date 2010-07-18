@@ -1,6 +1,6 @@
 Index: gcc/collect2.c
 ===================================================================
---- gcc/collect2.c	(revision 161568)
+--- gcc/collect2.c	(revision 162285)
 +++ gcc/collect2.c	(working copy)
 @@ -52,6 +52,11 @@
  #include "intl.h"
@@ -171,7 +171,19 @@ Index: gcc/collect2.c
        fprintf (stderr, "c_file              = %s\n",
  	       (c_file ? c_file : "not found"));
        fprintf (stderr, "o_file              = %s\n",
-@@ -1849,6 +1962,11 @@
+@@ -1779,6 +1892,11 @@
+ 
+ 	maybe_unlink (c_file);
+ 	maybe_unlink (o_file);
++
++#ifdef DO_BINARY_POSTPROCESSING
++	DO_BINARY_POSTPROCESSING
++#endif
++
+ 	return 0;
+       }
+   }
+@@ -1849,6 +1967,11 @@
  #endif
        maybe_unlink (c_file);
        maybe_unlink (o_file);
@@ -183,7 +195,7 @@ Index: gcc/collect2.c
        return 0;
      }
  
-@@ -1946,6 +2064,10 @@
+@@ -1946,6 +2069,10 @@
    maybe_unlink (export_file);
  #endif
  
