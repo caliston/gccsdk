@@ -1,0 +1,44 @@
+This gccsdk/branches/developers/joty/gcc branch is to develop a GCCSDK based
+on gcc4.6trunk together with binutils 2.20.1.  When it is stable enough, it
+then can become candidate for merging to gccsdk/trunk/gcc4.
+
+Status patch merging:
+
+- All patches which could be merged more or less straightforwardly, have been
+  merged.  The ones which were backport merges were dropped.
+  Patches which didn't apply or were in doubt they are still relevant have
+  been moved to recipe/patches/gcc/unused.  The further we are with this port,
+  it will become clear what their status is (when no longer needed, they will
+  be removed).
+- recipe/files/gcc/gcc/config/arm/{riscos.c,riscos-elf.h}: the throwback
+  support has been disabled (search for 'FIXME') as its implementation needs
+  to be partially redone (hopefully in a cleaner way so that parallel building
+  works again).  Note gcc now reports columns as well in their warnings/errors
+  so this is something we can support in our throwback code as well.
+
+Status build:
+
+- Enable languages c and c++, multilib configuration with static target libs
+  cleanly builds.
+- Didn't try any other languages nor shared library configuration.
+- The 'riscos' subprojects all build with the made cross-compiler except
+  d.so-1.9.9/d-link
+
+Status test:
+
+- Very minimally: UnixLib is atm broken that its exit() code no longer has the
+  call to _Exit() resulting in an odd crash at the end of each execution.
+
+Upstream gcc bug tracking:
+
+- UnixLib exit()/_Exit()/_exit() malcompilation:
+    "Function with attribute noreturn omits a call to another function with noreturn"
+    http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44974
+- RISC OS target's option crash:
+    "ICE in cancel_option()"
+    http://gcc.gnu.org/bugzilla/show_bug.cgi?id=31980
+- No longer be able to use --enable-maintainer-mode as one of GCC configure
+  options (see Makefile):
+    "eh_arm.cc:42:23: error: declaration of '__cxxabiv1::__cxa_type_match_result __cxa_type_match(_Unwind_Control_Block*, const std::type_info*, bool, void**)' with C language linkage [-Werror]"
+    http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44902
+
