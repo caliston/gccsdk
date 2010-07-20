@@ -37,8 +37,5 @@ Upstream gcc bug tracking:
 - RISC OS target's option crash:
     "ICE in cancel_option()"
     http://gcc.gnu.org/bugzilla/show_bug.cgi?id=31980
-- No longer be able to use --enable-maintainer-mode as one of GCC configure
-  options (see Makefile):
-    "eh_arm.cc:42:23: error: declaration of '__cxxabiv1::__cxa_type_match_result __cxa_type_match(_Unwind_Control_Block*, const std::type_info*, bool, void**)' with C language linkage [-Werror]"
-    http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44902
+  Currently patched by: recipe/patches/gcc/gcc.opts-common.c.p
 
