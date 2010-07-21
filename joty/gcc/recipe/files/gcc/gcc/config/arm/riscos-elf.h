@@ -100,7 +100,7 @@
 
 /* In general:
      When building with --enable-shared:
-       libgcc.a = support rotuines, not including EH
+       libgcc.a = support routines, not including EH
        libgcc_eh.a = EH support routines
        libgcc_s.so = support routines, including EH
      When building with --disable-shared:
