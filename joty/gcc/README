@@ -319,8 +319,13 @@ script will also take care of making full copies inside recipe/files directory
 when it concerns a file not belonging to GCC nor binutils standard
 distribution.
 
-  $ cd srcdir
-  $ ../create-patch <file to patch or file to copy>
+  $ cd srcdir/gcc
+  $ ../../create-patch <file to patch or file to copy>
+
+or
+
+  $ cd srcdir/binutils
+  $ ../../create-patch <file to patch or file to copy>
 
 Don't forget to do a 'svn add recipe/...' when it concerns a new patch file or
 a new file inside recipe/files or recipe/scripts.
@@ -346,7 +351,7 @@ you to run unmodified ELF RISC OS binaries under Linux.
 The GCC testsuite requires the installation of at least DejaGnu, Tcl and
 Expect and can be started using:
 
-  $ cd builddir-cross/gcc
+  $ cd builddir/cross-gcc/gcc/
   $ make check-gcc//unix/{-static}
 
 Currently the testing works only for static libraries so that why you need to
