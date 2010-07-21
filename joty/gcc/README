@@ -325,6 +325,14 @@ distribution.
 Don't forget to do a 'svn add recipe/...' when it concerns a new patch file or
 a new file inside recipe/files or recipe/scripts.
 
+When making non-obvious changes in ARM's backend, please do a full rebuild of
+the cross-compiler with '--enable-checking=release' changed to
+'--enable-checking=all' in 'Makefile'.  Even better is to let this followed by
+a full rebuild of the RISC OS native compiler as well.
+Note, this is time expensive (but worthwhile) as it makes the cross-compiler
+go very slow because of all the internal consistency run-time checks being
+made.
+
 
 6. Testing
 ~~~~~~~~~~
