@@ -13,14 +13,17 @@ TARGET=arm-unknown-riscos
 # TARGET=arm-unknown-eabi
 GCC_LANGUAGES="c,c++"
 
+# *_SCM variables: when set to "yes", we'll fetch the source from source control
+# system and it will always be the latest version.
 AUTOCONF_FOR_BINUTILS_VERSION=2.64
 AUTOMAKE_FOR_BINUTILS_VERSION=1.11.1
 BINUTILS_VERSION=$(GCCSDK_SUPPORTED_BINUTILS_RELEASE)
 AUTOCONF_FOR_GCC_VERSION=2.64
 AUTOMAKE_FOR_GCC_VERSION=1.11.1
 GCC_VERSION=$(GCCSDK_SUPPORTED_GCC_RELEASE)
-#NEWLIB_VERSION=1.18.0
-NEWLIB_VERSION=1.18trunk
+GCC_USE_SCM=yes
+NEWLIB_VERSION=1.18.1
+NEWLIB_USE_SCM=yes
 GDB_VERSION=7.1
 GMP_VERSION=5.0.1
 MPFR_VERSION=3.0.0
@@ -37,8 +40,6 @@ ifeq ($(TARGET),arm-unknown-riscos)
 # Case GCCSDK arm-unknown-riscos target:
 # Variations: --disable-shared vs --enable-shared=libunixlib,libgcc,libstdc++
 ## FIXME: --disable-shared -> --enable-shared=libunixlib,libgcc,libstdc++
-## FIXME: Added --with-system-zlib as otherwise zlib as multilib build fails
-## (which shouldn't so this is a hack).
 ## FIXME: Consider --enable-__cxa_atexit (but this is require UnixLib changes).
 GCC_CONFIG_ARGS := \
 	--enable-threads=posix \
@@ -51,7 +52,6 @@ GCC_CONFIG_ARGS := \
 	--disable-libstdcxx-pch \
 	--disable-tls \
 	--without-pic \
-	--with-system-zlib \
 	--with-cross-host
 # FIXME: for Java support: --without-x --enable-libgcj
 BINUTILS_CONFIG_ARGS =
@@ -96,7 +96,9 @@ RECIPEDIR := $(ROOT)/recipe
 RISCOSTOOLSDIR := $(GCCSDK_RISCOS)
 
 # GCC-only configure arguments which are dependant on cross vs ronative building:
-CROSS_GCC_CONFIG_ARGS := --with-gmp=$(PREFIX_CROSSGCC_LIBS) --with-mpfr=$(PREFIX_CROSSGCC_LIBS) --with-mpc=$(PREFIX_CROSSGCC_LIBS)
+## FIXME: Added --with-system-zlib as otherwise zlib as multilib build fails
+## (which shouldn't so this is a hack).
+CROSS_GCC_CONFIG_ARGS := --with-gmp=$(PREFIX_CROSSGCC_LIBS) --with-mpfr=$(PREFIX_CROSSGCC_LIBS) --with-mpc=$(PREFIX_CROSSGCC_LIBS) --with-system-zlib
 RONATIVE_GCC_CONFIG_ARGS := --with-gmp=$(PREFIX_RONATIVEGCC_LIBS) --with-mpfr=$(PREFIX_RONATIVEGCC_LIBS) --with-mpc=$(PREFIX_RONATIVEGCC_LIBS)
 
 # Binutils & GCC configure args unique for cross-compiling & unique to building for RISC OS native
@@ -226,7 +228,7 @@ buildstepsdir/cross-gcc-built: buildstepsdir/cross-gcc-configured
 	touch buildstepsdir/cross-gcc-built
 
 # Configure gcc ronative:
-buildstepsdir/ronative-gcc-configured: buildstepsdir/cross-all-built buildstepsdir/ronative-gmp buildstepsdir/ronative-mpc buildstepsdir/ronative-mpfr
+buildstepsdir/ronative-gcc-configured: buildstepsdir/cross-all-built buildstepsdir/ronative-gmp-built buildstepsdir/ronative-mpc-built buildstepsdir/ronative-mpfr-built
 	-rm -rf $(BUILDDIR)/ronative-gcc
 	mkdir -p $(BUILDDIR)/ronative-gcc
 	cd $(BUILDDIR)/ronative-gcc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gcc/configure $(RONATIVE_CONFIG_ARGS) $(RONATIVE_GCC_CONFIG_ARGS) $(GCC_CONFIG_ARGS) --enable-languages=$(GCC_LANGUAGES)
@@ -251,6 +253,13 @@ buildstepsdir/cross-gmp-built: buildstepsdir/src-gmp-copied
 	cd $(BUILDDIR)/cross-gmp && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/gmp/configure --disable-shared --prefix=$(PREFIX_CROSSGCC_LIBS) && $(MAKE) && $(MAKE) install
 	touch buildstepsdir/cross-gmp-built
 
+# Configure & build gmp ronative:
+buildstepsdir/ronative-gmp-built: buildstepsdir/src-gmp-copied
+	-rm -rf $(BUILDDIR)/ronative-gmp
+	mkdir -p $(BUILDDIR)/ronative-gmp
+	cd $(BUILDDIR)/ronative-gmp && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gmp/configure --disable-shared --host=$(TARGET) --prefix=$(PREFIX_RONATIVEGCC_LIBS) && $(MAKE) && $(MAKE) install
+	touch buildstepsdir/ronative-gmp-built
+
 # Configure & build mpc cross:
 buildstepsdir/cross-mpc-built: buildstepsdir/src-mpc-copied buildstepsdir/cross-gmp-built buildstepsdir/cross-mpfr-built
 	-rm -rf $(BUILDDIR)/cross-mpc
@@ -258,12 +267,26 @@ buildstepsdir/cross-mpc-built: buildstepsdir/src-mpc-copied buildstepsdir/cross-
 	cd $(BUILDDIR)/cross-mpc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/mpc/configure --disable-shared --prefix=$(PREFIX_CROSSGCC_LIBS) --with-gmp=$(PREFIX_CROSSGCC_LIBS) && $(MAKE) && $(MAKE) install
 	touch buildstepsdir/cross-mpc-built
 
+# Configure & build mpc ronative:
+buildstepsdir/ronative-mpc-built: buildstepsdir/src-mpc-copied buildstepsdir/ronative-gmp-built buildstepsdir/ronative-mpfr-built
+	-rm -rf $(BUILDDIR)/ronative-mpc
+	mkdir -p $(BUILDDIR)/ronative-mpc
+	cd $(BUILDDIR)/ronative-mpc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/mpc/configure --disable-shared --host=$(TARGET) --prefix=$(PREFIX_RONATIVEGCC_LIBS) --with-gmp=$(PREFIX_RONATIVEGCC_LIBS) && $(MAKE) && $(MAKE) install
+	touch buildstepsdir/ronative-mpc-built
+
 # Configure & build mpfr cross:
 buildstepsdir/cross-mpfr-built: buildstepsdir/src-mpfr-copied buildstepsdir/cross-gmp-built
 	-rm -rf $(BUILDDIR)/cross-mpfr
 	mkdir -p $(BUILDDIR)/cross-mpfr
 	cd $(BUILDDIR)/cross-mpfr && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/mpfr/configure --disable-shared --with-gmp=$(PREFIX_CROSSGCC_LIBS) --prefix=$(PREFIX_CROSSGCC_LIBS) && $(MAKE) && $(MAKE) install
 	touch buildstepsdir/cross-mpfr-built
+
+# Configure & build mpfr ronative:
+buildstepsdir/ronative-mpfr-built: buildstepsdir/src-mpfr-copied buildstepsdir/ronative-gmp-built
+	-rm -rf $(BUILDDIR)/ronative-mpfr
+	mkdir -p $(BUILDDIR)/ronative-mpfr
+	cd $(BUILDDIR)/ronative-mpfr && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/mpfr/configure --disable-shared --host=$(TARGET) --with-gmp=$(PREFIX_RONATIVEGCC_LIBS) --prefix=$(PREFIX_RONATIVEGCC_LIBS) && $(MAKE) && $(MAKE) install
+	touch buildstepsdir/ronative-mpfr-built
 
 # Build the RISC OS related tools (cmunge, elf2aif, asasm, etc) cross:
 buildstepsdir/cross-riscostools-built: buildstepsdir/cross-gcc-built
@@ -331,8 +354,8 @@ endif
 
 # Unpack or checkout the gcc source:
 buildstepsdir/src-gcc-copied: buildstepsdir/buildtool-autoconf-for-gcc-built buildstepsdir/buildtool-automake-for-gcc-built
-ifneq "$(findstring trunk,$(GCC_VERSION))" ""
-buildstepsdir/src-gcc-copied: $(SRCORIGDIR)/gcc-trunk
+ifeq "$(GCC_USE_SCM)" "yes"
+buildstepsdir/src-gcc-copied: $(SRCORIGDIR)/gcc-trunk/LAST_UPDATED
 	-rm -rf $(SRCDIR)/gcc
 	-svn revert -R $(SRCORIGDIR)/gcc-trunk
 	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "\$$?" | cut -b 9- | xargs rm -rf
@@ -383,7 +406,7 @@ buildstepsdir/src-mpfr-copied: $(SRCORIGDIR)/mpfr-$(MPFR_VERSION).tar.gz
 	touch buildstepsdir/src-mpfr-copied
 
 # Unpack newlib source:
-ifneq "$(findstring trunk,$(NEWLIB_VERSION))" ""
+ifeq "$(NEWLIB_USE_SCM)" "yes"
 buildstepsdir/src-newlib-copied:
 	-rm -rf $(SRCDIR)/newlib
 	cd $(SRCORIGDIR) && cvs -z 9 -d :pserver:anoncvs@sources.redhat.com:/cvs/src co newlib
@@ -431,11 +454,12 @@ $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION).tar.bz2:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/binutils/binutils-$(BINUTILS_VERSION).tar.bz2
 
-ifneq "$(findstring trunk,$(GCC_VERSION))" ""
+ifeq "$(GCC_USE_SCM)" "yes"
 # Checkout gcc source:
-$(SRCORIGDIR)/gcc-trunk:
+$(SRCORIGDIR)/gcc-trunk/LAST_UPDATED:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && svn co svn://gcc.gnu.org/svn/gcc/trunk gcc-trunk
+	cd $(SRCORIGDIR)/gcc-trunk && ./contrib/gcc_update
 else
 # Download gcc source:
 $(SRCORIGDIR)/gcc-$(GCC_VERSION).tar.bz2:
