@@ -36,16 +36,16 @@ MPC_VERSION=0.8.2
 ifeq ($(TARGET),arm-unknown-riscos)
 # Case GCCSDK arm-unknown-riscos target:
 # Variations: --disable-shared vs --enable-shared=libunixlib,libgcc,libstdc++
-## FIXME: --enable-shared=libunixlib,libgcc,libstdc++
-# Added --with-system-zlib as otherwise zlib as multilib build fails (which shouldn't
-# so this is a hack).
+## FIXME: --disable-shared -> --enable-shared=libunixlib,libgcc,libstdc++
+## FIXME: Added --with-system-zlib as otherwise zlib as multilib build fails
+## (which shouldn't so this is a hack).
+## FIXME: Consider --enable-__cxa_atexit (but this is require UnixLib changes).
 GCC_CONFIG_ARGS := \
 	--enable-threads=posix \
 	--enable-sjlj-exceptions=no \
 	--enable-c99 \
 	--enable-cmath \
 	--enable-multilib \
-	--enable-checking \
 	--disable-shared \
 	--disable-c-mbchar \
 	--disable-libstdcxx-pch \
@@ -73,7 +73,7 @@ GDB_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-werror --disa
 
 # When debugging/testing/validating the compiler add "--enable-checking=all",
 # otherwise add "--enable-checking=release" or even "--enable-checking=no"
-GCC_CONFIG_ARGS += --enable-checking=no
+GCC_CONFIG_ARGS += --enable-checking=release
 # Configure args shared between different targets:
 # For debugging:
 # FIXME: add to GCC_BUILD_FLAGS for optimized ARM libraries: CFLAGS_FOR_TARGET="-O3 -march=armv5" CXXFLAGS_FOR_TARGET="-O3 -march=armv5"
