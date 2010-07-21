@@ -27,13 +27,14 @@ Status build:
 Status test:
 
 - Very minimally: UnixLib is atm broken that its exit() code no longer has the
-  call to _Exit() resulting in an odd crash at the end of each execution.
+  call to _Exit() resulting in a crash at the end of each execution.
 
 Upstream gcc bug tracking:
 
 - UnixLib exit()/_Exit()/_exit() malcompilation:
     "Function with attribute noreturn omits a call to another function with noreturn"
     http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44974
+  Currently avoided by doing an alias hack in UnixLib's unix/unix.c file.
 - RISC OS target's option crash:
     "ICE in cancel_option()"
     http://gcc.gnu.org/bugzilla/show_bug.cgi?id=31980
