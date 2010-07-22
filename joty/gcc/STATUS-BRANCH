@@ -39,4 +39,6 @@ Upstream gcc bug tracking:
     "ICE in cancel_option()"
     http://gcc.gnu.org/bugzilla/show_bug.cgi?id=31980
   Currently patched by: recipe/patches/gcc/gcc.opts-common.c.p
-
+- Buffer overflow in *push_multi pattern
+    http://gcc.gnu.org/bugzilla/show_bug.cgi?id=45029
+  Currently patched by one of the hunks in recipe/patches/gcc/gcc.config.arm.arm.md.p
