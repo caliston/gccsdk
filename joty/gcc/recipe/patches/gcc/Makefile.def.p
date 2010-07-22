@@ -1,6 +1,6 @@
 Index: Makefile.def
 ===================================================================
---- Makefile.def	(revision 161055)
+--- Makefile.def	(revision 162355)
 +++ Makefile.def	(working copy)
 @@ -153,6 +153,7 @@
  		   raw_cxx=true; };
@@ -18,10 +18,11 @@ Index: Makefile.def
  lang_env_dependencies = { module=newlib; no_c=true; };
  lang_env_dependencies = { module=libgloss; no_c=true; };
  lang_env_dependencies = { module=libgcc; no_gcc=true; no_c=true; };
-@@ -565,6 +567,8 @@
+@@ -565,6 +567,9 @@
  dependencies = { module=all-target-winsup; on=all-target-libtermcap; };
  dependencies = { module=configure-target-libiberty; on=all-binutils; };
  dependencies = { module=configure-target-libiberty; on=all-ld; };
++dependencies = { module=configure-target-libiberty; on=all-target-libunixlib; };
 +dependencies = { module=configure-target-libunixlib; on=all-binutils; };
 +dependencies = { module=configure-target-libunixlib; on=all-ld; };
  dependencies = { module=configure-target-newlib; on=all-binutils; };
