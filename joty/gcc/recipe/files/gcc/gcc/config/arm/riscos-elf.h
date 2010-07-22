@@ -184,10 +184,6 @@
     {						\
       builtin_define ("__riscos");		\
       builtin_define ("__riscos__");		\
-      if (flag_pic == 1)			\
-	builtin_define ("__pic__");		\
-      else if (flag_pic == 2)			\
-	builtin_define ("__PIC__");		\
     }						\
   while (0)
 
