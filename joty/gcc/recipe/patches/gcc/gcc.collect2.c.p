@@ -1,6 +1,6 @@
 Index: gcc/collect2.c
 ===================================================================
---- gcc/collect2.c	(revision 162285)
+--- gcc/collect2.c	(revision 162355)
 +++ gcc/collect2.c	(working copy)
 @@ -52,6 +52,11 @@
  #include "intl.h"
@@ -59,8 +59,8 @@ Index: gcc/collect2.c
 +      else
 +#endif
 +	{
-+	  char **real_strip_argv = xcalloc (sizeof (char *), 5);
-+	  const char ** strip_argv = (const char **) real_strip_argv;
++	  char **real_strip_argv = (char **) xcalloc (sizeof (char *), 5);
++	  const char ** strip_argv = CONST_CAST2 (const char **, char **, real_strip_argv);
 +
 +	  strip_argv[0] = strip_file_name;
 +	  strip_argv[1] = "-O";
@@ -96,8 +96,8 @@ Index: gcc/collect2.c
 +      else
 +#endif
 +	{
-+	  char **real_elf2aif_argv = xcalloc (sizeof (char *), 3);
-+	  const char ** elf2aif_argv = (const char **) real_elf2aif_argv;
++	  char **real_elf2aif_argv = (char **) xcalloc (sizeof (char *), 3);
++	  const char ** elf2aif_argv = CONST_CAST2 (const char **, char **, real_elf2aif_argv);
 +
 +	  elf2aif_argv[0] = elf2aif_file_name;
 +	  elf2aif_argv[1] = output_file;
