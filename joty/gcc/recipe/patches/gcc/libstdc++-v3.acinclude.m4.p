@@ -1,8 +1,8 @@
 Index: libstdc++-v3/acinclude.m4
 ===================================================================
---- libstdc++-v3/acinclude.m4	(revision 162285)
+--- libstdc++-v3/acinclude.m4	(revision 162611)
 +++ libstdc++-v3/acinclude.m4	(working copy)
-@@ -1648,7 +1648,7 @@
+@@ -1655,7 +1655,7 @@
  
  m4_pushdef([n_syserr], [1])dnl
  m4_foreach([syserr], [EOWNERDEAD, ENOTRECOVERABLE, ENOLINK, EPROTO, ENODATA,

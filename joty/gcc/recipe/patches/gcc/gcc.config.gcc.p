@@ -1,8 +1,8 @@
 Index: gcc/config.gcc
 ===================================================================
---- gcc/config.gcc	(revision 162323)
+--- gcc/config.gcc	(revision 162611)
 +++ gcc/config.gcc	(working copy)
-@@ -816,6 +816,15 @@
+@@ -824,6 +824,15 @@
  	tmake_file="arm/t-arm arm/t-arm-elf t-rtems arm/t-rtems"
  	tmake_file="${tmake_file} arm/t-arm-softfp soft-fp/t-softfp"
  	;;

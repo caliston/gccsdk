@@ -1,8 +1,8 @@
 Index: gcc/builtins.c
 ===================================================================
---- gcc/builtins.c	(revision 162155)
+--- gcc/builtins.c	(revision 162611)
 +++ gcc/builtins.c	(working copy)
-@@ -627,6 +627,38 @@
+@@ -626,6 +626,38 @@
  {
    int i;
  
