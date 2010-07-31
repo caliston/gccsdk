@@ -182,10 +182,14 @@ restart that step where it left off:
 
 Other useful make targets:
 
-  clean     : Removes temporary build produced files but not the installed
-              compiler.
-  distclean : Removes temporary build produced files including the installed
-              compiler.
+  ronative  : Builds the RISC OS native compiler (see Section 4 below)
+  clean     : Removes intermediate build files, the built cross and RISC OS
+              native compiler.  Private changes in $GCCSDK_SRCDIR are lost
+              (use create-patch first if you want to keep them).
+  distclean : Same as clean and additionally also removes the cached sources
+              fetched from Internet.
+  updategcc : Updates the GCC sources from GCC svn repository (only when not
+              using fixed GCC releases).
 
 2.3. Build porting tools
 ~~~~~~~~~~~~~~~~~~~~~~~~

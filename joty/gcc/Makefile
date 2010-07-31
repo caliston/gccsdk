@@ -145,6 +145,15 @@ distclean: $(GCCSDK_INTERNAL_GETENV)
 buildstepsdir/distclean-done: buildstepsdir/clean-done
 	-rm -rf release-area $(SRCORIGDIR)
 
+updategcc: $(GCCSDK_INTERNAL_GETENV)
+buildstepsdir/updategcc-done:
+ifeq "$(GCC_USE_SCM)" "yes"
+	-svn revert -R $(SRCORIGDIR)/gcc-trunk
+	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "\$$?" | cut -b 9- | xargs rm -rf
+	cd $(SRCORIGDIR)/gcc-trunk && ./contrib/gcc_update
+	-rm buildstepsdir/src-gcc-copied
+endif
+
 # Respawn Makefile again after having loaded all our GCCSDK environment variables.
 ifeq ($(GCCSDK_INTERNAL_GETENV),getenv)
 getenv:
