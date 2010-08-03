@@ -89,6 +89,7 @@ ROOT := $(shell pwd)
 PREFIX_CROSS := $(GCCSDK_CROSS_PREFIX)
 PREFIX_RONATIVE := $(GCCSDK_RISCOS_PREFIX)/\!GCC
 BUILDDIR := $(GCCSDK_BUILDDIR)
+BUILDSTEPSDIR := buildstepsdir
 PREFIX_BUILDTOOL_BINUTILS := $(BUILDDIR)/installed-buildtools-for-binutils
 PREFIX_BUILDTOOL_GCC := $(BUILDDIR)/installed-buildtools-for-gcc
 PREFIX_CROSSGCC_LIBS := $(BUILDDIR)/installed-libs-for-cross-gcc
@@ -136,7 +137,7 @@ RONATIVE_PPL_CONFIG_ARGS := --disable-shared --with-libgmp-prefix=$(PREFIX_RONAT
 
 # Configure arguments CLooG:
 CROSS_CLOOG_CONFIG_ARGS := --disable-shared --with-gmp=$(PREFIX_CROSSGCC_LIBS) --with-bits=gmp --with-ppl=$(PREFIX_CROSSGCC_LIBS) --with-host-libstdcxx='-Wl,-lstdc++' --prefix=$(PREFIX_CROSSGCC_LIBS)
-RONATIVE_CLOOG_CONFIG_ARGS := --disable-shared --with-gmp=$(PREFIX_RONATIVEGCC_LIBS) --with-bits=gmp --with-ppl=$(PREFIX_RONATIVEGCC_LIBS) --with-host-libstdcxx='-Wl,-lstdc++' --host=$(TARGET) --prefix=$(PREFIX_CROSSGCC_LIBS)
+RONATIVE_CLOOG_CONFIG_ARGS := --disable-shared --with-gmp=$(PREFIX_RONATIVEGCC_LIBS) --with-bits=gmp --with-ppl=$(PREFIX_RONATIVEGCC_LIBS) --with-host-libstdcxx='-Wl,-lstdc++' --host=$(TARGET) --prefix=$(PREFIX_RONATIVEGCC_LIBS)
 
 # To respawn Makefile with setup-gccsdk-param environment loaded.
 GCCSDK_INTERNAL_GETENV=getenv
@@ -146,274 +147,267 @@ endif
 
 .NOTPARALLEL:
 .PHONY: all cross ronative clean distclean updategcc
-## FIXME: VPATH over buildstepsdir ?
+VPATH = $(BUILDSTEPSDIR)
 
 # Default target is to build the cross-compiler (including the RISC OS tools):
 all: $(GCCSDK_INTERNAL_GETENV)
-buildstepsdir/all-done: buildstepsdir/cross-all-built
+all-done: cross-all-built
 
 # Builds the cross compiler:
 cross: $(GCCSDK_INTERNAL_GETENV)
-buildstepsdir/cross-all-built: buildstepsdir/cross-gcc-built \
-	buildstepsdir/cross-riscostools-built
-	touch buildstepsdir/cross-all-built
+cross-all-built: cross-gcc-built cross-riscostools-built
+	touch $(BUILDSTEPSDIR)/cross-all-built
 
 # Builds the native RISC OS compiler (gcc and binutils):
 ronative: $(GCCSDK_INTERNAL_GETENV)
-buildstepsdir/ronative-done: buildstepsdir/ronative-gcc-built \
-	buildstepsdir/ronative-binutils-built \
-	buildstepsdir/ronative-riscostools-built
-	touch buildstepsdir/ronative-done
+ronative-done: ronative-gcc-built ronative-binutils-built ronative-riscostools-built
+	touch $(BUILDSTEPSDIR)/ronative-done
 
 clean: $(GCCSDK_INTERNAL_GETENV)
-buildstepsdir/clean-done:
+clean-done:
 	-rm -rf $(BUILDDIR)
 	-rm -rf $(SRCDIR)
 	-svn revert -R $(SRCORIGDIR)/gcc-trunk
 	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "\$$?" | cut -b 9- | xargs rm -rf
-	-rm -rf buildstepsdir
+	-rm -rf $(BUILDSTEPSDIR)
 	-rm -rf $(PREFIX_CROSS) $(PREFIX_RONATIVE)
 
 distclean: $(GCCSDK_INTERNAL_GETENV)
-buildstepsdir/distclean-done: buildstepsdir/clean-done
+distclean-done: clean-done
 	-rm -rf release-area $(SRCORIGDIR)
 
 updategcc: $(GCCSDK_INTERNAL_GETENV)
-buildstepsdir/updategcc-done:
+updategcc-done:
 ifeq "$(GCC_USE_SCM)" "yes"
 	-svn revert -R $(SRCORIGDIR)/gcc-trunk
 	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "\$$?" | cut -b 9- | xargs rm -rf
 	cd $(SRCORIGDIR)/gcc-trunk && ./contrib/gcc_update
-	-rm buildstepsdir/src-gcc-copied
 endif
 
 # Respawn Makefile again after having loaded all our GCCSDK environment variables.
 ifeq ($(GCCSDK_INTERNAL_GETENV),getenv)
 getenv:
-	@bash -c ". ./setup-gccsdk-params && $(MAKE) $(patsubst %,buildstepsdir/%-done,$(MAKECMDGOALS)) GCCSDK_INTERNAL_GETENV="
+	test -d $(BUILDSTEPSDIR) || mkdir $(BUILDSTEPSDIR)
+	@bash -c ". ./setup-gccsdk-params && $(MAKE) $(patsubst %,%-done,$(MAKECMDGOALS)) GCCSDK_INTERNAL_GETENV="
 endif
 
 # -- Configure & building:
 
 # Configure & build autoconf-for-binutils tool:
-buildstepsdir/buildtool-autoconf-for-binutils-built: buildstepsdir/src-autoconf-for-binutils-copied
+buildtool-autoconf-for-binutils-built: src-autoconf-for-binutils-copied
 	-rm -rf $(BUILDDIR)/buildtool-autoconf-for-binutils
 	mkdir -p $(BUILDDIR)/buildtool-autoconf-for-binutils
 	cd $(BUILDDIR)/buildtool-autoconf-for-binutils && $(SRCDIR)/autoconf-for-binutils/configure --prefix=$(PREFIX_BUILDTOOL_BINUTILS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/buildtool-autoconf-for-binutils-built
+	touch $(BUILDSTEPSDIR)/buildtool-autoconf-for-binutils-built
 
 # Configure & build autoconf-for-gcc tool:
-buildstepsdir/buildtool-autoconf-for-gcc-built: buildstepsdir/src-autoconf-for-gcc-copied
+buildtool-autoconf-for-gcc-built: src-autoconf-for-gcc-copied
 	-rm -rf $(BUILDDIR)/buildtool-autoconf-for-gcc
 	mkdir -p $(BUILDDIR)/buildtool-autoconf-for-gcc
 	cd $(BUILDDIR)/buildtool-autoconf-for-gcc && $(SRCDIR)/autoconf-for-gcc/configure --prefix=$(PREFIX_BUILDTOOL_GCC) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/buildtool-autoconf-for-gcc-built
+	touch $(BUILDSTEPSDIR)/buildtool-autoconf-for-gcc-built
 
 # Configure & build automake-for-binutils tool:
-buildstepsdir/buildtool-automake-for-binutils-built: buildstepsdir/src-automake-for-binutils-copied
+buildtool-automake-for-binutils-built: src-automake-for-binutils-copied
 	-rm -rf $(BUILDDIR)/buildtool-automake-for-binutils
 	mkdir -p $(BUILDDIR)/buildtool-automake-for-binutils
 	cd $(BUILDDIR)/buildtool-automake-for-binutils && $(SRCDIR)/automake-for-binutils/configure --prefix=$(PREFIX_BUILDTOOL_BINUTILS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/buildtool-automake-for-binutils-built
+	touch $(BUILDSTEPSDIR)/buildtool-automake-for-binutils-built
 
 # Configure & build automake-for-gcc tool:
-buildstepsdir/buildtool-automake-for-gcc-built: buildstepsdir/src-automake-for-gcc-copied
+buildtool-automake-for-gcc-built: src-automake-for-gcc-copied
 	-rm -rf $(BUILDDIR)/buildtool-automake-for-gcc
 	mkdir -p $(BUILDDIR)/buildtool-automake-for-gcc
 	cd $(BUILDDIR)/buildtool-automake-for-gcc && $(SRCDIR)/automake-for-gcc/configure --prefix=$(PREFIX_BUILDTOOL_GCC) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/buildtool-automake-for-gcc-built
+	touch $(BUILDSTEPSDIR)/buildtool-automake-for-gcc-built
 
 # Configure binutils cross:
-buildstepsdir/cross-binutils-configured: buildstepsdir/src-binutils-copied
+cross-binutils-configured: src-binutils-copied
 	-rm -rf $(BUILDDIR)/cross-binutils
 	mkdir -p $(BUILDDIR)/cross-binutils
 	cd $(BUILDDIR)/cross-binutils && PATH="$(PREFIX_BUILDTOOL_BINUTILS)/bin:$(PATH)" && $(SRCDIR)/binutils/configure $(CROSS_CONFIG_ARGS) $(BINUTILS_CONFIG_ARGS)
-	touch buildstepsdir/cross-binutils-configured
+	touch $(BUILDSTEPSDIR)/cross-binutils-configured
 
 # Build binutils cross:
-buildstepsdir/cross-binutils-built: buildstepsdir/cross-binutils-configured
+cross-binutils-built: cross-binutils-configured
 	cd $(BUILDDIR)/cross-binutils && PATH="$(PREFIX_BUILDTOOL_BINUTILS)/bin:$(PATH)" && $(SRCDIR)/binutils/configure $(CROSS_CONFIG_ARGS) $(BINUTILS_CONFIG_ARGS) && $(MAKE) $(BINUTILS_BUILD_FLAGS) && $(MAKE) install
-	touch buildstepsdir/cross-binutils-built
+	touch $(BUILDSTEPSDIR)/cross-binutils-built
 
 # Configure ronative:
-buildstepsdir/ronative-binutils-configured: buildstepsdir/src-binutils-copied buildstepsdir/cross-all-built
+ronative-binutils-configured: src-binutils-copied cross-all-built
 	-rm -rf $(BUILDDIR)/ronative-binutils
 	mkdir -p $(BUILDDIR)/ronative-binutils
 	cd $(BUILDDIR)/ronative-binutils && PATH="$(PREFIX_BUILDTOOL_BINUTILS)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/binutils/configure $(RONATIVE_CONFIG_ARGS) $(BINUTILS_CONFIG_ARGS)
-	touch buildstepsdir/ronative-binutils-configured
+	touch $(BUILDSTEPSDIR)/ronative-binutils-configured
 
 # Build binutils ronative:
-buildstepsdir/ronative-binutils-built: buildstepsdir/ronative-binutils-configured
+ronative-binutils-built: ronative-binutils-configured
 	cd $(BUILDDIR)/ronative-binutils && PATH="$(PREFIX_BUILDTOOL_BINUTILS)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/binutils/configure $(RONATIVE_CONFIG_ARGS) $(BINUTILS_CONFIG_ARGS) && $(MAKE) $(BINUTILS_BUILD_FLAGS) && $(MAKE) install
-	touch buildstepsdir/ronative-binutils-built
+	touch $(BUILDSTEPSDIR)/ronative-binutils-built
 
 # Configure gcc cross:
 ifneq ($(TARGET),arm-unknown-riscos)
-buildstepsdir/cross-gcc-configured: buildstepsdir/src-newlib-copied
+cross-gcc-configured: src-newlib-copied
 endif
 ifeq "$(GCC_USE_PPL_CLOOG)" "yes"
-buildstepsdir/cross-gcc-configured: buildstepsdir/cross-ppl-built buildstepsdir/cross-cloog-built
+cross-gcc-configured: cross-ppl-built cross-cloog-built
 endif
-buildstepsdir/cross-gcc-configured: buildstepsdir/src-gcc-copied buildstepsdir/cross-binutils-built buildstepsdir/cross-gmp-built buildstepsdir/cross-mpc-built buildstepsdir/cross-mpfr-built
+cross-gcc-configured: src-gcc-copied cross-binutils-built cross-gmp-built cross-mpc-built cross-mpfr-built
 	-rm -rf $(SRCDIR)/gcc/newlib
 	-rm -rf $(SRCDIR)/gcc/libgloss
 ifneq ($(TARGET),arm-unknown-riscos)
 	ln -s $(SRCDIR)/newlib/newlib $(SRCDIR)/gcc/newlib
 	ln -s $(SRCDIR)/newlib/libgloss $(SRCDIR)/gcc/libgloss
-	touch buildstepsdir/src-gcc-copied
+	touch $(BUILDSTEPSDIR)/src-gcc-copied
 endif
 	-rm -rf $(BUILDDIR)/cross-gcc
 	mkdir -p $(BUILDDIR)/cross-gcc
 	cd $(BUILDDIR)/cross-gcc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gcc/configure $(CROSS_CONFIG_ARGS) $(CROSS_GCC_CONFIG_ARGS) $(GCC_CONFIG_ARGS) --enable-languages=$(GCC_LANGUAGES)
-	touch buildstepsdir/cross-gcc-configured
+	touch $(BUILDSTEPSDIR)/cross-gcc-configured
 
 # Build gcc cross:
-buildstepsdir/cross-gcc-built: buildstepsdir/cross-gcc-configured
+cross-gcc-built: cross-gcc-configured
 	cd $(BUILDDIR)/cross-gcc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(MAKE) $(GCC_BUILD_FLAGS) && $(MAKE) install
-	touch buildstepsdir/cross-gcc-built
+	touch $(BUILDSTEPSDIR)/cross-gcc-built
 
 # Configure gcc ronative:
 ifeq "$(GCC_USE_PPL_CLOOG)" "yes"
-buildstepsdir/ronative-gcc-configured: buildstepsdir/ronative-ppl-built buildstepsdir/ronative-cloog-built
+ronative-gcc-configured: ronative-ppl-built ronative-cloog-built
 endif
-buildstepsdir/ronative-gcc-configured: buildstepsdir/cross-all-built buildstepsdir/ronative-gmp-built buildstepsdir/ronative-mpc-built buildstepsdir/ronative-mpfr-built
+ronative-gcc-configured: cross-all-built ronative-gmp-built ronative-mpc-built ronative-mpfr-built
 	-rm -rf $(BUILDDIR)/ronative-gcc
 	mkdir -p $(BUILDDIR)/ronative-gcc
 	cd $(BUILDDIR)/ronative-gcc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gcc/configure $(RONATIVE_CONFIG_ARGS) $(RONATIVE_GCC_CONFIG_ARGS) $(GCC_CONFIG_ARGS) --enable-languages=$(GCC_LANGUAGES)
-	touch buildstepsdir/ronative-gcc-configured
+	touch $(BUILDSTEPSDIR)/ronative-gcc-configured
 
 # Build gcc ronative:
-buildstepsdir/ronative-gcc-built: buildstepsdir/ronative-gcc-configured
+ronative-gcc-built: ronative-gcc-configured
 	cd $(BUILDDIR)/ronative-gcc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(MAKE) $(GCC_BUILD_FLAGS) && $(MAKE) install
-	touch buildstepsdir/ronative-gcc-built
+	touch $(BUILDSTEPSDIR)/ronative-gcc-built
 
 # Configure & build gmp cross:
-buildstepsdir/cross-gmp-built: buildstepsdir/src-gmp-copied
+cross-gmp-built: src-gmp-copied
 	-rm -rf $(BUILDDIR)/cross-gmp
 	mkdir -p $(BUILDDIR)/cross-gmp
 	cd $(BUILDDIR)/cross-gmp && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/gmp/configure $(CROSS_GMP_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/cross-gmp-built
+	touch $(BUILDSTEPSDIR)/cross-gmp-built
 
 # Configure & build gmp ronative:
-buildstepsdir/ronative-gmp-built: buildstepsdir/src-gmp-copied
+ronative-gmp-built: src-gmp-copied
 	-rm -rf $(BUILDDIR)/ronative-gmp
 	mkdir -p $(BUILDDIR)/ronative-gmp
 	cd $(BUILDDIR)/ronative-gmp && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gmp/configure $(RONATIVE_GMP_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/ronative-gmp-built
+	touch $(BUILDSTEPSDIR)/ronative-gmp-built
 
 # Configure & build mpc cross:
-buildstepsdir/cross-mpc-built: buildstepsdir/src-mpc-copied buildstepsdir/cross-gmp-built buildstepsdir/cross-mpfr-built
+cross-mpc-built: src-mpc-copied cross-gmp-built cross-mpfr-built
 	-rm -rf $(BUILDDIR)/cross-mpc
 	mkdir -p $(BUILDDIR)/cross-mpc
 	cd $(BUILDDIR)/cross-mpc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/mpc/configure $(CROSS_MPC_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/cross-mpc-built
+	touch $(BUILDSTEPSDIR)/cross-mpc-built
 
 # Configure & build mpc ronative:
-buildstepsdir/ronative-mpc-built: buildstepsdir/src-mpc-copied buildstepsdir/ronative-gmp-built buildstepsdir/ronative-mpfr-built
+ronative-mpc-built: src-mpc-copied ronative-gmp-built ronative-mpfr-built
 	-rm -rf $(BUILDDIR)/ronative-mpc
 	mkdir -p $(BUILDDIR)/ronative-mpc
 	cd $(BUILDDIR)/ronative-mpc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/mpc/configure $(RONATIVE_MPC_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/ronative-mpc-built
+	touch $(BUILDSTEPSDIR)/ronative-mpc-built
 
 # Configure & build mpfr cross:
-buildstepsdir/cross-mpfr-built: buildstepsdir/src-mpfr-copied buildstepsdir/cross-gmp-built
+cross-mpfr-built: src-mpfr-copied cross-gmp-built
 	-rm -rf $(BUILDDIR)/cross-mpfr
 	mkdir -p $(BUILDDIR)/cross-mpfr
 	cd $(BUILDDIR)/cross-mpfr && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/mpfr/configure $(CROSS_MPFR_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/cross-mpfr-built
+	touch $(BUILDSTEPSDIR)/cross-mpfr-built
 
 # Configure & build mpfr ronative:
-buildstepsdir/ronative-mpfr-built: buildstepsdir/src-mpfr-copied buildstepsdir/ronative-gmp-built
+ronative-mpfr-built: src-mpfr-copied ronative-gmp-built
 	-rm -rf $(BUILDDIR)/ronative-mpfr
 	mkdir -p $(BUILDDIR)/ronative-mpfr
 	cd $(BUILDDIR)/ronative-mpfr && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/mpfr/configure $(RONATIVE_MPFR_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/ronative-mpfr-built
+	touch $(BUILDSTEPSDIR)/ronative-mpfr-built
 
 # Configure & build ppl cross:
-buildstepsdir/cross-ppl-built: buildstepsdir/src-ppl-copied buildstepsdir/cross-gmp-built
+cross-ppl-built: src-ppl-copied cross-gmp-built
 	-rm -rf $(BUILDDIR)/cross-ppl
 	mkdir -p $(BUILDDIR)/cross-ppl
 	cd $(BUILDDIR)/cross-ppl && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/ppl/configure $(CROSS_PPL_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/cross-ppl-built
+	touch $(BUILDSTEPSDIR)/cross-ppl-built
 
 # Configure & build ppl ronative:
-buildstepsdir/ronative-ppl-built: buildstepsdir/src-ppl-copied buildstepsdir/ronative-gmp-built
+ronative-ppl-built: src-ppl-copied ronative-gmp-built
 	-rm -rf $(BUILDDIR)/ronative-ppl
 	mkdir -p $(BUILDDIR)/ronative-ppl
 	cd $(BUILDDIR)/ronative-ppl && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/ppl/configure $(RONATIVE_PPL_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/ronative-ppl-built
+	touch $(BUILDSTEPSDIR)/ronative-ppl-built
 
 # Configure & build cloog cross:
-buildstepsdir/cross-cloog-built: buildstepsdir/src-cloog-copied buildstepsdir/cross-gmp-built buildstepsdir/cross-ppl-built
+cross-cloog-built: src-cloog-copied cross-gmp-built cross-ppl-built
 	-rm -rf $(BUILDDIR)/cross-cloog
 	mkdir -p $(BUILDDIR)/cross-cloog
 	cd $(BUILDDIR)/cross-cloog && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SRCDIR)/cloog/configure $(CROSS_CLOOG_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/cross-cloog-built
+	touch $(BUILDSTEPSDIR)/cross-cloog-built
 
 # Configure & build cloog ronative:
-buildstepsdir/ronative-cloog-built: buildstepsdir/src-cloog-copied buildstepsdir/ronative-gmp-built buildstepsdir/ronative-ppl-built
+ronative-cloog-built: src-cloog-copied ronative-gmp-built ronative-ppl-built
 	-rm -rf $(BUILDDIR)/ronative-cloog
 	mkdir -p $(BUILDDIR)/ronative-cloog
 	cd $(BUILDDIR)/ronative-cloog && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/cloog/configure $(RONATIVE_CLOOG_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/ronative-cloog-built
+	touch $(BUILDSTEPSDIR)/ronative-cloog-built
 
 # Build the RISC OS related tools (cmunge, elf2aif, asasm, etc) cross:
-buildstepsdir/cross-riscostools-built: buildstepsdir/cross-gcc-built
+cross-riscostools-built: cross-gcc-built
 	cd $(RISCOSTOOLSDIR) && ./build-it cross
-	touch buildstepsdir/cross-riscostools-built
+	touch $(BUILDSTEPSDIR)/cross-riscostools-built
 
 # Build the RISC OS related tools (cmunge, elf2aif, asasm, etc) ronative:
-buildstepsdir/ronative-riscostools-built: buildstepsdir/ronative-gcc-built
+ronative-riscostools-built: ronative-gcc-built
 	cd $(RISCOSTOOLSDIR) && ./build-it riscos
-	touch buildstepsdir/ronative-riscostools-built
+	touch $(BUILDSTEPSDIR)/ronative-riscostools-built
 
 # Configure & build gdb cross:
-buildstepsdir/cross-gdb-built: buildstepsdir/src-gdb-copied buildstepsdir/cross-gcc-built
+cross-gdb-built: src-gdb-copied cross-gcc-built
 	-rm -rf $(BUILDDIR)/cross-gdb
 	mkdir -p $(BUILDDIR)/cross-gdb
 	cd $(BUILDDIR)/cross-gdb && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gdb/configure $(CROSS_CONFIG_ARGS) $(GDB_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/cross-gdb-built
+	touch $(BUILDSTEPSDIR)/cross-gdb-built
 
 # -- Source unpacking.
 
 # Unpack autoconf-for-binutils source:
-buildstepsdir/src-autoconf-for-binutils-copied: $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2
+src-autoconf-for-binutils-copied: $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2
 	-rm -rf $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION) $(SRCDIR)/autoconf-for-binutils
 	cd $(SRCORIGDIR) && tar xfj autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/autoconf-for-binutils
 	cp -T -p -r $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION) $(SRCDIR)/autoconf-for-binutils
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-autoconf-for-binutils-copied
+	touch $(BUILDSTEPSDIR)/src-autoconf-for-binutils-copied
 
 # Unpack autoconf-for-gcc source:
-buildstepsdir/src-autoconf-for-gcc-copied: $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2
+src-autoconf-for-gcc-copied: $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2
 	-rm -rf $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION) $(SRCDIR)/autoconf-for-gcc
 	cd $(SRCORIGDIR) && tar xfj autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/autoconf-for-gcc
 	cp -T -p -r $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION) $(SRCDIR)/autoconf-for-gcc
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-autoconf-for-gcc-copied
+	touch $(BUILDSTEPSDIR)/src-autoconf-for-gcc-copied
 
 # Unpack automake-for-binutils source:
-buildstepsdir/src-automake-for-binutils-copied: $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2
+src-automake-for-binutils-copied: $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2
 	-rm -rf $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION) $(SRCDIR)/automake-for-binutils
 	cd $(SRCORIGDIR) && tar xfj automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/automake-for-binutils
 	cp -T -p -r $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION) $(SRCDIR)/automake-for-binutils
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-automake-for-binutils-copied
+	touch $(BUILDSTEPSDIR)/src-automake-for-binutils-copied
 
 # Unpack automake-for-gcc source:
-buildstepsdir/src-automake-for-gcc-copied: $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION).tar.bz2
+src-automake-for-gcc-copied: $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION).tar.bz2
 	-rm -rf $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION) $(SRCDIR)/automake-for-gcc
 	cd $(SRCORIGDIR) && tar xfj automake-$(AUTOMAKE_FOR_GCC_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/automake-for-gcc
 	cp -T -p -r $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION) $(SRCDIR)/automake-for-gcc
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-automake-for-gcc-copied
+	touch $(BUILDSTEPSDIR)/src-automake-for-gcc-copied
 
 # Unpack binutils source:
-buildstepsdir/src-binutils-copied: $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION).tar.bz2 buildstepsdir/buildtool-autoconf-for-binutils-built buildstepsdir/buildtool-automake-for-binutils-built
+src-binutils-copied: $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION).tar.bz2 buildtool-autoconf-for-binutils-built buildtool-automake-for-binutils-built
 	-rm -rf $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION) $(SRCDIR)/binutils
 	cd $(SRCORIGDIR) && tar xfj binutils-$(BINUTILS_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/binutils
@@ -421,19 +415,18 @@ buildstepsdir/src-binutils-copied: $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION).ta
 ifeq ($(TARGET),arm-unknown-riscos)
 	cd $(SRCDIR)/binutils && PATH="$(PREFIX_BUILDTOOL_BINUTILS)/bin:$(PATH)" && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 endif
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-binutils-copied
+	touch $(BUILDSTEPSDIR)/src-binutils-copied
 
 # Unpack or checkout the gcc source:
-buildstepsdir/src-gcc-copied: buildstepsdir/buildtool-autoconf-for-gcc-built buildstepsdir/buildtool-automake-for-gcc-built
+src-gcc-copied: buildtool-autoconf-for-gcc-built buildtool-automake-for-gcc-built
 ifeq "$(GCC_USE_SCM)" "yes"
-buildstepsdir/src-gcc-copied: $(SRCORIGDIR)/gcc-trunk/LAST_UPDATED
+src-gcc-copied: $(SRCORIGDIR)/gcc-trunk/LAST_UPDATED
 	-rm -rf $(SRCDIR)/gcc
 	-svn revert -R $(SRCORIGDIR)/gcc-trunk
 	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "\$$?" | cut -b 9- | xargs rm -rf
 	ln -s $(SRCORIGDIR)/gcc-trunk $(SRCDIR)/gcc
 else
-buildstepsdir/src-gcc-copied: $(SRCORIGDIR)/gcc-$(GCC_VERSION).tar.bz2
+src-gcc-copied: $(SRCORIGDIR)/gcc-$(GCC_VERSION).tar.bz2
 	-rm -rf $(SRCORIGDIR)/gcc-$(GCC_VERSION) $(SRCDIR)/gcc
 	cd $(SRCORIGDIR) && tar xfj gcc-$(GCC_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/gcc
@@ -442,76 +435,67 @@ endif
 ifeq ($(TARGET),arm-unknown-riscos)
 	cd $(SRCDIR)/gcc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 endif
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-gcc-copied
+	touch $(BUILDSTEPSDIR)/src-gcc-copied
 
 # Unpack gmp source:
-buildstepsdir/src-gmp-copied: $(SRCORIGDIR)/gmp-$(GMP_VERSION).tar.gz
+src-gmp-copied: $(SRCORIGDIR)/gmp-$(GMP_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/gmp-$(GMP_VERSION) $(SRCDIR)/gmp
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/gmp-$(GMP_VERSION).tar.gz
 	cp -T -p -r $(SRCORIGDIR)/gmp-$(GMP_VERSION) $(SRCDIR)/gmp
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-gmp-copied
+	touch $(BUILDSTEPSDIR)/src-gmp-copied
 
 # Unpack mpc source:
-buildstepsdir/src-mpc-copied: $(SRCORIGDIR)/mpc-$(MPC_VERSION).tar.gz
+src-mpc-copied: $(SRCORIGDIR)/mpc-$(MPC_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/mpc-$(MPC_VERSION) $(SRCDIR)/mpc
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/mpc-$(MPC_VERSION).tar.gz
 	cp -T -p -r $(SRCORIGDIR)/mpc-$(MPC_VERSION) $(SRCDIR)/mpc
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-mpc-copied
+	touch $(BUILDSTEPSDIR)/src-mpc-copied
 
 # Unpack mpfr source:
-buildstepsdir/src-mpfr-copied: $(SRCORIGDIR)/mpfr-$(MPFR_VERSION).tar.gz
+src-mpfr-copied: $(SRCORIGDIR)/mpfr-$(MPFR_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/mpfr-$(MPFR_VERSION) $(SRCDIR)/mpfr
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/mpfr-$(MPFR_VERSION).tar.gz
 	cp -T -p -r $(SRCORIGDIR)/mpfr-$(MPFR_VERSION) $(SRCDIR)/mpfr
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-mpfr-copied
+	touch $(BUILDSTEPSDIR)/src-mpfr-copied
 
 # Unpack ppl source:
-buildstepsdir/src-ppl-copied: $(SRCORIGDIR)/ppl-$(PPL_VERSION).tar.gz
+src-ppl-copied: $(SRCORIGDIR)/ppl-$(PPL_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/ppl-$(PPL_VERSION) $(SRCDIR)/ppl
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/ppl-$(PPL_VERSION).tar.gz
 	cp -T -p -r $(SRCORIGDIR)/ppl-$(PPL_VERSION) $(SRCDIR)/ppl
 	# The following is temporary until ppl 0.11 is out:
 	cd $(SRCDIR)/ppl && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(RECIPEDIR)/scripts/ppl/reconf-ppl
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-ppl-copied
+	touch $(BUILDSTEPSDIR)/src-ppl-copied
 
 # Unpack cloog source:
-buildstepsdir/src-cloog-copied: $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz
+src-cloog-copied: $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION) $(SRCDIR)/cloog
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz
 	cp -T -p -r $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION) $(SRCDIR)/cloog
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-cloog-copied
+	touch $(BUILDSTEPSDIR)/src-cloog-copied
 
 # Unpack newlib source:
 ifeq "$(NEWLIB_USE_SCM)" "yes"
-buildstepsdir/src-newlib-copied:
+src-newlib-copied:
 	-rm -rf $(SRCDIR)/newlib
 	cd $(SRCORIGDIR) && cvs -z 9 -d :pserver:anoncvs@sources.redhat.com:/cvs/src co newlib
 	mv $(SRCORIGDIR)/src $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION)
 	ln -s $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION) $(SRCDIR)/newlib
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-newlib-copied
+	touch $(BUILDSTEPSDIR)/src-newlib-copied
 else
-buildstepsdir/src-newlib-copied: $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION).tar.gz
+src-newlib-copied: $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION) $(SRCDIR)/newlib
 	cd $(SRCORIGDIR) && tar xfz newlib-$(NEWLIB_VERSION).tar.gz
 	cp -T -p -r $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION) $(SRCDIR)/newlib
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-newlib-copied
+	touch $(BUILDSTEPSDIR)/src-newlib-copied
 endif
 
 # Unpack gdb source:
-buildstepsdir/src-gdb-copied: $(SRCORIGDIR)/gdb-$(GDB_VERSION).tar.bz2
+src-gdb-copied: $(SRCORIGDIR)/gdb-$(GDB_VERSION).tar.bz2
 	-rm -rf $(SRCORIGDIR)/gdb-$(GDB_VERSION) $(SRCDIR)/gdb
 	cd $(SRCORIGDIR) && tar xfj gdb-$(GDB_VERSION).tar.bz2
 	cp -T -p -r $(SRCORIGDIR)/gdb-$(GDB_VERSION) $(SRCDIR)/gdb
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-gdb-copied
+	touch $(BUILDSTEPSDIR)/src-gdb-copied
 
 # -- Source downloading.
 
