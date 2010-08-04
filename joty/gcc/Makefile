@@ -506,17 +506,20 @@ src-gdb-copied: $(SRCORIGDIR)/gdb-$(GDB_VERSION).tar.bz2
 $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/autoconf/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2
+	touch $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2
 
 # Download automake source to be used to build automake:
 $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/automake/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2
+	touch $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2
 
 ifneq ($(AUTOCONF_FOR_BINUTILS_VERSION),$(AUTOCONF_FOR_GCC_VERSION))
 # Download autoconf source to be used to build gcc:
 $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/autoconf/autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2
+	touch $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2
 endif
 
 ifneq ($(AUTOMAKE_FOR_BINUTILS_VERSION),$(AUTOMAKE_FOR_GCC_VERSION))
@@ -524,12 +527,14 @@ ifneq ($(AUTOMAKE_FOR_BINUTILS_VERSION),$(AUTOMAKE_FOR_GCC_VERSION))
 $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION).tar.bz2:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/automake/automake-$(AUTOMAKE_FOR_GCC_VERSION).tar.bz2
+	touch $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION).tar.bz2
 endif
 
 # Download binutils source:
 $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION).tar.bz2:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/binutils/binutils-$(BINUTILS_VERSION).tar.bz2
+	touch $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION).tar.bz2
 
 ifeq "$(GCC_USE_SCM)" "yes"
 # Checkout gcc source:
@@ -542,40 +547,47 @@ else
 $(SRCORIGDIR)/gcc-$(GCC_VERSION).tar.bz2:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/gcc/gcc-$(GCC_VERSION)/gcc-$(GCC_VERSION).tar.bz2
+	touch $(SRCORIGDIR)/gcc-$(GCC_VERSION).tar.bz2
 endif
 
 # Download gmp source:
 $(SRCORIGDIR)/gmp-$(GMP_VERSION).tar.gz:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c ftp://ftp.gmplib.org/pub/gmp-$(GMP_VERSION)/gmp-$(GMP_VERSION).tar.gz
+	touch $(SRCORIGDIR)/gmp-$(GMP_VERSION).tar.gz
 
 # Download mpc source:
 $(SRCORIGDIR)/mpc-$(MPC_VERSION).tar.gz:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://www.multiprecision.org/mpc/download/mpc-$(MPC_VERSION).tar.gz
+	touch $(SRCORIGDIR)/mpc-$(MPC_VERSION).tar.gz
 
 # Download mpfr source:
 $(SRCORIGDIR)/mpfr-$(MPFR_VERSION).tar.gz:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://www.mpfr.org/mpfr-current/mpfr-$(MPFR_VERSION).tar.gz
+	touch $(SRCORIGDIR)/mpfr-$(MPFR_VERSION).tar.gz
 
 # Download ppl source:
 $(SRCORIGDIR)/ppl-$(PPL_VERSION).tar.gz:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://www.cs.unipr.it/ppl/Download/ftp/releases/$(PPL_VERSION)/ppl-$(PPL_VERSION).tar.gz
+	touch $(SRCORIGDIR)/ppl-$(PPL_VERSION).tar.gz
 
 # Download CLooG source:
 $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c ftp://gcc.gnu.org/pub/gcc/infrastructure/cloog-ppl-$(CLOOG_VERSION).tar.gz
+	touch $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz
 
 # Download newlib source:
 $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION).tar.gz:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c ftp://sources.redhat.com/pub/newlib/newlib-$(NEWLIB_VERSION).tar.gz
+	touch $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION).tar.gz
 
 # Download gdb source:
 $(SRCORIGDIR)/gdb-$(GDB_VERSION).tar.bz2:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/gdb/gdb-$(GDB_VERSION).tar.bz2
-
+	touch $(SRCORIGDIR)/gdb-$(GDB_VERSION).tar.bz2
