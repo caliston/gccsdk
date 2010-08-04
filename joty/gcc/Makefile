@@ -15,6 +15,9 @@ GCC_LANGUAGES="c,c++"
 
 # *_SCM variables: when set to "yes", we'll fetch the source from source control
 # system and it will always be the latest version.
+# GCC_USE_PPL_CLOOG: when set to "yes", this enables additional loop optimisation.
+# This requires a C++ compiler (e.g. when building the RISC OS native compiler, this
+# option requires a C++ cross compiler).
 AUTOCONF_FOR_BINUTILS_VERSION=2.64
 AUTOMAKE_FOR_BINUTILS_VERSION=1.11.1
 BINUTILS_VERSION=$(GCCSDK_SUPPORTED_BINUTILS_RELEASE)
