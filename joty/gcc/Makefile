@@ -115,8 +115,7 @@ endif
 
 # Configure arguments Binutils & GCC:
 CROSS_CONFIG_ARGS := --target=$(TARGET) --prefix=$(PREFIX_CROSS)
-# Note: --build argument can only be determined when SRCDIR is populated.
-RONATIVE_CONFIG_ARGS = --build=`$(SRCDIR)/gcc/config.guess` --host=$(TARGET) --target=$(TARGET) --prefix=$(PREFIX_RONATIVE)
+RONATIVE_CONFIG_ARGS := --host=$(TARGET) --target=$(TARGET) --prefix=$(PREFIX_RONATIVE)
 
 # Configure arguments GMP:
 CROSS_GMP_CONFIG_ARGS := --disable-shared --prefix=$(PREFIX_CROSSGCC_LIBS)
