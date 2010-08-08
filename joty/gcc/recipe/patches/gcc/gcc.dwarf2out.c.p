@@ -1,8 +1,8 @@
 Index: gcc/dwarf2out.c
 ===================================================================
---- gcc/dwarf2out.c	(revision 162782)
+--- gcc/dwarf2out.c	(revision 162985)
 +++ gcc/dwarf2out.c	(working copy)
-@@ -2332,7 +2332,9 @@
+@@ -2365,7 +2365,9 @@
  	      /* Rule 3 */
  	      /* Either setting the FP from an offset of the SP,
  		 or adjusting the FP */
@@ -12,7 +12,7 @@ Index: gcc/dwarf2out.c
  
  	      gcc_assert (REG_P (XEXP (src, 0))
  			  && (unsigned) REGNO (XEXP (src, 0)) == cfa.reg
-@@ -2381,6 +2383,13 @@
+@@ -2414,6 +2416,13 @@
  		  cfa_temp.reg = REGNO (dest);
  		  cfa_temp.offset = INTVAL (XEXP (src, 1));
  		}
@@ -26,7 +26,7 @@ Index: gcc/dwarf2out.c
  	      else
  		gcc_unreachable ();
  	    }
-@@ -16963,12 +16972,14 @@
+@@ -16972,12 +16981,14 @@
        elim = XEXP (elim, 0);
      }
  
