@@ -324,11 +324,6 @@ __unixinit (void)
 #endif
 }
 
-#if 1
-/* FIXME: this is a hack for http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44974 */
-extern __typeof (_Exit) _ExitAliased __attribute__ ((alias ("_Exit")));
-#endif
-
 void
 exit (int status)
 {
@@ -340,12 +335,7 @@ exit (int status)
   while (__atexit_function_count-- > 0)
     __funcall ((*__atexit_function_array[__atexit_function_count]), ());
 
-#if 1
-/* FIXME: this is a hack for http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44974 */
-  _ExitAliased (status);
-#else
   _Exit (status);
-#endif
 }
 
 /* ISOC99: Terminate the program with `status' without calling any of

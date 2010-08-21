@@ -1,3 +1,8 @@
+Sat Aug 21 16:55:44 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* unix/unix.c (exit): Revert previous workaround. gcc bug
+	44974 is solved.
+
 Wed Jul 21 14:46:21 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 	* unix/unix.c (exit): Add temporary workaround for gcc bug
