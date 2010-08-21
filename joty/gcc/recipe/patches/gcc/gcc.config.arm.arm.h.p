@@ -1,8 +1,8 @@
 Index: gcc/config/arm/arm.h
 ===================================================================
---- gcc/config/arm/arm.h	(revision 162830)
+--- gcc/config/arm/arm.h	(revision 163437)
 +++ gcc/config/arm/arm.h	(working copy)
-@@ -186,6 +186,12 @@
+@@ -204,6 +204,12 @@
  #define SUBTARGET_CPP_SPEC      ""
  #endif
  
@@ -15,7 +15,7 @@ Index: gcc/config/arm/arm.h
  /* Run-time Target Specification.  */
  #ifndef TARGET_VERSION
  #define TARGET_VERSION fputs (" (ARM/generic)", stderr);
-@@ -209,7 +215,7 @@
+@@ -227,7 +233,7 @@
  				         : TARGET_TPCS_FRAME)
  #define TARGET_LDRD			(arm_arch5e && ARM_DOUBLEWORD_ALIGN)
  #define TARGET_AAPCS_BASED \
@@ -24,7 +24,7 @@ Index: gcc/config/arm/arm.h
  
  #define TARGET_HARD_TP			(target_thread_pointer == TP_CP15)
  #define TARGET_SOFT_TP			(target_thread_pointer == TP_SOFT)
-@@ -367,7 +373,8 @@
+@@ -399,7 +405,8 @@
    ARM_ABI_ATPCS,
    ARM_ABI_AAPCS,
    ARM_ABI_IWMMXT,
@@ -34,7 +34,7 @@ Index: gcc/config/arm/arm.h
  };
  
  extern enum arm_abi_type arm_abi;
-@@ -850,10 +857,10 @@
+@@ -888,10 +895,10 @@
        fixed_regs[PIC_OFFSET_TABLE_REGNUM] = 1;			\
        call_used_regs[PIC_OFFSET_TABLE_REGNUM] = 1;		\
      }								\
@@ -48,7 +48,7 @@ Index: gcc/config/arm/arm.h
      }								\
    /* -mcaller-super-interworking reserves r11 for calls to	\
       _interwork_r11_call_via_rN().  Making the register global	\
-@@ -922,9 +929,14 @@
+@@ -960,9 +967,14 @@
  #define LAST_HI_REGNUM		11
  
  #ifndef TARGET_UNWIND_INFO
@@ -63,7 +63,7 @@ Index: gcc/config/arm/arm.h
  
  /* We can generate DWARF2 Unwind info, even though we don't use it.  */
  #define DWARF2_UNWIND_INFO 1
-@@ -986,10 +998,18 @@
+@@ -1024,10 +1036,18 @@
    (((REGNUM) >= FIRST_IWMMXT_GR_REGNUM) && ((REGNUM) <= LAST_IWMMXT_GR_REGNUM))
  
  /* Base register for access to local variables of the function.  */
@@ -82,7 +82,7 @@ Index: gcc/config/arm/arm.h
  
  #define FIRST_CIRRUS_FP_REGNUM	27
  #define LAST_CIRRUS_FP_REGNUM	42
-@@ -1474,7 +1494,7 @@
+@@ -1512,7 +1532,7 @@
     is at the high-address end of the local variables;
     that is, each additional local variable allocated
     goes at a more negative offset in the frame.  */
@@ -91,7 +91,7 @@ Index: gcc/config/arm/arm.h
  
  /* The amount of scratch space needed by _interwork_{r7,r11}_call_via_rN().
     When present, it is one word in size, and sits at the top of the frame,
-@@ -1494,7 +1514,8 @@
+@@ -1532,7 +1552,8 @@
     If FRAME_GROWS_DOWNWARD, this is the offset to the END of the
     first local allocated.  Otherwise, it is the offset to the BEGINNING
     of the first local allocated.  */
@@ -101,7 +101,7 @@ Index: gcc/config/arm/arm.h
  
  /* If we generate an insn to push BYTES bytes,
     this says how many the stack pointer really advances by.  */
-@@ -1595,6 +1616,7 @@
+@@ -1633,6 +1654,7 @@
    int soft_frame;	/* FRAME_POINTER_REGNUM.  */
    int locals_base;	/* THUMB_HARD_FRAME_POINTER_REGNUM.  */
    int outgoing_args;	/* STACK_POINTER_REGNUM.  */
@@ -109,7 +109,7 @@ Index: gcc/config/arm/arm.h
    unsigned int saved_regs_mask;
  }
  arm_stack_offsets;
-@@ -1621,6 +1643,8 @@
+@@ -1659,6 +1681,8 @@
    /* Records if sibcalls are blocked because an argument
       register is needed to preserve stack alignment.  */
    int sibcall_blocked;
@@ -118,7 +118,7 @@ Index: gcc/config/arm/arm.h
    /* The PIC register for this function.  This might be a pseudo.  */
    rtx pic_reg;
    /* Labels for per-function Thumb call-via stubs.  One per potential calling
-@@ -1673,6 +1697,8 @@
+@@ -1711,6 +1735,8 @@
    int nregs;
    /* This is the number of iWMMXt register arguments scanned so far.  */
    int iwmmxt_nregs;
@@ -127,7 +127,7 @@ Index: gcc/config/arm/arm.h
    int named_count;
    int nargs;
    /* Which procedure call variant to use for this call.  */
-@@ -1758,6 +1784,8 @@
+@@ -1796,6 +1822,8 @@
     (IN_RANGE ((REGNO), 0, 3)						\
      || (TARGET_AAPCS_BASED && TARGET_VFP && TARGET_HARD_FLOAT		\
  	&& IN_RANGE ((REGNO), FIRST_VFP_REGNUM, FIRST_VFP_REGNUM + 15))	\
@@ -136,7 +136,7 @@ Index: gcc/config/arm/arm.h
      || (TARGET_IWMMXT_ABI						\
  	&& IN_RANGE ((REGNO), FIRST_IWMMXT_REGNUM, FIRST_IWMMXT_REGNUM + 9)))
  
-@@ -1844,6 +1872,11 @@
+@@ -1882,6 +1910,11 @@
     pointer.  Note we have to use {ARM|THUMB}_HARD_FRAME_POINTER_REGNUM
     because the definition of HARD_FRAME_POINTER_REGNUM is not a constant.  */
  
@@ -148,7 +148,7 @@ Index: gcc/config/arm/arm.h
  #define ELIMINABLE_REGS						\
  {{ ARG_POINTER_REGNUM,        STACK_POINTER_REGNUM            },\
   { ARG_POINTER_REGNUM,        FRAME_POINTER_REGNUM            },\
-@@ -1852,6 +1885,7 @@
+@@ -1890,6 +1923,7 @@
   { FRAME_POINTER_REGNUM,      STACK_POINTER_REGNUM            },\
   { FRAME_POINTER_REGNUM,      ARM_HARD_FRAME_POINTER_REGNUM   },\
   { FRAME_POINTER_REGNUM,      THUMB_HARD_FRAME_POINTER_REGNUM }}
@@ -156,7 +156,7 @@ Index: gcc/config/arm/arm.h
  
  /* Define the offset between two registers, one to be eliminated, and the
     other its replacement, at the start of a routine.  */
-@@ -1897,8 +1931,8 @@
+@@ -1935,8 +1969,8 @@
  /* Don't allow the pc to be used.  */
  #define ARM_REGNO_OK_FOR_BASE_P(REGNO)			\
    (TEST_REGNO (REGNO, <, PC_REGNUM)			\
@@ -167,7 +167,7 @@ Index: gcc/config/arm/arm.h
  
  #define THUMB1_REGNO_MODE_OK_FOR_BASE_P(REGNO, MODE)		\
    (TEST_REGNO (REGNO, <=, LAST_LO_REGNUM)			\
-@@ -1986,6 +2020,11 @@
+@@ -2024,6 +2058,11 @@
    if (TARGET_THUMB2)			\
      thumb2_asm_output_opcode (STREAM);
  
@@ -179,7 +179,7 @@ Index: gcc/config/arm/arm.h
  /* The EABI specifies that constructors should go in .init_array.
     Other targets use .ctors for compatibility.  */
  #ifndef ARM_EABI_CTORS_SECTION_OP
-@@ -2031,6 +2070,7 @@
+@@ -2069,6 +2108,7 @@
  #   define DTORS_SECTION_ASM_OP ARM_DTORS_SECTION_OP
  # endif /* !defined (__ARM_EABI__) */
  #endif /* !defined (IN_LIBCC2) */
@@ -187,7 +187,7 @@ Index: gcc/config/arm/arm.h
  
  /* True if the operating system can merge entities with vague linkage
     (e.g., symbols in COMDAT group) during dynamic linking.  */
-@@ -2059,8 +2099,8 @@
+@@ -2097,8 +2137,8 @@
  #define ARM_REG_OK_FOR_BASE_P(X)		\
    (REGNO (X) <= LAST_ARM_REGNUM			\
     || REGNO (X) >= FIRST_PSEUDO_REGISTER	\
