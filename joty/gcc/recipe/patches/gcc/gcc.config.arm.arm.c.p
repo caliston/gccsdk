@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.c
 ===================================================================
---- gcc/config/arm/arm.c	(revision 163437)
+--- gcc/config/arm/arm.c	(revision 163560)
 +++ gcc/config/arm/arm.c	(working copy)
 @@ -123,6 +123,8 @@
  #if TARGET_DLLIMPORT_DECL_ATTRIBUTES
@@ -1144,7 +1144,7 @@ Index: gcc/config/arm/arm.c
  }
  
  /* Dwarf models VFPv3 registers as 32 64-bit registers.
-@@ -22579,6 +23100,10 @@
+@@ -22580,6 +23101,10 @@
  bool
  arm_frame_pointer_required (void)
  {
