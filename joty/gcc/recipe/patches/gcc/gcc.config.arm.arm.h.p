@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.h
 ===================================================================
---- gcc/config/arm/arm.h	(revision 163437)
+--- gcc/config/arm/arm.h	(revision 163743)
 +++ gcc/config/arm/arm.h	(working copy)
 @@ -204,6 +204,12 @@
  #define SUBTARGET_CPP_SPEC      ""
@@ -127,7 +127,7 @@ Index: gcc/config/arm/arm.h
    int named_count;
    int nargs;
    /* Which procedure call variant to use for this call.  */
-@@ -1796,6 +1822,8 @@
+@@ -1769,6 +1795,8 @@
     (IN_RANGE ((REGNO), 0, 3)						\
      || (TARGET_AAPCS_BASED && TARGET_VFP && TARGET_HARD_FLOAT		\
  	&& IN_RANGE ((REGNO), FIRST_VFP_REGNUM, FIRST_VFP_REGNUM + 15))	\
@@ -136,7 +136,7 @@ Index: gcc/config/arm/arm.h
      || (TARGET_IWMMXT_ABI						\
  	&& IN_RANGE ((REGNO), FIRST_IWMMXT_REGNUM, FIRST_IWMMXT_REGNUM + 9)))
  
-@@ -1882,6 +1910,11 @@
+@@ -1855,6 +1883,11 @@
     pointer.  Note we have to use {ARM|THUMB}_HARD_FRAME_POINTER_REGNUM
     because the definition of HARD_FRAME_POINTER_REGNUM is not a constant.  */
  
@@ -148,7 +148,7 @@ Index: gcc/config/arm/arm.h
  #define ELIMINABLE_REGS						\
  {{ ARG_POINTER_REGNUM,        STACK_POINTER_REGNUM            },\
   { ARG_POINTER_REGNUM,        FRAME_POINTER_REGNUM            },\
-@@ -1890,6 +1923,7 @@
+@@ -1863,6 +1896,7 @@
   { FRAME_POINTER_REGNUM,      STACK_POINTER_REGNUM            },\
   { FRAME_POINTER_REGNUM,      ARM_HARD_FRAME_POINTER_REGNUM   },\
   { FRAME_POINTER_REGNUM,      THUMB_HARD_FRAME_POINTER_REGNUM }}
@@ -156,7 +156,7 @@ Index: gcc/config/arm/arm.h
  
  /* Define the offset between two registers, one to be eliminated, and the
     other its replacement, at the start of a routine.  */
-@@ -1935,8 +1969,8 @@
+@@ -1908,8 +1942,8 @@
  /* Don't allow the pc to be used.  */
  #define ARM_REGNO_OK_FOR_BASE_P(REGNO)			\
    (TEST_REGNO (REGNO, <, PC_REGNUM)			\
@@ -167,7 +167,7 @@ Index: gcc/config/arm/arm.h
  
  #define THUMB1_REGNO_MODE_OK_FOR_BASE_P(REGNO, MODE)		\
    (TEST_REGNO (REGNO, <=, LAST_LO_REGNUM)			\
-@@ -2024,6 +2058,11 @@
+@@ -1997,6 +2031,11 @@
    if (TARGET_THUMB2)			\
      thumb2_asm_output_opcode (STREAM);
  
@@ -179,7 +179,7 @@ Index: gcc/config/arm/arm.h
  /* The EABI specifies that constructors should go in .init_array.
     Other targets use .ctors for compatibility.  */
  #ifndef ARM_EABI_CTORS_SECTION_OP
-@@ -2069,6 +2108,7 @@
+@@ -2042,6 +2081,7 @@
  #   define DTORS_SECTION_ASM_OP ARM_DTORS_SECTION_OP
  # endif /* !defined (__ARM_EABI__) */
  #endif /* !defined (IN_LIBCC2) */
@@ -187,7 +187,7 @@ Index: gcc/config/arm/arm.h
  
  /* True if the operating system can merge entities with vague linkage
     (e.g., symbols in COMDAT group) during dynamic linking.  */
-@@ -2097,8 +2137,8 @@
+@@ -2070,8 +2110,8 @@
  #define ARM_REG_OK_FOR_BASE_P(X)		\
    (REGNO (X) <= LAST_ARM_REGNUM			\
     || REGNO (X) >= FIRST_PSEUDO_REGISTER	\
