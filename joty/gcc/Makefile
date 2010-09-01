@@ -18,6 +18,8 @@ GCC_LANGUAGES="c,c++"
 # GCC_USE_PPL_CLOOG: when set to "yes", this enables additional loop optimisation.
 # This requires a C++ compiler (e.g. when building the RISC OS native compiler, this
 # option requires a C++ cross compiler).
+# For MPFR/GMP/MPC version numbers, a good set can be found mentioned at
+# gcc/contrib/download_prerequisites.
 AUTOCONF_FOR_BINUTILS_VERSION=2.64
 AUTOMAKE_FOR_BINUTILS_VERSION=1.11.1
 BINUTILS_VERSION=$(GCCSDK_SUPPORTED_BINUTILS_RELEASE)
