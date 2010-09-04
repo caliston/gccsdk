@@ -1,6 +1,6 @@
 Index: configure.ac
 ===================================================================
---- configure.ac	(revision 162611)
+--- configure.ac	(revision 163858)
 +++ configure.ac	(working copy)
 @@ -189,6 +189,7 @@
  target_libraries="target-libgcc \
@@ -25,7 +25,7 @@ Index: configure.ac
  # If we aren't building newlib, then don't build libgloss, since libgloss
  # depends upon some newlib header files.
  case "${noconfigdirs}" in
-@@ -3085,6 +3094,10 @@
+@@ -3087,6 +3096,10 @@
     ;;
    esac
    ;;
@@ -36,7 +36,7 @@ Index: configure.ac
  esac
  
  case "$target" in
-@@ -3319,7 +3332,7 @@
+@@ -3321,7 +3334,7 @@
  GCC_TARGET_TOOL(nm, NM_FOR_TARGET, NM, [binutils/nm-new])
  GCC_TARGET_TOOL(objdump, OBJDUMP_FOR_TARGET, OBJDUMP, [binutils/objdump])
  GCC_TARGET_TOOL(ranlib, RANLIB_FOR_TARGET, RANLIB, [binutils/ranlib])

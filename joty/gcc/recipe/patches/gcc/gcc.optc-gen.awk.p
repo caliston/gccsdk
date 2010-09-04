@@ -1,6 +1,6 @@
 Index: gcc/optc-gen.awk
 ===================================================================
---- gcc/optc-gen.awk	(revision 162611)
+--- gcc/optc-gen.awk	(revision 163858)
 +++ gcc/optc-gen.awk	(working copy)
 @@ -110,6 +110,8 @@
  	print "/* Set by -" opts[i] "."

@@ -1,8 +1,8 @@
 Index: gcc/opth-gen.awk
 ===================================================================
---- gcc/opth-gen.awk	(revision 161055)
+--- gcc/opth-gen.awk	(revision 163858)
 +++ gcc/opth-gen.awk	(working copy)
-@@ -86,6 +86,12 @@
+@@ -84,6 +84,12 @@
  
  	var_seen[name] = 1;
  	print "extern " var_type(flags[i]) name ";"

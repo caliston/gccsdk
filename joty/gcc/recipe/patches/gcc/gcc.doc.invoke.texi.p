@@ -1,6 +1,6 @@
 Index: gcc/doc/invoke.texi
 ===================================================================
---- gcc/doc/invoke.texi	(revision 163743)
+--- gcc/doc/invoke.texi	(revision 163858)
 +++ gcc/doc/invoke.texi	(working copy)
 @@ -447,6 +447,7 @@
  @gccoptlist{-mapcs-frame  -mno-apcs-frame @gol
