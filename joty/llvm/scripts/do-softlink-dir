@@ -5,9 +5,17 @@
 TODIR=$1
 FROMDIR=$2
 
+# Argument sanity checking:
+[ -z "$TODIR" -o -z "$FROMDIR" ] && ( echo "Syntax: do-soft-link-dir <to-dir> <from-dir>" ; exit 1 )
+[ -d "$TODIR" ] || ( echo "Directory $TODIR does not exist" ; exit 1 )
+[ -f "$FROMDIR" ] && ( echo "Object $FROMDIR can not be a file" ; exit 1 )
+
 echo GCCSDK: Symlinking from $FROMDIR to $TODIR
+
+[ -d "$FROMDIR" ] && rm -rf $FROMDIR
+
 pushd $TODIR > /dev/null
 for dir in `find . -type d | grep -v "\.svn" ` ; do mkdir -p $FROMDIR/$dir ; done
-for file in `find . -type f -o -type l | grep -v "\.svn" ` ; do rm -f $FROMDIR/$file; ln -s $TODIR/$file $FROMDIR/$file ; done
+for file in `find . -type f -o -type l | grep -v "\.svn" ` ; do ln -s $TODIR/$file $FROMDIR/$file ; done
 popd > /dev/null
 
