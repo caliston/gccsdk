@@ -1,11 +1,12 @@
 # Build GCCSDK
 # Written by John Tytgat / BASS
 #
-# Needed:
+# Build requirements:
 #   - apt-get install flex bison libgmp3-dev libmpfr-dev texinfo build-essential
 #   - binutils 2.20.1 and gcc 4.6 needs automake 1.11.1 and autoconf 2.64.
 #     Note the required automake/autoconf sources will be fetched & built automatically.
 #   - gcc 4.6 needs at least GMP 4.3.2, MPFR 2.4.2 and MPC 0.8.1 (MPFR needs GMP, MPC needs GMP & MPFR)
+#     For MPFR/GMP/MPC version numbers, a good set can be found mentioned at gcc/contrib/download_prerequisites.
 #   - gdb requires libncurses5-dev
 
 # TARGET can have following values: arm-unknown-riscos (stable), arm-unknown-eabi (work in progress)
@@ -18,8 +19,6 @@ GCC_LANGUAGES="c,c++"
 # GCC_USE_PPL_CLOOG: when set to "yes", this enables additional loop optimisation.
 # This requires a C++ compiler (e.g. when building the RISC OS native compiler, this
 # option requires a C++ cross compiler).
-# For MPFR/GMP/MPC version numbers, a good set can be found mentioned at
-# gcc/contrib/download_prerequisites.
 AUTOCONF_FOR_BINUTILS_VERSION=2.64
 AUTOMAKE_FOR_BINUTILS_VERSION=1.11.1
 BINUTILS_VERSION=$(GCCSDK_SUPPORTED_BINUTILS_RELEASE)
@@ -29,7 +28,7 @@ GCC_VERSION=$(GCCSDK_SUPPORTED_GCC_RELEASE)
 GCC_USE_SCM=yes
 NEWLIB_VERSION=1.18.1
 NEWLIB_USE_SCM=yes
-GDB_VERSION=7.1
+GDB_VERSION=7.2
 GMP_VERSION=5.0.1
 MPFR_VERSION=3.0.0
 MPC_VERSION=0.8.2
@@ -63,16 +62,21 @@ GCC_CONFIG_ARGS := \
 	--without-pic \
 	--with-cross-host
 # FIXME: for Java support: --without-x --enable-libgcj
-BINUTILS_CONFIG_ARGS =
+BINUTILS_CONFIG_ARGS :=
+GDB_CONFIG_ARGS :=
 else
 # Case arm-unknown-eabi target (use newlib):
 GCC_CONFIG_ARGS := --disable-threads --disable-multilib --disable-shared --with-newlib
 BINUTILS_CONFIG_ARGS := --disable-multilib --disable-shared
+GDB_CONFIG_ARGS :=
 endif
 GCC_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 1 Development' \
 	--with-bugurl=http://gccsdk.riscos.info/
 BINUTILS_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 1 Development' \
 	--with-bugurl=http://gccsdk.riscos.info/
+## As long we don't have private changes applied to gdb, we don't need the following:
+##GDB_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 1 Development' \
+##	--with-bugurl=http://gccsdk.riscos.info/
 BINUTILS_CONFIG_ARGS += --enable-maintainer-mode --enable-interwork --disable-werror --with-gcc --disable-nls
 ## FIXME: left out --enable-maintainer-mode because of http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44902
 ## which turns compile warnings into errors.
@@ -155,17 +159,22 @@ VPATH = $(BUILDSTEPSDIR)
 
 # Default target is to build the cross-compiler (including the RISC OS tools):
 all: $(GCCSDK_INTERNAL_GETENV)
-all-done: cross-all-built
+all-done: cross-done
 
 # Builds the cross compiler:
 cross: $(GCCSDK_INTERNAL_GETENV)
-cross-all-built: cross-gcc-built cross-riscostools-built
-	touch $(BUILDSTEPSDIR)/cross-all-built
+cross-done: cross-gcc-built cross-riscostools-built
+	touch $(BUILDSTEPSDIR)/cross-done
 
 # Builds the native RISC OS compiler (gcc and binutils):
 ronative: $(GCCSDK_INTERNAL_GETENV)
 ronative-done: ronative-gcc-built ronative-binutils-built ronative-riscostools-built
 	touch $(BUILDSTEPSDIR)/ronative-done
+
+# Cross gdb:
+cross-gdb: $(GCCSDK_INTERNAL_GETENV)
+cross-gdb-done: cross-gdb-built
+	touch $(BUILDSTEPSDIR)/cross-gdb
 
 clean: $(GCCSDK_INTERNAL_GETENV)
 clean-done:
@@ -370,7 +379,7 @@ ronative-riscostools-built: ronative-gcc-built
 	touch $(BUILDSTEPSDIR)/ronative-riscostools-built
 
 # Configure & build gdb cross:
-cross-gdb-built: src-gdb-copied cross-gcc-built
+cross-gdb-built: src-gdb-copied
 	-rm -rf $(BUILDDIR)/cross-gdb
 	mkdir -p $(BUILDDIR)/cross-gdb
 	cd $(BUILDDIR)/cross-gdb && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gdb/configure $(CROSS_CONFIG_ARGS) $(GDB_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
@@ -445,6 +454,7 @@ endif
 src-gmp-copied: $(SRCORIGDIR)/gmp-$(GMP_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/gmp-$(GMP_VERSION) $(SRCDIR)/gmp
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/gmp-$(GMP_VERSION).tar.gz
+	-mkdir -p $(SRCDIR)/gmp
 	cp -T -p -r $(SRCORIGDIR)/gmp-$(GMP_VERSION) $(SRCDIR)/gmp
 	touch $(BUILDSTEPSDIR)/src-gmp-copied
 
@@ -452,6 +462,7 @@ src-gmp-copied: $(SRCORIGDIR)/gmp-$(GMP_VERSION).tar.gz
 src-mpc-copied: $(SRCORIGDIR)/mpc-$(MPC_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/mpc-$(MPC_VERSION) $(SRCDIR)/mpc
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/mpc-$(MPC_VERSION).tar.gz
+	-mkdir -p $(SRCDIR)/mpc
 	cp -T -p -r $(SRCORIGDIR)/mpc-$(MPC_VERSION) $(SRCDIR)/mpc
 	touch $(BUILDSTEPSDIR)/src-mpc-copied
 
@@ -459,6 +470,7 @@ src-mpc-copied: $(SRCORIGDIR)/mpc-$(MPC_VERSION).tar.gz
 src-mpfr-copied: $(SRCORIGDIR)/mpfr-$(MPFR_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/mpfr-$(MPFR_VERSION) $(SRCDIR)/mpfr
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/mpfr-$(MPFR_VERSION).tar.gz
+	-mkdir -p $(SRCDIR)/mpfr
 	cp -T -p -r $(SRCORIGDIR)/mpfr-$(MPFR_VERSION) $(SRCDIR)/mpfr
 	touch $(BUILDSTEPSDIR)/src-mpfr-copied
 
@@ -466,6 +478,7 @@ src-mpfr-copied: $(SRCORIGDIR)/mpfr-$(MPFR_VERSION).tar.gz
 src-ppl-copied: $(SRCORIGDIR)/ppl-$(PPL_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/ppl-$(PPL_VERSION) $(SRCDIR)/ppl
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/ppl-$(PPL_VERSION).tar.gz
+	-mkdir -p $(SRCDIR)/ppl
 	cp -T -p -r $(SRCORIGDIR)/ppl-$(PPL_VERSION) $(SRCDIR)/ppl
 	# The following is temporary until ppl 0.11 is out:
 	cd $(SRCDIR)/ppl && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(RECIPEDIR)/scripts/ppl/reconf-ppl
@@ -475,6 +488,7 @@ src-ppl-copied: $(SRCORIGDIR)/ppl-$(PPL_VERSION).tar.gz
 src-cloog-copied: $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION) $(SRCDIR)/cloog
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz
+	-mkdir -p $(SRCDIR)/cloog
 	cp -T -p -r $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION) $(SRCDIR)/cloog
 	touch $(BUILDSTEPSDIR)/src-cloog-copied
 
@@ -484,12 +498,14 @@ src-newlib-copied:
 	-rm -rf $(SRCDIR)/newlib
 	cd $(SRCORIGDIR) && cvs -z 9 -d :pserver:anoncvs@sources.redhat.com:/cvs/src co newlib
 	mv $(SRCORIGDIR)/src $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION)
+	-mkdir -p $(SRCDIR)/newlib
 	ln -s $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION) $(SRCDIR)/newlib
 	touch $(BUILDSTEPSDIR)/src-newlib-copied
 else
 src-newlib-copied: $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION) $(SRCDIR)/newlib
 	cd $(SRCORIGDIR) && tar xfz newlib-$(NEWLIB_VERSION).tar.gz
+	-mkdir -p $(SRCDIR)/newlib
 	cp -T -p -r $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION) $(SRCDIR)/newlib
 	touch $(BUILDSTEPSDIR)/src-newlib-copied
 endif
@@ -498,6 +514,7 @@ endif
 src-gdb-copied: $(SRCORIGDIR)/gdb-$(GDB_VERSION).tar.bz2
 	-rm -rf $(SRCORIGDIR)/gdb-$(GDB_VERSION) $(SRCDIR)/gdb
 	cd $(SRCORIGDIR) && tar xfj gdb-$(GDB_VERSION).tar.bz2
+	-mkdir -p $(SRCDIR)/gdb
 	cp -T -p -r $(SRCORIGDIR)/gdb-$(GDB_VERSION) $(SRCDIR)/gdb
 	touch $(BUILDSTEPSDIR)/src-gdb-copied
 
