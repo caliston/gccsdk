@@ -111,7 +111,8 @@ RISCOSTOOLSDIR := $(GCCSDK_RISCOS)
 
 # GCC-only configure arguments which are dependant on cross vs ronative building:
 ## FIXME: Added --with-system-zlib as otherwise zlib as multilib build fails
-## (which shouldn't so this is a hack).
+## (which shouldn't so this is a hack). Believed to be
+## http://gcc.gnu.org/bugzilla/show_bug.cgi?id=45174
 CROSS_GCC_CONFIG_ARGS := --with-gmp=$(PREFIX_CROSSGCC_LIBS) --with-mpfr=$(PREFIX_CROSSGCC_LIBS) --with-mpc=$(PREFIX_CROSSGCC_LIBS) --with-system-zlib
 RONATIVE_GCC_CONFIG_ARGS := --with-gmp=$(PREFIX_RONATIVEGCC_LIBS) --with-mpfr=$(PREFIX_RONATIVEGCC_LIBS) --with-mpc=$(PREFIX_RONATIVEGCC_LIBS)
 ifeq "$(GCC_USE_PPL_CLOOG)" "yes"
