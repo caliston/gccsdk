@@ -185,6 +185,7 @@ clean-done:
 	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "\$$?" | cut -b 9- | xargs rm -rf
 	-rm -rf $(BUILDSTEPSDIR)
 	-rm -rf $(PREFIX_CROSS) $(PREFIX_RONATIVE)
+	-svn status --no-ignore | grep "^I       " | cut -b 9- | grep -v -E "^(gccsdk-params|srcdir\.orig|release-area)$$" | xargs rm -rf
 
 distclean: $(GCCSDK_INTERNAL_GETENV)
 distclean-done: clean-done

@@ -1459,6 +1459,7 @@ static void parse_line(FILE *file) {
   char *line;
 
   line = getline(file);
+fprintf(stderr, "parse_line(): line <%s> (linenum %d)\n", line, opt.atline);
 
   while (isspace(*line))
     line++;
@@ -1469,6 +1470,7 @@ static void parse_line(FILE *file) {
   { /* Search for field block */
     field_t *field;
     char *colon=strchr(line,':');
+fprintf(stderr, "  colon: %s\n", colon ? colon : "<NULL>");
     const char *tail;
 
     if (colon==NULL)
