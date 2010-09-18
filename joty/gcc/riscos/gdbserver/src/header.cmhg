@@ -1,6 +1,6 @@
 ; Module header description file for the GDBServer
 
-;;#include "constants.h"
+#include "constants.h"
 
 help-string: GDBServer 0.01
 
@@ -22,7 +22,6 @@ generic-veneers: post_run, appexit, apperror, appupcall, post_abort,
 
 service-call-handler: mod_service &2a
 
-;;error-chunk-base-number: kGDBServer_ErrorBase
-error-identifiers: \
-	kErr_AlreadyWaitingForGDB("Already waiting for a GDB to connect")
+error-chunk-base-number: kGDBServer_ErrorBase
+error-identifiers: kErr_AlreadyWaitingForGDB("Already waiting for a GDB to connect")
 
