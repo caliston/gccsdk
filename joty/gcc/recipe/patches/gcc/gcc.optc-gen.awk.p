@@ -1,6 +1,6 @@
 Index: gcc/optc-gen.awk
 ===================================================================
---- gcc/optc-gen.awk	(revision 163858)
+--- gcc/optc-gen.awk	(revision 164393)
 +++ gcc/optc-gen.awk	(working copy)
 @@ -110,6 +110,8 @@
  	print "/* Set by -" opts[i] "."
@@ -8,6 +8,6 @@ Index: gcc/optc-gen.awk
  	print var_type(flags[i]) name init ";"
 +	if (flag_set_p("Explicit", flags[i]))
 +		print var_type(flags[i]) name "_explicit;"
- 	if (gcc_driver == 1)
- 		print "#endif /* GCC_DRIVER */"
  	print ""
+ 
+ 	var_seen[name] = 1;
