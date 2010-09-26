@@ -21,6 +21,52 @@ Wed Jun 23 01:08:51 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 // ------------------------------------ ^^^ gcc4.6trunk ^^^ port -----------------
 
+Sun Sep 26 20:50:20 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* gcccompat/_b_return.s: Remove __ARM_EABI__ check.
+	* gcccompat/_galloca.s: Likewise.
+	* gcccompat/galloca.c: Likewise.
+	* gcccompat/_eh_support.s: Likewise.
+	* gcccompat/_b_frame.s: Likewise.
+	* Makefile.am: Don't build gcccompat/* sources for non chunked stack
+	builds.
+	* include/unixlib/buildoptions.h: Add check on EABI and chunked stack
+	combination.  Moved related chunk build options inside a
+	__UNIXLIB_CHUNKED_STACK check.
+
+Sun Sep 26 18:59:59 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/bits/sched.h: Fix check on include guard for features.h.
+	* include/sys/resource.h: Likewise.
+	* include/pwd.h: Likewise.
+	* include/sched.h: Likewise.
+	* include/pthread.h: Likewise.
+
+Sun Sep 26 18:16:46 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* kernel/kcurskch.s ( _kernel_current_stack_chunk): Return NULL for
+	non chunked stack builds.
+	* pthread/create.c (__pthread_create): Hacks for non chunked stack
+	builds.
+	* pthread/newnode.c (__pthread_new_stack): Likewise.
+	* pthread/context.c (__pthread_cleanup_idle): Likewise.
+	* configure.ac (UNIXLIB_CHUNKED_STACK): New conditional which gets
+	set for non arm-unknown-riscos targets.
+	(BUILDING_SCL): Rename to UNIXLIB_BUILDING_SCL.
+	* include/unixlib/buildoptions.h: Allow _UNIXLIB_* buidoptions to
+	be set from the top Makefile.
+	(__UNIXLIB_CHUNKED_STACK): Added.
+	* Makefile.am: Add __UNIXLIB_CHUNKED_STACK to CFLAGS and CCASFLAGS.
+	Follow BUILDING_SCL to UNIXLIB_BUILDING_SCL rename.
+	* README-DEV: Add 'Development' section.
+	* incl-local/internal/asm_dec.s: Don't define CHUNK_* for non
+	chunked stack builds.
+	* incl-local/internal/unix.h: Disable sys/stackalloc.c prototypes
+	which are not available in non chunked stack builds.
+	* sys/stackalloc.c: Have only the __stackalloc_incr_wimpslot
+	function for non chunked stack builds.
+	* sys/_syslib.s: First attempt at non chunked stack setup.
+
 Sat Sep 11 18:37:46 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 	* stdio/fwrite.c (fwrite): Do not call __flsbuf when fd is -1 as this
