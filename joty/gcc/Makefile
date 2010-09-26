@@ -223,14 +223,14 @@ buildtool-autoconf-for-gcc-built: src-autoconf-for-gcc-copied
 	touch $(BUILDSTEPSDIR)/buildtool-autoconf-for-gcc-built
 
 # Configure & build automake-for-binutils tool:
-buildtool-automake-for-binutils-built: src-automake-for-binutils-copied
+buildtool-automake-for-binutils-built: src-automake-for-binutils-copied buildtool-autoconf-for-binutils-built
 	-rm -rf $(BUILDDIR)/buildtool-automake-for-binutils
 	mkdir -p $(BUILDDIR)/buildtool-automake-for-binutils
 	cd $(BUILDDIR)/buildtool-automake-for-binutils && $(SRCDIR)/automake-for-binutils/configure --prefix=$(PREFIX_BUILDTOOL_BINUTILS) && $(MAKE) && $(MAKE) install
 	touch $(BUILDSTEPSDIR)/buildtool-automake-for-binutils-built
 
 # Configure & build automake-for-gcc tool:
-buildtool-automake-for-gcc-built: src-automake-for-gcc-copied
+buildtool-automake-for-gcc-built: src-automake-for-gcc-copied buildtool-autoconf-for-gcc-built
 	-rm -rf $(BUILDDIR)/buildtool-automake-for-gcc
 	mkdir -p $(BUILDDIR)/buildtool-automake-for-gcc
 	cd $(BUILDDIR)/buildtool-automake-for-gcc && $(SRCDIR)/automake-for-gcc/configure --prefix=$(PREFIX_BUILDTOOL_GCC) && $(MAKE) && $(MAKE) install
