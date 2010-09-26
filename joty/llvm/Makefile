@@ -64,7 +64,7 @@ endif
 # Configure args unique for cross-compiling & unique to building for RISC OS native
 CROSS_CONFIG_ARGS := --target=$(TARGET) --prefix=$(PREFIX_CROSS)
 BINUTILS_CONFIGURE_ARGS := --enable-interwork --disable-multilib --disable-shared --disable-werror --with-gcc --disable-nls
-GCC_CONFIGURE_ARGS := --disable-threads --enable-interwork --disable-multilib --disable-shared --disable-nls --with-arch=armv4
+GCC_CONFIGURE_ARGS := --disable-threads --enable-interwork --disable-multilib --disable-shared --disable-nls --enable-maintainer-mode --with-arch=armv4
 # --with-tune=strongarm --with-float=softfp --with-mode=arm
 # FIXME: GCC_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 3 Development' --with-bugurl=http://gccsdk.riscos.info/
 ifeq ($(RTLIB),newlib)
@@ -103,7 +103,7 @@ buildstepsdir/buildtool-autoconf-for-gcc: buildstepsdir/src-autoconf-for-gcc
 	touch buildstepsdir/buildtool-autoconf-for-gcc
 
 # Configure & build automake-for-gcc tool:
-buildstepsdir/buildtool-automake-for-gcc: buildstepsdir/src-automake-for-gcc
+buildstepsdir/buildtool-automake-for-gcc: buildstepsdir/src-automake-for-gcc buildstepsdir/buildtool-autoconf-for-gcc
 	-rm -rf $(BUILDDIR)/buildtool-automake-for-gcc
 	mkdir -p $(BUILDDIR)/buildtool-automake-for-gcc
 	cd $(BUILDDIR)/buildtool-automake-for-gcc && $(SRCDIR)/automake-for-gcc/configure --prefix=$(PREFIX_BUILDTOOLS_GCC) && $(MAKE) && $(MAKE) install
