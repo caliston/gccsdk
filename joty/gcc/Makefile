@@ -500,7 +500,6 @@ src-newlib-copied:
 	-rm -rf $(SRCDIR)/newlib
 	cd $(SRCORIGDIR) && cvs -z 9 -d :pserver:anoncvs@sources.redhat.com:/cvs/src co newlib
 	mv $(SRCORIGDIR)/src $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION)
-	-mkdir -p $(SRCDIR)/newlib
 	ln -s $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION) $(SRCDIR)/newlib
 	touch $(BUILDSTEPSDIR)/src-newlib-copied
 else
