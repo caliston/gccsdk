@@ -37,17 +37,21 @@ BUILDDIR := $(ROOT)/builddir
 BUILDDIR_CROSS_LLVM := $(BUILDDIR)/cross-llvm
 BUILDDIR_CROSS_LLVMCLANG := $(BUILDDIR)/cross-llvm-clang
 BUILDDIR_CROSS_LLVMGCC := $(BUILDDIR)/cross-llvm-gcc
+PREFIX_BUILDTOOLS_BINUTILS := $(BUILDDIR)/installed-buildtools-for-binutils
 PREFIX_BUILDTOOLS_GCC := $(BUILDDIR)/installed-buildtools-for-gcc
 
-BUILDSTEPSDIR := $(ROOT)/buildsteps
+BUILDSTEPSDIR := $(ROOT)/buildstepsdir
 SCRIPTSDIR := $(ROOT)/scripts
 RECIPEDIR := $(ROOT)/recipe
 
 PREFIX_CROSS := $(ROOT)/install
 
+AUTOCONF_FOR_BINUTILS_VERSION := 2.64
+AUTOMAKE_FOR_BINUTILS_VERSION := 1.11.1
+BINUTILS_VERSION := 2.20.1
+BINUTILS_USE_SCM := yes
 AUTOCONF_FOR_GCC_VERSION := 2.59
 AUTOMAKE_FOR_GCC_VERSION := 1.9.6
-BINUTILS_VERSION := 2.20.1
 NEWLIB_VERSION := 1.18.0
 
 TARGET := arm-unknown-eabi
@@ -61,10 +65,12 @@ endif
 
 # Configure args unique for cross-compiling & unique to building for RISC OS native
 CROSS_CONFIG_ARGS := --target=$(TARGET) --prefix=$(PREFIX_CROSS)
-BINUTILS_CONFIGURE_ARGS := --enable-interwork --disable-multilib --disable-shared --disable-werror --with-gcc --disable-nls
-GCC_CONFIGURE_ARGS := --disable-threads --enable-interwork --disable-multilib --disable-shared --disable-nls --with-arch=armv4
+BINUTILS_CONFIGURE_ARGS := --enable-interwork --disable-multilib --disable-shared --disable-nls --disable-werror --enable-maintainer-mode
+BINUTILS_CONFIGURE_ARGS += --with-pkgversion='GCCSDK LLVM/Clang Development' --with-bugurl=http://gccsdk.riscos.info/
+# FIXME: --enable-gold --enable-plugins
+GCC_CONFIGURE_ARGS := --enable-interwork --disable-multilib --disable-shared --disable-nls --disable-threads --with-arch=armv4
 # --with-tune=strongarm --with-float=softfp --with-mode=arm
-# FIXME: GCC_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 3 Development' --with-bugurl=http://gccsdk.riscos.info/
+# FIXME: GCC_CONFIGURE_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 3 Development' --with-bugurl=http://gccsdk.riscos.info/
 ifeq ($(RTLIB),newlib)
 GCC_CONFIGURE_ARGS += --with-newlib
 else
@@ -77,6 +83,8 @@ endif
 GCC_BUILD_FLAGS := CFLAGS="-O0 -g" LIBCFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g" CFLAGS_FOR_TARGET="-O3" CXXFLAGS_FOR_TARGET="-O3"
 
 .PHONY: all clean distclean clang llvm-gcc
+VPATH = $(BUILDSTEPSDIR)
+
 all: llvm-gcc
 
 clean:
@@ -85,42 +93,55 @@ clean:
 distclean:
 	-rm -rf $(BUILDDIR) $(SRCDIR_BINUTILS) buildstepsdir $(PREFIX_CROSS)
 
-clang: buildstepsdir/cross-clang-builddone
+clang: cross-clang-built
 
-llvm-gcc: buildstepsdir/cross-llvm-gcc-builddone
+llvm-gcc: cross-llvm-gcc-built
 
 # -- Configure & building:
 
 # --- autoconf / automake:
 
+# Configure & build autoconf-for-binutils tool:
+buildtool-autoconf-for-binutils-built: src-autoconf-for-binutils-copied
+	-rm -rf $(BUILDDIR)/buildtool-autoconf-for-binutils-built
+	mkdir -p $(BUILDDIR)/buildtool-autoconf-for-binutils-built
+	cd $(BUILDDIR)/buildtool-autoconf-for-binutils-built && $(SRCDIR)/autoconf-for-binutils/configure --prefix=$(PREFIX_BUILDTOOLS_BINUTILS) && $(MAKE) && $(MAKE) install
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildtool-autoconf-for-binutils-built
+
 # Configure & build autoconf-for-gcc tool:
-buildstepsdir/buildtool-autoconf-for-gcc: buildstepsdir/src-autoconf-for-gcc
-	-rm -rf $(BUILDDIR)/buildtool-autoconf-for-gcc
-	mkdir -p $(BUILDDIR)/buildtool-autoconf-for-gcc
-	cd $(BUILDDIR)/buildtool-autoconf-for-gcc && $(SRCDIR)/autoconf-for-gcc/configure --prefix=$(PREFIX_BUILDTOOLS_GCC) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/buildtool-autoconf-for-gcc
+buildtool-autoconf-for-gcc-built: src-autoconf-for-gcc-copied
+	-rm -rf $(BUILDDIR)/buildtool-autoconf-for-gcc-built
+	mkdir -p $(BUILDDIR)/buildtool-autoconf-for-gcc-built
+	cd $(BUILDDIR)/buildtool-autoconf-for-gcc-built && $(SRCDIR)/autoconf-for-gcc/configure --prefix=$(PREFIX_BUILDTOOLS_GCC) && $(MAKE) && $(MAKE) install
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildtool-autoconf-for-gcc-built
+
+# Configure & build automake-for-binutils tool:
+buildtool-automake-for-binutils-built: src-automake-for-binutils-copied buildtool-autoconf-for-binutils-built
+	-rm -rf $(BUILDDIR)/buildtool-automake-for-binutils-built
+	mkdir -p $(BUILDDIR)/buildtool-automake-for-binutils-built
+	cd $(BUILDDIR)/buildtool-automake-for-binutils-built && $(SRCDIR)/automake-for-binutils/configure --prefix=$(PREFIX_BUILDTOOLS_BINUTILS) && $(MAKE) && $(MAKE) install
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildtool-automake-for-binutils-built
 
 # Configure & build automake-for-gcc tool:
-buildstepsdir/buildtool-automake-for-gcc: buildstepsdir/src-automake-for-gcc buildstepsdir/buildtool-autoconf-for-gcc
-	-rm -rf $(BUILDDIR)/buildtool-automake-for-gcc
-	mkdir -p $(BUILDDIR)/buildtool-automake-for-gcc
-	cd $(BUILDDIR)/buildtool-automake-for-gcc && $(SRCDIR)/automake-for-gcc/configure --prefix=$(PREFIX_BUILDTOOLS_GCC) && $(MAKE) && $(MAKE) install
-	touch buildstepsdir/buildtool-automake-for-gcc
+buildtool-automake-for-gcc-built: src-automake-for-gcc-copied buildtool-autoconf-for-gcc-built
+	-rm -rf $(BUILDDIR)/buildtool-automake-for-gcc-built
+	mkdir -p $(BUILDDIR)/buildtool-automake-for-gcc-built
+	cd $(BUILDDIR)/buildtool-automake-for-gcc-built && $(SRCDIR)/automake-for-gcc/configure --prefix=$(PREFIX_BUILDTOOLS_GCC) && $(MAKE) && $(MAKE) install
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/buildtool-automake-for-gcc-built
 
 # --- binutils:
 
 # Configure binutils cross:
-buildstepsdir/cross-binutils-configure: buildstepsdir/src-binutils
+cross-binutils-configured: src-binutils-copied buildtool-autoconf-for-binutils-built buildtool-automake-for-binutils-built
 	-rm -rf $(BUILDDIR)/cross-binutils
 	mkdir -p $(BUILDDIR)/cross-binutils
-	cd $(BUILDDIR)/cross-binutils && $(SRCDIR)/binutils/configure $(CROSS_CONFIG_ARGS) $(BINUTILS_CONFIGURE_ARGS)
-	touch buildstepsdir/cross-binutils-configure
+	cd $(BUILDDIR)/cross-binutils && PATH="$(PREFIX_BUILDTOOLS_BINUTILS)/bin:$(PATH)" && $(SRCDIR)/binutils/configure $(CROSS_CONFIG_ARGS) $(BINUTILS_CONFIGURE_ARGS)
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/cross-binutils-configured
 
 # Build binutils cross:
-buildstepsdir/cross-binutils-builddone: buildstepsdir/cross-binutils-configure
-	cd $(BUILDDIR)/cross-binutils && make
-	cd $(BUILDDIR)/cross-binutils && make install
-	touch buildstepsdir/cross-binutils-builddone
+cross-binutils-built: cross-binutils-configured
+	cd $(BUILDDIR)/cross-binutils && PATH="$(PREFIX_BUILDTOOLS_BINUTILS)/bin:$(PATH)" && make && make install
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/cross-binutils-built
 
 # --- clang (including building llvm):
 
@@ -128,49 +149,49 @@ buildstepsdir/cross-binutils-builddone: buildstepsdir/cross-binutils-configure
 # Currently we require llvm-gcc as there the runtime library is built + a 'gcc' which can be used
 # for linking.
 # FIXME: current no opt:  --enable-optimized
-buildstepsdir/cross-clang-configure: buildstepsdir/cross-binutils-builddone buildstepsdir/cross-llvm-gcc-builddone
+cross-clang-configured: cross-binutils-built cross-llvm-gcc-built
 	-rm -rf $(BUILDDIR_CROSS_LLVMCLANG)
 	mkdir -p $(BUILDDIR_CROSS_LLVMCLANG)
 	svn revert -R $(SRCDIR_LLVMCLANG)
 	cd $(SRCDIR_LLVMCLANG) && $(SCRIPTSDIR)/do-patch $(RECIPEDIR)
 	cd $(BUILDDIR_CROSS_LLVMCLANG) && $(SRCDIR_LLVMCLANG)/configure $(CROSS_CONFIG_ARGS) --enable-assertions --enable-targets=arm --with-c-include-dirs=$(PREFIX_CROSS)/$(TARGET)/include
-	mkdir -p buildstepsdir && touch buildstepsdir/cross-clang-configure
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/cross-clang-configured
 
 # Build clang:
-buildstepsdir/cross-clang-builddone: buildstepsdir/cross-clang-configure
+cross-clang-built: cross-clang-configured
 	mkdir -p $(PREFIX_CROSS)/bin
 	if [ ! -f $(PREFIX_CROSS)/bin/gcc ] ; then ln -s $(PREFIX_CROSS)/bin/$(TARGET)-gcc $(PREFIX_CROSS)/bin/gcc ; fi
-	cd $(BUILDDIR_CROSS_LLVMCLANG) && make
+	cd $(BUILDDIR_CROSS_LLVMCLANG) && make 
 	cd $(BUILDDIR_CROSS_LLVMCLANG) && make install
-	mkdir -p buildstepsdir && touch buildstepsdir/cross-clang-builddone
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/cross-clang-built
 
 # --- llvm base (only for llvm-gcc usage):
 
 # Configure llvm:
 # FIXME: current no opt:  --enable-optimized
-buildstepsdir/cross-llvm-configure:
+cross-llvm-configured:
 	-rm -rf $(BUILDDIR_CROSS_LLVM)
 	mkdir -p $(BUILDDIR_CROSS_LLVM)
 	cd $(BUILDDIR_CROSS_LLVM) && $(SRCDIR_LLVMBASE)/configure $(CROSS_CONFIG_ARGS) --enable-assertions --enable-targets=arm --with-llvmgccdir=$(PREFIX_CROSS)/bin
-	mkdir -p buildstepsdir && touch buildstepsdir/cross-llvm-configure
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/cross-llvm-configured
 
 # Build llvm:
-buildstepsdir/cross-llvm-builddone: buildstepsdir/cross-llvm-configure
+cross-llvm-built: cross-llvm-configured
 	cd $(BUILDDIR_CROSS_LLVM) && make
 	cd $(BUILDDIR_CROSS_LLVM) && make install
-	mkdir -p buildstepsdir && touch buildstepsdir/cross-llvm-builddone
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/cross-llvm-built
 
 # --- llvm-gcc:
 
 # Configure gcc:
 ifeq ($(RTLIB),newlib)
-buildstepsdir/cross-llvm-gcc-configure: buildstepsdir/src-newlib-in-gcc
+cross-llvm-gcc-configured: src-newlib-copied-in-gcc-copied
 else ifeq ($(RTLIB),unixlib)
 # Integrating UnixLib in gcc requires regenerating some of the autotools files so build the
 # required versions of autoconf and automake.
-buildstepsdir/cross-llvm-gcc-configure: buildstepsdir/src-unixlib-in-gcc buildstepsdir/buildtool-autoconf-for-gcc buildstepsdir/buildtool-automake-for-gcc
+cross-llvm-gcc-configured: src-unixlib-in-gcc-copied buildtool-autoconf-for-gcc-built buildtool-automake-for-gcc-built
 endif
-buildstepsdir/cross-llvm-gcc-configure: buildstepsdir/cross-binutils-builddone buildstepsdir/cross-llvm-builddone
+cross-llvm-gcc-configured: cross-binutils-built cross-llvm-built
 	-rm -rf $(BUILDDIR_CROSS_LLVMGCC)
 	mkdir -p $(BUILDDIR_CROSS_LLVMGCC)
 ifeq ($(RTLIB),unixlib)
@@ -181,49 +202,67 @@ ifeq ($(RTLIB),unixlib)
 	cd $(SRCDIR_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PATH)" && autogen Makefile.def && autoconf
 endif
 	cd $(BUILDDIR_CROSS_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(GCC_ENV) $(SRCDIR_LLVMGCC)/configure $(GCC_CONFIGURE_ARGS) $(CROSS_CONFIG_ARGS) --enable-languages=c,c++ --without-headers --enable-checking --enable-llvm=$(BUILDDIR_CROSS_LLVM)
-	mkdir -p buildstepsdir && touch buildstepsdir/cross-llvm-gcc-configure
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/cross-llvm-gcc-configured
 
 # Build gcc:
-buildstepsdir/cross-llvm-gcc-builddone: buildstepsdir/cross-llvm-gcc-configure
+cross-llvm-gcc-built: cross-llvm-gcc-configured
 	cd $(BUILDDIR_CROSS_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(GCC_ENV) make $(GCC_BUILD_FLAGS) && make install
-	mkdir -p buildstepsdir && touch buildstepsdir/cross-llvm-gcc-builddone
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/cross-llvm-gcc-built
 
 # -- Source unpacking.
 
+# Unpack autoconf-for-binutils source:
+src-autoconf-for-binutils-copied: $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2
+	-rm -rf $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION) $(SRCDIR)/autoconf-for-binutils
+	cd $(SRCORIGDIR) && tar xfj autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2
+	-mkdir -p $(SRCDIR)/autoconf-for-binutils
+	cp -T -p -r $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION) $(SRCDIR)/autoconf-for-binutils
+	-mkdir -p $(BUILDSTEPSDIR)
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/src-autoconf-for-binutils-copied
+
 # Unpack autoconf-for-gcc source:
-buildstepsdir/src-autoconf-for-gcc: $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2
+src-autoconf-for-gcc-copied: $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2
 	-rm -rf $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION) $(SRCDIR)/autoconf-for-gcc
 	cd $(SRCORIGDIR) && tar xfj autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/autoconf-for-gcc
 	cp -T -p -r $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION) $(SRCDIR)/autoconf-for-gcc
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-autoconf-for-gcc
+	-mkdir -p $(BUILDSTEPSDIR)
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/src-autoconf-for-gcc-copied
+
+# Unpack automake-for-binutils source:
+src-automake-for-binutils-copied: $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2
+	-rm -rf $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION) $(SRCDIR)/automake-for-binutils
+	cd $(SRCORIGDIR) && tar xfj automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2
+	-mkdir -p $(SRCDIR)/automake-for-binutils
+	cp -T -p -r $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION) $(SRCDIR)/automake-for-binutils
+	-mkdir -p $(BUILDSTEPSDIR)
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/src-automake-for-binutils-copied
 
 # Unpack automake-for-gcc source:
-buildstepsdir/src-automake-for-gcc: $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION).tar.bz2
+src-automake-for-gcc-copied: $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION).tar.bz2
 	-rm -rf $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION) $(SRCDIR)/automake-for-gcc
 	cd $(SRCORIGDIR) && tar xfj automake-$(AUTOMAKE_FOR_GCC_VERSION).tar.bz2
 	-mkdir -p $(SRCDIR)/automake-for-gcc
 	cp -T -p -r $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION) $(SRCDIR)/automake-for-gcc
-	-mkdir -p buildstepsdir
-	touch buildstepsdir/src-automake-for-gcc
+	-mkdir -p $(BUILDSTEPSDIR)
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/src-automake-for-gcc-copied
 
 # Unpack binutils source:
-buildstepsdir/src-binutils: $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION).tar.bz2
+src-binutils-copied: $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION).tar.bz2
 	-rm -rf $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION) $(SRCDIR_BINUTILS)
 	cd $(SRCORIGDIR) && tar xfj binutils-$(BINUTILS_VERSION).tar.bz2
 	cp -r -p $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION) $(SRCDIR_BINUTILS)
-	mkdir -p buildstepsdir && touch buildstepsdir/src-binutils
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/src-binutils-copied
 
 # Link in newlib in gcc (no patching is necessary):
-buildstepsdir/src-newlib-in-gcc: buildstepsdir/src-newlib
+src-newlib-copied-in-gcc-copied: src-newlib-copied
 	if [ -d $(SRCDIR_LLVMGCC)/libunixlib ] ; then rm -rf $(SRCDIR_LLVMGCC)/libunixlib ; fi
 	$(SCRIPTSDIR)/do-softlink-dir $(SRCDIR_NEWLIB)/newlib $(SRCDIR_LLVMGCC)/newlib
 	$(SCRIPTSDIR)/do-softlink-dir $(SRCDIR_NEWLIB)/libgloss $(SRCDIR_LLVMGCC)/libgloss
-	mkdir -p buildstepsdir && touch buildstepsdir/src-newlib-in-gcc
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/src-newlib-copied-in-gcc-copied
 
 # Patch UnixLib, link in unixlib in gcc and generate the autotool files:
-buildstepsdir/src-unixlib-in-gcc:
+src-unixlib-in-gcc-copied:
 	if [ -d $(SRCDIR_LLVMGCC)/newlib ] ; then rm -rf $(SRCDIR_LLVMGCC)/newlib ; fi
 	if [ -d $(SRCDIR_LLVMGCC)/libgloss ] ; then rm -rf $(SRCDIR_LLVMGCC)/libgloss ; fi
 	svn revert -R $(SRCDIR_UNIXLIB)
@@ -231,22 +270,34 @@ buildstepsdir/src-unixlib-in-gcc:
 	$(SCRIPTSDIR)/do-softlink-dir $(SRCDIR_UNIXLIB) $(SRCDIR_LLVMGCC)/libunixlib
 	$(SRCDIR_LLVMGCC)/libunixlib/gen-auto.pl
 	# Not needed and will even break the build: cd $(SRCDIR_LLVMGCC)/libunixlib && cp libtool-org.m4 libtool.m4 && patch -p0 < libtool.m4.p
-	mkdir -p buildstepsdir && touch buildstepsdir/src-unixlib-in-gcc
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/src-unixlib-in-gcc-copied
 
 # Unpack newlib source in $(SRCDIR_NEWLIB) :
-buildstepsdir/src-newlib: $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION).tar.gz
+src-newlib-copied: $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION).tar.gz
 	-rm -rf $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION) $(SRCDIR_NEWLIB)
 	cd $(SRCORIGDIR) && tar xzf newlib-$(NEWLIB_VERSION).tar.gz
 	cp -r -p $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION) $(SRCDIR_NEWLIB)
-	mkdir -p buildstepsdir && touch buildstepsdir/src-newlib
+	mkdir -p $(BUILDSTEPSDIR) && touch $(BUILDSTEPSDIR)/src-newlib-copied
 
 # -- Source downloading.
+
+# Download autoconf source to be used to build binutils:
+$(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2:
+	-rm $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2
+	-mkdir -p $(SRCORIGDIR)
+	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/autoconf/autoconf-$(AUTOCONF_FOR_BINUTILS_VERSION).tar.bz2
 
 # Download autoconf source to be used to build gcc:
 $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2:
 	-rm $(SRCORIGDIR)/autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/autoconf/autoconf-$(AUTOCONF_FOR_GCC_VERSION).tar.bz2
+
+# Download automake source to be used to build binutils:
+$(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2:
+	-rm $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2
+	-mkdir -p $(SRCORIGDIR)
+	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/automake/automake-$(AUTOMAKE_FOR_BINUTILS_VERSION).tar.bz2
 
 # Download automake source to be used to build gcc:
 $(SRCORIGDIR)/automake-$(AUTOMAKE_FOR_GCC_VERSION).tar.bz2:
