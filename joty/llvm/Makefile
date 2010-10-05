@@ -52,16 +52,11 @@ NEWLIB_VERSION := 1.18.0
 
 TARGET := arm-unknown-eabi
 
-# For some wierd reason, libtool needs the following as environment variable:
-export LTCONFIG_VERSION := 1.4a-GCC3.0
-# To make configure work with libunixlib:
+# For some wierd reason, libtool used in GCC needs the environment variable LTCONFIG_VERSION defined.
+GCC_ENV := LTCONFIG_VERSION=1.4a-GCC3.0
+# When building UnixLib we don't want to have dl related library to be found during its configure.
 ifeq ($(RTLIB),unixlib)
-export ac_cv_func_shl_load := no
-export ac_cv_lib_dld_shl_load := no
-export ac_cv_func_dlopen := no
-export ac_cv_lib_dl_dlopen := no
-export ac_cv_lib_svld_dlopen := no
-export ac_cv_lib_dld_dld_link := no
+GCC_ENV += ac_cv_func_shl_load=no ac_cv_lib_dld_shl_load=no ac_cv_func_dlopen=no ac_cv_lib_dl_dlopen=no ac_cv_lib_svld_dlopen=no ac_cv_lib_dld_dld_link=no
 endif
 
 # Configure args unique for cross-compiling & unique to building for RISC OS native
@@ -185,12 +180,12 @@ ifeq ($(RTLIB),unixlib)
 	cd $(SRCDIR_LLVMGCC)/libstdc++-v3 && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PATH)" && aclocal -I . -I .. -I ../config && autoheader && automake -a && autoconf
 	cd $(SRCDIR_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PATH)" && autogen Makefile.def && autoconf
 endif
-	cd $(BUILDDIR_CROSS_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR_LLVMGCC)/configure $(GCC_CONFIGURE_ARGS) $(CROSS_CONFIG_ARGS) --enable-languages=c,c++ --without-headers --enable-checking --enable-llvm=$(BUILDDIR_CROSS_LLVM)
+	cd $(BUILDDIR_CROSS_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(GCC_ENV) $(SRCDIR_LLVMGCC)/configure $(GCC_CONFIGURE_ARGS) $(CROSS_CONFIG_ARGS) --enable-languages=c,c++ --without-headers --enable-checking --enable-llvm=$(BUILDDIR_CROSS_LLVM)
 	mkdir -p buildstepsdir && touch buildstepsdir/cross-llvm-gcc-configure
 
 # Build gcc:
 buildstepsdir/cross-llvm-gcc-builddone: buildstepsdir/cross-llvm-gcc-configure
-	cd $(BUILDDIR_CROSS_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && make $(GCC_BUILD_FLAGS) && make install
+	cd $(BUILDDIR_CROSS_LLVMGCC) && PATH="$(PREFIX_BUILDTOOLS_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(GCC_ENV) make $(GCC_BUILD_FLAGS) && make install
 	mkdir -p buildstepsdir && touch buildstepsdir/cross-llvm-gcc-builddone
 
 # -- Source unpacking.
