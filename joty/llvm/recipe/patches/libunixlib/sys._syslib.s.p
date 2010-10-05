@@ -1,8 +1,8 @@
 Index: sys/_syslib.s
 ===================================================================
---- sys/_syslib.s	(revision 4658)
+--- sys/_syslib.s	(revision 4830)
 +++ sys/_syslib.s	(working copy)
-@@ -1445,9 +1445,9 @@
+@@ -1466,9 +1466,9 @@
  	.word	0			@ rwlomem		offset = 16
  	.word	0			@ rwbase		offset = 20
  #else

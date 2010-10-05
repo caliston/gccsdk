@@ -1,8 +1,8 @@
 Index: Makefile.am
 ===================================================================
---- Makefile.am	(revision 4658)
+--- Makefile.am	(revision 4830)
 +++ Makefile.am	(working copy)
-@@ -1388,7 +1388,7 @@
+@@ -1404,7 +1404,7 @@
  	incl-local/time.h \
  	incl-local/unistd.h
  
@@ -11,7 +11,7 @@ Index: Makefile.am
  	$(debug_src) $(fenv_src) $(gcccompat_src) $(gdtoa_src) $(gmon_src) \
  	$(grp_src) $(inttypes_src) $(kernel_src) \
  	$(libm_complex_src) $(libm_dbl64_src) $(libm_flt32_src) $(libm_generic_src) $(libm_support_src) \
-@@ -1398,13 +1398,18 @@
+@@ -1414,13 +1414,18 @@
  	$(stdio_src) $(stdlib_src) $(string_src) $(sys_src) \
  	$(termios_src) $(time_src) $(unistd_src) $(unix_src) $(wchar_src)
  
@@ -30,5 +30,5 @@ Index: Makefile.am
 -toolexeclib_LTLIBRARIES = libunixlib.la libm.la
 +toolexeclib_LTLIBRARIES = libc.la libg.la libm.la
  
- # crt ----------------------
- 
+ if UNIXLIB_CHUNKED_STACK
+ # These rules are copied direct from a generated Makefile.
