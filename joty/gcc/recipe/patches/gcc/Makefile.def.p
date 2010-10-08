@@ -1,6 +1,6 @@
 Index: Makefile.def
 ===================================================================
---- Makefile.def	(revision 162355)
+--- Makefile.def	(revision 165069)
 +++ Makefile.def	(working copy)
 @@ -153,6 +153,7 @@
  		   raw_cxx=true; };
@@ -10,7 +10,7 @@ Index: Makefile.def
  target_modules = { module= newlib; };
  target_modules = { module= libgcc; bootstrap=true; no_check=true; };
  target_modules = { module= libgfortran; };
-@@ -521,6 +522,7 @@
+@@ -525,6 +526,7 @@
  // on libgcc and newlib/libgloss.
  lang_env_dependencies = { module=gperf; cxx=true; };
  lang_env_dependencies = { module=libjava; cxx=true; };
@@ -18,7 +18,7 @@ Index: Makefile.def
  lang_env_dependencies = { module=newlib; no_c=true; };
  lang_env_dependencies = { module=libgloss; no_c=true; };
  lang_env_dependencies = { module=libgcc; no_gcc=true; no_c=true; };
-@@ -565,6 +567,9 @@
+@@ -569,6 +571,9 @@
  dependencies = { module=all-target-winsup; on=all-target-libtermcap; };
  dependencies = { module=configure-target-libiberty; on=all-binutils; };
  dependencies = { module=configure-target-libiberty; on=all-ld; };

@@ -24,6 +24,12 @@ Status build:
 - The 'riscos' subprojects all build with the made cross-compiler except
   d.so-1.9.9/d-link
 
+Code generation:
+
+- Module code is not correct.  Not all cases of riscos/testsuite/module/ do
+  work as expected.
+- stack checking vs module is probably not working.
+
 Upstream gcc bug tracking:
 
 - RISC OS target's option crash:

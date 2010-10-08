@@ -44,6 +44,13 @@ along with GCC; see the file COPYING3.  If not see
 #undef ARM_DEFAULT_ABI
 #define ARM_DEFAULT_ABI ARM_ABI_APCS32
 
+#if 0
+FIXME: enable this !
+/* We like unwind data.  */
+#undef ARM_UNWIND_INFO
+#define ARM_UNWIND_INFO 1
+#endif
+
 /* For PIC code we need to explicitly specify (PLT) and (GOT) relocs. (PLT) is
    not needed for module code.  */
 #define NEED_PLT_RELOC	(!TARGET_MODULE && flag_pic)
