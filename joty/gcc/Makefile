@@ -155,7 +155,7 @@ MAKECMDGOALS=all
 endif
 
 .NOTPARALLEL:
-.PHONY: all cross ronative clean distclean updategcc
+.PHONY: all cross ronative cross-gdb clean distclean updategcc
 VPATH = $(BUILDSTEPSDIR)
 
 # Default target is to build the cross-compiler (including the RISC OS tools):
