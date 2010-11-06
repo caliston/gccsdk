@@ -1,6 +1,6 @@
 Index: gcc/dwarf2out.c
 ===================================================================
---- gcc/dwarf2out.c	(revision 165882)
+--- gcc/dwarf2out.c	(revision 166401)
 +++ gcc/dwarf2out.c	(working copy)
 @@ -2369,7 +2369,9 @@
  	      /* Rule 3 */
@@ -26,7 +26,7 @@ Index: gcc/dwarf2out.c
  	      else
  		gcc_unreachable ();
  	    }
-@@ -17112,12 +17121,14 @@
+@@ -17116,12 +17125,14 @@
        elim = XEXP (elim, 0);
      }
  
