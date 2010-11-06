@@ -15,6 +15,17 @@ Status patch merging:
   to be partially redone (hopefully in a cleaner way so that parallel building
   works again).  Note gcc now reports columns as well in their warnings/errors
   so this is something we can support in our throwback code as well.
+- Currently build breaks with:
+
+--8<--
+libtool: compile:  .../gcc4/builddir/cross-gcc/./gcc/xgcc -shared-libgcc -B.../gcc4/builddir/cross-gcc/./gcc -nostdinc++ -L.../gcc4/builddir/cross-gcc/arm-unknown-riscos/scl/fpu/module/libstdc++-v3/src -L.../gcc4/builddir/cross-gcc/arm-unknown-riscos/scl/fpu/module/libstdc++-v3/src/.libs -B.../gcc4/builddir/cross-gcc/arm-unknown-riscos/scl/fpu/module/libunixlib/ -B.../gcc4/builddir/cross-gcc/arm-unknown-riscos/scl/fpu/module/libunixlib/.libs/ -isystem .../gcc4/srcdir/gcc/libunixlib/include -B$GCCSDK_INSTALL_ENV/cross/arm-unknown-riscos/bin/ -B$GCCSDK_INSTALL_ENV/cross/arm-unknown-riscos/lib/ -isystem $GCCSDK_INSTALL_ENV/cross/arm-unknown-riscos/include -isystem $GCCSDK_INSTALL_ENV/cross/arm-unknown-riscos/sys-include -mlibscl -mhard-float -mmodule -I.../gcc4/builddir/cross-gcc/arm-unknown-riscos/scl/fpu/module/libstdc++-v3/include/arm-unknown-riscos -I.../gcc4/builddir/cross-gcc/arm-unknown-riscos/scl/fpu/module/libstdc++-v3/include -I.../gcc4/srcdir/gcc/libstdc++-v3/libsupc++ -I$GCCSDK_INSTALL_ENV/cross/include -fno-implicit-templates -Wall -Wextra -Wwrite-strings -Wcast-qual -fdiagnostics-show-location=once -ffunction-sections -fdata-sections -g -O2 -mlibscl -mhard-float -mmodule -c .../gcc4/srcdir/gcc/libstdc++-v3/src/bitmap_allocator.cc -o bitmap_allocator.o
+In file included from .../gcc4/srcdir/gcc/libstdc++-v3/src/bitmap_allocator.cc:26:0:
+.../gcc4/builddir/cross-gcc/arm-unknown-riscos/scl/fpu/module/libstdc++-v3/include/ext/bitmap_allocator.h: In member function 'void __gnu_cxx::free_list::_M_insert(std::size_t*)':
+.../gcc4/builddir/cross-gcc/arm-unknown-riscos/scl/fpu/module/libstdc++-v3/include/ext/bitmap_allocator.h:639:5: internal compiler error: in legitimize_pic_address, at config/arm/arm.c:5223
+Please submit a full bug report,
+with preprocessed source if appropriate.
+See <http://gccsdk.riscos.info/> for instructions.
+--8<--
 
 Status build:
 
