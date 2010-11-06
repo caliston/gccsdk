@@ -182,7 +182,7 @@ clean-done:
 	-rm -rf $(BUILDDIR)
 	-rm -rf $(SRCDIR)
 	-svn revert -R $(SRCORIGDIR)/gcc-trunk
-	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "\$$?" | cut -b 9- | xargs rm -rf
+	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "^?" | cut -b 9- | xargs rm -rf
 	-rm -rf $(BUILDSTEPSDIR)
 	-rm -rf $(PREFIX_CROSS) $(PREFIX_RONATIVE)
 	-svn status --no-ignore | grep "^I       " | cut -b 9- | grep -v -E "^(gccsdk-params|srcdir\.orig|release-area)$$" | xargs rm -rf
@@ -195,7 +195,7 @@ updategcc: $(GCCSDK_INTERNAL_GETENV)
 updategcc-done:
 ifeq "$(GCC_USE_SCM)" "yes"
 	-svn revert -R $(SRCORIGDIR)/gcc-trunk
-	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "\$$?" | cut -b 9- | xargs rm -rf
+	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "^?" | cut -b 9- | xargs rm -rf
 	cd $(SRCORIGDIR)/gcc-trunk && ./contrib/gcc_update
 endif
 
@@ -438,7 +438,7 @@ ifeq "$(GCC_USE_SCM)" "yes"
 src-gcc-copied: $(SRCORIGDIR)/gcc-trunk/LAST_UPDATED
 	-rm -rf $(SRCDIR)/gcc
 	-svn revert -R $(SRCORIGDIR)/gcc-trunk
-	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "\$$?" | cut -b 9- | xargs rm -rf
+	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "^?" | cut -b 9- | xargs rm -rf
 	ln -s $(SRCORIGDIR)/gcc-trunk $(SRCDIR)/gcc
 else
 src-gcc-copied: $(SRCORIGDIR)/gcc-$(GCC_VERSION).tar.bz2
