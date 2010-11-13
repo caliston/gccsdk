@@ -65,6 +65,8 @@ Development tracks:
     should take a fresh look at this and e.g. convert asasm to a ObjAsm -> GAS source converter and let
     GAS do the actually assembling.
 
+- Use http://www.nongnu.org/libunwind/ in libunixlib for AAPCS backtrace implementation ?
+
 - gcc4.6 + APCS-32 = branch gccsdk/branches/developers/joty/gcc branch with target = arm-unknown-riscos
   - status: see above
   - module support (as we know it) is not finished
