@@ -83,9 +83,9 @@ FIXME: enable this !
 /* libscl means hard-float only.  Module support means libscl and
    hard-float.  libscl and module support go for static libgcc
    library.  */
-#define SUBTARGET_OPTION_TRANSLATE_TABLE		    \
-  { "-mlibscl", "-mlibscl -mhard-float -static" },	    \
-  { "-mmodule", "-mmodule -mlibscl -mhard-float -static" }
+#define DRIVER_SELF_SPECS						\
+  "%{mlibscl:-mlibscl -mhard-float -static} %<mlibscl",			\
+  "%{mmodule:-mmodule -mlibscl -mhard-float -static} %<mmodule"		\
 
 /* Default multilib is UnixLib and soft-float.  */
 #undef  MULTILIB_DEFAULTS

@@ -2,19 +2,6 @@ Index: gcc/config/arm/arm.h
 ===================================================================
 --- gcc/config/arm/arm.h	(revision 165882)
 +++ gcc/config/arm/arm.h	(working copy)
-@@ -204,6 +204,12 @@
- #define SUBTARGET_CPP_SPEC      ""
- #endif
- 
-+#ifndef SUBTARGET_OPTION_TRANSLATE_TABLE
-+#define SUBTARGET_OPTION_TRANSLATE_TABLE { "", "" }
-+#endif
-+#define TARGET_OPTION_TRANSLATE_TABLE \
-+  SUBTARGET_OPTION_TRANSLATE_TABLE
-+
- /* Run-time Target Specification.  */
- #ifndef TARGET_VERSION
- #define TARGET_VERSION fputs (" (ARM/generic)", stderr);
 @@ -227,7 +233,7 @@
  				         : TARGET_TPCS_FRAME)
  #define TARGET_LDRD			(arm_arch5e && ARM_DOUBLEWORD_ALIGN)
