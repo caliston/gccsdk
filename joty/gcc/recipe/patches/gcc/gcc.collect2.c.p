@@ -1,6 +1,6 @@
 Index: gcc/collect2.c
 ===================================================================
---- gcc/collect2.c	(revision 164216)
+--- gcc/collect2.c	(revision 166694)
 +++ gcc/collect2.c	(working copy)
 @@ -52,6 +52,11 @@
  #include "intl.h"
@@ -134,7 +134,7 @@ Index: gcc/collect2.c
  
  #ifdef CROSS_DIRECTORY_STRUCTURE
    /* If we look for a program in the compiler directories, we just use
-@@ -1360,6 +1457,12 @@
+@@ -1361,6 +1458,12 @@
    if (strip_file_name == 0)
      strip_file_name = find_a_file (&path, full_strip_suffix);
  
@@ -147,7 +147,7 @@ Index: gcc/collect2.c
    /* Determine the full path name of the C compiler to use.  */
    c_file_name = getenv ("COLLECT_GCC");
    if (c_file_name == 0)
-@@ -1422,6 +1525,12 @@
+@@ -1423,6 +1526,12 @@
  	*c_ptr++ = xstrdup (q);
        if (strcmp (q, "-shared") == 0)
  	shared_obj = 1;
