@@ -1,6 +1,6 @@
 Index: gcc/toplev.c
 ===================================================================
---- gcc/toplev.c	(revision 166694)
+--- gcc/toplev.c	(revision 166972)
 +++ gcc/toplev.c	(working copy)
 @@ -105,6 +105,11 @@
  				   declarations for e.g. AIX 4.x.  */
