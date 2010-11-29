@@ -45,6 +45,7 @@ Upstream gcc bug tracking:
 
 - Major: C++ building is broken:
     http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46667
+  Bail out change r167085 if you want to avoid this.
 - RISC OS target's option crash:
     "ICE in cancel_option()"
     http://gcc.gnu.org/bugzilla/show_bug.cgi?id=31980
