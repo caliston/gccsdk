@@ -1,8 +1,8 @@
 Index: gcc/doc/options.texi
 ===================================================================
---- gcc/doc/options.texi	(revision 167096)
+--- gcc/doc/options.texi	(revision 167269)
 +++ gcc/doc/options.texi	(working copy)
-@@ -362,6 +362,11 @@
+@@ -432,6 +432,11 @@
  controls whether the option is accepted and whether it is printed in
  the @option{--help} output.
  
