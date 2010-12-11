@@ -24,9 +24,9 @@
 #include <string.h>
 #include <stdlib.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "asm.h"
@@ -36,26 +36,23 @@
 #include "local.h"
 #include "main.h"
 #include "os.h"
-#include "variables.h"
 
 typedef struct localPos
-  {
-    struct localPos *next;
-    int local;
-    const char *file;
-    int lineno;
-  }
-localPos;
+{
+  struct localPos *next;
+  int local;
+  const char *file;
+  int lineno;
+} localPos;
 
 
 typedef struct routPos
-  {
-    struct routPos *next;
-    const char *id;
-    const char *file;
-    int lineno;
-  }
-routPos;
+{
+  struct routPos *next;
+  const char *id;
+  const char *file;
+  int lineno;
+} routPos;
 
 
 int rout_lblno[100] = {0};
@@ -71,15 +68,18 @@ static localPos *localList;
 static localPos *localListEnd;
 
 
-void
-c_rout (Lex *label)
+/**
+ * Implements ROUT.
+ */
+bool
+c_rout (const Lex *label)
 {
   routPos *p = malloc (sizeof (localPos));
   memset (rout_lblno, 0, sizeof (rout_lblno));
   if (label->tag == LexId)
     {
-      asm_label (label);
-      rout_id = strndup (label->LexId.str, label->LexId.len);
+      ASM_DefineLabel (label, 0);
+      rout_id = strndup (label->Data.Id.str, label->Data.Id.len);
     }
   else
     {
@@ -100,13 +100,18 @@ c_rout (Lex *label)
   p->id = rout_id;
   p->file = FS_GetCurFileName ();
   p->lineno = FS_GetCurLineNumber ();
+  return false;
 }
 
 
-void
-c_local (Lex *label)
+/**
+ * Implements LOCAL.
+ * Is an ObjAsm extension.
+ */
+bool
+c_local (const Lex *label)
 {
-  if (label && label->tag != LexNone)
+  if (label->tag != LexNone)
     error (ErrorWarning, "Label not allowed here - ignoring");
   localCurrent++;
   localPos *p;
@@ -120,10 +125,11 @@ c_local (Lex *label)
   p->local = localCurrent;
   p->file = FS_GetCurFileName ();
   p->lineno = FS_GetCurLineNumber ();
+  return false;
 }
 
 
-int
+bool
 localTest (const char *s)
 {
   return !memcmp (s, localFormat + 1, sizeof ("Local$$")-1);
@@ -133,20 +139,21 @@ localTest (const char *s)
 void
 localMunge (Lex *label)
 {
-  int i;
   if (!option_local)
     return;
-  if (label->LexId.str[i = label->LexId.len - 2] == '$'
-      && (label->LexId.str[i + 1] == 'L' || label->LexId.str[i + 1] == 'l'))
+
+  int i;
+  if (label->Data.Id.str[i = label->Data.Id.len - 2] == '$'
+      && (label->Data.Id.str[i + 1] == 'L' || label->Data.Id.str[i + 1] == 'l'))
     {
       char id[1024];
       sprintf (id, "Local$$%i$$", localCurrent);
-      id[strlen (id) + label->LexId.len - 2] = 0;
-      memcpy (id + strlen (id), label->LexId.str, label->LexId.len - 2);
+      id[strlen (id) + label->Data.Id.len - 2] = 0;
+      memcpy (id + strlen (id), label->Data.Id.str, label->Data.Id.len - 2);
 
-      label->LexId.str = strdup (id);
-      label->LexId.len = strlen (id);
-      if (!label->LexId.str)
+      label->Data.Id.str = strdup (id);
+      label->Data.Id.len = strlen (id);
+      if (!label->Data.Id.str)
 	errorOutOfMem ();
     }
 }

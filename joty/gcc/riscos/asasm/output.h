@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2002-2006 GCCSDK Developers
+ * Copyright (c) 2002-2010 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,6 +23,8 @@
 #ifndef output_header_included
 #define output_header_included
 
+#include "config.h"
+
 #include "global.h"
 
 void outputInit (const char *outfile);
@@ -34,14 +36,14 @@ void outputElf (void);
 
 extern const char *idfn_text;
 #ifdef NO_ELF_SUPPORT
-#  define DEFAULT_IDFN "GCCSDK ASASM AOF Assembler " VERSION " (" __DATE__ ")"
+#  define DEFAULT_IDFN "GCCSDK ASASM AOF Assembler " VERSION " (r" GCCSDK_REVISION ", " __DATE__ ")"
 #else
-#  define DEFAULT_IDFN "GCCSDK ASASM AOF/ELF Assembler " VERSION " (" __DATE__ ")"
+#  define DEFAULT_IDFN "GCCSDK ASASM AOF/ELF Assembler " VERSION " (r" GCCSDK_REVISION ", " __DATE__ ")"
 #endif
 
 #if defined(WORDS_BIGENDIAN)
-WORD armword (WORD val);
-WORD ourword (WORD val);
+ARMWord armword (ARMWord val);
+ARMWord ourword (ARMWord val);
 #else
 #define armword(x) (x)
 #define ourword(x) (x)

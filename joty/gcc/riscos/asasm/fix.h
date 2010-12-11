@@ -33,21 +33,19 @@
 #define ROR 0x00000060
 #define NO_SHIFT 0
 
-#define SHIFT_OP(s) ((s)==RRX?ROR:s)	/* RRX coded as ROR 0 */
+#define SHIFT_OP(s) ((s) == RRX ? ROR : (s))	/* RRX coded as ROR 0 */
 #define SHIFT_REG(s) (((s)<<8) | (1<<4))
 #define SHIFT_IMM(s) (((s)&31)<<7)
 
-WORD fixShiftImm (int lineno, WORD shiftop, int shift);
-WORD fixImm8s4 (int lineno, WORD ir, int im);
-WORD fixImmFloat (int lineno, WORD ir, FLOAT im);
-WORD fixSwi (int lineno, int im);
-WORD fixBranch (int lineno, int im);
-WORD fixBranchT (int lineno, int im);
-WORD fixAdr (int lineno, WORD ir, int im);
-void fixAdrl (int lineno, WORD * ir, WORD * ir2, int im, int warn);
-WORD fixCopOffset (int lineno, WORD ir, int offset);
-WORD fixCpuOffset (int lineno, WORD ir, int offset);
-WORD fixMask (int lineno, int mask);
-WORD fixInt (int lineno, int size, int value);
+ARMWord fixShiftImm (int lineno, ARMWord shiftop, int shift);
+ARMWord fixImm8s4 (int lineno, ARMWord ir, int im);
+ARMWord fixImmFloat (int lineno, ARMWord ir, ARMFloat im);
+ARMWord fixSwi (int lineno, int im);
+ARMWord fixCopOffset (int lineno, ARMWord ir, int offset);
+ARMWord fixMask (int lineno, int mask);
+
+ARMWord Fix_Int (const char *file, int lineno, int size, int value);
+ARMWord Fix_CPUOffset (const char *file, int lineno, ARMWord ir, int offset);
+ARMWord Fix_MOV (const char *file, int lineno, ARMWord ir, int im);
 
 #endif

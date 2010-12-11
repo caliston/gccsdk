@@ -21,15 +21,17 @@
  */
 
 #include "config.h"
+
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "area.h"
@@ -44,6 +46,7 @@
 #include "lex.h"
 #include "lit.h"
 #include "macros.h"
+#include "main.h"
 #include "output.h"
 #include "os.h"
 #include "put.h"
@@ -51,44 +54,30 @@
 #include "value.h"
 #include "variables.h"
 
-static char
-var_type (ValueTag type)
-{
-  switch (type)
-    {
-      case ValueInt:
-	return 'I';
-      case ValueBool:
-	return 'L';
-      case ValueString:
-	return 'S';
-      default:
-	return '?';
-    }
-  return '?';
-}
-
+#ifdef DEBUG
+//#  define DEBUG_VARIABLES
+#endif
 
 static void
 assign_var (Symbol *sym, ValueTag type)
 {
-  sym->value.Tag.t = type;
-  sym->value.Tag.v = type;
+  sym->value.Tag = type;
   switch (type)
     {
       case ValueInt:
-	sym->value.ValueInt.i = 0;
+	sym->value.Data.Int.i = 0;
 	break;
       case ValueBool:
-	sym->value.ValueBool.b = FALSE;
+	sym->value.Data.Bool.b = false;
 	break;
       case ValueString:
-	sym->value.ValueString.len = 0;
-	if ((sym->value.ValueString.s = calloc (1, 1)) == NULL)
+	sym->value.Data.String.len = 0;
+	/* We don't do malloc(0) as this can on some systems return NULL.  */
+	if ((sym->value.Data.String.s = malloc (1)) == NULL)
 	  errorOutOfMem ();
 	break;
       default:
-	abort ();
+	error (ErrorAbort, "Internal error: assign_var");
 	break;
     }
 }
@@ -97,26 +86,27 @@ assign_var (Symbol *sym, ValueTag type)
 /**
  * (Re)define local or global variable.
  * When variable exists we'll give a warning when its type is the same,
- * when type is different an error is given.
- * Contents pointed by ptr has to remain valid all the time.
+ * when type is different an error is given instead.
+ * \param localMacro Is true when variable is a local macro variable. Used to
+ * implement :DEF:.
  */
-static void
-declare_var (const char *ptr, int len, ValueTag type, bool localMacro)
+static Symbol *
+declare_var (const char *ptr, size_t len, ValueTag type, bool localMacro)
 {
-  Lex var = lexTempLabel (ptr, len);
+  const Lex var = lexTempLabel (ptr, len);
   Symbol *sym = symbolFind (&var);
   if (sym != NULL)
     {
-      if (sym->value.Tag.t != type)
+      if (sym->value.Tag != type)
 	{
 	  error (ErrorError, "'%.*s' is already declared as a %s",
-	         len, ptr, valueTagAsString (sym->value.Tag.t));
-	  inputRest ();
-	  return;
+	         (int)len, ptr, valueTagAsString (sym->value.Tag));
+	  return NULL;
 	}
-      error (ErrorWarning, "Redeclaration of %s variable '%.*s'",
-	     valueTagAsString (sym->value.Tag.t),
-	     var.LexId.len, var.LexId.str);
+      if (option_pedantic)
+        error (ErrorWarning, "Redeclaration of %s variable '%.*s'",
+	       valueTagAsString (sym->value.Tag),
+	       (int)var.Data.Id.len, var.Data.Id.str);
     }
   else
     sym = symbolAdd (&var);
@@ -124,193 +114,225 @@ declare_var (const char *ptr, int len, ValueTag type, bool localMacro)
   if (localMacro)
     sym->type |= SYMBOL_MACRO_LOCAL;
   assign_var (sym, type);
-}
-
-
-static const char *
-var_inputSymbol (int *len)
-{
-  char delim;
-  if (inputLook () == '|')
-    {
-      inputSkip ();
-      delim = '|';
-    }
-  else
-    delim = 0;
-  const char *sym = inputSymbol (len, delim);
-  if (delim == '|')
-    {
-      if (inputLook () == '|')
-	inputSkip ();
-      else
-	error (ErrorError, "Unterminated |label|");
-    }
   return sym;
 }
 
 
-void
-c_gbl (ValueTag type, const Lex *label)
+/**
+ * Implements GBLL, GBLA and GBLS.
+ * Global variable declaration
+ */
+bool
+c_gbl (const Lex *label)
 {
+  int c = inputGet ();
+  ValueTag type;
+  switch (c)
+    {
+      case 'L':
+	type = ValueBool;
+        break;
+      case 'A':
+	type = ValueInt;
+	break;
+      case 'S':
+	type = ValueString;
+	break;
+      default:
+	return true;
+    }
+
   if (label->tag != LexNone)
     error (ErrorWarning, "Label not allowed here - ignoring");
+
   skipblanks ();
   const char *ptr;
-  int len;
-  if (!inputComment ())
-    ptr = var_inputSymbol (&len);
+  size_t len;
+  if ((ptr = Input_Symbol (&len)) == NULL)
+    error (ErrorError, "Missing variable name");
   else
-    {
-      len = 0;
-      ptr = NULL;
-    }
-  if (!len)
-    {
-      error (ErrorError, "Missing variable name");
-      return;
-    }
-  declare_var (ptr, len, type, false);
+    declare_var (ptr, len, type, false);
+  return false;
 }
 
 
-void
-c_lcl (ValueTag type, const Lex *label)
+/**
+ * Implements LCLL, LCLA and LCLS.
+ * Local variable declaration
+ */
+bool
+c_lcl (const Lex *label)
 {
+  int c = inputGet ();
+  ValueTag type;
+  switch (c)
+    {
+      case 'L':
+	type = ValueBool;
+        break;
+      case 'A':
+	type = ValueInt;
+	break;
+      case 'S':
+	type = ValueString;
+	break;
+      default:
+	return true;
+    }
+
   if (gCurPObjP->type != POType_eMacro)
     {
       error (ErrorError, "Local variables not allowed outside macros");
-      inputRest ();
-      return;
+      return false;
     }
 
   if (label->tag != LexNone)
     error (ErrorWarning, "Label not allowed here - ignoring");
   skipblanks ();
   const char *ptr;
-  int len;
-  if (!inputComment ())
-    ptr = var_inputSymbol (&len);
-  else
-    {
-      ptr = NULL;
-      len = 0;
-    }
-  if (!len)
+  size_t len;
+  if ((ptr = Input_Symbol (&len)) == NULL)
     {
       error (ErrorError, "Missing variable name");
-      return;
+      return false;
     }
 
-  Lex l = lexTempLabel (ptr, len);
+  /* Link our local variable into the current macro so we can restore this
+     at the end of macro invocation.  */
+  const Lex l = lexTempLabel (ptr, len);
   Symbol *sym = symbolFind (&l);
   varPos *p;
-  if ((p = malloc (sizeof (varPos))) == NULL
-      || (p->name = strndup (ptr, len)) == NULL)
+  if ((p = malloc (sizeof (varPos) + len + 1)) == NULL)
     errorOutOfMem ();
+  memcpy (p->name, ptr, len + 1);
   p->next = gCurPObjP->d.macro.varListP;
-  p->symptr = sym;
-  if (sym)
+  if ((p->symptr = sym) != NULL)
     p->symbol = *sym;
-  else
-    {
-      p->symbol.type = 0;
-      p->symbol.value.Tag.t = ValueIllegal;
-    }
   gCurPObjP->d.macro.varListP = p;
 
   /* When symbol is already known, it remains a global variable (and :DEF:
      returns {TRUE} for it).  */
-  declare_var (ptr, len, type, sym == NULL);
+  declare_var (ptr, len, type, sym == NULL || (sym->type & SYMBOL_MACRO_LOCAL));
+  return false;
 }
 
 
-void
-c_set (ValueTag type, const Lex *label)
+/**
+ * SETA, SETL, SETS implementation.
+ * Variable assignment
+ */
+bool
+c_set (const Lex *label)
 {
-  const char *c;
-  Symbol *sym = symbolFind (label);
-  if (sym == NULL || sym->value.Tag.t == ValueIllegal)
-    c = "undefined";
-  else if (sym->value.Tag.v == ValueConst)
-    c = "not a variable";
-  else
-    c = NULL;
-  if (c)
+  int c = inputGet ();
+  ValueTag type;
+  switch (c)
     {
-      error (ErrorError, "'%.*s' is %s", label->LexId.len, label->LexId.str, c);
-      inputRest ();
-      return;
+      case 'L':
+	type = ValueBool;
+        break;
+      case 'A':
+	type = ValueInt;
+	break;
+      case 'S':
+	type = ValueString;
+	break;
+      default:
+	return true;
     }
-  exprBuild ();
-  Value value = exprEval (sym->value.Tag.t);
-  value.Tag.v = sym->value.Tag.v;
+
+  Symbol *sym = symbolFind (label);
+  if (sym == NULL)
+    {
+      error (ErrorError, "'%.*s' is undefined",
+	     (int)label->Data.Id.len, label->Data.Id.str);
+      return false;
+    }
+  assert (sym->value.Tag != ValueIllegal);
+  if (type != sym->value.Tag)
+    {
+      error (ErrorError, "Wrong type for symbol '%.*s'",
+	     (int)label->Data.Id.len, label->Data.Id.str);
+      return false;
+    }
+  const Value *value = exprBuildAndEval (sym->value.Tag);
   sym->type |= SYMBOL_DEFINED;
-  switch (value.Tag.t)
+  switch (value->Tag)
     {
       case ValueIllegal:
-	error (ErrorError, "Illegal SET%c", var_type (type));
-	sym->value.Tag.t = ValueInt;
-	sym->value.ValueInt.i = 0;
+	error (ErrorError, "Illegal SET%c", c);
+	sym->value = Value_Int (0);
 	break;
-#ifdef DEBUG
+
+#ifdef DEBUG_VARIABLES
       case ValueString:
-	printf ("c_set: string: <%.*s>\n", value.ValueString.len, value.ValueString.s);
+	printf ("c_set: string: <%.*s>\n",
+		(int)value.Data.String.len, value.Data.String.s);
+	/* Fall through.  */
 #endif
-	default:
-	sym->value = valueCopy (value);
+
+      default:
+	Value_Assign (&sym->value, value);
 	break;
     }
+  return false;
 }
 
 
+/**
+ * Called at the end of each MACRO execution to restore all its local
+ * variables.
+ */
 void
-var_restoreLocals (varPos *p)
+var_restoreLocals (const varPos *p)
 {
   while (p != NULL)
     {
       if (p->symptr)
 	{
-	  if (p->symptr->value.Tag.t == ValueString)
-	    free ((void *)p->symptr->value.ValueString.s);
+	  /* Variable existed before we (temporarily) overruled it, so
+	     restore it to its original value.  */
+	  valueFree (&p->symptr->value);
+	  assert (p->symptr->next == p->symbol.next);
 	  *p->symptr = p->symbol;
 	}
       else
 	{
 	  Lex l = lexTempLabel (p->name, strlen (p->name));
-	  Symbol *sym;
-	  if ((sym = symbolFind (&l)) != NULL)
-	    {
-	      sym->type = 0;	/* undefined */
-	      sym->value.Tag.t = ValueIllegal;
-	    }
+	  symbolRemove (&l);
 	}
-      varPos *q = p->next;
-      free (p->name);
-      free (p);
+
+      const varPos *q = p->next;
+      free ((void *)p);
       p = q;
     }
 }
 
 
-/* Contents pointed by def has to remain valid all the time.
- */
 void
 var_define (const char *def)
 {
   const char *i = strchr (def, '=');
-  int len = i ? i - def : (int)strlen (def);
-  declare_var (def, len, ValueString, false);
-  Lex var = lexTempLabel (def, len);
-  if (!i)
-    i = "";
+  size_t len = i != NULL ? (size_t)(i - def) : strlen (def);
+  Symbol *sym = declare_var (def, len, ValueString, false);
+  if (sym == NULL)
+    return;
+
+  size_t datLen;
+  if (i == NULL)
+    {
+      i = "";
+      datLen = 0;
+    }
   else
-    i++;
-  Value value;
-  value.Tag.t = ValueString;
-  value.Tag.v = ValueString;
-  value.ValueString.len = strlen (i);
-  value.ValueString.s = i;
-  /* FIXME: symbolFind() can return NULL here, no ? */
-  symbolFind (&var)->value = valueCopy (value);
+    {
+      ++i; /* Skip '=' */
+      datLen = strlen (i);
+    }
+  const Value value =
+    {
+      .Tag = ValueString,
+      .Data.String = { .len = datLen, .s = i }
+    };
+  Value_Assign (&sym->value, &value);
 }

@@ -22,9 +22,9 @@
 
 #include "config.h"
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "area.h"
@@ -34,7 +34,6 @@
 #include "fix.h"
 #include "get.h"
 #include "input.h"
-#include "mnemonics.h"
 #include "m_fpu.h"
 #include "option.h"
 #include "put.h"
@@ -42,8 +41,8 @@
 #include "value.h"
 #include "main.h"
 
-WORD
-fpuImm (FLOAT d)
+ARMWord
+fpuImm (ARMFloat d)
 {
   if (d == 0.0)
     return 0;
@@ -65,31 +64,24 @@ fpuImm (FLOAT d)
   return -1;
 }
 
-static WORD
-getFloatRhs (WORD ir)
+static ARMWord
+getFloatRhs (ARMWord ir)
 {
-  Value im;
-  if (inputLook () == '#')
+  if (Input_Match ('#', false))
     {
-      inputSkip ();
-      exprBuild ();
-      ir |= 8;			/* Immediate Float */
-      im = exprEval (ValueInt | ValueFloat | ValueLateLabel | ValueCode);
-      switch (im.Tag.t)
+      ir |= 8; /* Immediate float.  */
+      const Value *im = exprBuildAndEval (ValueInt | ValueFloat);
+      switch (im->Tag)
 	{
-	case ValueInt:
-	  ir = fixImmFloat (0, ir, (FLOAT) im.ValueInt.i);
-	  break;
-	case ValueFloat:
-	  ir = fixImmFloat (0, ir, im.ValueFloat.f);
-	  break;
-	case ValueLateLabel:
-	case ValueCode:
-	  relocImmFloat (ir, &im);
-	  break;
-	default:
-	  error (ErrorError, "Illegal float immediate");
-	  break;
+	  case ValueInt:
+	    ir = fixImmFloat (0, ir, im->Data.Int.i);
+	    break;
+	  case ValueFloat:
+	    ir = fixImmFloat (0, ir, im->Data.Float.f);
+	    break;
+	  default:
+	    error (ErrorError, "Illegal float immediate");
+	    break;
 	}
     }
   else
@@ -101,335 +93,564 @@ getFloatRhs (WORD ir)
 /** DATA dyadic **/
 
 static void
-dstlhsrhs (WORD ir)
+dstlhsrhs (ARMWord ir)
 {
   if (option_apcs_softfloat)
     error (ErrorWarning, "soft-float code uses hard FP instructions");
 
-  WORD op = getFpuReg ();
+  ARMWord op = getFpuReg ();
   ir |= DST_OP (op);
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
   op = getFpuReg ();
   ir |= LHS_OP (op);
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
   putIns (getFloatRhs (ir));
 }
 
 
-void
-m_adf (WORD cc)
+/**
+ * Implements ADF.
+ */
+bool
+m_adf (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_ADF | cc);
+  return false;
 }
 
-void
-m_dvf (WORD cc)
+/**
+ * Implements DVF.
+ */
+bool
+m_dvf (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_DVF | cc);
+  return false;
 }
 
-void
-m_fdv (WORD cc)
+/**
+ * Implements FDV.
+ */
+bool
+m_fdv (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_FDV | cc);
+  return false;
 }
 
-void
-m_fml (WORD cc)
+/**
+ * Implements FML.
+ */
+bool
+m_fml (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_FML | cc);
+  return false;
 }
 
-void
-m_frd (WORD cc)
+/**
+ * Implements FRD.
+ */
+bool
+m_frd (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_FRD | cc);
+  return false;
 }
 
-void
-m_muf (WORD cc)
+/**
+ * Implements MUF.
+ */
+bool
+m_muf (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_MUF | cc);
+  return false;
 }
 
-void
-m_pol (WORD cc)
+/**
+ * Implements POL.
+ */
+bool
+m_pol (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_POL | cc);
+  return false;
 }
 
-void
-m_pow (WORD cc)
+/**
+ * Implements POW.
+ */
+bool
+m_pow (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_POW | cc);
+  return false;
 }
 
-void
-m_rdf (WORD cc)
+/**
+ * Implements RDF.
+ */
+bool
+m_rdf (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_RDF | cc);
+  return false;
 }
 
-void
-m_rmf (WORD cc)
+/**
+ * Implements RMF.
+ */
+bool
+m_rmf (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_RMF | cc);
+  return false;
 }
 
-void
-m_rpw (WORD cc)
+/**
+ * Implements RPW.
+ */
+bool
+m_rpw (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_RPW | cc);
+  return false;
 }
 
-void
-m_rsf (WORD cc)
+/**
+ * Implements RSF.
+ */
+bool
+m_rsf (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_RSF | cc);
+  return false;
 }
 
-void
-m_suf (WORD cc)
+/**
+ * Implements SUF.
+ */
+bool
+m_suf (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstlhsrhs (M_SUF | cc);
+  return false;
 }
 
 
 /** DATA monadic **/
 
 static void
-dstrhs (WORD ir)
+dstrhs (ARMWord ir)
 {
-  WORD op;
-
   if (option_apcs_softfloat)
     error (ErrorWarning, "soft-float code uses hard FP instructions");
 
-  op = getFpuReg ();
+  ARMWord op = getFpuReg ();
   ir |= DST_OP (op);
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
   putIns (getFloatRhs (ir));
 }
 
-void
-m_abs (WORD cc)
+/**
+ * Implements ABS.
+ */
+bool
+m_abs (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_ABS | cc);
+  return false;
 }
 
-void
-m_acs (WORD cc)
+/**
+ * Implements ACS.
+ */
+bool
+m_acs (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_ACS | cc);
+  return false;
 }
 
-void
-m_asn (WORD cc)
+/**
+ * Implements ASN.
+ */
+bool
+m_asn (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_ASN | cc);
+  return false;
 }
 
-void
-m_atn (WORD cc)
+/**
+ * Implements ATN.
+ */
+bool
+m_atn (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_ATN | cc);
+  return false;
 }
 
-void
-m_cos (WORD cc)
+/**
+ * Implements COS.
+ */
+bool
+m_cos (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_COS | cc);
+  return false;
 }
 
-void
-m_exp (WORD cc)
+/**
+ * Implements EXP.
+ */
+bool
+m_exp (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_EXP | cc);
+  return false;
 }
 
-void
-m_lgn (WORD cc)
+/**
+ * Implements LGN.
+ */
+bool
+m_lgn (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_LGN | cc);
+  return false;
 }
 
-void
-m_log (WORD cc)
+/**
+ * Implements LOG.
+ */
+bool
+m_log (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_LOG | cc);
+  return false;
 }
 
-void
-m_mnf (WORD cc)
+/**
+ * Implements MNF.
+ */
+bool
+m_mnf (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_MNF | cc);
+  return false;
 }
 
-void
-m_mvf (WORD cc)
+/**
+ * Implements MVF.
+ */
+bool
+m_mvf (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_MVF | cc);
+  return false;
 }
 
-void
-m_rnd (WORD cc)
+/**
+ * Implements RND.
+ */
+bool
+m_rnd (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_RND | cc);
+  return false;
 }
 
-void
-m_sin (WORD cc)
+/**
+ * Implements SIN.
+ */
+bool
+m_sin (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_SIN | cc);
+  return false;
 }
 
-void
-m_sqt (WORD cc)
+/**
+ * Implements SQT.
+ */
+bool
+m_sqt (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_SQT | cc);
+  return false;
 }
 
-void
-m_tan (WORD cc)
+/**
+ * Implements TAN.
+ */
+bool
+m_tan (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_TAN | cc);
+  return false;
 }
 
-void
-m_urd (WORD cc)
+/**
+ * Implements URD.
+ */
+bool
+m_urd (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_URD | cc);
+  return false;
 }
 
-void
-m_nrm (WORD cc)
+/**
+ * Implements NRM.
+ */
+bool
+m_nrm (void)
 {
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
   dstrhs (M_NRM | cc);
-}
-
-/** REGISTER TRANSFER **/
-
-void
-m_fix (WORD cc)
-{
-  if (option_apcs_softfloat)
-    error (ErrorWarning, "soft-float code uses hard FP instructions");
-
-  WORD ir = M_FIX | cc;
-  ir |= DST_OP (getCpuReg ());
-  skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
-    error (ErrorError, "%sdst", InsertCommaAfter);
-  putIns (getFloatRhs (ir));
-}
-
-void
-m_flt (WORD cc)
-{
-  if (option_apcs_softfloat)
-    error (ErrorWarning, "soft-float code uses hard FP instructions");
-
-  WORD ir = M_FLT | cc;
-  ir |= LHS_OP (getFpuReg ());
-  skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
-    error (ErrorError, "%sdst", InsertCommaAfter);
-  ir |= DST_OP (getCpuReg ());
-  putIns (ir);
+  return false;
 }
 
 static void
-flagtransfer (WORD ir)
-{
-  if (option_apcs_softfloat)
-    error (ErrorWarning, "soft-float code uses hard FP instructions");
-
-  WORD op = getCpuReg ();
-  ir |= DST_OP (op);
-  putIns (ir);
-}
-
-void
-m_wfs (WORD cc)
-{
-  flagtransfer (M_WFS | cc);
-}
-
-void
-m_rfs (WORD cc)
-{
-  flagtransfer (M_RFS | cc);
-}
-
-void
-m_wfc (WORD cc)
-{
-  flagtransfer (M_WFC | cc);
-}
-
-void
-m_rfc (WORD cc)
-{
-  flagtransfer (M_RFC | cc);
-}
-
-static void
-comparelow (WORD ir)		/* No precision and no rounding allowed ? */
+comparelow (ARMWord ir)		/* No precision and no rounding allowed ? */
 {
   if (option_apcs_softfloat)
     error (ErrorWarning, "soft-float code uses hard FP instructions");
 
   ir |= LHS_OP (getFpuReg ());
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
   putIns (getFloatRhs (ir));
 }
 
-void
-m_cmf (WORD cc)
+/**
+ * Implements CMF.
+ */
+bool
+m_cmf (void)
 {
+  ARMWord cc = optionExceptionCond ();
+  if (cc == optionError)
+    return true;
   comparelow (M_CMF | cc);
+  return false;
 }
 
-void
-m_cnf (WORD cc)
+/**
+ * Implements CNF.
+ */
+bool
+m_cnf (void)
 {
+  ARMWord cc = optionExceptionCond ();
+  if (cc == optionError)
+    return true;
   comparelow (M_CNF | cc);
+  return false;
+}
+
+/** REGISTER TRANSFER **/
+
+/**
+ * Implements FIX.
+ */
+bool
+m_fix (void)
+{
+  ARMWord cc = optionCondOptRound ();
+  if (cc == optionError)
+    return true;
+
+  if (option_apcs_softfloat)
+    error (ErrorWarning, "soft-float code uses hard FP instructions");
+
+  ARMWord ir = M_FIX | cc;
+  ir |= DST_OP (getCpuReg ());
+  skipblanks ();
+  if (!Input_Match (',', true))
+    error (ErrorError, "%sdst", InsertCommaAfter);
+  putIns (getFloatRhs (ir));
+  return false;
+}
+
+/**
+ * Implements FLT.
+ */
+bool
+m_flt (void)
+{
+  ARMWord cc = optionCondPrecRound ();
+  if (cc == optionError)
+    return true;
+
+  if (option_apcs_softfloat)
+    error (ErrorWarning, "soft-float code uses hard FP instructions");
+
+  ARMWord ir = M_FLT | cc;
+  ir |= LHS_OP (getFpuReg ());
+  skipblanks ();
+  if (!Input_Match (',', true))
+    error (ErrorError, "%sdst", InsertCommaAfter);
+  ir |= DST_OP (getCpuReg ());
+  putIns (ir);
+  return false;
+}
+
+static void
+flagtransfer (ARMWord ir)
+{
+  if (option_apcs_softfloat)
+    error (ErrorWarning, "soft-float code uses hard FP instructions");
+
+  ARMWord op = getCpuReg ();
+  ir |= DST_OP (op);
+  putIns (ir);
+}
+
+/**
+ * Implements WFS.
+ */
+bool
+m_wfs (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+  flagtransfer (M_WFS | cc);
+  return false;
+}
+
+/**
+ * Implements RFS.
+ */
+bool
+m_rfs (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+  flagtransfer (M_RFS | cc);
+  return false;
+}
+
+/**
+ * Implements WFC.
+ */
+bool
+m_wfc (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+  flagtransfer (M_WFC | cc);
+  return false;
+}
+
+/**
+ * Implements RFC.
+ */
+bool
+m_rfc (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+  flagtransfer (M_RFC | cc);
+  return false;
 }

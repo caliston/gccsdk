@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2001-2006 GCCSDK Developers
+ * Copyright (c) 2001-2010 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,28 +24,28 @@
 #ifndef aoffile_header_included
 #define aoffile_header_included
 
+#include <stdint.h>
+
 typedef struct
 {
-  unsigned int Name;		/* Offset into string table */
-  unsigned int Type;
-  unsigned int Size;		/* Size of area, must be divisible by four */
-  unsigned int noRelocations;	/* Size of relocation table */
-  unsigned int Unused;		/* Unused, must be zero */
-}
-AofEntry;
+  uint32_t Name;		/* Offset into string table */
+  uint32_t Type;
+  uint32_t Size;		/* Size of area, must be divisible by four */
+  uint32_t noRelocations;	/* Size of relocation table */
+  uint32_t Unused;		/* Unused, must be zero */
+} AofEntry;
 
 #define AofHeaderID 0xc5e2d080
 
 typedef struct
 {
-  unsigned int Type;		/* 0xc5e2d080 if relocatable object format       */
-  unsigned int Version;		/* 1.xx -> 150  2.xx -> 200                      */
-  unsigned int noAreas;		/* size of Area[]                                */
-  unsigned int noSymbols;		/* size of Symbol Table if such exist            */
-  unsigned int EntryArea;		/* Where to start execution, 0 no entry          */
-  unsigned int EntryOffset;		/* otherwise start at Area[EntryArea]+AreaOffset */
-}
-AofHeader;
+  uint32_t Type;	/* 0xc5e2d080 if relocatable object format       */
+  uint32_t Version;	/* 1.xx -> 150  2.xx -> 200                      */
+  uint32_t noAreas;	/* size of Area[]                                */
+  uint32_t noSymbols;	/* size of Symbol Table if such exist            */
+  uint32_t EntryArea;	/* Where to start execution, 0 no entry          */
+  uint32_t EntryOffset;	/* otherwise start at Area[EntryArea]+AreaOffset */
+} AofHeader;
 
 #define aofHeaderSize(max) \
         (sizeof (AofHeader) + \
@@ -102,11 +102,9 @@ AofHeader;
 
 typedef struct
 {
-  unsigned int Offset;		/* Offset in area of the field to be relocated */
-  unsigned int How;		/* How relocation is done */
-}
-AofReloc;
-
+  uint32_t Offset;	/* Offset in area of the field to be relocated */
+  uint32_t How;		/* How relocation is done */
+} AofReloc;
 
 /* Defined with local scope */
 #define TYPE_LOCAL     0x01
@@ -129,12 +127,10 @@ AofReloc;
 
 typedef struct
 {
-  unsigned int Name;		/* Offset in string Table */
-  unsigned int Type;
-  unsigned int Value;		/* Value if constant, Size if common, otherwise Offset */
-  unsigned int AreaName;
-}
-AofSymbol;
-
+  uint32_t Name;	/* Offset in string Table */
+  uint32_t Type;
+  uint32_t Value;	/* Value if constant, Size if common, otherwise Offset */
+  uint32_t AreaName;
+} AofSymbol;
 
 #endif

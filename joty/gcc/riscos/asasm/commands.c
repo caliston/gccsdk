@@ -22,23 +22,23 @@
  */
 
 #include "config.h"
+
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 #include <math.h>
 
 #include "area.h"
-#include "asm.h"
 #include "code.h"
 #include "commands.h"
-#include "decode.h"
 #include "error.h"
 #include "expr.h"
 #include "filestack.h"
@@ -47,9 +47,7 @@
 #include "include.h"
 #include "input.h"
 #include "lex.h"
-#include "lit.h"
 #include "local.h"
-#include "macros.h"
 #include "main.h"
 #include "os.h"
 #include "output.h"
@@ -63,364 +61,452 @@ c_define (const char *msg, Symbol *sym, ValueTag legal)
   if (!sym)
     errorAbort ("Missing label before %s", msg);
   sym->type |= SYMBOL_ABSOLUTE;
-  exprBuild ();
-  Value value = exprEval (legal);
-  if (value.Tag.t == ValueIllegal)
+  const Value *value = exprBuildAndEval (legal);
+  if (value->Tag == ValueIllegal)
     {
       error (ErrorError, "Illegal %s", msg);
-      sym->value.Tag.t = ValueInt;
-      sym->value.ValueInt.i = 0;
+      sym->value = Value_Int (0);
     }
   else
-    sym->value = valueCopy (value);
+    Value_Assign (&sym->value, value);
   sym->type |= SYMBOL_DEFINED | SYMBOL_DECLARED;
-  sym->area.ptr = NULL;
 }
 
-
-void
+/**
+ * Implements EQU and *.
+ */
+bool
 c_equ (Symbol *symbol)
 {
-  c_define ("equ", symbol, ValueAll);
+  c_define ("EQU", symbol, ValueAll);
+  return false;
 }
 
-
-void
+/**
+ * Implements FN.
+ */
+bool
 c_fn (Symbol *symbol)
 {
   c_define ("float register", symbol, ValueInt);
   symbol->type |= SYMBOL_FPUREG;
-  int no = symbol->value.ValueInt.i;
+  int no = symbol->value.Data.Int.i;
   if (no < 0 || no > 7)
     {
-      symbol->value.ValueInt.i = 0;
-      error (ErrorError, "Illegal %s register %d (using 0)", "fpu", no);
+      symbol->value.Data.Int.i = 0;
+      error (ErrorError, "Illegal %s register %d (using 0)", "FPU", no);
     }
+  return false;
 }
 
-
-void
+/**
+ * Implements RN.
+ */
+bool
 c_rn (Symbol *symbol)
 {
   c_define ("register", symbol, ValueInt);
   symbol->type |= SYMBOL_CPUREG;
-  int no = symbol->value.ValueInt.i;
+  int no = symbol->value.Data.Int.i;
   if (no < 0 || no > 15)
     {
-      symbol->value.ValueInt.i = 0;
-      error (ErrorError, "Illegal %s register %d (using 0)", "cpu", no);
+      symbol->value.Data.Int.i = 0;
+      error (ErrorError, "Illegal %s register %d (using 0)", "CPU", no);
     }
+  return false;
 }
 
-
-void
+/**
+ * Implements CN.
+ */
+bool
 c_cn (Symbol *symbol)
 {
   c_define ("coprocessor register", symbol, ValueInt);
   symbol->type |= SYMBOL_COPREG;
-  int no = symbol->value.ValueInt.i;
+  int no = symbol->value.Data.Int.i;
   if (no < 0 || no > 15)
     {
-      symbol->value.ValueInt.i = 0;
-      error (ErrorError, "Illegal %s register %d (using 0)", "cop", no);
+      symbol->value.Data.Int.i = 0;
+      error (ErrorError, "Illegal %s register %d (using 0)", "coprocessor", no);
     }
+  return false;
 }
 
-void
+/**
+ * Implements CP.
+ */
+bool
 c_cp (Symbol *symbol)
 {
   c_define ("coprocessor number", symbol, ValueInt);
   symbol->type |= SYMBOL_COPNUM;
-  int no = symbol->value.ValueInt.i;
+  int no = symbol->value.Data.Int.i;
   if (no < 0 || no > 15)
     {
-      symbol->value.ValueInt.i = 0;
+      symbol->value.Data.Int.i = 0;
       error (ErrorError, "Illegal coprocessor number %d (using 0)", no);
     }
+  return false;
 }
 
-
-void
+/**
+ * Implements LTORG.
+ */
+bool
 c_ltorg (void)
 {
-  if (areaCurrentSymbol)
-    litOrg (areaCurrentSymbol->area.info->lits);
-  else
-    areaError ();
+  Lit_DumpPool ();
+  return false;
 }
 
-
-static void
-defineint (int size)
-{
-  Value value;
-  WORD word = 0;
-  int c;
-  do
-    {
-      skipblanks ();
-      exprBuild ();
-      value = exprEval (ValueInt | ValueString | ValueCode | ValueLateLabel | ValueAddr);
-      switch (value.Tag.t)
-	{
-	case ValueInt:
-	case ValueAddr:
-	  word = fixInt (0, size, value.ValueInt.i);
-	  putData (size, word);
-	  break;
-	case ValueString:
-	  if (size == 1)
-	    {			/* Lay out a string */
-	      int len = value.ValueString.len;
-	      const char *str = value.ValueString.s;
-	      while (len > 0)
-		putData (1, lexGetCharFromString (&len, &str));
-	    }
-	  else
-	    putData (size, lexChar2Int (FALSE, value.ValueString.len, value.ValueString.s));
-	  break;
-	case ValueCode:
-	case ValueLateLabel:
-	  relocInt (size, &value);
-	  putData (size, word);
-	  break;
-	default:
-	  error (ErrorError, "Illegal %s expression", "int");
-	  break;
-	}
-      skipblanks ();
-    }
-  while (((c = inputGet ()) != 0) && c == ',');
-  inputUnGet (c);
-}
-
-
-void
+/**
+ * Implements "HEAD" : APCS function name signature.
+ * ObjAsm extension.
+ */
+bool
 c_head (void)
 {
-  int i;
-  Value value;
-
-  i = areaCurrentSymbol ? areaCurrentSymbol->value.ValueInt.i : 0;
   skipblanks ();
-  exprBuild ();
-  value = exprEval (ValueString);
-  switch (value.Tag.t)
+  const Value *value = exprBuildAndEval (ValueString);
+  switch (value->Tag)
     {
-    case ValueString:
-      if (areaCurrentSymbol)
+      case ValueString:
 	{
-	  int len = value.ValueString.len;
-	  const char *str = value.ValueString.s;
-	  while (len > 0)
-	    putData (1, lexGetCharFromString (&len, &str));
+	  size_t len = value->Data.String.len;
+	  const char *str = value->Data.String.s;
+	  for (size_t i = 0; i < len; ++i)
+	    putData (1, str[i]);
 	  putData (1, 0);
 	}
-      break;
-    default:
-      error (ErrorError, "Illegal %s expression", "string");
-      break;
+        break;
+      default:
+        error (ErrorError, "Illegal %s expression", "string");
+        break;
     }
-  if (areaCurrentSymbol)
+
+  /* Align.  */
+  int i = areaCurrentSymbol->value.Data.Int.i;
+  while (areaCurrentSymbol->value.Data.Int.i & 3)
+    areaCurrentSymbol->area.info->image[areaCurrentSymbol->value.Data.Int.i++] = 0;
+  putData (4, 0xFF000000 + (areaCurrentSymbol->value.Data.Int.i - i));
+  return false;
+}
+
+/**
+ * Reloc updater for DefineInt().
+ */
+bool
+DefineInt_RelocUpdater (const char *file, int lineno, ARMWord offset,
+			const Value *valueP, void *privData, bool final)
+{
+  const int size = *(int *)privData;
+
+  assert (valueP->Tag == ValueCode && valueP->Data.Code.len != 0);
+
+  /* ValueString for size = 1 is an odd one case:  */
+  if (!final
+      && size == 1
+      && valueP->Data.Code.len == 1
+      && valueP->Data.Code.c[0].Tag == CodeValue
+      && valueP->Data.Code.c[0].Data.value.Tag == ValueString)
     {
-      while (areaCurrentSymbol->value.ValueInt.i & 3)
-	areaCurrentSymbol->area.info->image[areaCurrentSymbol->value.ValueInt.i++] = 0;
-      putData (4, 0xFF000000 + (areaCurrentSymbol->value.ValueInt.i - i));
+      size_t len = valueP->Data.Code.c[0].Data.value.Data.String.len;
+      const char *str = valueP->Data.Code.c[0].Data.value.Data.String.s;
+      /* Lay out a string.  */
+      for (size_t i = 0; i != len; ++i)
+	Put_DataWithOffset (offset + i, 1, str[i]);
+      return false;
     }
-  else
-    areaError ();
+
+  for (size_t i = 0; i != valueP->Data.Code.len; ++i)
+    {
+      const Code *codeP = &valueP->Data.Code.c[i];
+      if (codeP->Tag != CodeValue)
+	continue;
+      const Value *valP = &codeP->Data.value;
+
+      switch (valP->Tag)
+	{
+	  case ValueInt:
+	    {
+	      ARMWord word = Fix_Int (file, lineno, size, valP->Data.Int.i);
+	      Put_DataWithOffset (offset, size, word);
+	    }
+	    break;
+
+	  case ValueSymbol:
+	    {
+	      if (!final)
+		{
+		  Put_DataWithOffset (offset, size, 0);
+		  return true;
+		}
+#if 0 /* FIXME: is this needed ? */
+	      if (size != 4)
+		{
+		  errorLine (file, lineno, ErrorError, "Wrong data size for relocation");
+		  return true;
+		}
+#endif
+	      int How;
+	      switch (size)
+		{
+		  case 4:
+		    How = HOW2_INIT | HOW2_WORD;
+		    break;
+		    case 2: // FIXME: needed ?
+		      How = HOW2_INIT | HOW2_HALF;
+		    break;
+		    case 1: // FIXME: needed ?
+		      How = HOW2_INIT | HOW2_BYTE;
+		    break;
+		}
+	      Reloc_Create (How, offset, valP);
+	    }
+	    break;
+
+	  default:
+	    return true;
+	}
+    }
+  
+  return false;
 }
 
-
-void
-c_dcb (void)
+static bool
+DefineInt (int size, const char *mnemonic)
 {
-  defineint (1);
-}
-
-
-void
-c_dcw (void)
-{
-  defineint (2);
-}
-
-
-void
-c_dcd (void)
-{
-  defineint (4);
-}
-
-static void
-definereal (int size)
-{
-  Value value;
-  int c;
   do
     {
-      skipblanks ();
       exprBuild ();
-      value = exprEval (ValueInt | ValueFloat | ValueLateLabel | ValueCode);
-      switch (value.Tag.t)
-	{
-	case ValueInt:
-	  putDataFloat (size, (FLOAT) value.ValueInt.i);
-	  break;
-	case ValueFloat:
-	  putDataFloat (size, value.ValueFloat.f);
-	  break;
-	case ValueCode:
-	case ValueLateLabel:
-	  relocFloat (size, &value);
-	  putDataFloat (size, 0.0);
-	  break;
-	default:
-	  error (ErrorError, "Illegal %s expression", "float");
-	  break;
-	}
+      if (Reloc_QueueExprUpdate (DefineInt_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
+				 ValueInt | ValueString | ValueSymbol | ValueCode,
+				 &size, sizeof (size)))
+	error (ErrorError, "Illegal %s expression", mnemonic);
+
       skipblanks ();
     }
-  while (((c = inputGet ()) != 0) && c == ',');
-  inputUnGet (c);
+  while (Input_Match (',', false));
+  return false;
 }
 
-
-void
-c_dcfd (void)
+/**
+ * Implements DCB and = (8 bit integer).
+ */
+bool
+c_dcb (void)
 {
-  definereal (8);
+  return DefineInt (1, "DCB or =");
 }
 
-
-void
-c_dcfe (void)
+/**
+ * Implements DCW (16 bit integer).
+ */
+bool
+c_dcw (void)
 {
-  // FIXME:
-  error (ErrorError, "Not implemented: dcf%c %s", 'e', inputRest ());
+  return DefineInt (2, "DCW");
 }
 
+/**
+ * Implements DCD and & (32 bit integer).
+ */
+bool
+c_dcd (void)
+{
+  return DefineInt (4, "DCD");
+}
 
-void
+/**
+ * Reloc updater for DefineReal().
+ */
+bool
+DefineReal_RelocUpdater (const char *file, int lineno, ARMWord offset,
+			 const Value *valueP, void *privData, bool final)
+{
+  const int size = *(int *)privData;
+
+  assert (valueP->Tag == ValueCode && valueP->Data.Code.len != 0);
+
+  for (size_t i = 0; i != valueP->Data.Code.len; ++i)
+    {
+      const Code *codeP = &valueP->Data.Code.c[i];
+      if (codeP->Tag != CodeValue)
+	continue;
+      const Value *valP = &codeP->Data.value;
+
+      switch (valP->Tag)
+	{
+	  case ValueInt:
+	    putDataFloat (size, valP->Data.Int.i);
+	    break;
+
+	  case ValueFloat:
+	    putDataFloat (size, valP->Data.Float.f);
+	    break;
+
+	  case ValueSymbol:
+	    if (!final)
+	      {
+		Put_DataWithOffset (offset, size, 0);
+		return true;
+	      }
+	    errorLine (file, lineno, ErrorError, "Can't create relocation");
+	    break;
+
+	  default:
+	    return true;
+	}
+    }
+  
+  return false;
+}
+
+static bool
+DefineReal (int size, const char *mnemonic)
+{
+  do
+    {
+      exprBuild ();
+      ValueTag legal = ValueFloat | ValueSymbol | ValueCode;
+      if (option_autocast)
+	legal |= ValueInt;
+      if (Reloc_QueueExprUpdate (DefineReal_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
+				 legal, &size, sizeof (size)))
+	error (ErrorError, "Illegal %s expression", mnemonic);
+
+      skipblanks ();
+    }
+  while (Input_Match (',', false));
+  return false;
+}
+
+/**
+ * Implements DCFS (IEEE Single Precision).
+ */
+bool
 c_dcfs (void)
 {
-  definereal (4);
+  return DefineReal (4, "DCFS");
 }
 
-
-void
-c_dcfp (void)
+/**
+ * Implements DCFD (IEEE Double Precision).
+ */
+bool
+c_dcfd (void)
 {
-  // FIXME:
-  error (ErrorError, "Not implemented: dcf%c %s", 'p', inputRest ());
+  return DefineReal (8, "DCFD");
 }
 
-
-static void
+static bool
 symFlag (unsigned int flags, const char *err)
 {
-  Lex lex = lexGetId ();
+  const Lex lex = lexGetId ();
   if (lex.tag != LexId)
-    return;
-  Symbol *sym = symbolGet (&lex);
-  if (localTest (sym->str))
-    error (ErrorError, "Local labels cannot be %s", err);
-  else
-    sym->type |= flags;
+    {
+      /* When the symbol is not known yet, it will automatically be created.  */
+      Symbol *sym = symbolGet (&lex);
+      if (localTest (sym->str))
+        error (ErrorError, "Local labels cannot be %s", err);
+      else
+        sym->type |= flags;
+    }
+  return false;
 }
 
-
-void
+/**
+ * Implements EXPORT / GLOBL.
+ */
+bool
 c_globl (void)
 {
-  symFlag (SYMBOL_REFERENCE | SYMBOL_DECLARED, "exported");
+  return symFlag (SYMBOL_REFERENCE | SYMBOL_DECLARED, "exported");
 }
 
-
-void
+/**
+ * Implements STRONG.
+ */
+bool
 c_strong (void)
 {
-  symFlag (SYMBOL_STRONG, "marked 'strong'");
+  return symFlag (SYMBOL_STRONG, "marked 'strong'");
 }
 
-
-void
+/**
+ * Implements KEEP.
+ */
+bool
 c_keep (void)
 {
-  symFlag (SYMBOL_KEEP | SYMBOL_DECLARED, "marked 'keep'");
+  return symFlag (SYMBOL_KEEP | SYMBOL_DECLARED, "marked 'keep'");
 }
 
-
-void
+/**
+ * Implements IMPORT.
+ */
+bool
 c_import (void)
 {
   Lex lex = lexGetId ();
   if (lex.tag != LexId)
-    return;
+    return false; /* Error is already given.  */
 
   Symbol *sym = symbolGet (&lex);
   sym->type |= SYMBOL_REFERENCE | SYMBOL_DECLARED;
-  int c;
-  while ((c = inputGet ()) == ',')
+  while (Input_Match (',', false))
     {
       Lex attribute = lexGetId ();
-      if (!strncmp ("NOCASE", attribute.LexId.str, attribute.LexId.len))
+      if (!strncmp ("NOCASE", attribute.Data.Id.str, attribute.Data.Id.len))
 	sym->type |= SYMBOL_NOCASE;
-      else if (!strncmp ("WEAK", attribute.LexId.str, attribute.LexId.len))
+      else if (!strncmp ("WEAK", attribute.Data.Id.str, attribute.Data.Id.len))
 	sym->type |= SYMBOL_WEAK;
-      else if (!strncmp ("COMMON", attribute.LexId.str, attribute.LexId.len))
+      else if (!strncmp ("COMMON", attribute.Data.Id.str, attribute.Data.Id.len))
         {
 	  skipblanks ();
-	  if ((c = inputGet ()) != '=')
-	    {
-	      error (ErrorError, "COMMON attribute needs size specification");
-	      inputUnGet (c);
-	    }
+	  if (Input_Match ('=', false))
+	    error (ErrorError, "COMMON attribute needs size specification");
 	  else
 	    {
-	      Value size;
-	      exprBuild ();
-	      size = exprEval (ValueInt);
-	      switch (size.Tag.t)
+	      const Value *size = exprBuildAndEval (ValueInt);
+	      switch (size->Tag)
 	        {
-	        case ValueInt:
-		  sym->value = valueCopy (size);
-	          sym->type |= SYMBOL_COMMON;
-	          break;
-	        default:
-	          error (ErrorError, "Illegal COMMON attribute expression");
-	          break;
+		  case ValueInt:
+		    Value_Assign (&sym->value, size);
+		    sym->type |= SYMBOL_COMMON;
+		    break;
+		  default:
+		    error (ErrorError, "Illegal COMMON attribute expression");
+		    break;
 	        }
 	    }
 	}
-      else if (!strncmp ("FPREGARGS", attribute.LexId.str, attribute.LexId.len))
+      else if (!strncmp ("FPREGARGS", attribute.Data.Id.str, attribute.Data.Id.len))
 	sym->type |= SYMBOL_FPREGARGS;
       else
-	error (ErrorError, "Illegal IMPORT attribute %s", attribute.LexId.str);
+	error (ErrorError, "Illegal IMPORT attribute %s", attribute.Data.Id.str);
       skipblanks ();
     }
-  inputUnGet (c);
+  return false;
 }
-
 
 /**
  * Called for GET / INCLUDE
  */
-void
+bool
 c_get (void)
 {
-  inputExpand = FALSE;
-
   char *filename;
   if ((filename = strdup (inputRest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
-  for (cptr = filename; *cptr && !isspace (*cptr); cptr++)
+  for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
     /* */;
   if (*cptr)
     {
-      *cptr++ = '\0';		/* must be a space */
-      while (*cptr && isspace (*cptr))
+      *cptr++ = '\0'; /* must be a space */
+      while (*cptr && isspace ((unsigned char)*cptr))
 	cptr++;
       if (*cptr && *cptr != ';')
 	error (ErrorError, "Skipping extra characters '%s' after filename", cptr);
@@ -429,24 +515,25 @@ c_get (void)
   FS_PushFilePObject (filename);
   if (option_verbose)
     fprintf (stderr, "Including file \"%s\" as \"%s\"\n", filename, gCurPObjP->name);
+  return false;
 }
 
-
-void
+/**
+ * Implements LNK.
+ */
+bool
 c_lnk (void)
 {
-  inputExpand = FALSE;
-
   char *filename;
   if ((filename = strdup (inputRest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
-  for (cptr = filename; *cptr && !isspace (*cptr); cptr++)
+  for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
     /* */;
   if (*cptr)
     {
-      *cptr++ = '\0';		/* must be a space */
-      while (*cptr && isspace (*cptr))
+      *cptr++ = '\0'; /* must be a space */
+      while (*cptr && isspace ((unsigned char)*cptr))
 	cptr++;
       if (*cptr && *cptr != ';')
 	error (ErrorError, "Skipping extra characters '%s' after filename", cptr);
@@ -460,28 +547,33 @@ c_lnk (void)
   FS_PushFilePObject (filename);
   if (option_verbose)
     fprintf (stderr, "Linking to file \"%s\" as \"%s\"\n", filename, gCurPObjP->name);
+  return false;
 }
 
-
-void
+/**
+ * Implements IDFN.
+ */
+bool
 c_idfn (void)
 {
   free ((void *)idfn_text);
   if ((idfn_text = strdup (inputRest ())) == NULL)
     errorOutOfMem();
   skiprest ();
+  return false;
 }
 
-
-void
+/**
+ * Implements BIN.
+ */
+bool
 c_bin (void)
 {
-  inputExpand = FALSE;
   char *filename;
   if ((filename = strdup (inputRest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
-  for (cptr = filename; *cptr && !isspace (*cptr); cptr++)
+  for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
     /* */;
   *cptr = '\0';
 
@@ -492,7 +584,7 @@ c_bin (void)
       error (ErrorError, "Cannot open file \"%s\"", filename);
       free (filename);
       free ((void *)newFilename);
-      return;
+      return false;
     }
   if (option_verbose)
     fprintf (stderr, "Including binary file \"%s\" as \"%s\"\n", filename, newFilename);
@@ -501,62 +593,95 @@ c_bin (void)
   while (!feof (binfp))
     putData (1, getc (binfp));
   fclose (binfp);
+  return false;
 }
 
-
-void
+/**
+ * Implements END.
+ */
+bool
 c_end (void)
 {
   if (gCurPObjP->type == POType_eMacro)
     errorAbort ("Cannot use END within a macro");
   FS_PopPObject (false);
+  return false;
 }
 
-
-void
+/**
+ * Implements ASSERT.
+ */
+bool
 c_assert (void)
 {
-  exprBuild ();
-  Value value = exprEval (ValueBool);
-  if (value.Tag.t != ValueBool)
+  const Value *value = exprBuildAndEval (ValueBool);
+  if (value->Tag != ValueBool)
     error (ErrorError, "ASSERT expression must be boolean");
-  else if (!value.ValueBool.b)
+  else if (!value->Data.Bool.b)
     error (ErrorError, "Assertion failed");
+  return false;
 }
 
-void
+/**
+ * Implementation for:
+ *   ! <arithmetic expression>, <string expression>
+ *   INFO <arithmetic expression>, <string expression>
+ *
+ * When <arithmetic expression> evaluates to 0, <string expression> is
+ * outputed as is.  When it evaluates to non-0, <string expression> is given
+ * as error.
+ */
+bool
 c_info (void)
 {
-  exprBuild ();
-  Value value = exprEval (ValueInt | ValueFloat);
+  const Value *value = exprBuildAndEval (ValueInt | ValueFloat);
+  if (value->Tag != ValueInt && value->Tag != ValueFloat)
+    {
+      error (ErrorError, "INFO expression must be arithmetic");
+      return false;
+    }
+  bool giveErr = (value->Tag == ValueInt && value->Data.Int.i != 0)
+		   || (value->Tag == ValueFloat && fabs (value->Data.Float.f) >= 0.00001);
 
   skipblanks();
-  if (inputGet () != ',')
-    error (ErrorError, "Missing , in INFO directive");
+  if (!Input_Match (',', false))
+    {
+      error (ErrorError, "Missing , in INFO directive");
+      return false;
+    }
 
-  exprBuild();
-  Value message = exprEval (ValueString);
-  if (message.Tag.t != ValueString)
-    error (ErrorError, "INFO message must be a string");
+  const Value *message = exprBuildAndEval (ValueString);
+  if (message->Tag != ValueString)
+    {
+      error (ErrorError, "INFO message must be a string");
+      return false;
+    }
 
-  if (value.Tag.t != ValueInt && value.Tag.t != ValueFloat)
-    error (ErrorError, "INFO expression must be arithmetic");
-  else if (value.Tag.t == ValueInt)
-    error (value.ValueInt.i != 0 ? ErrorError : ErrorWarning, "%s", message.ValueString.s);
+  if (giveErr)
+    error (ErrorError, "%.*s", (int)message->Data.String.len, message->Data.String.s);
   else
-    error (fabs(value.ValueFloat.f) < 0.00001 ? ErrorWarning : ErrorError, "%s", message.ValueString.s);
+    printf ("%.*s\n", (int)message->Data.String.len, message->Data.String.s);
+  return false;
 }
 
-void
+/**
+ * Implements OPT.
+ */
+bool
 c_opt (void)
 {
   inputRest();
-  /* Do nothing.  This is for compatiblity with objasm */
+  /* Do nothing.  This is for compatiblity with objasm.  */
+  return false;
 }
 
-void
+/**
+ * Implements SUBT (subtitle) / TTL (title).
+ */
+bool
 c_title (void)
 {
   inputRest();
   /* Do nothing right now.  This command is for the benefit of error reporting */
+  return false;
 }

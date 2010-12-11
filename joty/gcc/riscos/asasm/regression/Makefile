@@ -22,15 +22,18 @@
 # Or
 #   $ make AS=my_asm output_actual/<specific_test>.o
 #
-# To clean up after testing:
+# To clean up after testing or to re-do all tests again:
 #   $ make clean
 
 # Environment variables needed in the tests:
 export HDR_PATH := $(CURDIR)/hdr
 export APCS := APCS-32
 
+# EXTENSION is a test for enable testing extra functionality ASASM has
+# compared to objasm.
+
 AS = asasm
-ASFLAGS = -t xscale -objasm -aof
+ASFLAGS = -t xscale -aof -PD "EXTENSION SETL {TRUE}"
 DIFF = diff
 DIFFFLAGS = -q
 ECHO = echo
@@ -45,23 +48,22 @@ act_PROGRAMS = $(check_PROGRAMS_PASS:tests_pass/%.s=output_actual/%.o)
 
 VPATH = tests_pass:tests_fail
 
+.PHONY: all clean
+
 all: $(act_PROGRAMS)
-	@$(ECHO) All tests were OK
+	@$(ECHO) "*** All tests were OK (do 'make clean' if you want to re-do them)"
 
 clean:
 	-rm -fr output_actual
 	-rm -fr output_reference
-	-rm -f config.h
 
 output_actual/%.o: %.s output_reference/%.o Makefile
 	@$(ECHO) +++ $< : Assemble actual and compare with reference
 	@$(MKDIR) -p output_actual
-	@$(ECHO) $(ECHOFLAGS) "\tGBLL REFERENCE\nREFERENCE\tSETL\t{FALSE}\n\tEND" >config.h
-	@$(AS) $(ASFLAGS) -o $@ $<
+	@$(AS) $(ASFLAGS) -PD "REFERENCE SETL {FALSE}" -o $@ $<
 	@$(DIFF) $(DIFFFLAGS) $@ $(@:output_actual/%=output_reference/%) || (mv $@ $(@:%.o=%_failed.o) && false)
 
 output_reference/%.o: %.s Makefile
 	@$(ECHO) +++ $< : Create reference $@
 	@$(MKDIR) -p output_reference
-	@$(ECHO) $(ECHOFLAGS) "\tGBLL REFERENCE\nREFERENCE\tSETL\t{TRUE}\n\tEND" >config.h
-	@$(AS) $(ASFLAGS) -o $@ $<
+	@$(AS) $(ASFLAGS) -PD "REFERENCE SETL {TRUE}" -o $@ $<

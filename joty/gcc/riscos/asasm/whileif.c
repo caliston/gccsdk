@@ -26,9 +26,9 @@
 #include <string.h>
 #include <ctype.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "code.h"
@@ -43,127 +43,219 @@
 #include "value.h"
 #include "whileif.h"
 
-static BOOL ignore_else = FALSE;
-
-static void if_skip (const char *onerror);
+static bool if_skip (const char *onerror, bool closeOnly);
 static void while_skip (void);
 static void whileFree (void);
-static BOOL whileReEval (void);
+static bool whileReEval (void);
 
-static void
-if_skip (const char *onerror)
+/**
+ * Skip following assembler lines because of
+ * either a failed '[' test, so until we find the corresponding matching '|' or ']',
+ * either we had a successful '[' test and we reached the '|' part.
+ * \param onerror Error message to given when no matching '|' or ']' can be found
+ * in the current parse object.
+ * \param closeOnly When true, expect only ']' to match.
+ */
+static bool
+if_skip (const char *onerror, bool closeOnly)
 {
-  int c;
+  /* We will now skip input lines until a matching '|' or ']'.  This means
+     we have to do the final decode check ourselves.  */
+  decode_finalcheck ();
+
   int nested = 0;
-  int tmp_inputExpand = inputExpand;
-  inputExpand = FALSE;
-  while (inputNextLine ())
-   {
-      if (inputLook () && !isspace (c = inputGet ()))
-	{
-	  char del = c == '|' ? c : 0;
-	  inputSymbol (&c, del);
-	  if (del && inputLook () == del)
-	    inputSkip ();
-	}
-      skipblanks ();
-      c = inputGet ();
-      if (inputLook () && !isspace (inputGet ()))
+  while (inputNextLineNoSubst ())
+    {
+      /* Ignore blank lines and comments.  */
+      if (Input_IsEolOrCommentStart ())
 	continue;
-      switch (c)
+
+      /* Check for label and skip it.  */
+      Lex label;
+      if (!isspace ((unsigned char)inputLook ()))
+	label = Lex_GetDefiningLabel ();
+      else
+	label.tag = LexNone;
+      skipblanks ();
+
+      /* Check for '[', '|', ']', 'IF', 'ELSE', 'ENDIF'.  */
+      enum { t_unknown, t_if, t_else, t_endif } toktype;
+      int numSkip = 1;
+      char c = inputLookN (0);
+      if (c == '[')
+	toktype = t_if;
+      else if (c == '|')
+	toktype = t_else;
+      else if (c == ']')
+	toktype = t_endif;
+      else
 	{
-	case ']':
-	  if (nested-- == 0)
-	    goto skipped;
-	  break;
-	case '|':
-	  if (nested == 0)
-	    goto skipped;
-	  break;
-	case '[':
-	  nested++;
+	  if (c == 'I' && inputLookN (1) == 'F')
+	    {
+	      toktype = t_if;
+	      numSkip = 2;
+	    }
+	  else if (c == 'E')
+	    {
+	      if (inputLookN (1) == 'N'
+		  && inputLookN (2) == 'D'
+		  && inputLookN (3) == 'I'
+		  && inputLookN (4) == 'F')
+		{
+		  toktype = t_endif;
+		  numSkip = 5;
+		}
+	      else if (inputLookN (1) == 'L'
+		       && inputLookN (2) == 'S'
+		       && inputLookN (3) == 'E')
+		{
+		  toktype = t_else;
+		  numSkip = 4;
+		}
+	      else
+		toktype = t_unknown;
+	    }
+	  else
+	    toktype = t_unknown;
+	}
+      if (toktype == t_unknown || (inputLookN (numSkip) && !isspace ((unsigned char)inputLookN (numSkip))))
+	continue;
+      inputSkipN (numSkip);
+      if (toktype != t_if)
+	{
+          skipblanks ();
+          if (!Input_IsEolOrCommentStart ())
+	    error (ErrorError, "Spurious characters after %s token", toktype == t_else ? "ELSE" : "ENDIF");
+	}
+
+      switch (toktype)
+	{
+	  case t_if:
+	    if (label.tag != LexNone)
+	      error (ErrorWarning, "Label not allowed here - ignoring");
+	    nested++;
+	    break;
+	  case t_else:
+	    if (nested == 0)
+	      {
+		if (label.tag != LexNone)
+		  error (ErrorWarning, "Label not allowed here - ignoring");
+		if (!closeOnly)
+		  return false;
+		error (ErrorError, "Spurious '|' is being ignored");
+	      }
+	    break;
+	  case t_endif:
+	    if (nested-- == 0)
+	      return c_endif (&label);
+	    break;
 	}
     }
+  /* We reached the end of the current parsing object without finding a matching
+     '|' nor ']'.  */
   error (ErrorError, "%s", onerror);
-  inputExpand = tmp_inputExpand;
-  return;
-
-skipped:
-  ignore_else = TRUE;
-  inputRewind = TRUE;
-  inputExpand = tmp_inputExpand;
+  return false;
 }
 
-
-void
-c_if (void)
+/**
+ * Implements '['
+ * Only called from decode().
+ */
+bool
+c_if (const Lex *label)
 {
+  if (label->tag != LexNone)
+    error (ErrorWarning, "Label not allowed here - ignoring");
+
   gCurPObjP->if_depth++;
 
-  exprBuild ();
-  Value flag = exprEval (ValueBool);
-  if (flag.Tag.t != ValueBool)
+  const Value *flag = exprBuildAndEval (ValueBool);
+  bool skipToEndIf;
+  if (flag->Tag != ValueBool)
     {
-      error (ErrorError, "IF expression must be boolean (treating as TRUE)");
-      return;
+      error (ErrorError, "IF expression must be boolean (treating as true)");
+      skipToEndIf = false;
     }
-  if (!flag.ValueBool.b)
-    if_skip ("No matching | or ]");
-}
-
-
-void
-c_else (Lex *label)
-{
-  if (!gCurPObjP->if_depth)
-    error (ErrorError, "Mismatched |");
-  if (label->tag != LexNone)
-    {
-      error (ErrorError, "Label not allowed with |");
-      ignore_else = FALSE;
-      return;
-    }
-  if (!ignore_else)
-    if_skip ("No matching ]");
-  ignore_else = FALSE;
-}
-
-
-void
-c_endif (Lex *label)
-{
-  if (!gCurPObjP->if_depth)
-    errorAbort ("Mismatched ]");
   else
-    gCurPObjP->if_depth--;
+    skipToEndIf = !flag->Data.Bool.b;
+
+  if (skipToEndIf)
+    return if_skip ("No matching | or ]", false);
+
+  return false;
+}
+
+/**
+ * Implements '|'
+ * The previous '[' evaluated to {TRUE} and we're now about to enter the 'else'
+ * clause which we have to ignore.
+ * Only called from decode().
+ */
+bool
+c_else (const Lex *label)
+{
+  if (!gCurPObjP->if_depth)
+    {
+      error (ErrorError, "Mismatched |");
+      return false;
+    }
+
   if (label->tag != LexNone)
-    error (ErrorError, "Label not allowed with ]");
-  ignore_else = FALSE;
+    error (ErrorWarning, "Label not allowed here - ignoring");
+
+  return if_skip ("No matching ]", true);
+}
+
+/**
+ * Implements ']'
+ * Called from decode() (the previous lines were being assembled) and
+ * if_skip() (the previous lines were being skipped).
+ */
+bool
+c_endif (const Lex *label)
+{
+  if (!gCurPObjP->if_depth)
+    {
+      error (ErrorError, "Mismatched ]");
+      return false;
+    }
+
+  gCurPObjP->if_depth--;
+
+  if (label->tag != LexNone)
+    error (ErrorWarning, "Label not allowed here - ignoring");
+
+  return false;
 }
 
 
+/**
+ * Skip following assembler input lines until we find matching WEND.
+ */
 static void
 while_skip (void)
 {
   int nested = 0;
-  while (inputNextLine ())
+  while (inputNextLine ()) /* FIXME: call inputNextLineNoSubst() instead, like in if_skip() ? */
     {
-      if (inputLook () && !isspace (inputGet ()))
-	{
-	  int c;
-	  inputSymbol (&c, 0);
-	}
+      /* Skip label (if there is one).  */
+      if (!isspace ((unsigned char)inputLook ()))
+	(void) Lex_GetDefiningLabel ();
       skipblanks ();
-      if (inputGetLower () == 'w')
+
+      /* Look for WHILE and WEND.  */
+      if (inputGet () == 'W')
 	{
-	  switch (inputGetLower ())
+	  switch (inputGet ())
 	    {
-	      case 'h':		/* WHILE? */
-		if (!(notinput ("ile") || (inputLook () && !isspace (inputGet ()))))
+	      case 'H':	/* WHILE? */
+		if (!notinput ("ILE")
+		    && (isspace ((unsigned char)inputLook ()) || Input_IsEolOrCommentStart ()))
 		  nested++;
 		break;
-	      case 'e':		/* WEND? */
-		if (!(notinput ("nd") || (inputLook () && !isspace (inputGet ())))
+	      case 'E':	/* WEND? */
+		if (!notinput ("ND")
+		    && (isspace ((unsigned char)inputLook ()) || Input_IsEolOrCommentStart ())
 		    && nested-- == 0)
 		  return;
 	        break;
@@ -175,42 +267,47 @@ while_skip (void)
 }
 
 
-
-void
-c_while (Lex *label)
+/**
+ * Implements WHILE.
+ */
+bool
+c_while (const Lex *label)
 {
-  label = label;
+  if (label->tag != LexNone)
+    error (ErrorWarning, "Label not allowed here - ignoring");
 
-  inputMark ();
+  const char * const inputMark = Input_GetMark ();
   /* Evaluate expression */
-  exprBuild ();
-  Value flag = exprEval (ValueBool);
-  if (flag.Tag.t != ValueBool)
+  const Value *flag = exprBuildAndEval (ValueBool);
+  if (flag->Tag != ValueBool)
     {
-      error (ErrorError, "WHILE expression must be boolean (treating as FALSE)");
+      error (ErrorError, "WHILE expression must be boolean (treating as false)");
       while_skip ();
-      return;
+      return false;
     }
+#if 0
+  /* FIXME: this needs to be implemented differently.  */
   if (!exprNotConst)
     {
-      error (ErrorError, "WHILE expression is constant (treating as FALSE)");
+      error (ErrorError, "WHILE expression is constant (treating as false)");
       while_skip ();
       return;
     }
-#ifdef DEBUG
-  printf("c_while() : expr is <%s>\n", flag.ValueBool.b ? "TRUE" : "FALSE");
 #endif
-  if (!flag.ValueBool.b)
+#ifdef DEBUG
+  printf("c_while() : expr is <%s>\n", flag->Data.Bool.b ? "true" : "false");
+#endif
+  if (!flag->Data.Bool.b)
     {
       while_skip ();
-      return;
+      return false;
     }
 
   WhileBlock *whileNew;
   if ((whileNew = malloc (sizeof (WhileBlock))) == NULL)
     errorOutOfMem ();
   /* Copy expression */
-  inputRollback ();
+  Input_RollBackToMark (inputMark);
   if ((whileNew->expr = strdup (inputRest ())) == NULL)
     errorOutOfMem ();
   /* Put on stack */
@@ -228,6 +325,7 @@ c_while (Lex *label)
 	break;
     }
   gCurPObjP->whilestack = whileNew;
+  return false;
 }
 
 
@@ -241,63 +339,68 @@ whileFree (void)
 }
 
 
-static BOOL
+static bool
 whileReEval (void)
 {
   inputThisInstead (gCurPObjP->whilestack->expr);
-  exprBuild ();
-  Value flag = exprEval (ValueBool);
-  if (flag.Tag.t != ValueBool)
+  const Value *flag = exprBuildAndEval (ValueBool);
+  if (flag->Tag != ValueBool)
     {
-      error (ErrorError, "WHILE expression must be boolean (treating as FALSE)");
-      return FALSE;
+      error (ErrorError, "WHILE expression must be boolean (treating as false)");
+      return false;
     }
 #ifdef DEBUG
-  printf("whileReEval() : expr is <%s>\n", flag.ValueBool.b ? "TRUE" : "FALSE");
+  printf("whileReEval() : expr is <%s>\n", flag->Data.Bool.b ? "true" : "false");
 #endif
-  if (flag.ValueBool.b)
+  if (flag->Data.Bool.b)
     {
       switch (gCurPObjP->whilestack->tag)
 	{
 	  case WhileInFile:
 	    fseek (gCurPObjP->d.file.fhandle, gCurPObjP->whilestack->ptr.file.offset, SEEK_SET);
 	    gCurPObjP->lineNum = gCurPObjP->whilestack->lineno;
-	    return TRUE;
+	    return true;
 	  case WhileInMacro:
 	    gCurPObjP->d.macro.curPtr = gCurPObjP->whilestack->ptr.macro.offset;
 	    gCurPObjP->lineNum = gCurPObjP->whilestack->lineno;
-	    return TRUE;
+	    return true;
 	  default:
 	    errorAbort ("Internal whileReEval: unrecognised WHILE type");
 	    break;
 	}
     }
-  return FALSE;
+  return false;
 }
 
 
-void
-c_wend (Lex *label)
+/**
+ * Implements WEND.
+ */
+bool
+c_wend (const Lex *label)
 {
-  label = label;
-
   if (!gCurPObjP->whilestack)
     {
       error (ErrorError, "Mismatched WEND");
-      return;
+      return false;
     }
+
+  if (label->tag != LexNone)
+    error (ErrorWarning, "Label not allowed here - ignoring");
+
   switch (gCurPObjP->whilestack->tag)
     {
       case WhileInFile:
       case WhileInMacro:
 	if (whileReEval ())
-	  return;
+	  return false;
 	break;
       default:
 	errorAbort ("Internal c_wend: unrecognised WHILE type");
 	break;
     }
   whileFree ();
+  return false;
 }
 
 
@@ -307,7 +410,7 @@ FS_PopIfWhile (bool noCheck)
   if (gCurPObjP->if_depth)
     {
       if (!noCheck)
-	errorAbort ("Unmatched IF%s", "s" + (gCurPObjP->if_depth > 1));
+	error (ErrorError, "Unmatched IF%s", "s" + (gCurPObjP->if_depth > 1));
       gCurPObjP->if_depth = 0;
     }
 
@@ -315,5 +418,5 @@ FS_PopIfWhile (bool noCheck)
   for (i = 0; gCurPObjP->whilestack != NULL; ++i)
     whileFree ();
   if (i && !noCheck)
-    errorAbort ("Unmatched WHILE%s", "s" + (i > 1));
+    error (ErrorError, "Unmatched WHILE%s", "s" + (i > 1));
 }

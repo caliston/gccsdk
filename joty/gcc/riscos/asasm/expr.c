@@ -21,10 +21,11 @@
  */
 
 #include "config.h"
+
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "area.h"
@@ -44,52 +45,52 @@ prim (void)
 
   switch (lex.tag)
     {
-    case LexId:
-      codeSymbol (symbolGet (&lex));
-      break;
-    case LexInt:
-      codeInt (lex.LexInt.value);
-      break;
-    case LexString:
-      codeString (lex.LexString.len, lex.LexString.str);
-      break;
-    case LexFloat:
-      codeFloat (lex.LexFloat.value);
-      break;
-    case LexStorage:
-      codeStorage ();
-      break;
-    case LexPosition:
-      codePosition (areaCurrentSymbol);
-      break;
-    case LexOperator:
-      prim ();
-      if (lex.LexOperator.op == Op_none)
-	/* */;
-      else if (isUnop (lex.LexOperator.op))
-	codeOperator (lex.LexOperator.op);
-      else
-	error (ErrorError, "Illegal unop");
-      break;
-    case LexDelim:
-      if (lex.LexDelim.delim == '(')
-	{
-	  expr (1);
-	  lex = lexGetPrim ();
-	  if (lex.tag != LexDelim || lex.LexDelim.delim != ')')
-	    error (ErrorError, "Missing ')'");
-	}
-      else if (lex.LexDelim.delim == ')')
-	error (ErrorError, "Missing '('");
-      else
-	error (ErrorError, "Illegal delimiter '%c'", lex.LexDelim.delim);
-      break;
-    case LexBool:
-      codeBool (lex.LexBool.value);
-      break;
-    default:
-      error (ErrorError, "Illegal expression");
-      break;
+      case LexId:
+	codeSymbol (symbolGet (&lex));
+        break;
+      case LexInt:
+        codeInt (lex.Data.Int.value);
+        break;
+      case LexString:
+        codeString (lex.Data.String.str, lex.Data.String.len);
+        break;
+      case LexFloat:
+        codeFloat (lex.Data.Float.value);
+        break;
+      case LexStorage:
+        codeStorage ();
+        break;
+      case LexPosition:
+        codePosition (areaCurrentSymbol, areaCurrentSymbol->value.Data.Int.i);
+        break;
+      case LexOperator:
+        prim ();
+        if (lex.Data.Operator.op == Op_none)
+  	  /* */;
+        else if (isUnop (lex.Data.Operator.op))
+	  codeOperator (lex.Data.Operator.op);
+        else
+	  error (ErrorError, "Illegal unop");
+        break;
+      case LexDelim:
+        if (lex.Data.Delim.delim == '(')
+	  {
+	    expr (1);
+	    lex = lexGetPrim ();
+	    if (lex.tag != LexDelim || lex.Data.Delim.delim != ')')
+	      error (ErrorError, "Missing ')'");
+	  }
+        else if (lex.Data.Delim.delim == ')')
+	  error (ErrorError, "Missing '('");
+        else
+	  error (ErrorError, "Illegal delimiter '%c'", lex.Data.Delim.delim);
+        break;
+      case LexBool:
+        codeBool (lex.Data.Bool.value);
+        break;
+      default:
+        error (ErrorError, "Illegal expression");
+        break;
     }
 }
 
@@ -104,17 +105,20 @@ expr (int pri)
 
   while (lexNextPri () == pri)
     {
-      Lex op;
-      op = lexGetBinop ();
+      Lex op = lexGetBinop ();
       if (pri == 10)
 	prim ();
       else
 	expr (pri + 1);
-      codeOperator (op.LexOperator.op);
+      codeOperator (op.Data.Operator.op);
     }
 }
 
 
+/**
+ * Parses the expression found at the current input and builds up an
+ * (code) expression stream.
+ */
 void
 exprBuild (void)
 {
@@ -123,8 +127,26 @@ exprBuild (void)
 }
 
 
-Value
+/**
+ * Evaluates the current (code) expression stream.
+ * \param legal Or'd ValueTag values which are allowed as result.
+ * \return Result of evaluation.  Use Value_Assign() to keep a non-temporary
+ * copy of it.
+ */
+const Value *
 exprEval (ValueTag legal)
 {
-  return codeEval (legal);
+  return codeEval (legal, NULL);
+}
+
+
+/**
+ * \return Result of evaluation.  Only to be used before next evaluation.
+ * Use Value_Assign() to keep a non-temporary copy of it.
+ */
+const Value *
+exprBuildAndEval (ValueTag legal)
+{
+  exprBuild ();
+  return exprEval (legal);
 }

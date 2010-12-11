@@ -21,15 +21,17 @@
  */
 
 #include "config.h"
+
+#include <assert.h>
 #include <setjmp.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "area.h"
@@ -37,70 +39,91 @@
 #include "code.h"
 #include "decode.h"
 #include "error.h"
+#include "expr.h"
 #include "filestack.h"
 #include "input.h"
 #include "lex.h"
+#include "main.h"
+
+#ifdef DEBUG
+//#  define DEBUG_ASM
+#endif
 
 /**
  * Parse the input file, and perform the assembly.
+ * \param asmFile Filename to assemble.
  */
 void
-assemble (void)
+ASM_Assemble (const char *asmFile)
 {
-  /* Read each line from the input into input.c:workBuff, if inputExpand is
-     true, then expand the input line into where necessary.  */
+  inputInit (asmFile);
+
+  setjmp (asmContinue); // FIXME: this will be wrong when we're skipping if/while contents.
+  asmContinueValid = true;
+
+  /* Process input line-by-line.  */
   while (gCurPObjP != NULL && inputNextLine ())
     {
+      /* Ignore blank lines and comments.  */
+      if (Input_IsEolOrCommentStart ())
+	continue;
+
+      /* Read label (if there is one).  */
       Lex label;
-      Symbol *symbol;
-
-      /* ignore blank lines and comments */
-      if (inputLook () && !isspace (inputLook ()) && !inputComment ())
-	{
-	  /* Deal with any label */
-	  label = isdigit (inputLook ())? lexGetLocal () : lexGetId ();
-
-	  /* Check for local label here */
-	  skipblanks ();
-	  if (inputLook () == ':')
-	    inputSkip ();
-	}
+      if (!isspace ((unsigned char)inputLook ()))
+	label = Lex_GetDefiningLabel ();
       else
-	{
-	  label.tag = LexNone;
-	  symbol = NULL;
-	}
+	label.tag = LexNone;
       skipblanks ();
-      if (!inputComment ())
-	decode (&label);
-      else
-	asm_label (&label);
 
-      inputExpand = TRUE;
+#ifdef DEBUG_ASM
+      printf ("%s: %d: ", FS_GetCurFileName (), FS_GetCurLineNumber ());
+      lexPrint (&label);
+      printf ("\n");
+#endif
+
+      decode (&label);
     }
+
+  asmContinueValid = false;
 }
 
 
+/**
+ * Defines a label being at offset of the current AREA.
+ * \return NULL when give Lex object can not be a label or has been defined
+ * as label before.
+ */
 Symbol *
-asm_label (const Lex *label)
+ASM_DefineLabel (const Lex *label, int offset)
 {
   if (label->tag != LexId)
     return NULL;
 
   Symbol *symbol = symbolAdd (label);
-  if (areaCurrentSymbol)
+  if (symbol->value.Tag != ValueIllegal)
+    return NULL; /* Label was already defined with a value.  */
+  symbol->type |= SYMBOL_ABSOLUTE; /* FIXME: this feels wrong as labels are relative against the base of their AREA where they are defined in.  */
+  assert (symbol->value.Tag == ValueIllegal);
+  if (areaCurrentSymbol->area.info->type & AREA_BASED)
     {
-      symbol->value = valueLateToCode (areaCurrentSymbol->value.ValueInt.i,
-				       codeNewLateInfo (areaCurrentSymbol));
-      symbol->type |= SYMBOL_ABSOLUTE;
-      /* If the current area is a based area, then set the based bit.  */
-      if (areaCurrentSymbol->area.info->type & AREA_BASED)
-	symbol->type |= SYMBOL_BASED;
+      /* Define label as "ValueAddr AreaBaseReg, #<given area offset>".  */
+      symbol->value = Value_Addr (Area_GetBaseReg (areaCurrentSymbol->area.info), offset);
     }
   else
     {
-      symbol->type = 0;
-      symbol->value.Tag.t = ValueIllegal;
+      /* Define label as "ValueSymbol(current AREA) + <given area offset>".  */
+      const Code values[] =
+	{
+	    { .Tag = CodeValue,
+	      .Data.value = { .Tag = ValueSymbol, .Data.Symbol = { .factor = 1, .symbol = areaCurrentSymbol } } },
+	    { .Tag = CodeValue,
+	      .Data.value = { .Tag = ValueInt, .Data.Int = { .i = offset } } },
+	    { .Tag = CodeOperator,
+	      .Data.op = Op_add }
+	};
+      symbol->value = Value_Code (sizeof (values)/sizeof (values[0]), values);
     }
+
   return symbol;
 }

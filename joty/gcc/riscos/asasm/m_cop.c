@@ -22,26 +22,25 @@
 
 #include "config.h"
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
-#include "area.h"
 #include "error.h"
 #include "expr.h"
 #include "get.h"
 #include "help_cop.h"
 #include "input.h"
 #include "main.h"
-#include "mnemonics.h"
+#include "m_cop.h"
 #include "option.h"
 #include "put.h"
 #include "reloc.h"
 #include "targetcpu.h"
 
 static void
-coprocessor (BOOL CopOnly, WORD ir, int maxop)	/* p#,cpop,cpdst,cplhs,cprhs {,info} */
+coprocessor (bool CopOnly, ARMWord ir, int maxop)	/* p#,cpop,cpdst,cplhs,cprhs {,info} */
 {
   int cop = CP_NUMBER (getCopNum ());
 
@@ -54,144 +53,148 @@ coprocessor (BOOL CopOnly, WORD ir, int maxop)	/* p#,cpop,cpdst,cplhs,cprhs {,in
     cpuWarn (ARM3);
   ir |= cop;
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%scoprocessor number", InsertCommaAfter);
   if (maxop > 7)
     ir |= CP_DCODE (help_copInt (maxop, "coprocessor opcode"));
   else
     ir |= CP_RTRAN (help_copInt (maxop, "coprocessor opcode"));
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%sdata operand", InsertCommaAfter);
   ir |= CopOnly ? CPDST_OP (getCopReg ()) : CPDST_OP (getCpuReg ());
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
   ir |= CPLHS_OP (getCopReg ());
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
   ir |= CPRHS_OP (getCopReg ());
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-      ir |= CP_INFO (help_copInt (7, "coprocessor info"));
-    }
+  if (Input_Match (',', true))
+    ir |= CP_INFO (help_copInt (7, "coprocessor info"));
   putIns (ir);
 }
 
-void
-m_cdp (WORD cc)			/* cdp CC p#,cpop,cpdst,cplhs,cprhs {,info} */
+/**
+ * Implements CDP.
+ * cdp CC p#,cpop,cpdst,cplhs,cprhs {,info}
+ */
+bool
+m_cdp (void)
 {
-  coprocessor (TRUE, cc | 0x0e000000, 15);
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+  coprocessor (true, cc | 0x0e000000, 15);
+  return false;
 }
 
-void
+/**
+ * Implements CDP2.
+ */
+bool
 m_cdp2 (void)
 {
-  coprocessor (TRUE, 0xfe000000, 15);
+  coprocessor (true, 0xfe000000, 15);
+  return false;
 }
 
 /** REGISTER TRANSFER **/
 
-void
-m_mcr (WORD cc)
+/**
+ * Implements MCR.
+ */
+bool
+m_mcr (void)
 {
-  coprocessor (FALSE, cc | 0x0e000010, 7);
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+  coprocessor (false, cc | 0x0e000010, 7);
+  return false;
 }
 
-void
+/**
+ * Implements MCR2.
+ */
+bool
 m_mcr2 (void)
 {
-  coprocessor (FALSE, 0xfe000010, 7);
+  coprocessor (false, 0xfe000010, 7);
+  return false;
 }
 
-void
-m_mrc (WORD cc)
+/**
+ * Implements MRC.
+ */
+bool
+m_mrc (void)
 {
-  coprocessor (FALSE, cc | 0x0e100010, 7);
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+  coprocessor (false, cc | 0x0e100010, 7);
+  return false;
 }
 
-void
+/**
+ * Implements MRC2.
+ */
+bool
 m_mrc2 (void)
 {
-  coprocessor (FALSE, 0xfe100010, 7);
+  coprocessor (false, 0xfe100010, 7);
+  return false;
 }
 
 static void
-coprocessorr (WORD ir)
+coprocessorr (ARMWord ir)
 {
   ir |= CP_NUMBER (getCopNum ());
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%scoprocessor number", InsertCommaAfter);
   ir |= (help_copInt (15, "coprocessor opcode") << 4);
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%scoprocessor opcode", InsertCommaAfter);
   ir |= CPDST_OP (getCpuReg ());
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
   ir |= CPLHS_OP (getCpuReg ());
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
   ir |= CPRHS_OP (getCopReg ());
 
   putIns (ir);
 }
 
-void
-m_mcrr (WORD cc)
+/**
+ * Implements MCRR.
+ */
+bool
+m_mcrr (void)
 {
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
   coprocessorr (cc | 0x0C400000);
+  return false;
 }
 
-void
-m_mrrc (WORD cc)
+/**
+ * Implements MRRC.
+ */
+bool
+m_mrrc (void)
 {
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
   coprocessorr (cc | 0x0C500000);
+  return false;
 }

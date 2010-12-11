@@ -1,5 +1,3 @@
-	GET	config.h
-
 	AREA	Code, CODE, READONLY
 
 	[ :LNOT: REFERENCE
@@ -11,3 +9,4 @@
 		^	0, r9
 baz		#	4
 
+	END

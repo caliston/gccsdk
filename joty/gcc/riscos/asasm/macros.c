@@ -21,10 +21,11 @@
  */
 
 #include "config.h"
+
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 #include <string.h>
 #include <stdlib.h>
@@ -37,6 +38,10 @@
 #include "macros.h"
 #include "os.h"
 #include "variables.h"
+
+#ifdef DEBUG
+//#  define DEBUG_MACRO
+#endif
 
 static Macro *macroList;
 
@@ -95,11 +100,11 @@ macroCall (const Macro *m, const Lex *label)
     {
       if (m->labelarg)
 	{
-	  const char *c = label->LexId.str;
+	  const char *c = label->Data.Id.str;
 	  int len;
 	  for (len = (c[0] == '#') ? 1 : 0; isalnum (c[len]) || c[len] == '_'; ++len)
 	    /* */;
-	  if ((args[marg++] = strndup (label->LexId.str, len)) == NULL)
+	  if ((args[marg++] = strndup (label->Data.Id.str, len)) == NULL)
 	    errorOutOfMem();
 	}
       else
@@ -112,7 +117,7 @@ macroCall (const Macro *m, const Lex *label)
     args[marg++] = NULL;		/* Null label argument */
 
   skipblanks ();
-  while (!inputComment ())
+  while (!Input_IsEolOrCommentStart ())
     {
       if (marg == m->numargs)
 	{
@@ -120,36 +125,30 @@ macroCall (const Macro *m, const Lex *label)
 	  skiprest ();
 	  break;
 	}
-      inputMark ();
       const char *c;
-      int len;
-      if (inputLook () == '"')
+      size_t len;
+      if (Input_Match ('"', false))
 	{
-	  inputSkip ();
 	  c = inputSymbol (&len, '"');	/* handles "x\"y", but not "x""y" */
 	  inputSkip ();
 	  skipblanks ();
 	}
       else
 	{
-	  /*inputRollback(); */
 	  c = inputSymbol (&len, ',');
 	  while (len > 0 && (c[len - 1] == ' ' || c[len - 1] == '\t'))
 	    len--;
 	}
       if ((args[marg++] = strndup (c, len)) == NULL)
 	errorOutOfMem();
-      if (inputLook () == ',')
-	inputSkip ();
-      else
+      if (!Input_Match (',', true))
 	break;
-      skipblanks ();
     }
 
   for (/* */; marg < MACRO_ARG_LIMIT; ++marg)
     args[marg] = NULL;
 
-#ifdef DEBUG
+#ifdef DEBUG_MACRO
   printf ("Macro call = %s\n", inputLine ());
   for (int i = 0; i < MACRO_ARG_LIMIT; ++i)
     printf ("  Arg %i = <%s>\n", i, args[i] ? args[i] : "NULL");
@@ -198,11 +197,11 @@ Macro_GetLine (char *bufP, size_t bufSize)
 
 
 const Macro *
-macroFind (size_t len, const char *name)
+macroFind (const char *name, size_t len)
 {
   for (const Macro *m = macroList; m != NULL; m = m->next)
     {
-      if (!strncmp (name, m->name, len) && m->name[len] == '\0')
+      if (!memcmp (name, m->name, len) && m->name[len] == '\0')
 	return m;
     }
   return NULL;
@@ -211,49 +210,52 @@ macroFind (size_t len, const char *name)
 
 /* Macro builder code */
 
-
-static BOOL
+/**
+ * \return true when MEND is read.
+ */
+static bool
 c_mend (void)
 {
-  if (!isspace (inputLook ()))
-    return FALSE;
+  if (!isspace ((unsigned char)inputLook ()))
+    return false;
 
   skipblanks ();
-  if (inputGetLower () != 'm')
-    return FALSE;
-  if (inputGetLower () != 'e')
-    return FALSE;
-  if (inputGetLower () != 'n')
-    return FALSE;
-  if (inputGetLower () != 'd')
-    return FALSE;
+  if (inputGet () != 'M' || inputGet () != 'E'
+      || inputGet () != 'N' || inputGet () != 'D')
+    return false;
   char c = inputLook ();
-  return c == '\0' || isspace (c);
+  return c == '\0' || isspace ((unsigned char)c);
 }
 
 
-void
+/**
+ * Processes:
+ *         MACRO
+ * $<lbl> <marco name> [$<param1>[=<default value>]]*
+ */
+bool
 c_macro (const Lex *label)
 {
+  if (label->tag != LexNone)
+    error (ErrorWarning, "Label not allowed here - ignoring");
+
   Macro m;
-  memset(&m, 0, sizeof(Macro));
+  memset (&m, 0, sizeof(Macro));
 
   char *buf = NULL;
 
-  inputExpand = FALSE;
-  if (label->tag != LexNone)
-    error (ErrorWarning, "Label not allowed here - ignoring");
   skipblanks ();
-  if (!inputComment ())
+  if (!Input_IsEolOrCommentStart ())
     error (ErrorWarning, "Skipping characters following MACRO");
-  if (!inputNextLine ())
+
+  /* Read optional '$' + label name.  */
+  if (!inputNextLineNoSubst ())
     errorAbort ("End of file found within macro definition");
-  if (inputComment ())
+  if (Input_IsEolOrCommentStart ())
     errorAbort ("Missing macro name");
-  if (inputLook () == '$')
-    inputSkip ();
-  int len;
-  char *ptr = inputSymbol (&len, 0);
+  Input_Match ('$', false);
+  size_t len;
+  const char *ptr = inputSymbol (&len, 0);
   if (len)
     {
       m.labelarg = m.numargs = 1;
@@ -261,27 +263,25 @@ c_macro (const Lex *label)
 	errorOutOfMem ();
     }
   skipblanks ();
-  if (inputLook () == '|')
-    {
-      inputSkip ();
-      ptr = inputSymbol (&len, '|');
-      if (inputGet () != '|')
-	error (ErrorError, "Macro name continues over newline");
-    }
-  else
-    ptr = inputSymbol (&len, 0);
-  if (!len)
+
+  /* Read macro name.  */
+  if ((ptr = Input_Symbol (&len)) == NULL)
     errorAbort ("Missing macro name");
-  if (macroFind (len, ptr))
+  const Macro *prevDefMacro = macroFind (ptr, len);
+  if (prevDefMacro != NULL)
     {
-      error (ErrorError, "Macro %.*s is already defined", len, ptr);
+      error (ErrorError, "Macro '%.*s' is already defined", (int)len, ptr);
+      errorLine (prevDefMacro->file, prevDefMacro->startline, ErrorError,
+		 "note: Previous definition of macro '%.*s' was here", (int)len, ptr);
       goto lookforMEND;
     }
   if ((m.name = strndup (ptr, len)) == NULL)
     errorOutOfMem ();
   m.startline = FS_GetCurLineNumber ();
   skipblanks ();
-  while (!inputComment ())
+
+  /* Read zero or more macro parameters.  */
+  while (!Input_IsEolOrCommentStart ())
     {
       if (m.numargs == MACRO_ARG_LIMIT)
 	{
@@ -289,37 +289,31 @@ c_macro (const Lex *label)
 	  skiprest ();
 	  break;
 	}
-      skipblanks ();
-      if (inputLook () == '$')
-	inputSkip ();
+      Input_Match ('$', false);
       ptr = inputSymbol (&len, ',');
       if ((m.args[m.numargs++] = strndup (ptr, len)) == NULL)
 	errorOutOfMem ();
-      if (inputLook () == ',')
-	inputSkip ();
+      Input_Match (',', true);
     }
   int bufptr = 0, buflen = 0;
   do
     {
-      if (!inputNextLine ())
+      if (!inputNextLineNoSubst ())
 	goto noMEND;
-      inputMark ();
+      const char * const inputMark = Input_GetMark ();
       if (c_mend ())
 	break;
-      inputRollback ();
+      Input_RollBackToMark (inputMark);
       char c;
       while ((c = inputGet ()) != 0)
 	{
-	  inputMark ();
+	  const char * const inputMark2 = Input_GetMark ();
 	  if (c == '$')
 	    {
-	      if (inputLook () == '$')
-		inputSkip ();
-	      else
-		{		/* Token? Check list and substitute */
+	      if (!Input_Match ('$', false))
+		{ /* Token? Check list and substitute */
 		  ptr = inputSymbol (&len, '\0');
-		  if (inputLook () == '.')
-		    inputSkip ();
+		  Input_Match ('.', false);
 		  int i;
 		  for (i = 0;
 		       i < m.numargs
@@ -331,8 +325,8 @@ c_macro (const Lex *label)
 		    c = MACRO_ARG0 + i;
 		  else
 		    {
-		      /* error(ErrorWarning, TRUE, "Unknown macro argument encountered"); */
-		      inputRollback ();
+		      /* error(ErrorWarning, true, "Unknown macro argument encountered"); */
+		      Input_RollBackToMark (inputMark2);
 		    }
 		}
 	    }
@@ -362,7 +356,7 @@ c_macro (const Lex *label)
   p->next = macroList;
   macroList = p;
 
-  return;
+  return false;
 
 lookforMEND:
   do
@@ -381,10 +375,14 @@ noMEND:
   free ((void *)m.name);
   for (int i = 0; i < MACRO_ARG_LIMIT; ++i)
     free ((void *) m.args[i]);
+  return false;
 }
 
 
-void
+/**
+ * Implements MEXIT.
+ */
+bool
 c_mexit (const Lex *label)
 {
   if (label->tag != LexNone)
@@ -394,4 +392,5 @@ c_mexit (const Lex *label)
     error (ErrorError, "MEXIT found outside a macro");
   else
     FS_PopMacroPObject (false);
+  return false;
 }

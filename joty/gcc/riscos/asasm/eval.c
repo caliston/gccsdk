@@ -20,393 +20,647 @@
  * eval.c
  */
 
+#include "config.h"
+
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
+#include "code.h"
 #include "error.h"
 #include "eval.h"
 #include "global.h"
-#include "help_eval.h"
 #include "include.h"
+#include "main.h"
 #include "os.h"
 
 /* No validation checking on value types! */
 static int
-ememcmp (Value * lv, const Value * rv)
+ememcmp (const Value *lv, const Value *rv)
 {
-  const int lvl = lv->ValueString.len;
-  const int rvl = rv->ValueString.len;
-  int a = memcmp (lv->ValueString.s, rv->ValueString.s, lvl < rvl ? lvl : rvl);
-  if (a == 0 && lvl != rvl)
-    a = lvl - rvl;
-  return a;
+  const int lvl = lv->Data.String.len;
+  const int rvl = rv->Data.String.len;
+  int a = memcmp (lv->Data.String.s, rv->Data.String.s, lvl < rvl ? lvl : rvl);
+  return a ? a : lvl - rvl;
 }
 
-
+#define STRINGIFY(OP)	#OP
+/* Core implementation for '<', '<=', '>', '>=', '==' and '!='.
+   Works for ValueFloat, ValueString, ValueInt, ValueAdd.  */
 #define COMPARE(OP) \
-  if (lvalue->Tag.t == ValueFloat && rvalue->Tag.t == ValueFloat) \
+  do \
     { \
-      lvalue->ValueBool.b = lvalue->ValueFloat.f OP rvalue->ValueFloat.f; \
-      lvalue->Tag.t = ValueBool; \
-      return TRUE; \
-    }	  \
-  if (lvalue->Tag.t == ValueString && rvalue->Tag.t == ValueString) \
-    { \
-      lvalue->ValueBool.b = ememcmp(lvalue,rvalue) OP 0; \
-      lvalue->Tag.t = ValueBool; \
-      return TRUE; \
-    } \
-  if (!(lvalue->Tag.t & (ValueInt | ValueAddr | ValueLateLabel)) \
-      || !(rvalue->Tag.t & (ValueInt | ValueAddr | ValueLateLabel))) \
-    { \
-      fprintf (stderr, ": %i %i\n", lvalue->Tag.t, rvalue->Tag.t); \
-      return FALSE; \
-    } \
-  \
-  help_evalSubLate(lvalue,rvalue); \
-  /* Might not be a ValueInt, but ValueLate* has i at the same place */ \
-  if (!(lvalue->Tag.t & (ValueInt | ValueAddr))) \
-    return FALSE; \
-  \
-  lvalue->ValueBool.b = lvalue->ValueInt.i OP rvalue->ValueInt.i; \
-  lvalue->Tag.t = ValueBool; \
-  return TRUE /* Last ; is where macro is used */
-
-BOOL
-evalBinop (Operator op, Value * lvalue, const Value * rvalue)
+      if (lvalue->Tag == ValueFloat && rvalue->Tag == ValueFloat) \
+        lvalue->Data.Bool.b = lvalue->Data.Float.f OP rvalue->Data.Float.f; \
+      else if (lvalue->Tag == ValueString && rvalue->Tag == ValueString) \
+        lvalue->Data.Bool.b = ememcmp (lvalue, rvalue) OP 0; \
+      else if (lvalue->Tag == ValueInt && rvalue->Tag == ValueInt) \
+        { \
+	  /* Comparing integers happens *unsigned* ! */ \
+          lvalue->Data.Bool.b = (uint32_t)lvalue->Data.Int.i OP (uint32_t)rvalue->Data.Int.i; \
+        } \
+      else if (lvalue->Tag == ValueAddr && rvalue->Tag == ValueAddr) \
+        { \
+	  /* First compare on base register, then its index.  */ \
+	  if (lvalue->Data.Addr.r != rvalue->Data.Addr.r) \
+	    lvalue->Data.Bool.b = lvalue->Data.Addr.r OP rvalue->Data.Addr.r; \
+	  else \
+	    lvalue->Data.Bool.b = lvalue->Data.Addr.i OP rvalue->Data.Addr.i; \
+        } \
+      else \
+        { \
+	  error (ErrorError, "Bad operand types for " STRINGIFY(OP)); \
+          return false; \
+        } \
+      lvalue->Tag = ValueBool; \
+    } while (0)
+		   
+bool
+evalBinop (Operator op, Value *lvalue, const Value *rvalue)
 {
   switch (op)
     {
-    case Op_mul:
-      if ((lvalue->Tag.t == ValueAddr && rvalue->Tag.t == ValueInt)
-	  || (lvalue->Tag.t == ValueInt && rvalue->Tag.t == ValueAddr))
+    case Op_mul: /* * */
+      /* FIXME: ValueAddr * ValueAddr does not make sense.  */
+      /* FIXME: <int> * <float> -> <float> */
+      if ((lvalue->Tag == ValueAddr && rvalue->Tag == ValueInt)
+	  || (lvalue->Tag == ValueInt && rvalue->Tag == ValueAddr))
+	lvalue->Data.Int.i *= rvalue->Data.Int.i;
+      else if (lvalue->Tag == rvalue->Tag
+	       && lvalue->Tag == ValueInt)
+	lvalue->Data.Int.i *= rvalue->Data.Int.i;
+      else if (lvalue->Tag == rvalue->Tag
+	       && lvalue->Tag == ValueFloat)
+	lvalue->Data.Float.f *= rvalue->Data.Float.f;
+      else
 	{
-	  lvalue->ValueInt.i *= rvalue->ValueInt.i;
-	  return TRUE;
+	  error (ErrorError, "Bad operand type for multiplication");
+	  return false;
 	}
-      if (lvalue->Tag.t != rvalue->Tag.t)
-	return FALSE;
-      switch (lvalue->Tag.t)
-	{
-	case ValueInt:
-	  lvalue->ValueInt.i *= rvalue->ValueInt.i;
-	  return TRUE;
-	case ValueFloat:
-	  lvalue->ValueFloat.f *= rvalue->ValueFloat.f;
-	  return TRUE;
-	default:
-	  abort ();
-	  break;
-	}
-      return FALSE;
-    case Op_div:
-      if (lvalue->Tag.t != rvalue->Tag.t)
-	return FALSE;
-      switch (lvalue->Tag.t)
-	{
-	case ValueInt:
-	  lvalue->ValueInt.i /= rvalue->ValueInt.i;
-	  return TRUE;
-	case ValueFloat:
-	  lvalue->ValueFloat.f /= rvalue->ValueFloat.f;
-	  return TRUE;
-	default:
-	  abort ();
-	  break;
-	}
-      return FALSE;
-    case Op_mod:
-      if (lvalue->Tag.t != ValueInt || rvalue->Tag.t != ValueInt)
-	return FALSE;
-      lvalue->ValueInt.i %= rvalue->ValueInt.i;
-      return TRUE;
-    case Op_add:
-      if (lvalue->Tag.t == ValueFloat && rvalue->Tag.t == ValueFloat)
-	{
-	  lvalue->ValueFloat.f += rvalue->ValueFloat.f;
-	  return TRUE;
-	}
-      if (lvalue->Tag.t == ValueAddr && rvalue->Tag.t == ValueInt)
-	{
-	  lvalue->ValueAddr.i += rvalue->ValueInt.i;
-	  return TRUE;
-	}
-      if ((lvalue->Tag.t & (ValueInt | ValueLateLabel)) &&
-	  (rvalue->Tag.t & (ValueInt | ValueLateLabel)))
-	{
-	  help_evalAddLate (lvalue, rvalue);
-	  /* Might not be a ValueInt, but ValueLate* has i at the same place */
-	  lvalue->ValueInt.i += rvalue->ValueInt.i;
-	  return TRUE;
-	}
-      /* FALL THROUGH */
-    case Op_concat:		/* fall thru from Op_add */
-      if (lvalue->Tag.t == ValueString && rvalue->Tag.t == ValueString)
-	{
-	  char *c;
-	  if ((c = malloc (lvalue->ValueString.len + rvalue->ValueString.len)) == NULL)
-	    errorOutOfMem();
-	  memcpy (c, lvalue->ValueString.s, lvalue->ValueString.len);
-	  memcpy (c + lvalue->ValueString.len,
-		  rvalue->ValueString.s, rvalue->ValueString.len);
-	  lvalue->ValueString.s = c;	/* string concatenation */
-	  lvalue->ValueString.len += rvalue->ValueString.len;
-	  return TRUE;
-	}
-      return FALSE;
-    case Op_sub:
-      if (lvalue->Tag.t == ValueFloat && rvalue->Tag.t == ValueFloat)
-	{
-	  lvalue->ValueFloat.f -= rvalue->ValueFloat.f;
-	  return TRUE;
-	}
-      if (lvalue->Tag.t == ValueAddr && (rvalue->Tag.t & (ValueInt | ValueAddr)))
-	{
-	  if (rvalue->Tag.t == ValueAddr &&
-	      lvalue->ValueAddr.r != rvalue->ValueAddr.r)
-	    return FALSE;
-	  lvalue->ValueAddr.i -= rvalue->ValueInt.i;
-	  if (rvalue->Tag.t == ValueAddr)
-	    lvalue->Tag.t = ValueInt;
-	  return TRUE;
-	}
-      if (!(lvalue->Tag.t & (ValueInt | ValueLateLabel))
-	  || !(rvalue->Tag.t & (ValueInt | ValueLateLabel)))
-	return FALSE;
+      break;
 
-      help_evalSubLate (lvalue, rvalue);
-      /* Might not be a ValueInt, but ValueLate* has i at the same place */
-      lvalue->ValueInt.i -= rvalue->ValueInt.i;
-      return TRUE;
-    case Op_and:
-      if ((lvalue->Tag.t == ValueAddr && rvalue->Tag.t == ValueInt)
-	  || (lvalue->Tag.t == ValueInt && rvalue->Tag.t == ValueAddr)
-	  || (lvalue->Tag.t == ValueInt && rvalue->Tag.t == ValueInt))
+    case Op_div: /* / */
+      if (lvalue->Tag == rvalue->Tag && lvalue->Tag == ValueInt)
 	{
-	  lvalue->ValueInt.i &= rvalue->ValueInt.i;
-	  return TRUE;
+	  if (rvalue->Data.Int.i == 0)
+	    {
+	      error (ErrorError, "Division by zero");
+	      return false;
+	    }
+	  /* Division is *unsigned*.  */
+	  lvalue->Data.Int.i = (unsigned)lvalue->Data.Int.i / (unsigned)rvalue->Data.Int.i;
 	}
-      return FALSE;
-    case Op_or:
-      if (lvalue->Tag.t != ValueInt || rvalue->Tag.t != ValueInt)
-	return FALSE;
-      lvalue->ValueInt.i |= rvalue->ValueInt.i;
-      return TRUE;
-    case Op_xor:
-      if (lvalue->Tag.t != ValueInt || rvalue->Tag.t != ValueInt)
-	return FALSE;
-      lvalue->ValueInt.i ^= rvalue->ValueInt.i;
-      return TRUE;
-    case Op_asr:
-      if (lvalue->Tag.t != ValueInt || rvalue->Tag.t != ValueInt)
-	return FALSE;
-      lvalue->ValueInt.i = ((signed int) lvalue->ValueInt.i) >> rvalue->ValueInt.i;
-      return TRUE;
-    case Op_sr:
-      if (lvalue->Tag.t != ValueInt || rvalue->Tag.t != ValueInt)
-	return FALSE;
-      lvalue->ValueInt.i = ((WORD) lvalue->ValueInt.i) >> rvalue->ValueInt.i;
-      return TRUE;
-    case Op_sl:
-      if (lvalue->Tag.t != ValueInt || rvalue->Tag.t != ValueInt)
-	return FALSE;
-      lvalue->ValueInt.i <<= rvalue->ValueInt.i;
-      return TRUE;
-    case Op_ror:
-      if (lvalue->Tag.t != ValueInt || rvalue->Tag.t != ValueInt)
-	return FALSE;
-      lvalue->ValueInt.i = (((WORD) lvalue->ValueInt.i) >> rvalue->ValueInt.i) |
-	((lvalue->ValueInt.i) << (32 - rvalue->ValueInt.i));
-    case Op_rol:
-      if (lvalue->Tag.t != ValueInt || rvalue->Tag.t != ValueInt)
-	return FALSE;
-      lvalue->ValueInt.i = ((lvalue->ValueInt.i) << rvalue->ValueInt.i) |
-	(((WORD) lvalue->ValueInt.i) >> (32 - rvalue->ValueInt.i));
-      return TRUE;
-    case Op_le:
+      else if (lvalue->Tag == rvalue->Tag && lvalue->Tag == ValueFloat)
+	{
+	  if (rvalue->Data.Float.f == 0.)
+	    {
+	      error (ErrorError, "Division by zero");
+	      return false;
+	    }
+	  lvalue->Data.Float.f /= rvalue->Data.Float.f;
+	}
+      else
+	{
+	  error (ErrorError, "Bad operand type for division");
+	  return false;
+	}
+      break;
+
+    case Op_mod: /* :MOD: */
+      if (lvalue->Tag == ValueInt && rvalue->Tag == ValueInt)
+	{
+	  if (rvalue->Data.Int.i == 0)
+	    {
+	      error (ErrorError, "Division by zero");
+	      return false;
+	    }
+	  /* Modulo is *unsigned*.  */
+	  lvalue->Data.Int.i = (unsigned)lvalue->Data.Int.i % (unsigned)rvalue->Data.Int.i;
+	}
+      else
+	{
+	  error (ErrorError, "Bad operand type for modulo");
+	  return false;
+	}
+      break;
+
+    case Op_add: /* + */
+	{
+	  Value rhs;
+	  /* Promotion for ValueFloat and ValueAddr.  */
+	  if ((rvalue->Tag == ValueFloat && lvalue->Tag != ValueFloat)
+	      || (rvalue->Tag == ValueAddr && lvalue->Tag != ValueAddr))
+	    {
+	      rhs = *lvalue;
+	      *lvalue = *rvalue;
+	    }
+	  else
+	    rhs = *rvalue;
+
+	  if (lvalue->Tag == ValueFloat && rhs.Tag == ValueFloat)
+	    lvalue->Data.Float.f += rhs.Data.Float.f; /* <float> + <float> -> <float> */
+	  else if (lvalue->Tag == ValueFloat && rhs.Tag == ValueInt)
+	    lvalue->Data.Float.f += rhs.Data.Int.i; /* <float> + <signed int> -> <float> */
+	  else if (lvalue->Tag == ValueAddr && rhs.Tag == ValueAddr)
+	    {
+	      if (lvalue->Data.Addr.r != rhs.Data.Addr.r)
+		{
+		  error (ErrorError, "Base registers are different in addition ([r%d, #x] + [r%d, #y])",
+		         lvalue->Data.Addr.r, rvalue->Data.Addr.r);
+		  return false;
+		}
+	      /* <addr> + <addr> (same base reg) -> <addr> */
+	      /* FIXME: this is not consistent with Op_sub.  */
+	      lvalue->Data.Addr.i += rhs.Data.Addr.i;
+	    }
+	  else if (lvalue->Tag == ValueAddr && rhs.Tag == ValueInt)
+	    lvalue->Data.Addr.i += rhs.Data.Int.i; /* <addr> + <int> -> <addr> */
+	  else if (lvalue->Tag == ValueInt && rhs.Tag == ValueInt)
+	    lvalue->Data.Int.i += rhs.Data.Int.i; /* <int> + <int> -> <int> */
+	  else
+	    {
+	      error (ErrorError, "Bad operand type for addition");
+	      return false;
+	    }
+	}
+      break;
+
+    case Op_sub: /* - */
+      if (lvalue->Tag == ValueFloat && rvalue->Tag == ValueFloat)
+	lvalue->Data.Float.f -= rvalue->Data.Float.f; /* <float> - <float> -> <float> */
+      else if (lvalue->Tag == ValueFloat && rvalue->Tag == ValueInt)
+	lvalue->Data.Float.f -= rvalue->Data.Int.i; /* <float> - <signed int> -> <float> */
+      else if (lvalue->Tag == ValueInt && rvalue->Tag == ValueFloat)
+	{ /* <signed int> - <float> -> <float> */
+	  int val = lvalue->Data.Int.i;
+	  lvalue->Data.Float.f = val - rvalue->Data.Float.f;
+	  lvalue->Tag = ValueFloat;
+	}
+      else if (lvalue->Tag == ValueInt && rvalue->Tag == ValueInt)
+	lvalue->Data.Int.i -= rvalue->Data.Int.i; /* <int> - <int> -> <int> */
+      else if (lvalue->Tag == ValueAddr && rvalue->Tag == ValueAddr)
+	{ /* <addr> - <addr> -> <int> */
+	  if (lvalue->Data.Addr.r != rvalue->Data.Addr.r)
+	    {
+	      error (ErrorError, "Base registers are different in subtraction ([r%d, #x] - [r%d, #y])",
+	             lvalue->Data.Addr.r, rvalue->Data.Addr.r);
+	      return false;
+	    }
+	  /* ValueAddr.i is at the same place as ValueInt.i.  */
+	  lvalue->Data.Int.i -= rvalue->Data.Addr.i;
+	  lvalue->Tag = ValueInt;
+	}
+      else if (lvalue->Tag == ValueAddr && rvalue->Tag == ValueInt)
+	lvalue->Data.Addr.i -= rvalue->Data.Int.i; /* <addr> - <int> -> <addr> */
+      else if (lvalue->Tag == ValueInt && rvalue->Tag == ValueAddr)
+	{ /* <int> - <addr> -> <addr> */
+	  int val = lvalue->Data.Int.i;
+	  lvalue->Tag = ValueAddr;
+	  lvalue->Data.Addr.i = val - rvalue->Data.Addr.i;
+	  lvalue->Data.Addr.r = rvalue->Data.Addr.r;
+	}
+      else
+	{
+	  error (ErrorError, "Bad operand type for subtraction");
+	  return false;
+	}
+      break;
+
+    case Op_concat: /* :CC: */
+      {
+        if (lvalue->Tag != ValueString || rvalue->Tag != ValueString)
+	  {
+	    error (ErrorError, "Bad operand type for :CC:");
+	    return false;
+	  }
+	char *c;
+	if ((c = malloc (lvalue->Data.String.len + rvalue->Data.String.len)) == NULL)
+	  errorOutOfMem();
+	memcpy (c, lvalue->Data.String.s, lvalue->Data.String.len);
+	memcpy (c + lvalue->Data.String.len,
+		rvalue->Data.String.s, rvalue->Data.String.len);
+	lvalue->Data.String.s = c;
+	lvalue->Data.String.len += rvalue->Data.String.len;
+      }
+      break;
+
+    case Op_and: /* :AND: & */
+      if ((lvalue->Tag == ValueAddr && rvalue->Tag == ValueInt)
+	  || (lvalue->Tag == ValueInt && rvalue->Tag == ValueAddr)
+	  || (lvalue->Tag == ValueInt && rvalue->Tag == ValueInt))
+	{
+	  /* ValueInt.i and ValueAddr.i are at the same place.  */
+	  lvalue->Data.Int.i &= rvalue->Data.Int.i;
+	  lvalue->Tag = ValueInt;
+	}
+      else
+	{
+	  error (ErrorError, "Bad operand type for :AND:");
+	  return false;
+	}
+      break;
+
+    case Op_or: /* :OR: | */
+      if (lvalue->Tag != ValueInt || rvalue->Tag != ValueInt)
+	{
+	  error (ErrorError, "Bad operand type for :OR:");
+	  return false;
+	}
+      lvalue->Data.Int.i |= rvalue->Data.Int.i;
+      break;
+
+    case Op_xor: /* :EOR: ^ */
+      if (lvalue->Tag != ValueInt || rvalue->Tag != ValueInt)
+	{
+	  error (ErrorError, "Bad operand type for :EOR:");
+	  return false;
+	}
+      lvalue->Data.Int.i ^= rvalue->Data.Int.i;
+      break;
+
+    case Op_asr: /* >>> */
+      {
+        if (lvalue->Tag != ValueInt || rvalue->Tag != ValueInt)
+	  {
+	    error (ErrorError, "Bad operand type for >>>");
+	    return false;
+	  }
+        unsigned numbits = (unsigned)rvalue->Data.Int.i >= 32 ? 1 : 32 - (unsigned)rvalue->Data.Int.i;
+        unsigned mask = 1U << (numbits - 1);
+        ARMWord nosign = ((ARMWord) lvalue->Data.Int.i) >> (32 - numbits);
+        lvalue->Data.Int.i = (nosign ^ mask) - mask;
+      }
+      break;
+
+    case Op_sr: /* >> :SHR: */
+      if (lvalue->Tag != ValueInt || rvalue->Tag != ValueInt)
+	{
+	  error (ErrorError, "Bad operand type for >> or :SHR:");
+	  return false;
+	}
+      lvalue->Data.Int.i = (unsigned)rvalue->Data.Int.i >= 32 ? 0 : ((ARMWord) lvalue->Data.Int.i) >> rvalue->Data.Int.i;
+      break;
+
+    case Op_sl: /* << :SHL: */
+      if (lvalue->Tag != ValueInt || rvalue->Tag != ValueInt)
+	{
+	  error (ErrorError, "Bad operand type for << or :SHR:");
+	  return false;
+	}
+      lvalue->Data.Int.i = (unsigned)rvalue->Data.Int.i >= 32 ? 0 : ((ARMWord) lvalue->Data.Int.i) << rvalue->Data.Int.i;
+      break;
+
+    case Op_ror: /* :ROR: */
+      {
+        if (lvalue->Tag != ValueInt || rvalue->Tag != ValueInt)
+	  {
+	    error (ErrorError, "Bad operand type for :ROR:");
+	    return false;
+	  }
+	unsigned numbits = rvalue->Data.Int.i & 31;
+        lvalue->Data.Int.i = (((ARMWord) lvalue->Data.Int.i) >> numbits)
+			       | (lvalue->Data.Int.i << (32 - numbits));
+      }
+      break;
+
+    case Op_rol: /* :ROL: */
+      {
+        if (lvalue->Tag != ValueInt || rvalue->Tag != ValueInt)
+	  {
+	    error (ErrorError, "Bad operand type for :ROL:");
+	    return false;
+	  }
+	unsigned numbits = rvalue->Data.Int.i & 31;
+        lvalue->Data.Int.i = (lvalue->Data.Int.i << numbits)
+				| (((ARMWord) lvalue->Data.Int.i) >> (32 - numbits));
+      }
+      break;
+
+    case Op_le: /* <= */
       COMPARE (<=);
-    case Op_ge:
+      break;
+
+    case Op_ge: /* >= */
       COMPARE (>=);
-    case Op_lt:
+      break;
+
+    case Op_lt: /* < */
       COMPARE (<);
-    case Op_gt:
+      break;
+
+    case Op_gt: /* > */
       COMPARE (>);
-    case Op_eq:
-      if (lvalue->Tag.t == ValueBool && rvalue->Tag.t == ValueBool)
+      break;
+
+    case Op_eq: /* = == */
+      if (lvalue->Tag == ValueBool && rvalue->Tag == ValueBool)
+	lvalue->Data.Bool.b = lvalue->Data.Bool.b == rvalue->Data.Bool.b;
+      else
+        COMPARE (==);
+      break;
+
+    case Op_ne: /* <> /= != :LEOR: */
+      if (lvalue->Tag == ValueBool && rvalue->Tag == ValueBool)
+	lvalue->Data.Bool.b = lvalue->Data.Bool.b != rvalue->Data.Bool.b;
+      else
+        COMPARE (!=);
+      break;
+
+    case Op_land: /* :LAND: && */
+      if (lvalue->Tag != ValueBool || rvalue->Tag != ValueBool)
 	{
-	  lvalue->ValueBool.b =
-	    lvalue->ValueBool.b == rvalue->ValueBool.b;
-	  return TRUE;
+	  error (ErrorError, "Bad operand type for :LAND:");
+	  return false;
 	}
-      COMPARE (==);
-    case Op_ne:
-      if (lvalue->Tag.t == ValueBool && rvalue->Tag.t == ValueBool)
+      lvalue->Data.Bool.b = lvalue->Data.Bool.b && rvalue->Data.Bool.b;
+      break;
+
+    case Op_lor: /* :LOR: || */
+      if (lvalue->Tag != ValueBool || rvalue->Tag != ValueBool)
 	{
-	  lvalue->ValueBool.b =
-	    lvalue->ValueBool.b != rvalue->ValueBool.b;
-	  return TRUE;
+	  error (ErrorError, "Bad operand type for :LOR:");
+	  return false;
 	}
-      COMPARE (!=);
-    case Op_land:
-      if (lvalue->Tag.t != ValueBool || rvalue->Tag.t != ValueBool)
-	return FALSE;
-      lvalue->ValueBool.b = lvalue->ValueBool.b && rvalue->ValueBool.b;
-      return TRUE;
-    case Op_lor:
-      if (lvalue->Tag.t != ValueBool || rvalue->Tag.t != ValueBool)
-	return FALSE;
-      lvalue->ValueBool.b = lvalue->ValueBool.b || rvalue->ValueBool.b;
-      return TRUE;
-    case Op_left:
-      if (lvalue->Tag.t != ValueString || rvalue->Tag.t != ValueInt
-	  || rvalue->ValueInt.i < 0)
-	return FALSE;
-      if (lvalue->ValueString.len > rvalue->ValueInt.i)
-	lvalue->ValueString.len = rvalue->ValueInt.i;
-      return TRUE;
-    case Op_right:
-      if (lvalue->Tag.t != ValueString || rvalue->Tag.t != ValueInt
-	  || rvalue->ValueInt.i < 0)
-	return FALSE;
-      if (lvalue->ValueString.len > rvalue->ValueInt.i)
+      lvalue->Data.Bool.b = lvalue->Data.Bool.b || rvalue->Data.Bool.b;
+      break;
+
+    case Op_left: /* :LEFT: */
+      if (lvalue->Tag != ValueString || rvalue->Tag != ValueInt)
 	{
-	  lvalue->ValueString.s += lvalue->ValueString.len - rvalue->ValueInt.i;
-	  lvalue->ValueString.len = rvalue->ValueInt.i;
+	  error (ErrorError, "Bad operand type for :LEFT:");
+	  return false;
 	}
-      return TRUE;
+      if (rvalue->Data.Int.i < 0 || (size_t)rvalue->Data.Int.i > lvalue->Data.String.len)
+	{
+	  error (ErrorError, "Wrong number of characters (%d) specified for :LEFT:",
+	         rvalue->Data.Int.i);
+	  return false;
+	}
+      lvalue->Data.String.len = rvalue->Data.Int.i;
+      break;
+
+    case Op_right: /* :RIGHT: */
+      {
+        if (lvalue->Tag != ValueString || rvalue->Tag != ValueInt)
+	  {
+	    error (ErrorError, "Bad operand type for :RIGHT:");
+	    return false;
+	  }
+        if (rvalue->Data.Int.i < 0 || (size_t)rvalue->Data.Int.i > lvalue->Data.String.len)
+	  {
+	    error (ErrorError, "Wrong number of characters (%d) specified for :RIGHT:",
+	           rvalue->Data.Int.i);
+	    return false;
+	  }
+	char *c;
+	if ((c = malloc (rvalue->Data.Int.i)) == NULL)
+	  errorOutOfMem ();
+	memcpy (c,
+	        lvalue->Data.String.s + lvalue->Data.String.len - rvalue->Data.Int.i,
+	        rvalue->Data.Int.i);
+        lvalue->Data.String.s = c;
+        lvalue->Data.String.len = rvalue->Data.Int.i;
+      }
+      break;
+
     default:
       error (ErrorError, "Illegal binary operator");
-      break;
+      return false;
     }
-  error (ErrorError, "Internal evalBinop: illegal fall through");
-  return FALSE;
+
+  return true;
 }
 
-BOOL
+/**
+ * Negates given value.
+ */
+static bool
+Eval_NegValue (Value *value)
+{
+  switch (value->Tag)
+    {
+      case ValueInt:
+	value->Data.Int.i = -value->Data.Int.i;
+	break;
+      case ValueFloat:
+	value->Data.Float.f = -value->Data.Float.f;
+	break;
+      case ValueAddr:
+	value->Data.Addr.i = -value->Data.Addr.i;
+	break;
+      case ValueSymbol:
+	value->Data.Symbol.factor = - value->Data.Symbol.factor;
+	break;
+      case ValueCode:
+	for (size_t i = 0; i != value->Data.Code.len; ++i)
+	  {
+	    /* Negate only the values (not operations).  */
+	    if (value->Data.Code.c[i].Tag == CodeValue)
+	     {
+	        if (!Eval_NegValue (&value->Data.Code.c[i].Data.value))
+		  return false;
+	      }
+	  }
+	break;
+      default:
+	return false;
+    }
+  return true;
+}
+
+bool
 evalUnop (Operator op, Value *value)
 {
   switch (op)
     {
       case Op_fattr:
-	if (value->Tag.t != ValueString)
-	  return FALSE;
+	if (value->Tag != ValueString)
+	  return false;
 	error (ErrorError, "%s not implemented", "fattr");
 	break;
       case Op_fexec:
-	if (value->Tag.t != ValueString)
-	  return FALSE;
+	if (value->Tag != ValueString)
+	  return false;
 	/* TODO: Real exec address. For now, just fill with zeros */
-	value->ValueInt.i = 0;
-	value->Tag.t = ValueInt;
+	value->Data.Int.i = 0;
+	value->Tag = ValueInt;
 	break;
       case Op_fload:
-	if (value->Tag.t != ValueString)
-	  return FALSE;
+	if (value->Tag != ValueString)
+	  return false;
 	/* TODO: Real load address. For now, type everything as text */
-	value->ValueInt.i = 0xFFFfff00;
-	value->Tag.t = ValueInt;
+	value->Data.Int.i = 0xFFFfff00;
+	value->Tag = ValueInt;
 	break;
       case Op_fsize:
 	{
-	  if (value->Tag.t != ValueString)
-	    return FALSE;
+	  if (value->Tag != ValueString)
+	    return false;
 	  char *s;
-	  if ((s = strndup(value->ValueString.s, value->ValueString.len)) == NULL)
+	  if ((s = strndup (value->Data.String.s, value->Data.String.len)) == NULL)
 	    errorOutOfMem();
 	  FILE *fp;
 	  if ((fp = getInclude (s, NULL)) == NULL)
 	    {
 	      error (ErrorError, "Cannot open file \"%s\"", s ? s : "");
 	      free (s);
-	      return FALSE;
+	      return false;
 	    }
 	  if (fseek (fp, 0l, SEEK_END))
 	    {
 	      error (ErrorError, "Cannot seek to end of file \"%s\"", s ? s : "");
 	      free (s);
-	      return FALSE;
+	      return false;
 	    }
-	  value->ValueInt.i = (int) ftell (fp);
-	  if (value->ValueInt.i == -1)
+	  value->Data.Int.i = (int) ftell (fp);
+	  if (value->Data.Int.i == -1)
 	    {
 	      error (ErrorError, "Cannot find size of file \"%s\"", s ? s : "");
 	      free (s);
-	      return FALSE;
+	      return false;
 	    }
 	  fclose (fp);
 	  free (s);
-	  value->Tag.t = ValueInt;
+	  value->Tag = ValueInt;
 	}
 	break;
-      case Op_lnot:
-	if (value->Tag.t != ValueBool)
-	  return FALSE;
-	value->ValueBool.b = !value->ValueBool.b;
-	break;
-      case Op_not:
-	if (value->Tag.t != ValueInt)
-	  return FALSE;
-	value->ValueInt.i = ~value->ValueInt.i;
-	break;
-      case Op_neg:
-	if (value->Tag.t == ValueFloat)
-	  value->ValueFloat.f = -value->ValueFloat.f;
-	else
+
+      case Op_lnot: /* :LNOT: ! */
+	if (value->Tag != ValueBool)
 	  {
-	    if (!(value->Tag.t & (ValueInt | ValueLateLabel)))
-	      return FALSE;
-	    help_evalNegLate (value);
-	    value->ValueInt.i = -value->ValueInt.i;
+	    error (ErrorError, "Bad operand type for :LNOT:");
+	    return false;
+	  }
+	value->Data.Bool.b = !value->Data.Bool.b;
+	break;
+
+      case Op_not: /* :NOT: ~ */
+	if (value->Tag != ValueInt)
+	  {
+	    error (ErrorError, "Bad operand type for :NOT:");
+	    return false;
+	  }
+	value->Data.Int.i = ~value->Data.Int.i;
+	break;
+
+      case Op_neg: /* - */
+	if (!Eval_NegValue (value))
+	  {
+	    error (ErrorError, "Bad operand type for negation");
+	    return false;
 	  }
 	break;
-      case Op_index:
-	if (value->Tag.t != ValueAddr && value->Tag.t != ValueInt)
-	  return FALSE;
-	value->Tag.t = ValueInt;
+
+      case Op_base: /* :BASE: */
+	if (value->Tag != ValueAddr)
+	  {
+	    error (ErrorError, "Bad operand type for :BASE:");
+	    return false;
+	  }
+	value->Tag = ValueInt;
+	value->Data.Int.i = value->Data.Addr.r;
 	break;
-      case Op_len:
-	if (value->Tag.t != ValueString)
-	  return FALSE;
-	value->Tag.t = ValueInt;
+	
+      case Op_index: /* :INDEX: */
+	if (value->Tag != ValueAddr && value->Tag != ValueInt)
+	  {
+	    error (ErrorError, "Bad operand type for :INDEX:");
+	    return false;
+	  }
+	value->Tag = ValueInt; /* ValueAddr.i at same place as ValueInt.i.  */
 	break;
-      case Op_str:
+
+      case Op_len: /* :LEN: */
+	if (value->Tag != ValueString)
+	  {
+	    error (ErrorError, "Bad operand type for :LEN:");
+	    return false;
+	  }
+	value->Tag = ValueInt; /* ValueString.len at same place as ValueInt.i.  */
+	break;
+
+      case Op_str: /* :STR: */
+	if (value->Tag == ValueBool)
+	  {
+	    char *c;
+	    if ((c = malloc (1)) == NULL)
+	      errorOutOfMem ();
+	    *c = value->Data.Bool.b ? 'T' : 'F';
+	    value->Tag = ValueString;
+            value->Data.String.s = c;
+	    value->Data.String.len = 1;
+	  }
+	else
+	  {
+	    char num[32];
+	    switch (value->Tag)
+	      {
+	        case ValueInt:
+		  sprintf (num, "%.8X", value->Data.Int.i);
+		  break;
+	        case ValueFloat:
+		  sprintf (num, "%f", value->Data.Float.f);
+		  break;
+	        default:
+	          error (ErrorError, "Bad operand type for :STR:");
+		  return false;
+	      }
+	    size_t len = strlen (num);
+	    char *c;
+	    if ((c = malloc (len)) == NULL)
+	      errorOutOfMem();
+	    memcpy (c, num, len);
+	    value->Tag = ValueString;
+	    value->Data.String.s = c;
+	    value->Data.String.len = len;
+	  }
+	break;
+
+      case Op_chr: /* :CHR: */
 	{
-	  char num[32];
-	  switch (value->Tag.t)
+	  if (value->Tag != ValueInt)
 	    {
-	      case ValueInt:
-		sprintf (num, "%i", value->ValueInt.i);
-		break;
-	      case ValueFloat:
-		sprintf (num, "%f", value->ValueFloat.f);
-		break;
-	      default:
-		return FALSE;
+	      error (ErrorError, "Bad operand type for :CHR:");
+	      return false;
 	    }
-	  if ((value->ValueString.s = strdup (num)) == NULL)
-	    errorOutOfMem();
-	  value->ValueString.len = strlen (num);
-	  value->Tag.t = ValueString;
-	}
-	break;
-      case Op_chr:
-	{
-	  char num[2];
-	  if (value->Tag.t != ValueInt)
-	    return FALSE;
-	  if ((num[0] = value->ValueInt.i) == 0)
-	    error (ErrorWarning, ":CHR:0 is a problem...");
-	  num[1] = 0;
-	  if ((value->ValueString.s = strdup (num)) == NULL)
+	  if ((value->Data.Int.i < 0 || value->Data.Int.i >= 256) && option_pedantic)
+	    error (ErrorWarning, "Value %d will be truncated for :CHR: use",
+	           value->Data.Int.i);
+	  char *c;
+	  if ((c = malloc (1)) == NULL)
 	    errorOutOfMem ();
-	  value->ValueString.len = 1;
-	  value->Tag.t = ValueString;
+	  *c = value->Data.Int.i;
+	  value->Data.String.s = c;
+	  value->Data.String.len = 1;
+	  value->Tag = ValueString;
 	}
 	break;
+
+      case Op_size: /* ?<label> */
+	{
+	  if (value->Tag != ValueSymbol)
+	    {
+	      error (ErrorError, "Bad operand type for ? operator");
+	      return false;
+	    }
+	  if (value->Data.Symbol.symbol->type & SYMBOL_DEFINED)
+	    {
+	      value->Tag = ValueInt;
+	      value->Data.Int.i = value->Data.Symbol.symbol->codeSize;
+	    }
+	  else
+	    {
+	      error (ErrorError, "? is not supported for non defined labels");
+	      return false;
+	    }
+	}
+	break;
+
       default:
 	errorAbort ("Internal evalUnop: illegal fall through");
-	break;
+	return false;
     }
-  return TRUE;
+
+  return true;
 }

@@ -22,18 +22,17 @@
 
 #include "config.h"
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
-#include "area.h"
 #include "error.h"
 #include "expr.h"
 #include "get.h"
 #include "help_cop.h"
 #include "input.h"
-#include "mnemonics.h"
+#include "m_copmem.h"
 #include "option.h"
 #include "put.h"
 #include "reloc.h"
@@ -42,46 +41,80 @@
 
 
 static void
-dstmem (WORD ir)
+dstmem (ARMWord ir)
 {
   ir |= CP_NUMBER (getCopNum ());
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%scoprocessor number", InsertCommaAfter);
   ir |= CPDST_OP (getCopReg ());
-  ir = help_copAddr (ir, FALSE);
+  ir = help_copAddr (ir, false);
   putIns (ir);
 }
 
-void
-m_ldc (WORD cc)
+/**
+ * Implements LDC.
+ * LDC{<cond>}{L} <coproc>, <CRd>, <addressing mode 5>
+ */
+bool
+m_ldc (void)
 {
+  ARMWord cc = optionCondL ();
+  if (cc == optionError)
+    return true;
   dstmem (cc | 0x0c100000);
+  return false;
 }
 
-void
-m_ldc2 (WORD cc)
+/**
+ * Implements LDC2.
+ * LDC2{L} <coproc>, <CRd>, <addressing mode 5>
+ */
+bool
+m_ldc2 (void)
 {
+  ARMWord cc = optionCondL ();
+  if (cc == optionError)
+    return true;
+
+  /* FIXME: add arch v5 check. */
+  
   if ((cc & NV) != AL)
     error (ErrorError, "LDC2 cannot be conditional");
-  dstmem (cc | 0x0c100000 | NV);
+  else
+    dstmem (cc | 0x0c100000 | NV);
+  return false;
 }
 
-void
-m_stc (WORD cc)
+/**
+ * Implements STC.
+ * STC{<cond>}{L} <coproc>, <CRd>, <addressing mode 5>
+ */
+bool
+m_stc (void)
 {
+  ARMWord cc = optionCondL ();
+  if (cc == optionError)
+    return true;
   dstmem (cc | 0x0c000000);
+  return false;
 }
 
-void
-m_stc2 (WORD cc)
+/**
+ * Implements STC2.
+ * STC2{L} <coproc>, <CRd>, <addressing mode 5>
+ */
+bool
+m_stc2 (void)
 {
+  ARMWord cc = optionCondL ();
+  if (cc == optionError)
+    return true;
+
+  /* FIXME: add arch v5 check. */
+  
   if ((cc & NV) != AL)
     error (ErrorError, "STC2 cannot be conditional");
   dstmem (cc | 0x0c000000 | NV);
+  return false;
 }

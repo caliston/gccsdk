@@ -21,13 +21,15 @@
  */
 
 #include "config.h"
+
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "area.h"
@@ -39,7 +41,9 @@
 #include "global.h"
 #include "help_cpu.h"
 #include "input.h"
-#include "mnemonics.h"
+#include "main.h"
+#include "m_cpu.h"
+#include "m_cpuctrl.h"
 #include "option.h"
 #include "os.h"
 #include "put.h"
@@ -48,143 +52,202 @@
 
 /** CONTROL **/
 
-void
-m_branch (WORD cc)
+static bool
+Branch_RelocUpdater (const char *file, int lineno, ARMWord offset,
+		     const Value *valueP, void *privData, bool final)
 {
-  Value im;
-  WORD ir = cc | 0x0A000000;
-  switch (inputLook ())
+  bool isBLX = *(bool *)privData;
+  ARMWord ir = GetWord (offset);
+  assert (valueP->Tag == ValueCode && valueP->Data.Code.len != 0);
+
+  int extraOffset = 0;
+  if (final)
     {
-    case '#':
-      inputSkip ();
-    case '"':
-      exprBuild ();
-      break;
-    default:
-      exprBuild ();
-      codePosition (areaCurrentSymbol);	/* It's relative */
-      codeOperator (Op_sub);
-      codeInt (8);
-      codeOperator (Op_sub);
-      break;
+      bool unresolvedSym = false, areaSym = false;
+      for (size_t i = 0; i != valueP->Data.Code.len; ++i)
+	{
+	  const Code *codeP = &valueP->Data.Code.c[i];
+	  if (codeP->Tag != CodeValue)
+	    continue;
+	  const Value *valP = &codeP->Data.value;
+
+	  if (valP->Tag == ValueSymbol)
+	    {
+	      if (valP->Data.Symbol.symbol == areaCurrentSymbol)
+		{
+		  if (valP->Data.Symbol.factor != -1)
+		    return true; /* No way we can encode this.  */
+		  areaSym =  true;
+		}
+	      else
+		unresolvedSym = true;
+	    }
+	}
+      if (unresolvedSym != areaSym)
+	return true; /* No way we can encode this.  */
+      /* The R_ARM_PC24 ELF reloc needs to happen for a "B + PC - 8"
+         instruction, while in AOF this needs to happen for a "B 0".  */
+      if (!option_aof && unresolvedSym)
+	extraOffset = offset;
     }
-  im = exprEval (ValueInt | ValueCode | ValueLateLabel);
-  switch (im.Tag.t)
+  
+  for (size_t i = 0; i != valueP->Data.Code.len; ++i)
     {
-    case ValueInt:
-      ir |= fixBranch (0, im.ValueInt.i);
-      break;
-    case ValueCode:
-    case ValueLateLabel:
-      relocBranch (&im);
-      break;
-    default:
-      error (ErrorError, "Illegal branch destination");
-      break;
+      const Code *codeP = &valueP->Data.Code.c[i];
+      if (codeP->Tag != CodeValue)
+	continue;
+      const Value *valP = &codeP->Data.value;
+
+      switch (valP->Tag)
+	{
+	  case ValueInt:
+	    {
+	      int intVal = valP->Data.Int.i + extraOffset;
+	      int mask = isBLX ? 1 : 3;
+	      if (intVal & mask)
+		errorLine (file, lineno, ErrorError, "Branch value is not a multiple of %s", isBLX ? "two" : "four");
+	      ir |= ((intVal >> 2) & 0xffffff) | (isBLX ? (intVal & 2) << 23 : 0);
+	      PutWord (offset, ir);
+	    }
+	    break;
+
+	  case ValueSymbol:
+	    if (!final)
+	      return true;
+	    if (valP->Data.Symbol.symbol != areaCurrentSymbol)
+	      Reloc_Create (HOW2_INIT | HOW2_SIZE | HOW2_RELATIVE, offset, valP);
+	    break;
+
+	  default:
+	    return true;
+	}
     }
-  putIns (ir);
+
+  return false;
 }
 
-void
-m_blx (WORD cc)
+static bool
+branch_shared (ARMWord cc, bool isBLX)
 {
-  Value im;
-  WORD reg;
-  WORD ir;
+  const ARMWord offset = areaCurrentSymbol->value.Data.Int.i;
+
+  switch (inputLook ())
+    {
+      case '#':
+	inputSkip ();	/* FIXME: what's this ?? */
+	/* Fall through.  */
+      case '"':
+	exprBuild (); /* FIXME: document/test this */
+	break;
+
+      default:
+	exprBuild ();
+	/* The branch instruction has its offset as relative, while the given
+	   label is absolute, so calculate "<label> - . - 8".  */
+	codePosition (areaCurrentSymbol, offset);
+	codeOperator (Op_sub);
+	codeInt (8);
+	codeOperator (Op_sub);
+	break;
+    }
+
+  putIns (cc | 0x0A000000);
+  if (Reloc_QueueExprUpdate (Branch_RelocUpdater, offset, ValueInt | ValueCode | ValueSymbol, &isBLX, sizeof (isBLX)))
+    error (ErrorError, "Illegal branch expression");
+  return false;
+}
+
+/**
+ * Implements B and BL.
+ */
+bool
+m_branch (void)
+{
+  ARMWord cc = optionLinkCond ();
+  if (cc == optionError)
+    return true;
+  return branch_shared (cc, false);
+}
+
+/**
+ * Implements BLX.
+ */
+bool
+m_blx (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
 
   cpuWarn (XSCALE);
 
-  inputMark ();
-  reg = getCpuRegNoError ();
+  const char * const inputMark = Input_GetMark ();
+  ARMWord reg = getCpuRegNoError ();
+  ARMWord ir;
   if (reg == INVALID_REG)
-    {			/* BLXcc <target_addr> */
-      inputRollback ();
+    { /* BLXcc <target_addr> */
+      Input_RollBackToMark (inputMark);
 
       if (cc != AL)
         error (ErrorError, "BLX <target_addr> must be unconditional");
 
-      ir = NV | 0x0A000000;
-
-      switch (inputLook ())
-	{
-	case '#':
-	  inputSkip ();
-	case '"':
-	  exprBuild ();
-	  break;
-	default:
-	  exprBuild ();
-	  codePosition (areaCurrentSymbol);
-	  codeOperator (Op_sub);
-	  codeInt (8);
-	  codeOperator (Op_sub);
-	  break;
-	}
-      im = exprEval (ValueInt | ValueCode | ValueLateLabel);
-      switch (im.Tag.t)
-	{
-	case ValueInt:
-	  ir |= fixBranchT (0, im.ValueInt.i);
-	  break;
-	case ValueCode:
-	case ValueLateLabel:
-	  relocBranchT (&im);
-	  break;
-	default:
-	  error (ErrorError, "Illegal branch destination");
-	  break;
-	}
+      return branch_shared (NV, true);
     }
   else
     ir = cc | 0x012FFF30 | RHS_OP (reg); /* BLX <Rm> */
 
   putIns (ir);
+  return false;
 }
 
-void
-m_bx (WORD cc)
+/**
+ * Implements BX.
+ */
+bool
+m_bx (void)
 {
-  int dst = getCpuReg();
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
 
   cpuWarn (XSCALE);
+
+  int dst = getCpuReg ();
   if (dst == 15)
     error (ErrorWarning, "Use of PC with BX is discouraged");
 
   putIns (cc | 0x012fff10 | dst);
+  return false;
 }
 
-void
-m_swi (WORD cc)
+/**
+ * Implements SWI.
+ */
+bool
+m_swi (void)
 {
-  if (inputLook () == '#')
-    {
-      inputSkip ();
-      error (ErrorInfo, "SWI is always immediate");
-    }
-  exprBuild ();
-  Value im = exprEval (ValueInt | ValueAddr | ValueString | ValueCode
-		 | ValueLateLabel);
-  WORD ir = cc | 0x0F000000;
-  switch (im.Tag.t)
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+
+  if (Input_Match ('#', false))
+    error (ErrorInfo, "SWI is always immediate");
+  const Value *im = exprBuildAndEval (ValueInt | ValueString);
+  ARMWord ir = cc | 0x0F000000;
+  switch (im->Tag)
     {
       case ValueInt:
-	ir |= fixSwi (0, im.ValueInt.i);
+	ir |= fixSwi (0, im->Data.Int.i);
 	break;
-      case ValueAddr:
-	ir |= fixSwi (0, im.ValueAddr.i);
-	break;
-      case ValueCode:
-      case ValueLateLabel:
-	relocSwi (&im);
-	break;
+
       case ValueString:
 #ifdef __riscos__
 	{
-	  const char *s;
-	  if ((s = strndup(im.ValueString.s, im.ValueString.len)) == NULL)
-	    errorOutOfMem ();
-	  ir |= switonum (s);
-	  free((void *)s);
+	  /* ValueString is not NUL terminated.  */
+	  char swiname[im->Data.String.len + 1];
+	  memcpy (swiname, im->Data.String.s, im->Data.String.len);
+	  swiname[im->Data.String.len] = '\0';
+	  ir |= switonum (swiname);
 	  if (ir == 0xFFFFFFFF)
 	    error (ErrorError, "Unknown SWI name");
 	}
@@ -192,120 +255,220 @@ m_swi (WORD cc)
 	error (ErrorError, "RISC OS is required to look up the SWI name");
 #endif
 	break;
+
       default:
 	error (ErrorError, "Illegal SWI expression");
 	break;
     }
   putIns (ir);
+  return false;
 }
 
-void
+/**
+ * Implements BKPT.
+ */
+bool
 m_bkpt (void)
 {
   cpuWarn (XSCALE);
 
-  if (inputLook () == '#')
+  if (Input_Match ('#', false))
+    error (ErrorInfo, "BKPT is always immediate");
+  const Value *im = exprBuildAndEval (ValueInt);
+  int i;
+  if (im->Tag != ValueInt)
     {
-      inputSkip ();
-      error (ErrorInfo, "BKPT is always immediate");
-    }
-  exprBuild ();
-  Value im = exprEval (ValueInt);
-  if (im.Tag.t != ValueInt)
-    error (ErrorError, "Illegal BKPT expression");
-  WORD val = fixInt (0, 2, im.ValueInt.i);
-
-  WORD ir = 0xE1200070;
-  ir |= ((val & 0xFFF0) << 4) | (val & 0xF);
-
-  putIns (ir);
-}
-
-
-/** EXTENSION **/
-
-void
-m_adr (WORD cc)
-{
-  WORD ir = cc & ~1, ir2 = 0;	/* bit 0 set to indicate ADRL */
-  Value im;
-  ir |= DST_OP (getCpuReg ());
-  ir |= LHS_OP (15) | IMM_RHS;	/* pc */
-  skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
+      error (ErrorError, "Illegal BKPT expression");
+      i = 0;
     }
   else
+    i = im->Data.Int.i;
+  ARMWord val = Fix_Int (NULL, 0, 2, i);
+
+  ARMWord ir = 0xE1200070 | ((val & 0xFFF0) << 4) | (val & 0xF);
+  putIns (ir);
+  return false;
+}
+
+/**
+ * \param baseReg When >= 0, emit "ADD/SUB Rx, <baseReg>, #xyz" +
+ * "ADD/SUB Rx, Rx, #xyz", otherwise emit "MOV/MVN Rx, #xyz" +
+ * "ORR/BIC Rx, Rx, #xyz"
+ * \param fixedNumInstr When true, we can't change the number of instructions.
+ * When ir & 1 is set and fixedNumInstr is false, we can ignore to emit the
+ * 2nd instruction.  When it is true, we have to.
+ */
+static void
+ADR_RelocUpdaterCore (const char *file, int lineno, size_t offset, int constant,
+		      int baseReg, bool fixedNumInstr)
+{
+  /* Register + offset.  */
+  ARMWord ir = GetWord (offset);
+  bool isADRL = (ir & 1) ? true : false;
+  ir &= ~1;
+
+  /* FIXME: Can clever use of ADD/SUB mixture can cover more constants ? */
+  unsigned int cTry1[4];
+  int numTry1 = Help_SplitByImm8s4 (constant, &cTry1[0], &cTry1[1], &cTry1[2], &cTry1[3]);
+  unsigned int cTry2[4];
+  int numTry2 = Help_SplitByImm8s4 (baseReg >= 0 ? -constant : ~constant, &cTry2[0], &cTry2[1], &cTry2[2], &cTry2[3]);
+  int num;
+  unsigned int *c;
+  ARMWord irop1, irop2;
+  if (numTry1 < numTry2)
+    {
+      num = numTry1;
+      c = cTry1;
+      irop1 = baseReg >= 0 ? M_ADD : M_MOV;
+      irop2 = baseReg >= 0 ? M_ADD : M_ORR;
+    }
+  else
+    {
+      num = numTry2;
+      c = cTry2;
+      irop1 = baseReg >= 0 ? M_SUB : M_MVN;
+      irop2 = baseReg >= 0 ? M_SUB : M_BIC;
+    }
+  if (num == 1 && isADRL)
+    {
+      if (fixedNumInstr)
+	{
+	  errorLine (file, lineno, ErrorInfo, "ADRL not required for offset 0x%08x", constant);
+	  c[1] = 0;
+	  num = 2;
+	}
+      else
+	errorLine (file, lineno, ErrorWarning, "ADRL not required for offset 0x%08x, using ADR instead", constant);
+    }
+  else if ((num == 2 && !isADRL) || num == 3 || num == 4)
+    {
+      if (fixedNumInstr)
+	{
+	  errorLine (file, lineno, ErrorError, "Offset 0x%08x can not be encoded with ADR/ADRL", constant);
+	  num = (isADRL) ? 2 : 1;
+	}
+      else
+	errorLine (file, lineno, ErrorWarning, "Offset 0x%08x can not be encoded in %d instruction sequence, using %d instructions instead", constant, isADRL ? 2 : 1, num);
+    }
+
+  for (int n = 0; n < num; ++n, ++c)
+    {
+      /* Fix up the base register.  */
+      ARMWord irs = ir | (n == 0 ? irop1 : irop2);
+      if (baseReg >= 0 || n != 0)
+        irs = irs | LHS_OP (n == 0 ? baseReg : GET_DST_OP(ir));
+
+      int i8s4 = help_cpuImm8s4 (*c);
+      assert (i8s4 != -1);
+      irs |= i8s4;
+
+      Put_InsWithOffset (offset + n*4, irs);
+    }
+}
+
+/**
+ * Shared reloc updater for ADR and ADRL.
+ */
+static bool
+ADR_RelocUpdater (const char *file, int lineno, ARMWord offset,
+		  const Value *valueP, void *privData, bool final)
+{
+  ARMWord ir = *(const ARMWord *)privData;
+  if (!final)
+    Put_InsWithOffset (offset, ir);
+  const bool userIntendedTwoInstr = (GetWord (offset) & 1) ? true : false;
+
+  assert (valueP->Tag == ValueCode && valueP->Data.Code.len != 0);
+  if (valueP->Data.Code.len != 1)
+    {
+      if (userIntendedTwoInstr)
+	Put_InsWithOffset (offset + 4, 0);
+      return true;
+    }
+  
+  for (size_t i = 0; i != valueP->Data.Code.len; ++i)
+    {
+      const Code *codeP = &valueP->Data.Code.c[i];
+      if (codeP->Tag != CodeValue)
+	continue;
+      const Value *valP = &codeP->Data.value;
+
+      switch (valP->Tag)
+	{
+	  case ValueInt:
+	    /* Absolute value : results in MOV/MVN (followed by ADD/SUB in case of
+	       ADRL).  */
+	    ADR_RelocUpdaterCore (file, lineno, offset, valP->Data.Int.i, -1, final);
+	    break;
+
+	  case ValueAddr:
+	    ADR_RelocUpdaterCore (file, lineno, offset, valP->Data.Addr.i, valP->Data.Addr.r, final);
+	    break;
+
+	  case ValueSymbol:
+	    {
+	      /* Wait until the last (final) round as this avoid emitting unnecessary
+		relocations.  */
+	      if (!final)
+		return true;
+	      ADR_RelocUpdaterCore (file, lineno, offset, -(offset + 8), 15, final);
+	      Reloc_Create (HOW2_INIT | HOW2_SIZE | HOW2_RELATIVE, offset, valP);
+	    }
+	    break;
+
+	  default:
+	    return true;
+	}
+    }
+
+  return false;
+}
+
+/**
+ * Implements ADR / ADRL.
+ */
+bool
+m_adr (void)
+{
+  ARMWord ir = optionAdrL ();
+  if (ir == optionError)
+    return true;
+
+  /* When bit 0 is set, we'll emit ADRL (2 instructions).  Don't forget to
+     reset that bit in the ADR_RelocUpdater routine.  */
+  ir |= DST_OP (getCpuReg ()) | IMM_RHS;
+
+  skipblanks ();
+  if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
+
   /* The label will expand to either a field in a based map or a PC-relative 
      expression.  */
   exprBuild ();
-  /* Try the field first */
-  im = exprEval (ValueAddr);
-  switch (im.Tag.t)
-    {
-    case ValueAddr:
-      /* Fix up the base register */
-      ir &= ~LHS_OP (15);
-      ir |= LHS_OP (im.ValueAddr.r);
-      /* Manufacture the offset as per normal */
-      if (cc & 1)
-	fixAdrl (0, &ir, &ir2, im.ValueInt.i, 0); /* don't warn ? */
-      else
-	ir = fixAdr (0, ir, im.ValueInt.i);
-      break;
-    default:
-      /* Not a field, so append " - . - 8" to the expression, and treat it as
-         PC-relative.  */
-      /* TODO: It may also be a late field but there's no simple way of
-         handling this when performing relocation.  */
-      codePosition (areaCurrentSymbol);	/* It's relative */
-      codeOperator (Op_sub);
-      codeInt (8);
-      codeOperator (Op_sub);
-      im = exprEval (ValueInt | ValueCode | ValueLateLabel);
-      switch (im.Tag.t)
-	{
-	case ValueInt:
-	  if (cc & 1)
-	    fixAdrl (0, &ir, &ir2, im.ValueInt.i, 0);	/* don't warn ? */
-	  else
-	    ir = fixAdr (0, ir, im.ValueInt.i);
-	  break;
-	case ValueCode:
-	case ValueLateLabel:
-	  if (cc & 1)
-	    relocAdrl (ir, &im);
-	  else
-	    relocAdr (ir, &im);
-	  break;
-	default:
-	  error (ErrorError, "Illegal ADR%s expression", (cc & 1) ? "L" : "");
-	  break;
-	}
-      break;
-    }
-  putIns (ir);
-  if (cc & 1)
-    putIns (ir2);
+  if (Reloc_QueueExprUpdate (ADR_RelocUpdater,
+			     areaCurrentSymbol->value.Data.Int.i,
+			     ValueAddr | ValueInt | ValueSymbol | ValueCode,
+			     &ir, sizeof (ir)))
+    error (ErrorError, "Illegal %s expression", (ir & 1) ? "ADRL" : "ADR");
+
+  return false;
 }
 
 
-/** APCS prologue **/
-
-static signed int regs[3] = {-1, -1, -1};
-/* [0] Stack args       0 = no, 1..4 = a1-an; -1 = RET or TAIL will cause error
- * [1] Stack reg vars 0 = no, 1..6 = v1-vn
- * [2] Stack fp vars    0 = no, 1..4 = f4-f(3+n)
+/* [0] Stack args      0 = no, 1..4 = a1-an; -1 = RET or TAIL will cause error
+ * [1] Stack reg vars  0 = no, 1..6 = v1-vn
+ * [2] Stack fp vars   0 = no, 1..4 = f4-f(3+n)
  */
+static signed int regs[3] = {-1, -1, -1};
 
-void
+/**
+ * Implements STACK : APCS prologue
+ */
+bool
 m_stack (void)
 {
   static const unsigned int lim[3] = {4, 6, 4};
-  static const unsigned int
+  static const ARMWord
     arg_regs[]  = {0x00000000, 0xE92D0001, 0xE92D0003, 0xE92D0007, 0xE92D000F},
     push_inst[] = {0xE92DD800, 0xE92DD810, 0xE92DD830, 0xE92DD870,
 		   0xE92DD8F0, 0xE92DD9F0, 0xE92DDBF0},
@@ -316,7 +479,6 @@ m_stack (void)
   if (inputLook ())
     {
       int reg = 0;
-      Value im;
       char c;
       do
 	{
@@ -338,16 +500,23 @@ m_stack (void)
 	    }
 	  if (regs[reg] != -1)
 	    error (ErrorError, "Register class %c duplicated", c);
-	  if (inputLook () == '=')
+	  if (Input_Match ('=', false))
 	    {
-	      inputSkip ();
-	      exprBuild ();
-	      im = exprEval (ValueInt);
-	      if (im.Tag.t != ValueInt)
-		im.ValueInt.i = 0;
-	      if ((unsigned) im.ValueInt.i > lim[reg])
-		error (ErrorError, "Too many registers to stack for class %c", c);
-	      regs[reg] = (signed) im.ValueInt.i;
+	      const Value *im = exprBuildAndEval (ValueInt);
+	      int i;
+	      if (im->Tag != ValueInt)
+		{
+		  error (ErrorError, "No number of registers specified");
+		  i = 0;
+		}
+	      else
+		i = im->Data.Int.i;
+	      if ((unsigned)i  > lim[reg])
+		{
+		  error (ErrorError, "Too many registers to stack for class %c", c);
+		  i = 0;
+		}
+	      regs[reg] = i;
 	    }
 	  else
 	    regs[reg] = (signed) lim[reg];
@@ -373,15 +542,16 @@ m_stack (void)
   if (regs[2] > 0)
     putIns (pfp_inst[regs[2]]);
   putIns (0xE24CB004 + 4 * regs[0]);
+  return false;
 }
 
 
 /** APCS epilogue **/
 
 static void
-apcsEpi (WORD cc, const int *pop_inst, const char *op)
+apcsEpi (ARMWord cc, const int *pop_inst, const char *op)
 {
-  static const int pfp_inst[] =
+  static const ARMWord pfp_inst[] =
     {
       0x00000000,
       0x0CBDC203,
@@ -398,10 +568,12 @@ apcsEpi (WORD cc, const int *pop_inst, const char *op)
   putIns (pop_inst[regs[1]] | cc);
 }
 
-/* APCS epilogue - return */
-
-void
-m_ret (WORD cc)
+/**
+ * Implements RET : APCS epilogue - return
+ * ObjAsm extension.
+ */
+bool
+m_ret (void)
 {
   static const int pop_inst[] =
     {
@@ -414,13 +586,19 @@ m_ret (WORD cc)
       0x095BABF0
     };
 
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+
   apcsEpi (cc, pop_inst, "RET");
+  return false;
 }
 
-/* APCS epilogue - tail call */
-
-void
-m_tail (WORD cc)
+/**
+ * Implements TAIL : APCS epilogue - tail call
+ */
+bool
+m_tail (void)
 {
   static const int pop_inst[] =
     {
@@ -433,120 +611,125 @@ m_tail (WORD cc)
       0x091B6BF0
     };
 
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+
   apcsEpi (cc, pop_inst, "TAIL");
   skipblanks ();
   if (inputLook ())
-    m_branch (cc);
+    branch_shared (cc, false);
+  return false;
 }
 
 
 /* PSR access */
 
-static WORD
-getpsr (BOOL only_all)
+static ARMWord
+getpsr (bool only_all)
 {
-  WORD saved;
-  char w[4];
-
   skipblanks ();
+
+  /* Read "CPSR" or "SPSR".  */
+  ARMWord saved;
   switch (inputGetLower ())
     {
-    case 'c':
-      saved = 0;
-      break;
-    case 's':
-      saved = 1 << 22;
-      break;
-    default:
+      case 'c':
+        saved = 0;
+        break;
+      case 's':
+        saved = 1 << 22;
+        break;
+      default:
+        error (ErrorError, "Not a PSR name");
+        return 0;
+    }
+  if (inputGetLower () != 'p'
+      || inputGetLower () != 's'
+      || inputGetLower () != 'r')
+    {
       error (ErrorError, "Not a PSR name");
       return 0;
     }
-  if (inputGetLower () == 'p' &&
-      inputGetLower () == 's' &&
-      inputGetLower () == 'r')
+
+  if (inputLook () != '_')
+    return saved | (only_all ? 0xF0000 : 0x90000);
+  
+  const char * const inputMark = Input_GetMark ();
+  inputSkip ();
+  char w[4];
+  w[0] = inputGetLower ();
+  w[1] = inputGetLower ();
+  w[2] = inputGetLower ();
+  w[3] = 0;
+  if (!strcmp (w, "all"))
+    return saved | (only_all ? 0xF0000 : 0x90000);
+  if (only_all)
     {
-      if (inputLook () != '_')
-	return saved | (only_all ? 0xF0000 : 0x90000);
-      inputMark ();
-      inputSkip ();
-      w[0] = inputGetLower ();
-      w[1] = inputGetLower ();
-      w[2] = inputGetLower ();
-      w[3] = 0;
-      if (!strcmp (w, "all"))
-	return saved | (only_all ? 0xF0000 : 0x90000);
-      if (only_all)
-	{
-	  error (ErrorError, "Partial PSR access not allowed");
-	  return 0;
-	}
-      if (!strcmp (w, "ctl"))
-	return saved | 0x10000;
-      if (!strcmp (w, "flg"))
-	return saved | 0x80000;
-      inputRollback ();
-      while (strchr ("_cCxXsSfF", inputLook ()))
-	{
-	  int p = 0;
-	  char c;
-	  if (inputLook () == '_')
-	    inputSkip ();
-	  switch (c = inputGetLower ())
-	    {
-	    case 'c':
-	      p = 16;
-	      break;
-	    case 'x':
-	      p = 17;
-	      break;
-	    case 's':
-	      p = 18;
-	      break;
-	    case 'f':
-	      p = 19;
-	      break;
-	    default:
-	      error (ErrorError, "Unrecognised PSR subset");
-	      break;
-	    }
-	  if (p)
-	    {
-	      if (saved & (1 << p))
-		error (ErrorError, "PSR mask bit '%c' already specified", c);
-	      saved |= 1 << p;
-	    }
-	}
-      return saved;
+      error (ErrorError, "Partial PSR access not allowed");
+      return 0;
     }
-  else
-    error (ErrorError, "Not a PSR name");
-  return 0;
+  if (!strcmp (w, "ctl"))
+    return saved | 0x10000;
+  if (!strcmp (w, "flg"))
+    return saved | 0x80000;
+  Input_RollBackToMark (inputMark);
+  while (strchr ("_cCxXsSfF", inputLook ()))
+    {
+      Input_Match ('_', false);
+      int p;
+      char c;
+      switch (c = inputGetLower ())
+	{
+	  case 'c':
+	    p = 16;
+	    break;
+	  case 'x':
+	    p = 17;
+	    break;
+	  case 's':
+	    p = 18;
+	    break;
+	  case 'f':
+	    p = 19;
+	    break;
+	  default:
+	    p = 0;
+	    error (ErrorError, "Unrecognised PSR subset");
+	    break;
+	}
+      if (p)
+        {
+          if (saved & (1 << p))
+	    error (ErrorError, "PSR mask bit '%c' already specified", c);
+	  saved |= 1 << p;
+	}
+    }
+  return saved;
 }
 
-
-void
-m_msr (WORD cc)
+/**
+ * Implements MSR.
+ */
+bool
+m_msr (void)
 {
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+
   cpuWarn (ARM6);
-  cc |= getpsr (FALSE) | 0x0120F000;
+  cc |= getpsr (false) | 0x0120F000;
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
-  if (inputLook () == '#')
+  if (Input_Match ('#', false))
     {
-      Value im;
-      inputSkip ();
-      exprBuild ();
-      im = exprEval (ValueInt);
-      if (im.Tag.t == ValueInt)
+      const Value *im = exprBuildAndEval (ValueInt);
+      if (im->Tag == ValueInt)
 	{
 	  cc |= 0x02000000;
-	  cc |= fixImm8s4 (0, cc, im.ValueInt.i);
+	  cc |= fixImm8s4 (0, cc, im->Data.Int.i);
 	}
       else
 	error (ErrorError, "Illegal immediate expression");
@@ -554,22 +737,25 @@ m_msr (WORD cc)
   else
     cc |= getCpuReg ();
   putIns (cc);
+  return false;
 }
 
-
-void
-m_mrs (WORD cc)
+/**
+ * Implements MRS.
+ */
+bool
+m_mrs (void)
 {
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+
   cpuWarn (ARM6);
   cc |= getCpuReg () << 12 | 0x01000000;
   skipblanks ();
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-    }
-  else
+  if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
-  cc |= getpsr (TRUE);
+  cc |= getpsr (true);
   putIns (cc);
+  return false;
 }

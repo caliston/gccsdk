@@ -23,9 +23,9 @@
 #include "config.h"
 #include <string.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "error.h"
@@ -39,99 +39,60 @@
 #include "reloc.h"
 #include "symbol.h"
 
-static WORD
-getCpuRegInternal (BOOL genError)
+static ARMWord
+getTypeInternal (bool genError, unsigned int type, const char *typeStr)
 {
-  Lex lexSym = genError ? lexGetId () : lexGetIdNoError ();
+  const Lex lexSym = genError ? lexGetId () : lexGetIdNoError ();
   if (lexSym.tag == LexNone)
     return genError ? 0 : INVALID_REG;
 
-  const Symbol *sym = symbolGet (&lexSym);
-  if ((sym->type & SYMBOL_DEFINED) && (sym->type & SYMBOL_ABSOLUTE))
+  const Symbol *sym = symbolFind (&lexSym);
+  if (sym && (sym->type & SYMBOL_DEFINED) && (sym->type & SYMBOL_ABSOLUTE))
     {
-      if (SYMBOL_GETREG (sym->type) == SYMBOL_CPUREG)
-	return sym->value.ValueInt.i;
+      if (SYMBOL_GETREGTYPE (sym->type) == type)
+	return sym->value.Data.Int.i;
       if (genError)
-	error (ErrorError, "'%s' is not a %s register", sym->str, "cpu");
+	error (ErrorError, "'%s' is not a %s", sym->str, typeStr);
     }
   else if (genError)
-    error (ErrorError, "Undefined register %s", sym->str);
+    error (ErrorError, "Undefined %s %s", typeStr, sym->str);
   return genError ? 0 : INVALID_REG;
 }
 
-WORD
+ARMWord
 getCpuReg (void)
 {
-  return getCpuRegInternal (TRUE);
+  return getTypeInternal (true, SYMBOL_CPUREG, "CPU register");
 }
 
-WORD
+ARMWord
 getCpuRegNoError (void)
 {
-  return getCpuRegInternal (FALSE);
+  return getTypeInternal (false, SYMBOL_CPUREG, "CPU register");
 }
 
-WORD
+ARMWord
 getFpuReg (void)
 {
-  Lex lexSym = lexGetId ();
-  if (lexSym.tag == LexNone)
-    return 0;
-
-  Symbol *sym = symbolGet (&lexSym);
-  if ((sym->type & SYMBOL_DEFINED) && (sym->type & SYMBOL_ABSOLUTE))
-    {
-      if (SYMBOL_GETREG (sym->type) == SYMBOL_FPUREG)
-	return sym->value.ValueInt.i;
-      error (ErrorError, "'%s' is not a %s register", sym->str, "fpu");
-    }
-  else
-    error (ErrorError, "Undefined float register %s", sym->str);
-  return 0;
+  return getTypeInternal (true, SYMBOL_FPUREG, "FPU register");
 }
 
-WORD
+ARMWord
 getCopReg (void)
 {
-  Lex lexSym = lexGetId ();
-  if (lexSym.tag == LexNone)
-    return 0;
-
-  Symbol *sym = symbolGet (&lexSym);
-  if ((sym->type & SYMBOL_DEFINED) && (sym->type & SYMBOL_ABSOLUTE))
-    {
-      if (SYMBOL_GETREG (sym->type) == SYMBOL_COPREG)
-	return sym->value.ValueInt.i;
-      error (ErrorError, "'%s' is not a %s register", sym->str, "cop");
-    }
-  else
-    error (ErrorError, "Undefined coprocessor register %s", sym->str);
-  return 0;
+  return getTypeInternal (true, SYMBOL_COPREG, "coprocessor register");
 }
 
-WORD
+ARMWord
 getCopNum (void)
 {
-  Lex lexSym = lexGetId ();
-  if (lexSym.tag == LexNone)
-    return 0;
-
-  Symbol *sym = symbolGet (&lexSym);
-  if ((sym->type & SYMBOL_DEFINED) && (sym->type & SYMBOL_ABSOLUTE))
-    {
-      if (SYMBOL_GETREG (sym->type) == SYMBOL_COPNUM)
-	return sym->value.ValueInt.i;
-      error (ErrorError, "'%s' is not a coprocessor number", sym->str);
-    }
-  else
-    error (ErrorError, "Undefined coprocessor number %s", sym->str);
-  return 0;
+  return getTypeInternal (true, SYMBOL_COPNUM, "coprocessor number");
 }
 
-static WORD
+static ARMWord
 getShiftOp (void)
 {
-  WORD r = 0;
+  ARMWord r = 0;
   switch (inputLookLower ())
     {
       case 'a':
@@ -209,33 +170,37 @@ illegal:
 }
 
 
-static WORD
-getShift (BOOL immonly)
+/**
+ * Parses:
+ *   1. LSL #<shift_imm>
+ *   2. LSL <Rs>           (not when immonly = false)
+ *   3. LSR #<shift_imm>
+ *   4. LSR <Rs>           (not when immonly = false)
+ *   5. ASR #<shift_imm>
+ *   6. ASR <Rs>           (not when immonly = false)
+ *   7. ROR #<shift_imm>
+ *   8. ROR <Rs>           (not when immonly = false)
+ *   9. RRX
+ */
+static ARMWord
+getShift (bool immonly)
 {
-  WORD op = 0;
-  Value im;
-  WORD shift = getShiftOp ();
+  ARMWord op = 0;
+  ARMWord shift = getShiftOp ();
   if (shift != RRX)
     {
       skipblanks ();
-      if (inputLook () == '#')
+      if (Input_Match ('#', false))
 	{
-	  inputSkip ();
-	  exprBuild ();
-	  im = exprEval (ValueInt | ValueCode | ValueLateLabel);
-	  switch (im.Tag.t)
+	  const Value *im = exprBuildAndEval (ValueInt);
+	  switch (im->Tag)
 	    {
-	    case ValueInt:
-	      op = fixShiftImm (0, shift, im.ValueInt.i); /* !! Fixed !! */
-	      break;
-	    case ValueCode:
-	    case ValueLateLabel:
-	      relocShiftImm (shift, &im);
-	      op = SHIFT_OP (shift); /* !! Fixed !! */
-	      break;
-	    default:
-	      error (ErrorError, "Illegal shift expression");
-	      break;
+	      case ValueInt:
+		op = fixShiftImm (0, shift, im->Data.Int.i); /* !! Fixed !! */
+		break;
+	      default:
+		error (ErrorError, "Illegal shift expression");
+		break;
 	    }
 	}
       else
@@ -251,61 +216,73 @@ getShift (BOOL immonly)
   return op;
 }
 
-WORD
-getRhs (BOOL immonly, BOOL shift, WORD ir)
+/**
+ * Parses Addressing Mode 1 - Data-processing operands
+ * Parses the <shifter_operand> in
+ * <opcode>{<cond>}{S} <Rd>, <Rn>, <shifter_operand>
+ * With <shifter_operand>:
+ *   1. #<immediate>
+ *   2. <Rm>
+ *   3. <Rm>, LSL #<shift_imm>
+ *   4. <Rm>, LSL <Rs>
+ *   5. <Rm>, LSR #<shift_imm>
+ *   6. <Rm>, LSR <Rs>
+ *   7. <Rm>, ASR #<shift_imm>
+ *   8. <Rm>, ASR <Rs>
+ *   9. <Rm>, ROR #<shift_imm>
+ *  10. <Rm>, ROR <Rs>
+ *  11. <Rm>, RRX
+ */
+ARMWord
+getRhs (bool immonly, bool shift, ARMWord ir)
 {
-  Value im;
-  if (inputLook () == '#')
+  if (Input_Match ('#', false))
     {
       ir |= IMM_RHS;
-      inputSkip ();
-      exprBuild ();
-      im = exprEval (ValueInt | ValueCode | ValueLateLabel | ValueString | ValueAddr);
-      switch (im.Tag.t)
+      const Value *im = exprBuildAndEval (ValueInt | ValueAddr | ValueString); /* FIXME: *** NEED ValueSymbol & ValueCode */
+      switch (im->Tag)
 	{
-	case ValueInt:
-	  if (inputLook () == ',')
-	    {
-	      inputSkip ();
-	      Lex rotator = lexGetPrim ();
+	  case ValueInt:
+	    if (Input_Match (',', false))
+	      {
+		if (im->Data.Int.i < 0 || im->Data.Int.i >= 256)
+		  error (ErrorError, "Immediate value out of range: 0x%x", im->Data.Int.i);
 
-	      if (im.ValueInt.i < 0 || im.ValueInt.i >= 256)
-	        error (ErrorError, "Immediate value out of range: 0x%x", im.ValueInt.i);
+	        Lex rotator = lexGetPrim ();
+	        if (rotator.tag != LexInt
+	            || rotator.Data.Int.value < 0
+	            || rotator.Data.Int.value > 30
+	            || (rotator.Data.Int.value % 2) == 1)
+		  error (ErrorError, "Bad rotator %d", rotator.Data.Int.value);
 
-	      if (rotator.LexInt.value < 0 || rotator.LexInt.value > 30
-		  || (rotator.LexInt.value % 2) == 1)
-	        error (ErrorError, "Bad rotator %d", rotator.LexInt.value);
+		ir |= (rotator.Data.Int.value >> 1) << 8;
+	      }
+	    /* Fall through.  */
 
-	      ir |= (rotator.LexInt.value >> 1) << 8;
-	    }
-	case ValueAddr:
-	  ir = fixImm8s4 (0, ir, im.ValueInt.i);
-	  break;
-	case ValueString:
-	  if (im.ValueString.len != 1)
-	    error (ErrorError, "String too long to be an immediate expression");
-	  else
-	    ir = fixImm8s4 (0, ir, im.ValueString.s[0]);
-	  break;
-	case ValueCode:
-	case ValueLateLabel:
-	  relocImm8s4 (ir, &im);
-	  break;
-	default:
-	  error (ErrorError, "Illegal immediate expression");
-	  break;
+	  case ValueAddr: /* This is for "MOV Rx, #@" support.  */
+	    ir = fixImm8s4 (0, ir, im->Data.Int.i);
+	    break;
+
+	  case ValueString:
+	    if (im->Data.String.len != 1)
+	      error (ErrorError, "String too long to be an immediate expression");
+	    else
+	      ir = fixImm8s4 (0, ir, im->Data.String.s[0]);
+	    break;
+
+	  default:
+	    error (ErrorError, "Illegal immediate expression");
+	    break;
 	}
     }
   else
     {
       ir |= getCpuReg ();
       skipblanks ();
-      if (inputLook () == ',')
+      if (Input_Match (',', true))
 	{
 	  if (!shift)
 	    return ir;		/* will cause a 'skip rest of line' error */
-	  inputSkip ();
-	  skipblanks ();
 	  ir |= getShift (immonly);
 	}
       else

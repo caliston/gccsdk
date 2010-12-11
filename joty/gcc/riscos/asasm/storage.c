@@ -21,95 +21,88 @@
  */
 
 #include "config.h"
+
+#include <assert.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "error.h"
 #include "expr.h"
 #include "get.h"
 #include "input.h"
-#include "lex.h"
 #include "main.h"
 #include "storage.h"
 #include "value.h"
 
-static int storageD = 0;
-static Value storageV;
+static Value storageV =
+  {
+    .Tag = ValueAddr,
+    .Data.Addr = { .i = 0, .r = -1 }
+  };
 
 Value
 storageValue (void)
 {
-  if (!storageD)
-    {
-      error (ErrorError, "No storage declared (# or @ before ^)");
-      storageV.Tag.t = ValueAddr;
-      storageV.ValueAddr.i = 0;
-      storageV.ValueAddr.r = 15;
-    }
-  return valueCopy (storageV);
+  assert (storageV.Tag == ValueAddr);
+  if (storageV.Data.Addr.r == -1)
+    return Value_Int (storageV.Data.Addr.i);
+  return storageV;
 }
 
-void
+/**
+ * Implementation for '^'.
+ */
+bool
 c_record (void)
 {
-  Value value;
-  storageD = TRUE;
-  exprBuild ();
-  value = exprEval (ValueInt | ValueAddr);
-  storageV.ValueAddr.r = 15;
-  storageV.Tag.t = ValueAddr;
-  switch (value.Tag.t)
+  const Value *value = exprBuildAndEval (ValueInt);
+  storageV.Tag = ValueAddr;
+  switch (value->Tag)
     {
-    case ValueInt:
-      storageV.ValueAddr.i = value.ValueInt.i;
-      break;
-    case ValueAddr:
-      storageV.ValueAddr.i = value.ValueAddr.i;
-      break;
-    default:
-      storageV.ValueAddr.i = 0;
-      errorAbort ("^ cannot evaluate its offset expression");
-      break;
+      case ValueInt:
+        storageV.Data.Addr.i = value->Data.Int.i;
+        break;
+      default:
+        storageV.Data.Addr.i = 0;
+        errorAbort ("^ cannot evaluate its offset expression");
+        break;
     }
-  if (inputLook () == ',')
-    {
-      inputSkip ();
-      skipblanks ();
-      storageV.ValueAddr.r = getCpuReg ();
-    }
+  storageV.Data.Addr.r = (Input_Match (',', true)) ? (int)getCpuReg () : -1;
+  return false;
 }
 
-void
-c_alloc (Symbol * sym)
+/**
+ * Implementation for '#'.
+ */
+bool
+c_alloc (Symbol *sym)
 {
-  Value value;
   if (sym)
     {
-      sym->type |= SYMBOL_ABSOLUTE | SYMBOL_DEFINED;
-      sym->area.ptr = NULL;
+      assert ((sym->type & (SYMBOL_ABSOLUTE | SYMBOL_DEFINED)) == (SYMBOL_ABSOLUTE | SYMBOL_DEFINED));
       sym->value = storageValue ();
     }
-  exprBuild ();
-  value = exprEval (ValueInt);
-  switch (value.Tag.t)
+
+  /* Determine how much we should allocate.  */
+  const Value *value = exprBuildAndEval (ValueInt);
+  switch (value->Tag)
     {
-    case ValueInt:
-      if (value.ValueInt.i >= 0)
-	{
-	  if (option_pedantic > 1 && value.ValueInt.i == 0)
-	    error (ErrorInfo, "You are reserving zero bytes?");
-	  storageV.ValueAddr.i += value.ValueInt.i;
-	  /* ValueInt & ValueAddr have i in the same place */
-	  value.ValueAddr.r = storageV.ValueAddr.r;
-	}
-      else
-	error (ErrorError, "Cannot reserve negative amount of space %d", value.ValueInt.i);
-      break;
-    default:
-      errorAbort ("Illegal expression after #");
-      break;
+      case ValueInt:
+        if (value->Data.Int.i >= 0)
+	  {
+	    if (option_pedantic && value->Data.Int.i == 0)
+	      error (ErrorInfo, "You are reserving zero bytes?");
+	    storageV.Data.Addr.i += value->Data.Int.i;
+	  }
+        else
+	  error (ErrorError, "Cannot reserve negative amount of space %d", value->Data.Int.i);
+        break;
+      default:
+        error (ErrorError, "Illegal expression after #");
+        break;
     }
+  return false;
 }

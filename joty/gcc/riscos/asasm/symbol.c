@@ -21,14 +21,15 @@
  */
 
 #include "config.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "aoffile.h"
@@ -43,18 +44,22 @@
 #include "output.h"
 #include "symbol.h"
 
+#ifdef DEBUG
+#  define DEBUG_SYMBOL
+#endif
+
 /* For AOF, we output a symbol when it is be exported (or forced exported)
    and it is defined, or imported and referenced in the code.  */
 int (SYMBOL_AOF_OUTPUT) (const Symbol *);	/* typedef it */
 #define SYMBOL_AOF_OUTPUT(sym) \
-  (((sym)->type & (SYMBOL_EXPORT|SYMBOL_KEEP)) \
+  (((sym)->type & (SYMBOL_EXPORT | SYMBOL_KEEP)) \
    && (((sym)->type & SYMBOL_DEFINED) || (sym)->used > -1))
 
 /* For ELF, we output all used & defined or referenced symbols (except register
    or coprocessor names).  */
 int (SYMBOL_ELF_OUTPUT) (const Symbol *);	/* typedef it */
 #define SYMBOL_ELF_OUTPUT(sym) \
-  (SYMBOL_AOF_OUTPUT(sym) || (sym)->value.Tag.t == ValueCode)
+  (SYMBOL_AOF_OUTPUT(sym) || (sym)->value.Tag == ValueCode)
 
 #ifndef NO_ELF_SUPPORT
 #define SYMBOL_OUTPUT(sym) \
@@ -67,15 +72,16 @@ int (SYMBOL_ELF_OUTPUT) (const Symbol *);	/* typedef it */
 static Symbol *symbolTable[SYMBOL_TABLESIZE];
 
 static Symbol *
-symbolNew (int len, const char *str)
+symbolNew (const char *str, size_t len)
 {
   Symbol *result;
   if ((result = (Symbol *) malloc (sizeof (Symbol) + len)) == NULL)
     errorOutOfMem ();
   result->next = NULL;
   result->type = result->offset = 0;
-  result->value.Tag.t = ValueIllegal;
-  result->value.Tag.v = ValueConst;
+  result->value.Tag = ValueIllegal;
+  result->codeSize = 0;
+  result->area.ptr /* = result->area.info */ = NULL;
   result->used = -1;
   result->len = len;
   memcpy (result->str, str, len);
@@ -83,12 +89,19 @@ symbolNew (int len, const char *str)
   return result;
 }
 
-static BOOL
+static void
+symbolFree (Symbol *symP)
+{
+  valueFree (&symP->value);
+  free (symP);
+}
+
+static bool
 EqSymLex (const Symbol *str, const Lex *lx)
 {
-  if (str->len != lx->LexId.len)
-    return FALSE;
-  return !memcmp(str->str, lx->LexId.str, str->len);
+  if (str->len != lx->Data.Id.len)
+    return false;
+  return !memcmp (str->str, lx->Data.Id.str, str->len);
 }
 
 void
@@ -96,7 +109,7 @@ symbolInit (void)
 {
   static const struct {
     const char *name;
-    int len;
+    size_t len;
     int value;
     int type;
   } predefines[] = {
@@ -179,29 +192,23 @@ symbolInit (void)
     { "c12", 3, 12, SYMBOL_COPREG },
     { "c13", 3, 13, SYMBOL_COPREG },
     { "c14", 3, 14, SYMBOL_COPREG },
-    { "c15", 3, 15, SYMBOL_COPREG },
-    /* Terminator */
-    { NULL, 0, 0, 0 }
+    { "c15", 3, 15, SYMBOL_COPREG }
   };
 
-  Lex l;
-  l.tag = LexId;
-  for (int i = 0; predefines[i].name != NULL; i++)
+  for (size_t i = 0; i < sizeof (predefines)/sizeof (predefines[0]); ++i)
     {
-      l.LexId.str = predefines[i].name;
-      l.LexId.len = predefines[i].len;
-      l.LexId.hash = lexHashStr (l.LexId.str, l.LexId.len);
+      const Lex l = lexTempLabel (predefines[i].name, predefines[i].len);
 
       Symbol *s = symbolAdd (&l);
       s->type |= SYMBOL_ABSOLUTE | SYMBOL_DECLARED | predefines[i].type;
-      s->value.Tag.t = ValueInt;
-      s->value.ValueInt.i = predefines[i].value;
-      s->area.ptr = NULL;
+      s->value = Value_Int (predefines[i].value);
     }
 }
 
 
 /**
+ * Adds a new symbol definition.  When the symbol was already defined, this is
+ * flagged as an error unless it is an area symbol of zero size.
  * \return pointer to Symbol, never NULL.
  */
 Symbol *
@@ -211,57 +218,51 @@ symbolAdd (const Lex *l)
     errorAbort ("Internal symbolAdd: non-ID");
 
   Symbol **isearch;
-  for (isearch = &symbolTable[l->LexId.hash]; *isearch; isearch = &((*isearch)->next))
+  for (isearch = &symbolTable[l->Data.Id.hash]; *isearch; isearch = &(*isearch)->next)
     {
       Symbol *search = *isearch;
       if (EqSymLex (search, l))
 	{
-	  if ((search->type & SYMBOL_DEFINED) && !SYMBOL_GETREG(search->type))
-	    error (ErrorError, "Redefinition of %.*s", l->LexId.len, l->LexId.str);
+	  if ((search->type & SYMBOL_DEFINED) && !SYMBOL_GETREGTYPE (search->type))
+	    error (ErrorError, "Redefinition of '%.*s'",
+		   (int)l->Data.Id.len, l->Data.Id.str);
 	  else
 	    {
 	      if (search->type & SYMBOL_AREA)
 	        {
-	          if (areaCurrentSymbol->value.ValueInt.i != 0)
-		    error (ErrorError, "Symbol %.*s is already defined as area with incompatible definition",
-		           l->LexId.len, l->LexId.str);
+	          if (areaCurrentSymbol->value.Data.Int.i != 0)
+		    error (ErrorError, "Symbol '%.*s' is already defined as area with incompatible definition",
+		           (int)l->Data.Id.len, l->Data.Id.str);
 		}
 	      else
-		{
-		  search->type |= SYMBOL_DEFINED;
-		  return search;
-		}
+		search->type |= SYMBOL_DEFINED;
 	    }
+	  return search;
 	}
     }
-  *isearch = symbolNew (l->LexId.len, l->LexId.str);
+  *isearch = symbolNew (l->Data.Id.str, l->Data.Id.len);
   (*isearch)->type |= SYMBOL_DEFINED;
   return *isearch;
 }
 
 
+/**
+ * \return Always a non-NULL value pointing to symbol representing given Lex
+ * object.
+ */
 Symbol *
 symbolGet (const Lex *l)
 {
+  assert (l->tag == LexId);
+
   Symbol **isearch = NULL;
-  if (l->tag != LexId)
+  for (isearch = &symbolTable[l->Data.Id.hash]; *isearch; isearch = &(*isearch)->next)
     {
-      if (l->tag != LexNone)
-	errorAbort ("Internal symbolGet: non-ID");
-      for (isearch = &symbolTable[0]; *isearch; isearch = &((*isearch)->next))
-	/* */;
-      *isearch = symbolNew (sizeof("|Dummy|")-1, "|Dummy|"); /* FIXME: *isearch is written again further on, so memory leak here ? */
-    }
-  else
-    {
-      for (isearch = &symbolTable[l->LexId.hash]; *isearch; isearch = &((*isearch)->next))
-	{
-	  if (EqSymLex (*isearch, l))
-	    return *isearch;
-	}
+      if (EqSymLex (*isearch, l))
+	return *isearch;
     }
 
-  *isearch = symbolNew (l->LexId.len, l->LexId.str);
+  *isearch = symbolNew (l->Data.Id.str, l->Data.Id.len);
   return *isearch;
 }
 
@@ -273,12 +274,35 @@ symbolFind (const Lex *l)
     return NULL;
 
   Symbol **isearch;
-  for (isearch = &symbolTable[l->LexId.hash]; *isearch; isearch = &((*isearch)->next))
+  for (isearch = &symbolTable[l->Data.Id.hash]; *isearch; isearch = &(*isearch)->next)
     {
       if (EqSymLex (*isearch, l))
 	return *isearch;
     }
   return NULL;
+}
+
+
+/**
+ * Removes symbol from symbol table.
+ */
+void
+symbolRemove (const Lex *l)
+{
+  assert (l->tag == LexId);
+
+  Symbol **isearch;
+  for (isearch = &symbolTable[l->Data.Id.hash]; *isearch; isearch = &(*isearch)->next)
+    {
+      if (EqSymLex (*isearch, l))
+	{
+	  Symbol *toFreeP = *isearch;
+	  *isearch = toFreeP->next;
+	  symbolFree (toFreeP);
+	  return;
+	}
+    }
+  error (ErrorAbort, "Internal error: symbolRemove");
 }
 
 
@@ -294,18 +318,20 @@ symbolFix (int *stringSizeNeeded)
 {
   int nosym = 0;
   int strsize = 0;		/* Always contains its length */
-  int i;
-
-  for (i = 0; i < SYMBOL_TABLESIZE; i++)
+  for (int i = 0; i < SYMBOL_TABLESIZE; i++)
     {
-      Symbol *sym;
-      for (sym = symbolTable[i]; sym; sym = sym->next)
+      for (Symbol *sym = symbolTable[i]; sym; sym = sym->next)
 	{
 	  if (sym->type & SYMBOL_AREA)
 	    {
-	      sym->offset = strsize;
-	      strsize += sym->len + 1;
-	      nosym++;
+	      /* All AREA symbols are declared and not defined by nature.  */
+	      assert ((sym->type & (SYMBOL_DEFINED | SYMBOL_DECLARED)) == SYMBOL_DECLARED);
+	      if (!Area_IsImplicit (sym))
+		{
+		  sym->offset = strsize;
+		  strsize += sym->len + 1;
+		  nosym++;
+		}
 	    }
 	  else
 	    {
@@ -314,14 +340,15 @@ symbolFix (int *stringSizeNeeded)
 		  /* Make it a reference symbol.  */
 		  sym->type |= SYMBOL_REFERENCE;
 		  if (option_pedantic)
-		    errorLine (0, NULL, ErrorWarning, "Symbol %s is implicitly imported", sym->str);
+		    errorLine (NULL, 0, ErrorWarning, "Symbol %s is implicitly imported", sym->str);
 		}
-	      if (SYMBOL_OUTPUT (sym) && sym->value.Tag.v == ValueConst)
+	      if (SYMBOL_OUTPUT (sym))
 		{
-		  int label = -1, ii;
 		  if (localTest (sym->str))
 		    {
 		      void *area; /* FIXME: this is not usefully used. Why ? */
+		      int label = -1;
+		      int ii;
 		      char routine[1024];
 		      *routine = 0;
 		      if (sscanf (sym->str, localFormat, &area, &label, &ii, &routine) > 2)
@@ -329,14 +356,14 @@ symbolFix (int *stringSizeNeeded)
 			  const char *file;
 			  int lineno;
 			  localFindRout (routine, &file, &lineno);
-			  errorLine (lineno, file, ErrorError, "Missing local label (fwd) with ID %02i in routine '%s'%s", label, *routine ? routine : "<anonymous>", lineno ? " in block starting" : " (unknown location)");
+			  errorLine (file, lineno, ErrorError, "Missing local label (fwd) with ID %02i in routine '%s'%s", label, *routine ? routine : "<anonymous>", lineno ? " in block starting" : " (unknown location)");
 			}
 		      else if (sscanf (sym->str + sizeof ("Local$$")-1, "%i$$%s", &ii, routine) > 0)
 			{
 			  const char *file;
 			  int lineno;
 			  localFindLocal (ii, &file, &lineno);
-			  errorLine (lineno, file, ErrorError, "Missing local label '%s'%s", *routine ? routine : "<anonymous>", lineno ? " in block starting" : " (unknown location)");
+			  errorLine (file, lineno, ErrorError, "Missing local label '%s'%s", *routine ? routine : "<anonymous>", lineno ? " in block starting" : " (unknown location)");
 			}
 		      return 0;
 		    }
@@ -353,8 +380,8 @@ symbolFix (int *stringSizeNeeded)
 	    }
 	}
     }
-#ifdef DEBUG
-  symbolPrint ();
+#ifdef DEBUG_SYMBOL
+  symbolPrintAll ();
 #endif
   /* printf("Number of symbols selected: %d, size needed %d bytes\n", nosym, strsize); */
   *stringSizeNeeded = strsize;
@@ -372,7 +399,8 @@ symbolStringOutput (FILE *outfile)	/* Count already output */
     {
       for (const Symbol *sym = symbolTable[i]; sym != NULL; sym = sym->next)
 	{
-	  if (SYMBOL_OUTPUT (sym) || (sym->type & SYMBOL_AREA))
+	  if (SYMBOL_OUTPUT (sym)
+	      || ((sym->type & SYMBOL_AREA) && !Area_IsImplicit (sym)))
 	    fwrite (sym->str, 1, sym->len + 1, outfile);
 	}
     }
@@ -391,78 +419,53 @@ symbolSymbolAOFOutput (FILE *outfile)
 	      asym.Name = sym->offset + 4; /* + 4 to skip the initial length */
 	      if (sym->type & SYMBOL_DEFINED)
 		{
-		  int v;
-		  Value value;
-		  if (sym->value.Tag.t == ValueCode)
+		  const Value *value;
+		  if (sym->value.Tag == ValueCode)
 		    {
 		      codeInit ();
-		      value = codeEvalLow (ValueAll, sym->value.ValueCode.len,
-		                           sym->value.ValueCode.c);
+		      value = codeEvalLow (ValueAll, sym->value.Data.Code.len,
+		                           sym->value.Data.Code.c, NULL);
 		    }
 		  else
-		    value = sym->value;
+		    value = &sym->value;
 
-		  switch (value.Tag.t)
+		  int v;
+		  switch (value->Tag)
 		    {
 		      case ValueIllegal:
-			errorLine (0, NULL, ErrorError,
+			errorLine (NULL, 0, ErrorError,
 			           "Symbol %s cannot be evaluated", sym->str);
 			v = 0;
 			break;
 		      case ValueInt:
-			case ValueAddr:	/* nasty hack */
-			  v = value.ValueInt.i;
+		      case ValueAddr:	/* nasty hack */
+			v = value->Data.Int.i;
 			break;
 		      case ValueFloat:
-			errorLine (0, NULL, ErrorError,
+			errorLine (NULL, 0, ErrorError,
 			           "Linker does not understand float constants (%s)", sym->str);
-			v = (int) value.ValueFloat.f;
+			v = (int) value->Data.Float.f;
 			break;
 		      case ValueString:
-			v = lexChar2Int (FALSE, value.ValueString.len, value.ValueString.s);
+			v = lexChar2Int (false, value->Data.String.len, value->Data.String.s);
 			break;
 		      case ValueBool:
-			v = value.ValueBool.b;
+			v = value->Data.Bool.b;
 			break;
 		      case ValueCode:
-			errorLine (0, NULL, ErrorError,
+			errorLine (NULL, 0, ErrorError,
 			           "Linker does not understand code constants (%s)", sym->str);
 			v = 0;
 			break;
-		      case ValueLateLabel:
-			if (!value.ValueLate.late->next	/* Only one late label */
-			    && value.ValueLate.late->factor == 1	/* ... occuring one time */
-			    && (value.ValueLate.late->symbol->type & SYMBOL_AREA))
-			  {		/* ... and it is an area */
-			    if (sym->type & SYMBOL_ABSOLUTE)
-			      {	/* Change absolute to relative */
-				sym->type &= ~SYMBOL_ABSOLUTE;
-				v = value.ValueLate.i;
-				sym->area.ptr = value.ValueLate.late->symbol;
-			      }
-			    else if (sym->area.ptr != value.ValueLate.late->symbol)
-			      {
-				errorLine (0, NULL, ErrorError,
-					   "Linker cannot have 2 areas for the same symbol (%s)", sym->str);
-			        v = 0;
-			      }
-			    else
-			      v = 0;
-			  }
-			else
-			  {
-			    errorLine (0, NULL, ErrorError,
-				       "Linker cannot have many late labels for the same symbol (%s)", sym->str);
-			    v = 0;
-			  }
-			break;
 		      default:
-			errorAbortLine (0, NULL,
-			                "Internal symbolSymbolAOFOutput: not possible (%s) (0x%x)", sym->str, value.Tag.t);
+			errorAbortLine (NULL, 0,
+			                "Internal symbolSymbolAOFOutput: not possible (%s) (0x%x)", sym->str, value->Tag);
 			v = 0;
 			break;
 		    }
 		  asym.Value = v;
+		  /* When it is a non-absolute symbol, we need to specify the
+		     area name to which this symbol is relative to.  */
 		  if ((asym.Type = sym->type) & SYMBOL_ABSOLUTE)
 		    asym.AreaName = 0;
 		  else
@@ -471,7 +474,7 @@ symbolSymbolAOFOutput (FILE *outfile)
 	      else
 		{
 		  asym.Type = sym->type | TYPE_REFERENCE;
-		  asym.Value = (sym->type & SYMBOL_COMMON) ? sym->value.ValueInt.i : 0;
+		  asym.Value = (sym->type & SYMBOL_COMMON) ? sym->value.Data.Int.i : 0;
 		  asym.AreaName = 0;
 		}
 	      asym.Name     = armword (asym.Name);
@@ -482,12 +485,17 @@ symbolSymbolAOFOutput (FILE *outfile)
 	    }
 	  else if (sym->type & SYMBOL_AREA)
 	    {
-	      AofSymbol asym;
-	      asym.Name = armword (sym->offset + 4); /* + 4 to skip the initial length */
-	      asym.Type = armword (SYMBOL_KIND(sym->type) | SYMBOL_LOCAL);
-	      asym.Value = armword (0);
-	      asym.AreaName = armword (sym->offset + 4); /* + 4 to skip the initial length */
-	      fwrite (&asym, sizeof (AofSymbol), 1, outfile);
+	      if (!Area_IsImplicit (sym))
+		{
+	          const AofSymbol asym =
+		    {
+		      .Name = armword (sym->offset + 4), /* + 4 to skip the initial length */
+		      .Type = armword (SYMBOL_KIND(sym->type) | SYMBOL_LOCAL),
+		      .Value = armword (0),
+		      .AreaName = armword (sym->offset + 4) /* + 4 to skip the initial length */
+		    };
+		  fwrite (&asym, sizeof (AofSymbol), 1, outfile);
+		}
 	    }
 	}
     }
@@ -500,6 +508,9 @@ findAreaIndex (const struct AREA *area)
   int i = 3;
   for (const Symbol *ap = areaHeadSymbol; ap != NULL; ap = ap->area.info->next)
     {
+      if (Area_IsImplicit (ap))
+	continue;
+
       if (area == (const struct AREA *)ap)
         return i;
       i++;
@@ -514,13 +525,15 @@ void
 symbolSymbolELFOutput (FILE *outfile)
 {
   /* Output the undefined symbol */
-  Elf32_Sym asym;
-  asym.st_name = 0;
-  asym.st_value = 0;
-  asym.st_size = 0;
-  asym.st_info = 0;
-  asym.st_other = 0;
-  asym.st_shndx = 0;
+  Elf32_Sym asym =
+    {
+      .st_name = 0,
+      .st_value = 0,
+      .st_size = 0,
+      .st_info = 0,
+      .st_other = 0,
+      .st_shndx = 0
+    };
   fwrite (&asym, sizeof (Elf32_Sym), 1, outfile);
 
   for (int i = 0; i < SYMBOL_TABLESIZE; i++)
@@ -533,67 +546,42 @@ symbolSymbolELFOutput (FILE *outfile)
 	      asym.st_name = sym->offset + 1; /* + 1 to skip the initial & extra NUL */
 	      if (sym->type & SYMBOL_DEFINED)
 		{
-		  int v;
-		  Value value;
-		  if (sym->value.Tag.t == ValueCode)
+		  const Value *value;
+		  if (sym->value.Tag == ValueCode)
 		    {
 		      codeInit ();
-		      value = codeEvalLow (ValueAll, sym->value.ValueCode.len, sym->value.ValueCode.c);
+		      value = codeEvalLow (ValueAll, sym->value.Data.Code.len, sym->value.Data.Code.c, NULL);
 		      type = STT_NOTYPE; /* No information to base type on */
 		    }
 		  else
-		    value = sym->value;
-		  switch (value.Tag.t)
+		    value = &sym->value;
+		  int v;
+		  switch (value->Tag)
 		    {
 		      case ValueIllegal:
-			errorLine (0, NULL, ErrorError, "Symbol %s cannot be evaluated", sym->str);
+			errorLine (NULL, 0, ErrorError, "Symbol %s cannot be evaluated", sym->str);
 			v = 0;
 			break;
 		      case ValueInt:
-			case ValueAddr: /* nasty hack */
-			  v = value.ValueInt.i;
+		      case ValueAddr: /* nasty hack */
+			v = value->Data.Int.i;
 			break;
 		      case ValueFloat:
-			errorLine (0, NULL, ErrorError, "Linker does not understand float constants (%s)", sym->str);
-			v = (int) value.ValueFloat.f;
+			errorLine (NULL, 0, ErrorError, "Linker does not understand float constants (%s)", sym->str);
+			v = (int) value->Data.Float.f;
 			break;
 		      case ValueString:
-			v = lexChar2Int (FALSE, value.ValueString.len, value.ValueString.s);
+			v = lexChar2Int (false, value->Data.String.len, value->Data.String.s);
 			break;
 		      case ValueBool:
-			v = value.ValueBool.b;
+			v = value->Data.Bool.b;
 			break;
 		      case ValueCode:
-			errorLine (0, NULL, ErrorError, "Linker does not understand code constants (%s)", sym->str);
+			errorLine (NULL, 0, ErrorError, "Linker does not understand code constants (%s)", sym->str);
 			v = 0;
 			break;
-		      case ValueLateLabel:
-			if (!value.ValueLate.late->next /* Only one late label */
-			    && value.ValueLate.late->factor == 1 /* ... occuring one time */
-			    && (value.ValueLate.late->symbol->type & SYMBOL_AREA))
-			  { /* ... and it is an area */
-			    if (sym->type & SYMBOL_ABSOLUTE)
-			      { /* Change absolute to relative */
-				sym->type &= ~SYMBOL_ABSOLUTE;
-				v = value.ValueLate.i;
-				sym->area.ptr = value.ValueLate.late->symbol;
-			      }
-			    else if (sym->area.ptr != value.ValueLate.late->symbol)
-			      {
-			        errorLine (0, NULL, ErrorError, "Linker cannot have 2 areas for the same symbol (%s)", sym->str);
-			        v = 0;
-			      }
-			    else
-			      v = 0;
-			  }
-			else
-			  {
-			    errorLine (0, NULL, ErrorError, "Linker cannot have many late labels for the same symbol (%s)", sym->str);
-			    v = 0;
-			  }
-			break;
 		      default:
-			errorAbortLine (0, NULL, "Internal symbolELFSymbolOutput: not possible (%s) (0x%x)", sym->str, value.Tag.t);
+			errorAbortLine (NULL, 0, "Internal symbolELFSymbolOutput: not possible (%s) (0x%x)", sym->str, value->Tag);
 			v = 0;
 			break;
 		    }
@@ -602,7 +590,7 @@ symbolSymbolELFOutput (FILE *outfile)
 		    asym.st_shndx = 0;
 		  else
 		    /* Inefficient, needs fixing later */
-		    asym.st_shndx = findAreaIndex(sym->area.info);
+		    asym.st_shndx = findAreaIndex (sym->area.info);
 		}
 	      else
 		{
@@ -634,13 +622,14 @@ symbolSymbolELFOutput (FILE *outfile)
 	    }
 	  else if (sym->type & SYMBOL_AREA)
 	    {
-	      int bind = (sym->type & SYMBOL_GLOBAL) ? STB_GLOBAL : STB_LOCAL;
-	      int type = STT_SECTION;
-	      asym.st_info = ELF32_ST_INFO(bind, type);
-	      asym.st_name = sym->offset + 1; /* + 1 to skip initial & extra NUL */
-	      asym.st_value = 0;
-	      asym.st_shndx = findAreaIndex ((const struct AREA *)sym);
-	      fwrite (&asym, sizeof (Elf32_Sym), 1, outfile);
+	      if (!Area_IsImplicit (sym))
+		{
+		  asym.st_info = ELF32_ST_INFO ((sym->type & SYMBOL_GLOBAL) ? STB_GLOBAL : STB_LOCAL, STT_SECTION);
+		  asym.st_name = sym->offset + 1; /* + 1 to skip initial & extra NUL */
+		  asym.st_value = 0;
+		  asym.st_shndx = findAreaIndex ((const struct AREA *)sym);
+		  fwrite (&asym, sizeof (Elf32_Sym), 1, outfile);
+		}
 	    }
 	}
     }
@@ -648,81 +637,85 @@ symbolSymbolELFOutput (FILE *outfile)
 #endif
 
 #ifdef DEBUG
+void
+symbolPrint (const Symbol *sym)
+{
+  static const char *symkind[4] = { "UNKNOWN", "LOCAL", "REFERENCE", "GLOBAL" };
+  printf ("\"%.*s\": %s /",
+	  (int)sym->len, sym->str, symkind[SYMBOL_KIND (sym->type)]);
+  assert (strlen (sym->str) == (size_t)sym->len);
+  /* Dump the symbol attributes:  */
+  if (sym->type & SYMBOL_ABSOLUTE)
+    printf ("absolute/");
+  if (sym->type & SYMBOL_NOCASE)
+    printf ("caseinsensitive/");
+  if (sym->type & SYMBOL_WEAK)
+    printf ("weak/");
+  if (sym->type & SYMBOL_STRONG)
+    printf ("strong/");
+  if (sym->type & SYMBOL_COMMON)
+    printf ("common/");
+  if (sym->type & SYMBOL_DATUM)
+    printf ("datum/");
+  if (sym->type & SYMBOL_FPREGARGS)
+    printf ("fp args in regs/");
+  if (sym->type & SYMBOL_LEAF)
+    printf ("leaf/");
+  if (sym->type & SYMBOL_THUMB)
+    printf ("thumb/");
+  /* Internal attributes: */
+  printf (" * /");
+  if (sym->type & SYMBOL_KEEP)
+    printf ("keep/");
+  if (sym->type & SYMBOL_AREA)
+    printf ("area/");
+  if (sym->type & SYMBOL_NOTRESOLVED)
+    printf ("not resolved/");
+  switch (SYMBOL_GETREGTYPE (sym->type))
+    {
+      case 0: /* No register, nor coprocessor number.  */
+	break;
+      case SYMBOL_CPUREG:
+	printf ("CPU reg/");
+	break;
+      case SYMBOL_FPUREG:
+	printf ("FPU reg/");
+	break;
+      case SYMBOL_COPREG:
+	printf ("coprocessor reg/");
+	break;
+      case SYMBOL_COPNUM:
+	printf ("coprocessor num/");
+	break;
+      default:
+	printf ("??? 0x%x/", SYMBOL_GETREGTYPE (sym->type));
+	break;
+    }
+  if (sym->type & SYMBOL_DECLARED)
+    printf ("declared/");
+  
+  printf (" * %p, offset 0x%x, used %d: ",
+	  (void *)sym->area.ptr, sym->offset, sym->used);
+  valuePrint (&sym->value);
+}
+
 /**
- * Lists all symbols collected so far together with all its attributes.
+   * Lists all symbols collected so far together with all its attributes.
  */
 void
-symbolPrint (void)
+symbolPrintAll (void)
 {
   for (int i = 0; i < SYMBOL_TABLESIZE; i++)
     {
-      const Symbol *sym;
-      for (sym = symbolTable[i]; sym; sym = sym->next)
+      for (const Symbol *sym = symbolTable[i]; sym; sym = sym->next)
 	{
 	  /* We skip all internally defined register names and coprocessor
 	     numbers.  */
-	  if (SYMBOL_GETREG(sym->type))
+	  if (SYMBOL_GETREGTYPE (sym->type))
 	    continue;
 
-	  static const char *symkind[4] = { "UNKNOWN", "LOCAL", "REFERENCE", "GLOBAL" };
-	  printf ("\"%.*s\": %s /",
-		  sym->len, sym->str, symkind[SYMBOL_KIND(sym->type)]);
-	  assert (strlen (sym->str) == sym->len);
-	  /* Dump the symbol attributes:  */
-	  if (sym->type & SYMBOL_ABSOLUTE)
-	    printf ("absolute/");
-	  if (sym->type & SYMBOL_NOCASE)
-	    printf ("caseinsensitive/");
-	  if (sym->type & SYMBOL_WEAK)
-	    printf ("weak/");
-	  if (sym->type & SYMBOL_STRONG)
-	    printf ("strong/");
-	  if (sym->type & SYMBOL_COMMON)
-	    printf ("common/");
-	  if (sym->type & SYMBOL_DATUM)
-	    printf ("datum/");
-	  if (sym->type & SYMBOL_FPREGARGS)
-	    printf ("fp args in regs/");
-	  if (sym->type & SYMBOL_LEAF)
-	    printf ("leaf/");
-	  if (sym->type & SYMBOL_THUMB)
-	    printf ("thumb/");
-	  /* Internal attributes: */
-	  printf (" * /");
-	  if (sym->type & SYMBOL_KEEP)
-	    printf ("keep/");
-	  if (sym->type & SYMBOL_AREA)
-	    printf ("area/");
-	  if (sym->type & SYMBOL_NOTRESOLVED)
-	    printf ("not resolved/");
-	  if (sym->type & SYMBOL_BASED)
-	    printf ("based/");
-	  switch (SYMBOL_GETREG(sym->type))
-	    {
-	      case 0: /* No register, nor coprocessor number.  */
-		break;
-	      case SYMBOL_CPUREG:
-		printf ("cpu reg/");
-		break;
-	      case SYMBOL_FPUREG:
-		printf ("fpu reg/");
-		break;
-	      case SYMBOL_COPREG:
-		printf ("coproc reg/");
-		break;
-	      case SYMBOL_COPNUM:
-		printf ("coproc num/");
-		break;
-	      default:
-		printf ("??? 0x%x/", SYMBOL_GETREG(sym->type));
-		break;
-	    }
-	  if (sym->type & SYMBOL_DECLARED)
-	    printf ("declared/");
-	  
-	  printf (" * %p, offset 0x%x, used %d: ",
-		  (void *)sym->area.ptr, sym->offset, sym->used);
-	  valuePrint (&sym->value);
+	  symbolPrint (sym);
+	  printf ("\n");
 	}
     }
 }

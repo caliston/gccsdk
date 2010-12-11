@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2002-2009 GCCSDK Developers
+ * Copyright (c) 2002-2010 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,13 +23,17 @@
 #ifndef lex_header_included
 #define lex_header_included
 
+#include <stdbool.h>
+#include <stddef.h>
+
 #include "global.h"
 
 typedef enum
 {
-  Op_fload, Op_fexec, Op_fsize, Op_fattr,	/* unop */
-  Op_lnot, Op_not, Op_neg, Op_none,	/* unop */
-  Op_index, Op_len, Op_str, Op_chr,	/* unop */
+  Op_fload = 0, Op_fexec, Op_fsize, Op_fattr,	/* unop */
+  Op_lnot, Op_not, Op_neg, Op_none,		/* unop */
+  Op_base, Op_index, Op_len, Op_str, Op_chr,	/* unop */
+  Op_size,					/* unop */
   Op_left, Op_right,		/* 10 (9) */
   Op_mul, Op_div, Op_mod,	/* 10 (9) */
   Op_add, Op_sub, Op_concat,	/*  9 (8) */
@@ -43,18 +47,24 @@ typedef enum
   Op_lor			/*  1 */
 } Operator;
 
+#ifdef DEBUG
+const char *OperatorAsStr (Operator op);
+#endif
+
 #define isUnop(op) \
-  ((op)==Op_fload || (op)==Op_fexec || (op)==Op_fsize || \
-   (op)==Op_fattr || (op)==Op_lnot  || (op)==Op_not   || \
-   (op)==Op_neg   || (op)==Op_index || (op)==Op_len   || \
-   (op)==Op_str   || (op)==Op_chr)
-BOOL (isUnop) (Operator);
+  ((op) == Op_fload || (op) == Op_fexec || (op) == Op_fsize \
+   || (op) == Op_fattr || (op) == Op_lnot  || (op) == Op_not \
+   || (op) == Op_neg   || (op) == Op_base  || (op) == Op_index \
+   || (op) == Op_len   || (op) == Op_str   || (op) == Op_chr \
+   || (op) == Op_size)
+bool (isUnop) (Operator);
 
 extern const char Pri[2][10];
-#define PRI(n) Pri[option_objasm][n-1]
+#define PRI(n) Pri[1 /* FIXME: entry 0 is no longer used.  */][n-1]
 
 typedef enum
-{ LexId,			/* start with character */
+{
+  LexId,			/* start with character */
   LexString,			/* "jsgd" */
   LexInt,			/* start with digit */
   LexFloat,			/* start with digit contains dot */
@@ -63,76 +73,67 @@ typedef enum
 				/* == != <= >= */
   LexPosition,			/* . representing current position */
   LexStorage,			/* @ representing current storage counter */
-  LexDelim,			/* ()[]{}, */
+  LexDelim,			/* () */
   Lex00Label,			/* local (numeric) label */
   LexBool,			/* {TRUE} or {FALSE} */
   LexNone
 } LexTag;
 
-typedef union
+typedef struct
 {
-  LexTag tag;			/* LexPosition, LexStorage, LexNone */
-  struct
-  {
-    LexTag tag;
-    const char *str;
-    int len;
-    int hash;
-  } LexId;			/* LexId */
-  struct
-  {
-    LexTag tag;
-    const char *str;
-    int len;
-  } LexString;			/* LexString */
-  struct
-  {
-    LexTag tag;
-    int value;
-  } LexInt;			/* LexInt */
-  struct
-  {
-    LexTag tag;
-    FLOAT value;
-  } LexFloat;			/* LexFloat */
-  struct
-  {
-    LexTag tag;
-    Operator op;
-    int pri;
-  } LexOperator;		/* LexOperator */
-  struct
-  {
-    LexTag tag;
-    char delim;
-  } LexDelim;			/* LexDelim */
-  struct
-  {
-    LexTag tag;
-    int value;
-  } Lex00Label;			/* Lex00Label */
-  struct
-  {
-    LexTag tag;
-    BOOL value;
-  } LexBool;			/* LexBool */
+  LexTag tag; /* FIXME: change into Tag */
+  union
+    {
+      struct			/* LexId */
+        {
+          const char *str;	/* *NOT* NUL terminated.  */
+          size_t len;
+          unsigned int hash;
+        } Id;
+      struct			/* LexString */
+        {
+          const char *str;
+          size_t len;
+        } String;
+      struct			/* LexInt */
+        {
+          int value;
+        } Int;
+      struct			/* LexFloat */
+        {
+          ARMFloat value;
+        } Float;
+      struct			/* LexOperator */
+        {
+          Operator op;
+          int pri;
+        } Operator;
+      struct			/* LexDelim */
+        {
+          char delim;
+        } Delim;
+      struct			/* Lex00Label */
+        {
+          int value;
+        } Label;
+      struct			/* LexBool */
+        {
+          bool value;
+        } Bool;
+    } Data;
 } Lex;
 
-Lex lexGetLabel (void);
-Lex lexGetLocal (void);
+Lex Lex_GetDefiningLabel (void);
 Lex lexGetId (void);
 Lex lexGetIdNoError (void);
-Lex lexGetIdMunge (int);
 Lex lexGetPrim (void);
 Lex lexGetBinop (void);
 int lexNextPri (void);
 
-Lex lexTempLabel (const char *, int);
-
-int lexHashStr (const char *s, int maxn);
+Lex lexTempLabel (const char *str, size_t len);
 
 #ifdef DEBUG
-void lexPrint(const Lex * lex);
+void lexPrint (const Lex *lex);
 #endif
 
 #endif

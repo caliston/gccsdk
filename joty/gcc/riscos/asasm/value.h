@@ -23,96 +23,108 @@
 #ifndef value_header_included
 #define value_header_included
 
+#include <stdbool.h>
+#include <stddef.h>
+
 #include "global.h"
 
-struct SYMBOL;		/* Cannot include symbol.h as it needs value.h */
-
-union CODE;
-
-typedef struct LATEINFO
-{
-  struct LATEINFO *next;
-  int factor;
-  struct SYMBOL *symbol;
-} LateInfo;
+struct Symbol;		/* Cannot include symbol.h as it needs value.h */
+struct Code;
 
 typedef enum
 {
-  ValueIllegal   = 0,
-  ValueInt       = 1,
-  ValueFloat     = 2,
-  ValueString    = 4,
-  ValueBool      = 8,
-  ValueCode      = 16,
-  ValueLateLabel = 32,
-  ValueAddr      = 64,
+  ValueIllegal   =   0,
+  ValueInt       =   1,
+  ValueFloat     =   2,
+  ValueString    =   4,
+  ValueBool      =   8,
+  ValueCode      =  16,
+  ValueAddr      =  32,
+  ValueSymbol    =  64,
 
-  ValueConst     = 0,		/* only for variables */
   ValueAll       = 127		/* cheat */
 } ValueTag;
 
 typedef struct
 {
-  ValueTag t;
-  ValueTag v;			/* var type: ValueIllegal (const), ValueInt, ValueString */
-} ValueType;
-
-typedef union
-{
-  ValueType Tag;
-  struct
-  {				/* ValueInt */
-    ValueType Tag;
-    int i;
-  }
-  ValueInt;
-  struct
-  {				/* ValueFloat */
-    ValueType Tag;
-    FLOAT f;
-  }
-  ValueFloat;
-  struct
-  {				/* ValueString */
-    ValueType Tag;
-    int len; /* Size string without its NUL terminator.  */
-    const char *s; /* Malloced memory block and string is NUL terminated.  */
-  }
-  ValueString;
-  struct
-  {				/* ValueBool */
-    ValueType Tag;
-    BOOL b;
-  }
-  ValueBool;
-  struct
-  {				/* ValueCode */
-    ValueType Tag;
-    int len;
-    union CODE *c;
-  }
-  ValueCode;
-  struct
-  {				/* ValueLateLabel */
-    ValueType Tag;		/* Must start identical with ValueInt */
-    int i;
-    struct LATEINFO *late;
-  }
-  ValueLate;
-  struct
-  {				/* ValueAddr */
-    ValueType Tag;
-    int i;
-    int r;
-  }
-  ValueAddr;
+  ValueTag Tag;
+  union
+    {
+      struct			/* ValueInt */
+        {
+          int i;		/* Must start identical with ValueAddr's i & ValueString's len.  */
+        } Int;
+      struct			/* ValueFloat */
+        {
+          ARMFloat f;
+        } Float;
+      struct			/* ValueString */
+        {
+	  size_t len;		/**< Size string.  Must start identical with ValueInt's i & ValueAddr's i.  */
+	  const char *s;	/**< Malloced memory block and string contents is *NOT* NUL terminated.  */
+        } String;
+      struct			/* ValueBool */
+        {
+          bool b;
+        } Bool;
+      struct			/* ValueCode */
+        {
+          size_t len;
+          struct Code *c;
+        } Code;
+      struct			/* ValueAddr, represents address in the form of "[<r>, #<i>]" */
+        {
+	  int i;		/* Must start identical with ValueInt's i & ValueStrings's len.  */
+          int r;		/* When = 0 - 15 (inc), it is register based. -1 otherwise.  */
+        } Addr;
+      struct			/* ValueSymbol */
+	{
+	  int factor;		/* Number of times the symbol needs to be taken into account (can be negative, zero, positive).  */
+	  struct Symbol *symbol;
+	} Symbol;
+    } Data;
 } Value;
 
-Value valueLateToCode (int offset, LateInfo *late);
-Value valueCopy (Value value);
-BOOL valueEqual (const Value *a, const Value *b);
+static inline Value
+Value_Int (int i)
+{
+  const Value value =
+    {
+      .Tag = ValueInt,
+      .Data.Int.i = i
+    };
+  return value;
+}
+
+Value Value_Code (size_t len, const struct Code *code);
+
+static inline Value
+Value_Addr (int reg, int i)
+{
+  const Value value =
+    {
+      .Tag = ValueAddr,
+      .Data.Addr = { .i = i, .r = reg }
+    };
+  return value;
+}
+
+static inline Value
+Value_Symbol (struct Symbol *symbol, int factor)
+{
+  const Value value =
+    {
+      .Tag = ValueSymbol,
+      .Data.Symbol = { .factor = factor, .symbol = symbol }
+    };
+  return value;
+}
+
+void Value_Assign (Value *dst, const Value *src);
+void valueFree (Value *value);
+bool valueEqual (const Value *a, const Value *b);
 const char *valueTagAsString (ValueTag tag);
 #ifdef DEBUG
-void valuePrint(const Value *v);
+void valuePrint (const Value *v);
 #endif
 #endif

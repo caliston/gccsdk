@@ -24,16 +24,13 @@
 #define input_header_included
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "global.h"
 #include "macros.h"
 
-#define FLIP(x) (isupper((x)) ? tolower((x)) : islower((x)) ? toupper((x)) : ((x)))
 #define TOLOWER(x) tolower((x))
-
-extern BOOL inputExpand;
-extern BOOL inputRewind;
 
 #define MAX_PREDEFINES 10
 extern const char *predefines[MAX_PREDEFINES];
@@ -41,37 +38,44 @@ extern int num_predefines;
 
 void inputInit (const char *infile);
 
-/* Debug only: */
-const char *inputGiveRestLine(void);
+bool Input_Match (char c, bool spacesToo);
 
-BOOL inputNextLine (void);
+#if DEBUG
+const char *inputGiveRestLine (void);
+#endif
+
+bool inputNextLine (void);
+bool inputNextLineNoSubst (void);
 
 void skipblanks (void);
 void skiprest (void);
 
-BOOL inputComment (void);
+bool notinput (const char *str);
+
+bool Input_IsEolOrCommentStart (void);
 char inputLook (void);
 char inputLookLower (void);
-char inputLookUC (void);
 char inputLookN (int n);
 char inputLookNLower (int n);
-char inputLookNUC (int n);
 char inputGet (void);
 char inputGetLower (void);
-char inputGetUC (void);
 void inputUnGet (char c);
-void inputPutBack (char c);
 char inputSkipLook (void);
-char *inputRest (void);
+const char *inputRest (void);
 #if DEBUG
 const char *inputLine (void);
 #endif
 void inputSkip (void);
 void inputSkipN (int n);
-char *inputSymbol (int *ilen, char del);
 
-void inputMark (void);
-void inputRollback (void);
+const char *Input_Symbol (size_t *ilen);
+const char *inputSymbol (size_t *ilen, char del);
+
+const char *Input_GetMark (void);
+void Input_RollBackToMark (const char *mark);
+
+void Input_ShowLine (void);
+size_t Input_GetColumn (void);
 
 void inputThisInstead (const char *);
 

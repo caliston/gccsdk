@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+
 #include <setjmp.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -29,12 +30,12 @@
 #include <ctype.h>
 #include <locale.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 #ifdef __riscos__
-#include <kernel.h>
+#  include <kernel.h>
 #endif
 
 #include "area.h"
@@ -52,9 +53,9 @@
 #include "variables.h"
 
 jmp_buf asmContinue;
-BOOL asmContinueValid = FALSE;
+bool asmContinueValid = false;
 jmp_buf asmAbort;
-BOOL asmAbortValid = FALSE;
+bool asmAbortValid = false;
 
 /* AS options :
  */
@@ -62,12 +63,9 @@ int option_verbose = 0;
 int option_pedantic = 0;
 int option_fussy = 0;
 int option_throwback = 0;
-int option_dde = 0;
 int option_autocast = 0;
 int option_align = 1;
 int option_local = 1;
-int option_objasm = 0;
-int option_uc = 0;
 int option_apcs_32bit = -1; /* -1 = option not specified.  */
 int option_apcs_fpv3 = -1; /* -1 = option not specified.  */
 int option_apcs_softfloat = -1; /* -1 = option not specified.  */
@@ -89,18 +87,19 @@ as_help (void)
   fprintf (stderr,
 	   DEFAULT_IDFN
 	   "\n"
-	   "Usage: %s [option]... <asmfile>\n"
+	   "Usage: %s [option]... <asmfile> <objfile>\n"
+	   "       %s [option]... -o <objfile> <asmfile>\n"
 	   "\n"
 	   "Options:\n"
-	   "-o objfile                 Specifies destination AOF file.\n"
+	   "-o objfile                 Specifies destination AOF/ELF file.\n"
 	   "-I<directory>              Search 'directory' for included assembler files.\n"
 	   "-D<variable>               Define a string variable.\n"
 	   "-D<variable>=<value>       Define a string variable to a certain value.\n"
-	   "-PD <value>                Predefine a value using SETI/SETS/SETL syntax.\n"
+	   "-PD <value>                Predefine a value using SETA/SETS/SETL syntax.\n"
+	   "-PreDefine <value>         Same as -PD option.\n"
 	   "-pedantic      -p          Display extra warnings.\n"
 	   "-verbose       -v          Display progress information.\n"
 	   "-fussy         -f          Display conversion information.  Can be specified more than once for more conversion information.\n"
-	   "-dde                       Replace '@' in filenames with <Prefix$Dir>.\n"
 #ifdef __riscos__
 	   "-throwback     -tb         Throwback errors to a text editor.\n"
 #endif
@@ -109,8 +108,6 @@ as_help (void)
 	   "-depend <file> -d <file>   Write 'make' source file dependency information to 'file'.\n"
 	   "-noalign       -na         Don't auto-align words and halfwords.\n"
 	   "-nolocal       -nl         No builtin LOCAL support.\n"
-	   "-objasm        -obj        More compatibility with ObjAsm.\n"
-	   "-upper         -up         Mnemonics must be in upper case.\n"
 	   "-help          -h -H -?    Display this help.\n"
 	   "-version       -ver        Display the version number.\n"
 	   "-From asmfile              Source assembler file (ObjAsm compatibility).\n"
@@ -127,27 +124,16 @@ as_help (void)
 #endif
 	   "-aof                       Output AOF file.\n"
 	   "\n",
-	   ProgName);
+	   ProgName, ProgName);
 }
 
-
-#ifdef __riscos__
-static char *prefix;
-#endif
-
-static int finished = 0;
-
+static bool finished = false;
 
 static void
-restore_prefix (void)
+atexit_handler (void)
 {
   if (!finished || returnExitStatus () != EXIT_SUCCESS)
     outputRemove ();
-#ifdef __riscos__
-  if (prefix)
-    _kernel_setenv ("Prefix$Dir", prefix);
-#endif
-  /* workaround for throwback/Prefix$Dir problem */
 }
 
 static void
@@ -197,18 +183,13 @@ set_option_aof (int writeaof)
 int
 main (int argc, char **argv)
 {
-#ifdef __riscos__
-  ProgName = getenv ("Prefix$Dir");
-  /* There's a strange problem with Prefix$Dir becoming unset if
-   * throwback is used...
-   */
-  prefix = ProgName ? strdup (ProgName) : 0;
-#endif
-  atexit (restore_prefix);
+  atexit (atexit_handler);
+
   setlocale (LC_ALL, "");
+
   ProgName = *argv++;
 
-#define IS_ARG(ln,sn) !strcmp(*argv,ln) || !strcmp(*argv,sn)
+#define IS_ARG(ln, sn) (!strcmp(*argv, ln) || !strcmp(*argv, sn))
 
   if (argc == 1)
     {
@@ -235,7 +216,7 @@ main (int argc, char **argv)
 	  else
 	    var_define (argv[0] + 2);
 	}
-      else if (strcmp(argv[0], "-PD") == 0)
+      else if (IS_ARG ("-PD", "-PreDefine"))
         {
           if (--argc)
             {
@@ -248,9 +229,10 @@ main (int argc, char **argv)
               predefines[num_predefines++] = *++argv;
             }
           else
-            {
-              fprintf (stderr, "%s: Missing argument after -PD\n", ProgName);
-            }
+	    {
+              fprintf (stderr, "%s: Missing argument after -PD/-PreDefine\n", ProgName);
+	      return EXIT_FAILURE;
+	    }
         }
       else if (IS_ARG ("-o", "-To"))
 	{
@@ -277,10 +259,6 @@ main (int argc, char **argv)
 	option_align = 0;
       else if (IS_ARG ("-nolocal", "-nl"))
 	option_local = 0;
-      else if (IS_ARG ("-objasm", "-obj"))
-	option_objasm = 1; /* Used as index in lex.c.  */
-      else if (IS_ARG ("-upper", "-up"))
-	option_uc++;
       else if (IS_ARG ("-pedantic", "-p"))
 	option_pedantic++;
       else if (IS_ARG ("-target", "-t"))
@@ -306,8 +284,6 @@ main (int argc, char **argv)
 	set_option_apcs_softfloat (0);
       else if (!strcmp (*argv, "-module"))
 	option_rma_module = 1;
-      else if (!strcmp (*argv, "-dde"))
-	option_dde++;
       else if (!strncmp (*argv, "-I", 2))
 	{
 	  const char *inclDir = *argv + 2;
@@ -325,13 +301,9 @@ main (int argc, char **argv)
 	}
       else if (IS_ARG ("-version", "-ver"))
 	{
-	  fprintf (stderr, "AS AOF"
-#ifndef NO_ELF_SUPPORT
-		   "/ELF"
-#endif
-		   " Assembler " VERSION " (" __DATE__ ") [GCCSDK]\n");
-
-	  fprintf (stderr, "Copyright (c) 1992-2009 Niklas Rojemo, Darren Salt and GCCSDK Developers\n");
+	  fprintf (stderr,
+	           DEFAULT_IDFN "\n"
+	           "Copyright (c) 1992-2010 Niklas Rojemo, Darren Salt and GCCSDK Developers\n");
 	  return EXIT_SUCCESS;
 	}
       else if (IS_ARG ("-H", "-h")
@@ -386,10 +358,15 @@ main (int argc, char **argv)
 	{
 	  if (SourceFileName != NULL)
 	    {
-	      fprintf (stderr, "%s: Only one input file allowed (%s & %s specified)\n", ProgName, SourceFileName, *argv);
-	      return EXIT_FAILURE;
+	      if (ObjFileName != NULL)
+		{
+		  fprintf (stderr, "%s: Only one input file allowed\n", ProgName);
+		  return EXIT_FAILURE;
+		}
+	      ObjFileName = *argv;
 	    }
-	  SourceFileName = *argv;
+	  else
+	    SourceFileName = *argv;
 	}
       else
 	fprintf (stderr, "%s: Illegal flag %s ignored\n", ProgName, *argv);
@@ -411,46 +388,55 @@ main (int argc, char **argv)
 
   set_cpuvar ();
 
-  /* When the command line has been sorted, get on with the job in hand */
+  if (SourceFileName == NULL)
+    {
+      fprintf (stderr, "%s: No input filename specified\n", ProgName);
+      return EXIT_FAILURE;
+    }
   if (ObjFileName == NULL)
-    ObjFileName = SourceFileName;
-
+    {
+      fprintf (stderr, "%s: No output filename specified\n", ProgName);
+      return EXIT_FAILURE;
+    }
+  
   if (setjmp (asmAbort))
     {
-      asmAbortValid = FALSE;
+      asmAbortValid = false;
       fprintf (stderr, "%s: Aborted\n", ProgName);
       while (gCurPObjP != NULL)
 	FS_PopPObject (true);
     }
   else
     {
-      asmAbortValid = TRUE;
+      asmAbortValid = true;
       symbolInit ();
-      inputInit (SourceFileName);
-
-      /* ... do the assembly ... */
       outputInit (ObjFileName);
-
-      /* ... tidy up and write the ELF/AOF output.  */
       areaInit ();
-      setjmp (asmContinue); asmContinueValid = TRUE;
-      assemble ();
+      /* Do the assembly.  */
+      ASM_Assemble (SourceFileName);
       areaFinish ();
-      
-      if (setjmp (asmContinue))
-	fprintf (stdout, "%s: Error when writing object file '%s'.\n", ProgName, ObjFileName);
-      else
-        {
-#ifndef NO_ELF_SUPPORT
-	  if (!option_aof)
-	    outputElf();
+
+      /* Don't try to output anything when we have assemble errors.  */
+      if (returnExitStatus () == EXIT_SUCCESS)
+	{
+	  if (setjmp (asmContinue))
+	    fprintf (stderr, "%s: Error when writing object file '%s'.\n", ProgName, ObjFileName);
 	  else
+	    {
+	      asmContinueValid = true;
+	      /* Write the ELF/AOF output.  */
+#ifndef NO_ELF_SUPPORT
+	      if (!option_aof)
+		outputElf();
+	      else
 #endif
-	    outputAof();
+		outputAof();
+	    }
+	  asmContinueValid = false;
 	}
     }
   outputFinish ();
   errorFinish ();
-  finished = 1;
+  finished = true; /* No longer enforce removing output file.  */
   return returnExitStatus ();
 }

@@ -21,214 +21,151 @@
  */
 
 #include "config.h"
+
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "code.h"
 #include "error.h"
 #include "os.h"
+#include "main.h"
 #include "value.h"
 
-/* Code demands at least one Lateinfo */
-Value
-valueLateToCode(int offset, LateInfo *late)
+/**
+ * Assigns one Value to another, correctly freeing/claiming memory resources.
+ */
+void
+Value_Assign (Value *dst, const Value *src)
 {
-  LateInfo *l;
-  int factor;
-  int size;
+  if (dst == src)
+    return;
 
-  for (size = 1, l = late; l != NULL; l= l->next)
-    {
-      if ((factor = l->factor) == -1 || factor == 1)
-	size += 2;
-      else if (factor != 0)
-	size += 4;
-    }
-  if (offset == 0)
-    {
-      size -= 2;			/* No need to include offset ... */
-      if (late->factor == -1)
-	size++;				/* ... but must insert an unary - */
-    }
+  valueFree (dst);
 
-  Value value;
-  value.Tag.v = ValueConst;
-  if ((value.ValueCode.c = malloc(size*sizeof(Code))) == NULL)
-    errorOutOfMem ();
-
-  value.Tag.t = ValueCode;
-  value.ValueCode.len = size;
-  size = 0;
-  if (offset != 0)
-    {
-      value.ValueCode.c[size  ].Tag = CodeValue;
-      value.ValueCode.c[size  ].CodeValue.value.Tag.t = ValueInt;
-      value.ValueCode.c[size++].CodeValue.value.ValueInt.i = offset;
-    }
-  for (l = late; l != NULL; l = l->next)
-    {
-      if ((factor = l->factor) == -1 || factor == 1)
-	{
-	  value.ValueCode.c[size  ].Tag = CodeSymbol;
-	  value.ValueCode.c[size++].CodeSymbol.symbol = l->symbol;
-	  if (size != 1)
-	    { /* Add offset */
-	      value.ValueCode.c[size  ].Tag = CodeOperator;
-	      value.ValueCode.c[size++].CodeOperator.op = (factor > 0) ? Op_add : Op_sub;
-	    }
-	  else if (factor == -1)
-	    {
-	      value.ValueCode.c[size  ].Tag = CodeOperator;
-	      value.ValueCode.c[size++].CodeOperator.op = Op_neg;
-	    }
-	}
-      else if (factor != 0)
-	{
-	  value.ValueCode.c[size  ].Tag = CodeSymbol;
-	  value.ValueCode.c[size++].CodeSymbol.symbol = l->symbol;
-	  value.ValueCode.c[size  ].Tag = CodeValue;
-	  value.ValueCode.c[size  ].CodeValue.value.Tag.t = ValueInt;
-	  value.ValueCode.c[size++].CodeValue.value.ValueInt.i = factor;
-	  value.ValueCode.c[size  ].Tag = CodeOperator;
-	  value.ValueCode.c[size++].CodeOperator.op = Op_mul;
-	  if (size != 3)
-	    { /* Add offset */
-	      value.ValueCode.c[size  ].Tag = CodeOperator;
-	      value.ValueCode.c[size++].CodeOperator.op = Op_add;
-	    }
-	}
-    }
-
-  return value;
-}
-
-
-Value
-valueCopy (Value value)
-{
-  switch (value.Tag.t)
-    {
-    case ValueIllegal:
-    case ValueInt:
-    case ValueFloat:
-    case ValueBool:
-    case ValueAddr:
-      break;
-    case ValueString:
-      if ((value.ValueString.s = strndup (value.ValueString.s, value.ValueString.len)) == NULL)
-	errorOutOfMem ();
-      break;
-    case ValueCode:
-      value.ValueCode.c = codeCopy (value.ValueCode.len, value.ValueCode.c);
-      break;
-    case ValueLateLabel:
-      value = valueLateToCode (value.ValueLate.i, value.ValueLate.late);
-      break;
-    default:
-      errorAbort ("Internal valueCopy: illegal value");
-      value.Tag.t = ValueIllegal;
-      break;
-    }
-
-  return value;
-}
-
-static void
-valueFree(Value *value)
-{
-  switch (value->Tag.t)
+  *dst = *src;
+  switch (src->Tag)
     {
       case ValueIllegal:
       case ValueInt:
       case ValueFloat:
       case ValueBool:
-      case ValueAddr: /* Needed here? */
-	break;
+      case ValueAddr:
+      case ValueSymbol:
+        break;
+
       case ValueString:
-	if (value->Tag.v == ValueString)
-	  {
-	    free((void *)value->ValueString.s);
-	    value->ValueString.s = NULL;
-	  }
-	else
-	  errorAbort ("Internal valueFree: cannot handle %s", "string");
-	break;
+	{
+	  char *c;
+	  if ((c = malloc (src->Data.String.len)) == NULL)
+	    errorOutOfMem ();
+	  memcpy (c, src->Data.String.s, src->Data.String.len);
+	  dst->Data.String.s = c;
+	}
+        break;
+
       case ValueCode:
-	free(value->ValueCode.c);
-	value->ValueCode.c = NULL;
+        dst->Data.Code.c = codeCopy (src->Data.Code.len, src->Data.Code.c);
+        break;
+
+      default:
+        errorAbort ("Internal Value_Assign: illegal value");
+        break;
+    }
+}
+
+void
+valueFree (Value *value)
+{
+  switch (value->Tag)
+    {
+      case ValueIllegal:
+      case ValueInt:
+      case ValueFloat:
+      case ValueBool:
+      case ValueAddr:
+      case ValueSymbol:
 	break;
-      case ValueLateLabel:
-	errorAbort ("Internal valueFree: cannot handle %s", "late label");
+
+      case ValueString:
+	free ((void *)value->Data.String.s);
 	break;
+
+      case ValueCode:
+	Code_Free (value->Data.Code.c, value->Data.Code.len);
+	break;
+
       default:
 	errorAbort ("Internal valueFree: illegal value");
 	break;
     }
+  value->Tag = ValueIllegal;
 }
 
-static BOOL
-lateInfoEqual(const LateInfo *a, const LateInfo *b)
+Value
+Value_Code (size_t len, const Code *code)
 {
-  for (/* */; a || b; a = a->next, b = b->next)
+  const Value value =
     {
-      if (!a || !b
-	  || a->factor != b->factor
-	  || a->symbol != b->symbol)
-	return FALSE;
-    }
-  return TRUE;
+      .Tag = ValueCode,
+      .Data.Code = { .len = len, .c = codeCopy (len, code) }
+    };
+  return value;
 }
 
-BOOL
-valueEqual(const Value *a, const Value *b)
+bool
+valueEqual (const Value *a, const Value *b)
 {
-  if (a->Tag.t == ValueLateLabel)
-    {
-      /* Prevent valueEqual(ValueLateLabel,ValueCode) */
-      const Value *t = a; a = b; b = t;
-    }
-
-  switch (a->Tag.t)
+  switch (a->Tag)
     {
       case ValueIllegal:
-	return b->Tag.t == ValueIllegal;
+	return b->Tag == ValueIllegal;
+
       case ValueInt:
-	return b->Tag.t == ValueInt && a->ValueInt.i == b->ValueInt.i;
+	return (b->Tag == ValueInt && a->Data.Int.i == b->Data.Int.i)
+	         || (option_autocast && b->Tag == ValueFloat && (ARMFloat)a->Data.Int.i == b->Data.Float.f);
+
       case ValueFloat:
-	return b->Tag.t == ValueFloat && a->ValueFloat.f == b->ValueFloat.f;
+	return (b->Tag == ValueFloat && a->Data.Float.f == b->Data.Float.f)
+	         || (option_autocast && b->Tag == ValueInt && a->Data.Float.f == (ARMFloat)b->Data.Int.i);
+
       case ValueString:
-	return b->Tag.t == ValueString
-		 && a->ValueString.len == b->ValueString.len
-		 && !memcmp(a->ValueString.s, b->ValueString.s, a->ValueString.len);
+	return b->Tag == ValueString
+		 && a->Data.String.len == b->Data.String.len
+		 && !memcmp (a->Data.String.s, b->Data.String.s, a->Data.String.len);
+
       case ValueBool:
-	return b->Tag.t == ValueBool && a->ValueBool.b  == b->ValueBool.b;
+	return b->Tag == ValueBool && a->Data.Bool.b == b->Data.Bool.b;
+
+      case ValueAddr:
+	return b->Tag == ValueAddr
+		 && a->Data.Addr.i == b->Data.Addr.i
+		 && a->Data.Addr.r == b->Data.Addr.r;
+
+      case ValueSymbol:
+	return b->Tag == ValueSymbol
+		 && a->Data.Symbol.factor == b->Data.Symbol.factor
+		 && a->Data.Symbol.symbol == b->Data.Symbol.symbol;
+
       case ValueCode:
-	if (b->Tag.t == ValueLateLabel)
-	  {
-	    Value v = valueLateToCode(b->ValueLate.i,b->ValueLate.late);
-	    BOOL res = a->ValueCode.len == v.ValueCode.len && codeEqual(a->ValueCode.len,a->ValueCode.c,v.ValueCode.c);
-	    valueFree(&v);
-	    return res;
-	  }
-	else
-	  return b->Tag.t == ValueCode
-		   && a->ValueCode.len == b->ValueCode.len
-		   && codeEqual(a->ValueCode.len,a->ValueCode.c,b->ValueCode.c);
-      case ValueLateLabel:
-	return b->Tag.t == ValueLateLabel
-		 && a->ValueLate.i == b->ValueLate.i
-		 && lateInfoEqual(a->ValueLate.late,b->ValueLate.late);
+	  // FIXME: code pieces can differ in their components but still end up
+	  // with the same semantics.  We should normalize before really binary
+	  // comparing them.
+	  return b->Tag == ValueCode
+		   && a->Data.Code.len == b->Data.Code.len
+		   && codeEqual (a->Data.Code.len, a->Data.Code.c, b->Data.Code.c);
+
       default:
 	errorAbort ("Internal valueEqual: illegal value");
 	break;
     }
 
-  return FALSE;
+  return false;
 }
 
 
@@ -256,12 +193,12 @@ valueTagAsString (ValueTag tag)
       case ValueCode:
         str = "code";
         break;
-      case ValueLateLabel:
-        str = "label";
-        break;
       case ValueAddr:
-        str = "address";
+        str = "register based address";
         break;
+      case ValueSymbol:
+	str = "symbol";
+	break;
       default:
         str = "unknown";
         break;
@@ -272,39 +209,40 @@ valueTagAsString (ValueTag tag)
 
 #ifdef DEBUG
 void
-valuePrint(const Value *v)
+valuePrint (const Value *v)
 {
   if (v == NULL)
     return;
-  printf("Value %d:%d : ", v->Tag.t, v->Tag.v);
-  switch (v->Tag.t)
+  printf ("Value ");
+  switch (v->Tag)
     {
       case ValueIllegal:
-	printf("<illegal>\n");
+	printf ("<illegal>");
 	break;
       case ValueInt:
-	printf("<%d> (int)\n", v->ValueInt.i);
+	printf ("Int <%d>", v->Data.Int.i);
 	break;
       case ValueFloat:
-	printf("<%g> (float)\n", v->ValueFloat.f);
+	printf ("Float <%g>", v->Data.Float.f);
 	break;
       case ValueString:
-	printf("<%.*s> (string)\n", v->ValueString.len, v->ValueString.s);
+	printf ("String <%.*s>", (int)v->Data.String.len, v->Data.String.s);
 	break;
       case ValueBool:
-	printf("<%s> (bool)\n", v->ValueBool.b ? "TRUE" : "FALSE");
+	printf ("Bool <%s>", v->Data.Bool.b ? "true" : "false");
 	break;
       case ValueCode:
-	printf("(code)\n");
-	break;
-      case ValueLateLabel:
-	printf("(late label)\n");
+	printf ("Code: ");
+	codePrint (v->Data.Code.len, v->Data.Code.c);
 	break;
       case ValueAddr:
-	printf("(addr)\n");
+	printf ("AddrOffset 0x%x, reg %d", v->Data.Addr.i, v->Data.Addr.r);
+	break;
+      case ValueSymbol:
+	printf ("Symbol %d x '%s'", v->Data.Symbol.factor, v->Data.Symbol.symbol->str);
 	break;
       default:
-	printf("???\n");
+	printf ("tag 0x%x ???", v->Tag);
 	break;
     }
 }

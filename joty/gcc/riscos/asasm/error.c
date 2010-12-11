@@ -20,6 +20,7 @@
  */
 
 #include "config.h"
+
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -28,9 +29,9 @@
 #include <string.h>
 #include <ctype.h>
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 
 #include "error.h"
@@ -155,22 +156,32 @@ errorCore (ErrorTag e, const char *format, va_list ap)
         break;
     }
   vsnprintf (errbuf, sizeof (errbuf), format, ap);
-  fprintf (stderr, "%s: %s", str, errbuf);
   if (gCurPObjP != NULL)
     {
       const PObject *pObjP = gCurPObjP;
       switch (pObjP->type)
 	{
 	  case POType_eFile:
-	    fprintf (stderr, " at line %d in file %s\n",
-	             pObjP->lineNum, pObjP->name ? pObjP->name : "stdout");
+	    /* When lineNum is zero, we're processing the -PD options.  */
+	    if (pObjP->lineNum != 0)
+	      fprintf (stderr, "%s:%d:%zd: %s: %s\n",
+		       pObjP->name ? pObjP->name : "<stdin>",
+	               pObjP->lineNum,
+		       Input_GetColumn (),
+		       str, errbuf);
+	    else
+	      fprintf (stderr, "%s: %s\n", str, errbuf);
 	    break;
 	  case POType_eMacro:
-	    fprintf (stderr, " in macro %s at line %d in file %s\n",
-		     pObjP->d.macro.macro->name, pObjP->lineNum,
-	             pObjP->name ? pObjP->name : "stdout");
+	    fprintf (stderr, "%s:%d:%zd: %s: %s in macro %s\n",
+		     pObjP->name ? pObjP->name : "<stdin>",
+	             pObjP->lineNum,
+		     Input_GetColumn (),
+		     str, errbuf,
+		     pObjP->d.macro.macro->name);
 	    break;
 	}
+
       if (pObjP->name)
 	DoThrowback (t, pObjP->lineNum, errbuf, pObjP->name);
 
@@ -180,8 +191,12 @@ errorCore (ErrorTag e, const char *format, va_list ap)
 	  switch (pObjP->type)
 	    {
 	      case POType_eFile:
-		fprintf (stderr, "  called from line %d from file %s\n",
-		         pObjP->lineNum, pObjP->name ? pObjP->name : "stdout");
+		/* When lineNum is zero, we're processing the -PD options.  */
+		if (pObjP->lineNum != 0)
+		  fprintf (stderr, "  called from line %d from file %s\n",
+		           pObjP->lineNum, pObjP->name ? pObjP->name : "stdout");
+		else
+		  fputc ('\n', stderr);
 		break;
 	      case POType_eMacro:
 		fprintf (stderr, "  called from macro %s at line %d in file %s\n",
@@ -193,11 +208,15 @@ errorCore (ErrorTag e, const char *format, va_list ap)
 	    DoThrowback (t, pObjP->lineNum, errbuf, pObjP->name);
 	}
     }
+  else
+    fprintf (stderr, "%s: %s\n", str, errbuf);
 }
 
 
 /**
  * ErrorAbort or too many ErrorError won't make this function return.
+ * ErrorError will consume the rest of the line and set the current
+ * input pointer to a NUL character.
  */
 void
 error (ErrorTag e, const char *format, ...)
@@ -206,6 +225,8 @@ error (ErrorTag e, const char *format, ...)
   va_start (ap, format);
   errorCore (e, format, ap);
   va_end (ap);
+
+  Input_ShowLine ();
 
   if (e == ErrorAbort || no_errors > MAXERR)
     fixup ();
@@ -225,6 +246,8 @@ errorAbort (const char *format, ...)
   errorCore (ErrorAbort, format, ap);
   va_end (ap);
 
+  Input_ShowLine ();
+
   fixup ();
 }
 
@@ -240,7 +263,7 @@ errorOutOfMem (void)
 
 
 static void
-errorCoreLine (int lineno, const char *file, ErrorTag e,
+errorCoreLine (const char *file, int lineno, ErrorTag e,
 	       const char *format, va_list ap)
 {
   const char *str;
@@ -278,28 +301,27 @@ errorCoreLine (int lineno, const char *file, ErrorTag e,
     }
 
   vsprintf (errbuf, format, ap);
-  fprintf (stderr, "%s: %s", str, errbuf);
-
+  /* No column support (as it probably does not make sense).  */
   if (lineno == 0)
     lineno = FS_GetCurLineNumber ();
-  fprintf (stderr, " at line %d", lineno);
   if (file == NULL)
     file = FS_GetCurFileName ();
-  fprintf (stderr, " in file '%s'\n", file);
+  fprintf (stderr, "%s:%d: %s: %s\n", file, lineno, str, errbuf);
 
   DoThrowback (t, lineno, errbuf, file);
 }
 
 /**
- * ErrorAbort or too many ErrorError won't make this function return.
+ * Report Info/Warning/Error/Abort message after the input parsing (e.g.
+ * during output time).
+ * An ErrorAbort or too many ErrorError's won't make this function return.
  */
 void
-errorLine (int lineno, const char *file,
-	   ErrorTag e, const char *format, ...)
+errorLine (const char *file, int lineno, ErrorTag e, const char *format, ...)
 {
   va_list ap;
   va_start (ap, format);
-  errorCoreLine (lineno, file, e, format, ap);
+  errorCoreLine (file, lineno, e, format, ap);
   va_end (ap);
                  
   if (e == ErrorAbort || no_errors > MAXERR)
@@ -308,16 +330,16 @@ errorLine (int lineno, const char *file,
     skiprest ();
 }
 
-
 /**
- * Gives fatal error for given lineno and file and does not return.
+ * Reports fatal error for given lineno and file and does not return.
+ * To be used after the input parsing (e.g. during output time).
  */
 void
-errorAbortLine (int lineno, const char *file, const char *format, ...)
+errorAbortLine (const char *file, int lineno, const char *format, ...)
 {
   va_list ap;
   va_start (ap, format);
-  errorCoreLine (lineno, file, ErrorAbort, format, ap);
+  errorCoreLine (file, lineno, ErrorAbort, format, ap);
   va_end (ap);
                  
   fixup ();

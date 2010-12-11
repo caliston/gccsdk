@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2009 GCCSDK Developers
+ * Copyright (c) 2000-2010 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,9 +22,9 @@
 
 #include "config.h"
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#  include <stdint.h>
 #elif HAVE_INTTYPES_H
-#include <inttypes.h>
+#  include <inttypes.h>
 #endif
 #include <string.h>
 
@@ -35,68 +35,81 @@
 #include "lexAcorn.h"
 #include "main.h"
 
-#define FINISH_STR(string,Op,Pri)	\
-  if (notinput(string))			\
+#define FINISH_STR(string, Op, Pri)	\
+  if (notinput (string))		\
     goto illegal;			\
-  lex->LexOperator.op = Op;		\
-  lex->LexOperator.pri = PRI(Pri);	\
+  lex->Data.Operator.op = Op;		\
+  lex->Data.Operator.pri = PRI(Pri);	\
   return;
 
-#define FINISH_CHR(Op,Pri)		\
-  if (inputGet()!=':')			\
+#define FINISH_CHR(Op, Pri)		\
+  if (inputGet () != ':')		\
     goto illegal;			\
-  lex->LexOperator.op = Op;		\
-  lex->LexOperator.pri = PRI(Pri);	\
+  lex->Data.Operator.op = Op;		\
+  lex->Data.Operator.pri = PRI(Pri);	\
   return;
 
 void
 lexAcornUnop (Lex *lex)
 {
   lex->tag = LexOperator;
-  switch (inputGetLower ())
+  switch (inputGet ())
     {
-      case 'c':
-	FINISH_STR ("hr:", Op_chr, 10); /* :chr: */
-      case 'd':
-	if (notinput ("ef:")) /* :def: */
+      case 'B':
+	FINISH_STR ("ASE:", Op_base, 10); /* :BASE: */
+
+      case 'C':
+	FINISH_STR ("HR:", Op_chr, 10); /* :CHR: */
+
+      case 'D':
+	if (notinput ("EF:")) /* :DEF: */
 	  goto illegal;
 	*lex = lexGetPrim ();
-	if (lex->tag != LexId)
-	  goto illegal;
-	/* :def: only returns {TRUE} when the symbol is defined and it is not
-	   a macro local variable.  */
-	const Symbol *symP = symbolFind (lex);
-	lex->LexInt.value =  symP != NULL && !(symP->type & SYMBOL_MACRO_LOCAL);
-	lex->tag = LexBool;
-	return;
-      case 'f':
+	if (lex->tag == LexId)
+	  {
+	    /* :DEF: only returns {TRUE} when the symbol is defined and it is
+	       not a macro local variable.  */
+	    const Symbol *symP = symbolFind (lex);
+	    lex->Data.Bool.value = symP != NULL && !(symP->type & SYMBOL_MACRO_LOCAL);
+	    lex->tag = LexBool;
+	    return;
+	  }
+	else
+	  error (ErrorError, "Bad operand for :DEF:");
+	break;
+
+      case 'F':
 	switch (inputGetLower ())
 	  {
-	    case 'a':
-	      FINISH_STR ("ttr:", Op_fattr, 10); /* :fattr: */
-	    case 'e':
-	      FINISH_STR ("xec:", Op_fexec, 10); /* :fexec: */
-	    case 'l':
-	      FINISH_STR ("oad:", Op_fload, 10); /* :fload: */
-	    case 's':
-	      FINISH_STR ("ize:", Op_fsize, 10); /* :fsize: */
+	    case 'A':
+	      FINISH_STR ("TTR:", Op_fattr, 10); /* :FATTR: */
+	    case 'E':
+	      FINISH_STR ("XEC:", Op_fexec, 10); /* :FEXEC: */
+	    case 'L':
+	      FINISH_STR ("OAD:", Op_fload, 10); /* :FLOAD: */
+	    case 'S':
+	      FINISH_STR ("IZE:", Op_fsize, 10); /* :FSIZE: */
 	  }
 	break;
-      case 'i':
-	FINISH_STR ("ndex:", Op_index, 10); /* :index: */
-      case 'l':
-	switch (inputGetLower ())
+
+      case 'I':
+	FINISH_STR ("NDEX:", Op_index, 10); /* :INDEX: */
+
+      case 'L':
+	switch (inputGet ())
 	  {
-	    case 'e':
-	      FINISH_STR ("n:", Op_len, 10); /* :len: */
-	    case 'n':
-	      FINISH_STR ("ot:", Op_lnot, 10); /* :lnot: */
+	    case 'E':
+	      FINISH_STR ("N:", Op_len, 10); /* :LEN: */
+	    case 'N':
+	      FINISH_STR ("OT:", Op_lnot, 10); /* :LNOT: */
 	  }
 	break;
-      case 'n':
-	FINISH_STR ("ot:", Op_not, 10); /* :not: */
-      case 's':
-	FINISH_STR ("tr:", Op_str, 10); /* :str: */
+
+      case 'N':
+	FINISH_STR ("OT:", Op_not, 10); /* :NOT: */
+
+      case 'S':
+	FINISH_STR ("TR:", Op_str, 10); /* :STR: */
     }
 
 illegal:
@@ -105,65 +118,72 @@ illegal:
 
 
 void
-lexAcornBinop (Lex * lex)
+lexAcornBinop (Lex *lex)
 {
   lex->tag = LexOperator;
-  switch (inputGetLower ())
+  switch (inputGet ())
     {
-      case 'a':
-	FINISH_STR ("nd:", Op_and, 8); /* :and: */
-      case 'c':
-	FINISH_STR ("c:", Op_concat, 9); /* :cc: */
-      case 'e':
-	FINISH_STR ("or:", Op_xor, 6); /* :eor: */
-      case 'l':
-	switch (inputGetLower ())
+      case 'A':
+	FINISH_STR ("ND:", Op_and, 8); /* :AND: */
+
+      case 'C':
+	FINISH_STR ("C:", Op_concat, 9); /* :CC: */
+	
+      case 'E':
+	FINISH_STR ("OR:", Op_xor, 6); /* :EOR: */
+	
+      case 'L':
+	switch (inputGet ())
 	  {
-	    case 'a':
-	      FINISH_STR ("nd:", Op_land, 2); /* :land: */
-	    case 'e':
-	      switch (inputGetLower ())
+	    case 'A':
+	      FINISH_STR ("ND:", Op_land, 2); /* :LAND: */
+	    case 'E':
+	      switch (inputGet ())
 		{
-		  case 'f':
-		    FINISH_STR ("t:", Op_left, 10); /* :left: */
-		  case 'o':
-		    FINISH_STR ("r:", Op_ne, 1); /* :leor: */
+		  case 'F':
+		    FINISH_STR ("T:", Op_left, 10); /* :LEFT: */
+		  case 'O':
+		    FINISH_STR ("R:", Op_ne, 1); /* :LEOR: */
 		}
 	      break;
-	    case 'o':
-	      FINISH_STR ("r:", Op_lor, 1); /* :lor: */
+	    case 'O':
+	      FINISH_STR ("R:", Op_lor, 1); /* :LOR: */
 	  }
 	break;
-    case 'm':
-	FINISH_STR ("od:", Op_mod, 10); /* :mod: */
-    case 'o':
-	FINISH_STR ("r:", Op_or, 7); /* :or: */
-    case 'r':
-	switch (inputGetLower ())
+
+      case 'M':
+	FINISH_STR ("OD:", Op_mod, 10); /* :MOD: */
+
+      case 'O':
+	FINISH_STR ("R:", Op_or, 7); /* :OR: */
+
+      case 'R':
+	switch (inputGet ())
 	  {
-	    case 'i':
-	      FINISH_STR ("ght:", Op_right, 10); /* :right: */
-	    case 'o':
-	      switch (inputGetLower ())
+	    case 'I':
+	      FINISH_STR ("GHT:", Op_right, 10); /* :RIGHT: */
+	    case 'O':
+	      switch (inputGet())
 		{
-		  case 'l':
-		    FINISH_CHR (Op_rol, 5); /* :rol: */
-		  case 'r':
-		    FINISH_CHR (Op_ror, 5); /* :ror: */
+		  case 'L':
+		    FINISH_CHR (Op_rol, 5); /* :ROL: */
+		  case 'R':
+		    FINISH_CHR (Op_ror, 5); /* :ROR: */
 		}
 	      break;
 	  }
 	break;
-    case 's':
-	switch (inputGetLower ())
+
+      case 'S':
+	switch (inputGet ())
 	  {
-	    case 'h':
-	      switch (inputGetLower ())
+	    case 'H':
+	      switch (inputGet ())
 		{
-		  case 'l':
-		    FINISH_CHR (Op_sl, 5); /* :shl: */
-		  case 'r':
-		    FINISH_CHR (Op_sr, 5); /* :shr: */
+		  case 'L':
+		    FINISH_CHR (Op_sl, 5); /* :SHL: */
+		  case 'R':
+		    FINISH_CHR (Op_sr, 5); /* :SHR: */
 		}
 	      break;
 	  }
@@ -176,67 +196,90 @@ illegal:
 
 
 #define FINISH_STR_PRIM(string)	\
-  if (notinput(string))		\
+  if (notinput (string))	\
     goto illegal;
 
-
+/**
+ * Get builtin variable.
+ */
 void
 lexAcornPrim (Lex *lex)
 {
-  switch (inputGetLower ())
+  const char * const inputMark = Input_GetMark ();
+  switch (inputGet ())
     {
-      case 'c':
-	FINISH_STR_PRIM ("onfig}"); /* {config} */
+      case 'C':
+	FINISH_STR_PRIM ("ONFIG}"); /* {CONFIG} */
 	lex->tag = LexInt;
-	lex->LexInt.value = option_apcs_32bit ? 32 : 26;
+	lex->Data.Int.value = option_apcs_32bit ? 32 : 26;
 	return;
-      case 'e':
-	FINISH_STR_PRIM ("ndian}"); /* {endian} */
+
+      case 'E':
+	FINISH_STR_PRIM ("NDIAN}"); /* {ENDIAN} */
 	lex->tag = LexString;
-	if ((lex->LexString.str = strdup ("little")) == NULL)
+	if ((lex->Data.String.str = strdup ("little")) == NULL)
 	  errorOutOfMem ();
-	lex->LexString.len = sizeof ("little")-1;
+	lex->Data.String.len = sizeof ("little")-1;
 	return;
-      case 'f':
-	FINISH_STR_PRIM ("alse}"); /* {false} */
+
+      case 'F':
+	FINISH_STR_PRIM ("ALSE}"); /* {FALSE} */
 	lex->tag = LexBool;
-	lex->LexInt.value = FALSE;
+	lex->Data.Int.value = false;
 	return;
-      case 'm':
-	FINISH_STR_PRIM ("odule}"); /* {module} */
+
+      case 'M':
+	FINISH_STR_PRIM ("ODULE}"); /* {MODULE} */
 	lex->tag = LexBool;
-	lex->LexInt.value = option_rma_module;
+	lex->Data.Int.value = option_rma_module;
 	return;
-      case 'p':
-	FINISH_STR_PRIM ("c}"); /* {pc} */
+
+      case 'P':
+	FINISH_STR_PRIM ("C}"); /* {PC} */
 	lex->tag = LexPosition;
 	return;
-      case 's':
-	FINISH_STR_PRIM ("oftfloat}"); /* {softfloat} */
+
+      case 'S':
+	FINISH_STR_PRIM ("OFTFLOAT}"); /* {SOFTFLOAT} */
 	lex->tag = LexBool;
-	lex->LexInt.value = option_apcs_softfloat;
+	lex->Data.Int.value = option_apcs_softfloat;
 	return;
-      case 't':
-	FINISH_STR_PRIM ("rue}"); /* {true} */
+
+      case 'T':
+	FINISH_STR_PRIM ("RUE}"); /* {TRUE} */
 	lex->tag = LexBool;
-	lex->LexInt.value = TRUE;
+	lex->Data.Int.value = true;
 	return;
-      case 'v':
-	FINISH_STR_PRIM ("ar}"); /* {var} */
+
+      case 'V':
+	FINISH_STR_PRIM ("AR}"); /* {VAR} */
 	lex->tag = LexStorage;
 	return;
-      case 'o':
-	FINISH_STR_PRIM ("pt}"); /* {opt} */
+
+      case 'O':
+	FINISH_STR_PRIM ("PT}"); /* {OPT} */
 	lex->tag = LexInt;
-	lex->LexInt.value = 2;
+	lex->Data.Int.value = 2;
 	return;
-      case 'a':
-	FINISH_STR_PRIM ("sasm}"); /* {asasm} */
+
+      case 'A':
+	FINISH_STR_PRIM ("SASM}"); /* {ASASM} */
 	lex->tag = LexBool;
-	lex->LexInt.value = TRUE;
+	lex->Data.Int.value = true;
 	return;
     }
 
 illegal:
+  {
+    /* Try to find the end of the builtin variable name.  */
+    const char *lineRest = inputRest ();
+    while (*lineRest != '\0' && *lineRest != '\n' && *lineRest != '}')
+      ++lineRest;
+    if (*lineRest == '}')
+      error (ErrorError, "Unknown builtin variable {%.*s",
+	     (int)(lineRest + 1 - inputMark), inputMark);
+    else
+      error (ErrorError, "Missing closing bracket");
+  }
   lex->tag = LexNone;
 }

@@ -1,7 +1,6 @@
 /*
  * AS an assembler for ARM
- * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2004-2006 GCCSDK Developers
+ * Copyright (c) 2010 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,18 +16,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
- * help_eval.h
+ * m_fpumem.h
  */
 
-#ifndef help_eval_header_included
-#define help_eval_header_included
+#ifndef m_fpumem_header_included
+#define m_fpumem_header_included
 
-#include "value.h"
+#include <stdbool.h>
 
-void help_evalNegLate (Value * value);
-
-void help_evalSubLate (Value * lvalue, const Value * rvalue);
-
-void help_evalAddLate (Value * lvalue, const Value * rvalue);
+bool m_ldf (void);
+bool m_lfm (void);
+bool m_sfm (void);
+bool m_stf (void);
 
 #endif

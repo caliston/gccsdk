@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2004-2006 GCCSDK Developers
+ * Copyright (c) 2004-2010 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,6 +23,8 @@
 #ifndef code_header_included
 #define code_header_included
 
+#include <stdbool.h>
+
 #include "global.h"
 #include "lex.h"
 #include "reloc.h"
@@ -32,55 +34,47 @@
 typedef enum
 {
   CodeOperator,
-  CodeValue,
-  CodeSymbol
+  CodeValue
 } CodeTag;
 
-typedef union CODE
+typedef struct Code
 {
   CodeTag Tag;
-  struct
-  {
-    CodeTag Tag;
-    Operator op;
-  }
-  CodeOperator;
-  struct
-  {
-    CodeTag Tag;
-    Value value;
-  }
-  CodeValue;
-  struct
-  {
-    CodeTag Tag;
-    Symbol *symbol;
-  }
-  CodeSymbol;
+  union
+    {
+      Operator op;	/* .Tag = CodeOperator */
+      Value value;	/* .Tag = CodeValue */
+    } Data;
 } Code;
-
-#define CODE_SIZECODE  (1024)
-#define CODE_SIZESTACK (1024)
-#define CODE_SIZELATE  (1024)
-
-extern BOOL exprNotConst;
 
 void codeInit (void);
 
 void codeOperator (Operator op);
 void codeSymbol (Symbol *symbol);
 void codeInt (int value);
-void codePosition (Symbol *area);
+void codePosition (Symbol *area, int offset);
 void codeStorage (void);
-void codeString (int len, const char *str);
-void codeFloat (FLOAT value);
-void codeBool (BOOL value);
+void codeString (const char *str, size_t len);
+void codeFloat (ARMFloat value);
+void codeBool (bool value);
+void codeAddr (int reg, int offset);
+void Code_AddValueCode (const Value *value);
+void codeValue (const Value *value);
 
-Value codeEvalLow (ValueTag legal, int size, Code *program);
-Value codeEval (ValueTag legal);
+const Value *codeEvalLow (ValueTag legal, size_t size, Code *program, const ARMWord *instrOffsetP);
+const Value *codeEval (ValueTag legal, const ARMWord *instrOffsetP);
 
-LateInfo *codeNewLateInfo (Symbol *symbol);
-Code *codeCopy (int len, const Code *code);
-BOOL codeEqual (int len, const Code *a, const Code *b);
+bool Code_HasUndefinedSymbols (void);
+Value Code_TakeSnapShot (void);
+void Code_ExpandCurrAreaSymbolAsOffset (Value *value, int offset);
+bool Code_HasUndefSymbols (const Code *code, size_t len);
+
+void Code_Free (Code *code, size_t len);
+Code *codeCopy (size_t len, const Code *code);
+bool codeEqual (size_t len, const Code *a, const Code *b);
+
+#ifdef DEBUG
+void codePrint (size_t size, const Code *program);
+#endif
 
 #endif
