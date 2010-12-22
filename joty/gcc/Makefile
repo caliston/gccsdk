@@ -74,15 +74,13 @@ GCC_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 1 Develo
 	--with-bugurl=http://gccsdk.riscos.info/
 BINUTILS_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 1 Development' \
 	--with-bugurl=http://gccsdk.riscos.info/
-## As long we don't have private changes applied to gdb, we don't need the following:
-##GDB_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 1 Development' \
-##	--with-bugurl=http://gccsdk.riscos.info/
-BINUTILS_CONFIG_ARGS += --enable-maintainer-mode --enable-interwork --disable-werror --with-gcc --disable-nls
-## FIXME: left out --enable-maintainer-mode because of http://gcc.gnu.org/bugzilla/show_bug.cgi?id=44902
-## which turns compile warnings into errors.
-##GCC_CONFIG_ARGS += --enable-maintainer-mode --enable-interwork --disable-nls
-GCC_CONFIG_ARGS += --enable-interwork --disable-nls
-GDB_CONFIG_ARGS += --enable-interwork --disable-multilib --disable-werror --disable-nls
+GDB_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 1 Development' \
+	--with-bugurl=http://gccsdk.riscos.info/
+BINUTILS_CONFIG_ARGS += --enable-maintainer-mode --disable-werror --with-gcc --enable-interwork --disable-nls
+# --disable-werror is added because --enable-maintainer-mode turns all warnings into errors and
+# the gcc build is not 100% warning free.
+GCC_CONFIG_ARGS += --enable-maintainer-mode --disable-werror --enable-interwork --disable-nls --disable-libquadmath
+GDB_CONFIG_ARGS += --disable-werror --enable-interwork --disable-multilib --disable-nls
 
 # When debugging/testing/validating the compiler add "--enable-checking=all",
 # otherwise add "--enable-checking=release" or even "--enable-checking=no"
@@ -249,7 +247,7 @@ cross-binutils-built: cross-binutils-configured
 	touch $(BUILDSTEPSDIR)/cross-binutils-built
 
 # Configure ronative:
-ronative-binutils-configured: src-binutils-copied cross-all-built
+ronative-binutils-configured: src-binutils-copied cross-done
 	-rm -rf $(BUILDDIR)/ronative-binutils
 	mkdir -p $(BUILDDIR)/ronative-binutils
 	cd $(BUILDDIR)/ronative-binutils && PATH="$(PREFIX_BUILDTOOL_BINUTILS)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/binutils/configure $(RONATIVE_CONFIG_ARGS) $(BINUTILS_CONFIG_ARGS)
@@ -289,7 +287,7 @@ cross-gcc-built: cross-gcc-configured
 ifeq "$(GCC_USE_PPL_CLOOG)" "yes"
 ronative-gcc-configured: ronative-ppl-built ronative-cloog-built
 endif
-ronative-gcc-configured: cross-all-built ronative-gmp-built ronative-mpc-built ronative-mpfr-built
+ronative-gcc-configured: cross-done ronative-gmp-built ronative-mpc-built ronative-mpfr-built
 	-rm -rf $(BUILDDIR)/ronative-gcc
 	mkdir -p $(BUILDDIR)/ronative-gcc
 	cd $(BUILDDIR)/ronative-gcc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gcc/configure $(RONATIVE_CONFIG_ARGS) $(RONATIVE_GCC_CONFIG_ARGS) $(GCC_CONFIG_ARGS) --enable-languages=$(GCC_LANGUAGES)
