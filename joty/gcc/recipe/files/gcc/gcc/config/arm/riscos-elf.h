@@ -64,7 +64,7 @@ FIXME: enable this !
    -mfloat-abi=soft.  */
 #undef SUBTARGET_EXTRA_ASM_SPEC
 #define SUBTARGET_EXTRA_ASM_SPEC \
-     "%{!mfpu:%{mhard-float|mfloat-abi=hard:-mfpu=fpa; :-mfpu=softfpa}}" \
+     "%{!mfpu=*:%{mhard-float|mfloat-abi=hard:-mfpu=fpa; :-mfpu=softfpa}}" \
      "%{fpic|fPIC: -k}"
 
 #undef SUBTARGET_EXTRA_LINK_SPEC
