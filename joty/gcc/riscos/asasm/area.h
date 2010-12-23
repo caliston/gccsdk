@@ -65,10 +65,11 @@ struct LITPOOL;
 
 typedef struct AREA
 {
-  Symbol *next;			/** The following area symbol.  */
+  Symbol *next;			/** The next area symbol.  */
   uint32_t type;		/* See AREA_ #defines */
   size_t imagesize;
   uint8_t *image;
+  uint32_t baseAddr;
 
   RelocQueue *relocQueue;
   int norelocs;
@@ -93,11 +94,12 @@ void areaFinish (void);
 void areaGrow (Area *area, size_t mingrow);
 
 bool Area_IsImplicit (const Symbol *sym);
-void Area_AlignTo (int align, const char *msg);
+size_t Area_AlignTo (size_t offset, int align, const char *msg);
 
 bool c_align (void);
 bool c_area (void);
-bool c_reserve (void);
 bool c_entry (void);
+bool c_org (void);
+bool c_reserve (void);
 
 #endif

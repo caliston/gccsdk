@@ -43,7 +43,6 @@
 #include "expr.h"
 #include "filestack.h"
 #include "fix.h"
-#include "help_lex.h"
 #include "include.h"
 #include "input.h"
 #include "lex.h"
@@ -54,6 +53,18 @@
 #include "put.h"
 #include "symbol.h"
 #include "value.h"
+
+typedef struct
+{
+  int size; /**< Size of the data unit : 1, 2 or 4.  */
+  bool allowUnaligned; /**< Allow unaligned data storage.  */
+} DefineInt_PrivData_t;
+
+typedef struct
+{
+  int size; /**< Size of the data unit : 4 or 8.  */
+  bool allowUnaligned; /**< Allow unaligned data storage.  */
+} DefineReal_PrivData_t;
 
 static void
 c_define (const char *msg, Symbol *sym, ValueTag legal)
@@ -151,23 +162,13 @@ c_cp (Symbol *symbol)
 }
 
 /**
- * Implements LTORG.
- */
-bool
-c_ltorg (void)
-{
-  Lit_DumpPool ();
-  return false;
-}
-
-/**
  * Implements "HEAD" : APCS function name signature.
  * ObjAsm extension.
  */
 bool
 c_head (void)
 {
-  skipblanks ();
+  const int startAreaOffset = areaCurrentSymbol->value.Data.Int.i;
   const Value *value = exprBuildAndEval (ValueString);
   switch (value->Tag)
     {
@@ -176,22 +177,21 @@ c_head (void)
 	  size_t len = value->Data.String.len;
 	  const char *str = value->Data.String.s;
 	  for (size_t i = 0; i < len; ++i)
-	    putData (1, str[i]);
-	  putData (1, 0);
+	    Put_Data (1, str[i]);
+	  Put_Data (1, '\0');
 	}
         break;
+
       default:
         error (ErrorError, "Illegal %s expression", "string");
         break;
     }
 
-  /* Align.  */
-  int i = areaCurrentSymbol->value.Data.Int.i;
-  while (areaCurrentSymbol->value.Data.Int.i & 3)
-    areaCurrentSymbol->area.info->image[areaCurrentSymbol->value.Data.Int.i++] = 0;
-  putData (4, 0xFF000000 + (areaCurrentSymbol->value.Data.Int.i - i));
+  Area_AlignTo (areaCurrentSymbol->value.Data.Int.i, 4, NULL);
+  Put_Data (4, 0xFF000000 + areaCurrentSymbol->value.Data.Int.i - startAreaOffset);
   return false;
 }
+
 
 /**
  * Reloc updater for DefineInt().
@@ -200,13 +200,13 @@ bool
 DefineInt_RelocUpdater (const char *file, int lineno, ARMWord offset,
 			const Value *valueP, void *privData, bool final)
 {
-  const int size = *(int *)privData;
+  const DefineInt_PrivData_t *privDataP = (const DefineInt_PrivData_t *)privData;
 
   assert (valueP->Tag == ValueCode && valueP->Data.Code.len != 0);
 
   /* ValueString for size = 1 is an odd one case:  */
   if (!final
-      && size == 1
+      && privDataP->size == 1
       && valueP->Data.Code.len == 1
       && valueP->Data.Code.c[0].Tag == CodeValue
       && valueP->Data.Code.c[0].Data.value.Tag == ValueString)
@@ -222,16 +222,21 @@ DefineInt_RelocUpdater (const char *file, int lineno, ARMWord offset,
   for (size_t i = 0; i != valueP->Data.Code.len; ++i)
     {
       const Code *codeP = &valueP->Data.Code.c[i];
-      if (codeP->Tag != CodeValue)
-	continue;
+      if (codeP->Tag == CodeOperator)
+	{
+	  if (codeP->Data.op != Op_add)
+	    return true;
+	  continue;
+	}
+      assert (codeP->Tag == CodeValue);
       const Value *valP = &codeP->Data.value;
 
       switch (valP->Tag)
 	{
 	  case ValueInt:
 	    {
-	      ARMWord word = Fix_Int (file, lineno, size, valP->Data.Int.i);
-	      Put_DataWithOffset (offset, size, word);
+	      ARMWord word = Fix_Int (file, lineno, privDataP->size, valP->Data.Int.i);
+	      Put_AlignDataWithOffset (offset, privDataP->size, word, !privDataP->allowUnaligned);
 	    }
 	    break;
 
@@ -239,30 +244,27 @@ DefineInt_RelocUpdater (const char *file, int lineno, ARMWord offset,
 	    {
 	      if (!final)
 		{
-		  Put_DataWithOffset (offset, size, 0);
+		  Put_AlignDataWithOffset (offset, privDataP->size, 0, !privDataP->allowUnaligned);
 		  return true;
 		}
-#if 0 /* FIXME: is this needed ? */
-	      if (size != 4)
-		{
-		  errorLine (file, lineno, ErrorError, "Wrong data size for relocation");
-		  return true;
-		}
-#endif
 	      int How;
-	      switch (size)
+	      switch (privDataP->size)
 		{
+		  case 1:
+		    How = HOW2_INIT | HOW2_BYTE;
+		    break;
+		  case 2:
+		    How = HOW2_INIT | HOW2_HALF;
+		    break;
 		  case 4:
 		    How = HOW2_INIT | HOW2_WORD;
 		    break;
-		    case 2: // FIXME: needed ?
-		      How = HOW2_INIT | HOW2_HALF;
-		    break;
-		    case 1: // FIXME: needed ?
-		      How = HOW2_INIT | HOW2_BYTE;
+		  default:
+		    assert (0);
 		    break;
 		}
-	      Reloc_Create (How, offset, valP);
+	      if (Reloc_Create (How, offset, valP) == NULL)
+		return true;
 	    }
 	    break;
 
@@ -275,14 +277,19 @@ DefineInt_RelocUpdater (const char *file, int lineno, ARMWord offset,
 }
 
 static bool
-DefineInt (int size, const char *mnemonic)
+DefineInt (int size, bool allowUnaligned, const char *mnemonic)
 {
+  DefineInt_PrivData_t privData =
+    {
+      .size = size,
+      .allowUnaligned = allowUnaligned
+    };
   do
     {
       exprBuild ();
       if (Reloc_QueueExprUpdate (DefineInt_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
 				 ValueInt | ValueString | ValueSymbol | ValueCode,
-				 &size, sizeof (size)))
+				 &privData, sizeof (privData)))
 	error (ErrorError, "Illegal %s expression", mnemonic);
 
       skipblanks ();
@@ -297,25 +304,40 @@ DefineInt (int size, const char *mnemonic)
 bool
 c_dcb (void)
 {
-  return DefineInt (1, "DCB or =");
+  return DefineInt (1, true, "DCB or =");
 }
 
 /**
- * Implements DCW (16 bit integer).
+ * Implements DCW, DCWU (16 bit integer).
  */
 bool
 c_dcw (void)
 {
-  return DefineInt (2, "DCW");
+  bool allowUnaligned = Input_Match ('U', false);
+  if (inputLook () && !isspace ((unsigned char)inputLook ()))
+    return true;
+  return DefineInt (2, allowUnaligned, allowUnaligned ? "DCWU" : "DCW");
 }
 
 /**
- * Implements DCD and & (32 bit integer).
+ * Implements DCD, DCDU and & (32 bit integer).
  */
 bool
 c_dcd (void)
 {
-  return DefineInt (4, "DCD");
+  bool allowUnaligned = Input_Match ('U', false);
+  if (inputLook () && !isspace ((unsigned char)inputLook ()))
+    return true;
+  return DefineInt (4, allowUnaligned, allowUnaligned ? "DCDU" : "DCD");
+}
+
+/**
+ * Implements DCI.
+ */
+bool
+c_dci (void)
+{
+  return DefineInt (4, false, "DCI");
 }
 
 /**
@@ -325,31 +347,39 @@ bool
 DefineReal_RelocUpdater (const char *file, int lineno, ARMWord offset,
 			 const Value *valueP, void *privData, bool final)
 {
-  const int size = *(int *)privData;
+  const DefineReal_PrivData_t *privDataP = (const DefineReal_PrivData_t *)privData;
 
   assert (valueP->Tag == ValueCode && valueP->Data.Code.len != 0);
 
   for (size_t i = 0; i != valueP->Data.Code.len; ++i)
     {
       const Code *codeP = &valueP->Data.Code.c[i];
-      if (codeP->Tag != CodeValue)
-	continue;
+      if (codeP->Tag == CodeOperator)
+	{
+	  if (codeP->Data.op != Op_add)
+	    return true;
+	  continue;
+	}
+      assert (codeP->Tag == CodeValue);
       const Value *valP = &codeP->Data.value;
 
       switch (valP->Tag)
 	{
 	  case ValueInt:
-	    putDataFloat (size, valP->Data.Int.i);
+	    Put_FloatDataWithOffset (offset, privDataP->size, valP->Data.Int.i,
+				     !privDataP->allowUnaligned);
 	    break;
 
 	  case ValueFloat:
-	    putDataFloat (size, valP->Data.Float.f);
+	    Put_FloatDataWithOffset (offset, privDataP->size, valP->Data.Float.f,
+				     !privDataP->allowUnaligned);
 	    break;
 
 	  case ValueSymbol:
 	    if (!final)
 	      {
-		Put_DataWithOffset (offset, size, 0);
+		Put_FloatDataWithOffset (offset, privDataP->size, 0.,
+					 !privDataP->allowUnaligned);
 		return true;
 	      }
 	    errorLine (file, lineno, ErrorError, "Can't create relocation");
@@ -364,8 +394,13 @@ DefineReal_RelocUpdater (const char *file, int lineno, ARMWord offset,
 }
 
 static bool
-DefineReal (int size, const char *mnemonic)
+DefineReal (int size, bool allowUnaligned, const char *mnemonic)
 {
+  DefineReal_PrivData_t privData =
+    {
+      .size = size,
+      .allowUnaligned = allowUnaligned
+    };
   do
     {
       exprBuild ();
@@ -373,7 +408,7 @@ DefineReal (int size, const char *mnemonic)
       if (option_autocast)
 	legal |= ValueInt;
       if (Reloc_QueueExprUpdate (DefineReal_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
-				 legal, &size, sizeof (size)))
+				 legal, &privData, sizeof (privData)))
 	error (ErrorError, "Illegal %s expression", mnemonic);
 
       skipblanks ();
@@ -383,112 +418,27 @@ DefineReal (int size, const char *mnemonic)
 }
 
 /**
- * Implements DCFS (IEEE Single Precision).
+ * Implements DCFS / DCFSU (IEEE Single Precision).
  */
 bool
 c_dcfs (void)
 {
-  return DefineReal (4, "DCFS");
+  bool allowUnaligned = Input_Match ('U', false);
+  if (inputLook () && !isspace ((unsigned char)inputLook ()))
+    return true;
+  return DefineReal (4, allowUnaligned, allowUnaligned ? "DCFSU" : "DCFS");
 }
 
 /**
- * Implements DCFD (IEEE Double Precision).
+ * Implements DCFD / DCFDU (IEEE Double Precision).
  */
 bool
 c_dcfd (void)
 {
-  return DefineReal (8, "DCFD");
-}
-
-static bool
-symFlag (unsigned int flags, const char *err)
-{
-  const Lex lex = lexGetId ();
-  if (lex.tag != LexId)
-    {
-      /* When the symbol is not known yet, it will automatically be created.  */
-      Symbol *sym = symbolGet (&lex);
-      if (localTest (sym->str))
-        error (ErrorError, "Local labels cannot be %s", err);
-      else
-        sym->type |= flags;
-    }
-  return false;
-}
-
-/**
- * Implements EXPORT / GLOBL.
- */
-bool
-c_globl (void)
-{
-  return symFlag (SYMBOL_REFERENCE | SYMBOL_DECLARED, "exported");
-}
-
-/**
- * Implements STRONG.
- */
-bool
-c_strong (void)
-{
-  return symFlag (SYMBOL_STRONG, "marked 'strong'");
-}
-
-/**
- * Implements KEEP.
- */
-bool
-c_keep (void)
-{
-  return symFlag (SYMBOL_KEEP | SYMBOL_DECLARED, "marked 'keep'");
-}
-
-/**
- * Implements IMPORT.
- */
-bool
-c_import (void)
-{
-  Lex lex = lexGetId ();
-  if (lex.tag != LexId)
-    return false; /* Error is already given.  */
-
-  Symbol *sym = symbolGet (&lex);
-  sym->type |= SYMBOL_REFERENCE | SYMBOL_DECLARED;
-  while (Input_Match (',', false))
-    {
-      Lex attribute = lexGetId ();
-      if (!strncmp ("NOCASE", attribute.Data.Id.str, attribute.Data.Id.len))
-	sym->type |= SYMBOL_NOCASE;
-      else if (!strncmp ("WEAK", attribute.Data.Id.str, attribute.Data.Id.len))
-	sym->type |= SYMBOL_WEAK;
-      else if (!strncmp ("COMMON", attribute.Data.Id.str, attribute.Data.Id.len))
-        {
-	  skipblanks ();
-	  if (Input_Match ('=', false))
-	    error (ErrorError, "COMMON attribute needs size specification");
-	  else
-	    {
-	      const Value *size = exprBuildAndEval (ValueInt);
-	      switch (size->Tag)
-	        {
-		  case ValueInt:
-		    Value_Assign (&sym->value, size);
-		    sym->type |= SYMBOL_COMMON;
-		    break;
-		  default:
-		    error (ErrorError, "Illegal COMMON attribute expression");
-		    break;
-	        }
-	    }
-	}
-      else if (!strncmp ("FPREGARGS", attribute.Data.Id.str, attribute.Data.Id.len))
-	sym->type |= SYMBOL_FPREGARGS;
-      else
-	error (ErrorError, "Illegal IMPORT attribute %s", attribute.Data.Id.str);
-      skipblanks ();
-    }
-  return false;
+  bool allowUnaligned = Input_Match ('U', false);
+  if (inputLook () && !isspace ((unsigned char)inputLook ()))
+    return true;
+  return DefineReal (8, allowUnaligned, allowUnaligned ? "DCFDU" : "DCFD");
 }
 
 /**
@@ -564,10 +514,10 @@ c_idfn (void)
 }
 
 /**
- * Implements BIN.
+ * Implements INCBIN.
  */
 bool
-c_bin (void)
+c_incbin (void)
 {
   char *filename;
   if ((filename = strdup (inputRest ())) == NULL)
@@ -591,7 +541,7 @@ c_bin (void)
   free ((void *)newFilename);
   /* Include binary file.  */
   while (!feof (binfp))
-    putData (1, getc (binfp));
+    Put_Data (1, getc (binfp));
   fclose (binfp);
   return false;
 }
@@ -603,8 +553,9 @@ bool
 c_end (void)
 {
   if (gCurPObjP->type == POType_eMacro)
-    errorAbort ("Cannot use END within a macro");
-  FS_PopPObject (false);
+    error (ErrorError, "Cannot use END within a macro");
+  else
+    FS_PopPObject (false);
   return false;
 }
 
@@ -615,10 +566,18 @@ bool
 c_assert (void)
 {
   const Value *value = exprBuildAndEval (ValueBool);
-  if (value->Tag != ValueBool)
-    error (ErrorError, "ASSERT expression must be boolean");
-  else if (!value->Data.Bool.b)
-    error (ErrorError, "Assertion failed");
+  switch (value->Tag)
+    {
+      case ValueBool:
+	if (!value->Data.Bool.b)
+	  error (ErrorError, "Assertion failed");
+	break;
+
+      default:
+	error (ErrorError, "ASSERT expression must be boolean");
+	break;
+    }
+
   return false;
 }
 

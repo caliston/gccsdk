@@ -32,6 +32,7 @@
 #include <ctype.h>
 
 #include "commands.h"
+#include "decode.h"
 #include "error.h"
 #include "filestack.h"
 #include "input.h"
@@ -47,6 +48,9 @@ static Macro *macroList;
 
 static bool Macro_GetLine (char *bufP, size_t bufSize);
 
+/**
+ * Similar to FS_PopFilePObject().
+ */
 void
 FS_PopMacroPObject (bool noCheck)
 {
@@ -56,7 +60,10 @@ FS_PopMacroPObject (bool noCheck)
   FS_PopIfWhile (noCheck);
 
   for (int p = 0; p < MACRO_ARG_LIMIT; ++p)
-    free ((void *) gCurPObjP->d.macro.args[p]);
+    {
+      free ((void *) gCurPObjP->d.macro.args[p]);
+      gCurPObjP->d.macro.args[p] = NULL;
+    }
 
   var_restoreLocals (gCurPObjP->d.macro.varListP);
 }
@@ -75,7 +82,7 @@ FS_PushMacroPObject (const Macro *m, const char *args[MACRO_ARG_LIMIT])
 
   gCurPObjP[1].d.macro.macro = m;
   gCurPObjP[1].d.macro.curPtr = m->buf;
-  memcpy (gCurPObjP[1].d.macro.args, args, sizeof (args));
+  memcpy (gCurPObjP[1].d.macro.args, args, sizeof (args)*MACRO_ARG_LIMIT);
   gCurPObjP[1].d.macro.varListP = NULL;
   
   gCurPObjP[1].name = m->file;
@@ -91,7 +98,7 @@ FS_PushMacroPObject (const Macro *m, const char *args[MACRO_ARG_LIMIT])
 
 
 void
-macroCall (const Macro *m, const Lex *label)
+Macro_Call (const Macro *m, const Lex *label)
 {
   const char *args[MACRO_ARG_LIMIT];
 
@@ -101,48 +108,57 @@ macroCall (const Macro *m, const Lex *label)
       if (m->labelarg)
 	{
 	  const char *c = label->Data.Id.str;
-	  int len;
+	  size_t len;
 	  for (len = (c[0] == '#') ? 1 : 0; isalnum (c[len]) || c[len] == '_'; ++len)
 	    /* */;
 	  if ((args[marg++] = strndup (label->Data.Id.str, len)) == NULL)
 	    errorOutOfMem();
 	}
       else
-	{
-	  error (ErrorError, "Label argument not allowed");
-	  return;
-	}
+	error (ErrorWarning, "Label argument is ignored by macro %s", m->name);
     }
   else if (m->labelarg)
     args[marg++] = NULL;		/* Null label argument */
 
   skipblanks ();
-  while (!Input_IsEolOrCommentStart ())
+  bool tryEmptyParam = false;
+  while (tryEmptyParam || !Input_IsEolOrCommentStart ())
     {
       if (marg == m->numargs)
 	{
 	  error (ErrorError, "Too many arguments");
 	  skiprest ();
-	  break;
+	  return;
 	}
-      const char *c;
+      const char *arg;
       size_t len;
       if (Input_Match ('"', false))
 	{
-	  c = inputSymbol (&len, '"');	/* handles "x\"y", but not "x""y" */
-	  inputSkip ();
-	  skipblanks ();
+	  /* Double quoted argument.  */
+	  arg = Input_GetString (&len);
 	}
       else
 	{
-	  c = inputSymbol (&len, ',');
-	  while (len > 0 && (c[len - 1] == ' ' || c[len - 1] == '\t'))
+	  /* Unquoted argument.  */
+	  arg = inputSymbol (&len, ',');
+	  /* Discard the white space characters before comma.  */
+	  while (len != 0 && isspace ((unsigned char)arg[len - 1]))
 	    len--;
+	  if ((arg = strndup (arg, len)) == NULL)
+	    errorOutOfMem();
 	}
-      if ((args[marg++] = strndup (c, len)) == NULL)
-	errorOutOfMem();
+      if (len == 1 && arg[0] == '|')
+	{
+	  /* Argument '|' means taking the default argument value.  */
+	  free ((void *)arg);
+	  arg = m->defArgs[marg];
+	}
+      args[marg++] = arg;
+      skipblanks ();
       if (!Input_Match (',', true))
 	break;
+      /* Following deals with terminating "," character.  */
+      tryEmptyParam = true;
     }
 
   for (/* */; marg < MACRO_ARG_LIMIT; ++marg)
@@ -157,27 +173,35 @@ macroCall (const Macro *m, const Lex *label)
   FS_PushMacroPObject (m, args);
 }
 
-
+/**
+ * Called during macro expansion, called line-per-line of the macro.
+ * \param bufP Buffer to fill
+ * \param bufSize Buffer size
+ * \return true for failure or end of data (i.e. end of macro), false otherwise.
+ */
 static bool
 Macro_GetLine (char *bufP, size_t bufSize)
 {
   const char *curPtr = gCurPObjP->d.macro.curPtr;
+
+  if (*curPtr == '\0')
+    return true;
   
-  const char * const bufStartP = bufP;
   const char * const bufEndP = bufP + bufSize - 1;
   while (*curPtr != '\0' && bufP != bufEndP)
     {
       if (MACRO_ARG0 <= *curPtr && *curPtr <= MACRO_ARG15)
 	{
-	  /* Argument substitution */
+	  /* Argument substitution.  */
 	  const char *argP = gCurPObjP->d.macro.args[*curPtr - MACRO_ARG0];
-	  if (argP == NULL)
-	    argP = "";
-	  size_t argLen = strlen (argP);
-	  if (bufEndP < bufP + argLen)
-	    errorAbort ("Line too long");
-	  memcpy (bufP, argP, argLen);
-	  bufP += argLen;
+	  if (argP != NULL)
+	    {
+	      size_t argLen = strlen (argP);
+	      if (bufEndP < bufP + argLen)
+		errorAbort ("Line too long");
+	      memcpy (bufP, argP, argLen);
+	      bufP += argLen;
+	    }
 	  ++curPtr;
 	}
       else if (*curPtr == '\n')
@@ -192,12 +216,12 @@ Macro_GetLine (char *bufP, size_t bufSize)
 
   gCurPObjP->d.macro.curPtr = curPtr;
 
-  return bufP == bufStartP;
+  return false;
 }
 
 
 const Macro *
-macroFind (const char *name, size_t len)
+Macro_Find (const char *name, size_t len)
 {
   for (const Macro *m = macroList; m != NULL; m = m->next)
     {
@@ -223,6 +247,8 @@ c_mend (void)
   if (inputGet () != 'M' || inputGet () != 'E'
       || inputGet () != 'N' || inputGet () != 'D')
     return false;
+  /* We only need to check for EOL or space.  Upon return from Macro_Call()
+     in decode(), decode_finalcheck() will deal with this.  */
   char c = inputLook ();
   return c == '\0' || isspace ((unsigned char)c);
 }
@@ -251,23 +277,30 @@ c_macro (const Lex *label)
   /* Read optional '$' + label name.  */
   if (!inputNextLineNoSubst ())
     errorAbort ("End of file found within macro definition");
-  if (Input_IsEolOrCommentStart ())
-    errorAbort ("Missing macro name");
-  Input_Match ('$', false);
-  size_t len;
-  const char *ptr = inputSymbol (&len, 0);
-  if (len)
+  if (Input_Match ('$', false))
     {
-      m.labelarg = m.numargs = 1;
-      if ((m.args[0] = strndup (ptr, len)) == NULL)
-	errorOutOfMem ();
+      size_t len;
+      const char *ptr = inputSymbol (&len, 0);
+      if (len)
+	{
+	  m.labelarg = m.numargs = 1;
+	  if ((m.args[0] = strndup (ptr, len)) == NULL)
+	    errorOutOfMem ();
+	}
+    }
+  else if (!isspace ((unsigned char)inputLook ()))
+    {
+      error (ErrorError, "Illegal parameter start in macro definition");
+      goto lookforMEND;
     }
   skipblanks ();
 
   /* Read macro name.  */
+  size_t len;
+  const char *ptr;
   if ((ptr = Input_Symbol (&len)) == NULL)
     errorAbort ("Missing macro name");
-  const Macro *prevDefMacro = macroFind (ptr, len);
+  const Macro *prevDefMacro = Macro_Find (ptr, len);
   if (prevDefMacro != NULL)
     {
       error (ErrorError, "Macro '%.*s' is already defined", (int)len, ptr);
@@ -277,7 +310,6 @@ c_macro (const Lex *label)
     }
   if ((m.name = strndup (ptr, len)) == NULL)
     errorOutOfMem ();
-  m.startline = FS_GetCurLineNumber ();
   skipblanks ();
 
   /* Read zero or more macro parameters.  */
@@ -289,24 +321,71 @@ c_macro (const Lex *label)
 	  skiprest ();
 	  break;
 	}
-      Input_Match ('$', false);
-      ptr = inputSymbol (&len, ',');
-      if ((m.args[m.numargs++] = strndup (ptr, len)) == NULL)
+      if (!Input_Match ('$', false))
+	{
+	  error (ErrorError, "Illegal parameter start in macro definition");
+	  skiprest ();
+	  break;
+	}
+      ptr = Input_Symbol (&len);
+      if (ptr == NULL)
+	{
+	  error (ErrorError, "Failed to parse macro parameter");
+	  skiprest ();
+	  break;
+	}
+      if ((m.args[m.numargs] = strndup (ptr, len)) == NULL)
 	errorOutOfMem ();
-      Input_Match (',', true);
+      skipblanks ();
+      if (Input_Match ('=', false))
+	{
+	  /* There is a default argument value.  */
+	  const char *defarg;
+	  /* If there is a '"' as start of the default argument value, it needs
+	     to be right after the '='.  */
+	  if (Input_Match ('"', false))
+	    {
+	      size_t defarglen;
+	      defarg = Input_GetString (&defarglen);
+	      skipblanks ();
+	    }
+	  else
+	    {
+	      /* We do NOT skip spaces, nor do we remove the spaces before
+	         the next comma found.  */
+	      size_t defarglen;
+	      defarg = inputSymbol (&defarglen, ',');
+	      if ((defarg = strndup (defarg, defarglen)) == NULL)
+		errorOutOfMem ();
+	    }
+	  m.defArgs[m.numargs] = defarg;
+	}
+      else
+	m.defArgs[m.numargs] = NULL;
+      ++m.numargs;
+      if (!Input_Match (',', true))
+	break;
     }
-  int bufptr = 0, buflen = 0;
+  decode_finalcheck ();
+
+  /* Process the macro body.  */
+  m.startline = FS_GetCurLineNumber ();
+  size_t bufptr = 0, buflen = 128;
+  if ((buf = malloc (buflen)) == NULL)
+    errorOutOfMem ();
   do
     {
       if (!inputNextLineNoSubst ())
 	goto noMEND;
+
       const char * const inputMark = Input_GetMark ();
       if (c_mend ())
 	break;
       Input_RollBackToMark (inputMark);
-      char c;
-      while ((c = inputGet ()) != 0)
+
+      while (1)
 	{
+	  char c = inputGet ();
 	  const char * const inputMark2 = Input_GetMark ();
 	  if (c == '$')
 	    {
@@ -316,38 +395,37 @@ c_macro (const Lex *label)
 		  Input_Match ('.', false);
 		  int i;
 		  for (i = 0;
-		       i < m.numargs
-		         && (strlen (m.args[i]) != (size_t)len
-		             || memcmp (ptr, m.args[i], len));
+		       i != m.numargs && (memcmp (ptr, m.args[i], len)
+					  || m.args[i][len] != '\0');
 		       ++i)
 		    /* */;
-		  if (i < m.numargs)
+		  if (i != m.numargs)
 		    c = MACRO_ARG0 + i;
 		  else
-		    {
-		      /* error(ErrorWarning, true, "Unknown macro argument encountered"); */
-		      Input_RollBackToMark (inputMark2);
-		    }
+		    Input_RollBackToMark (inputMark2);
 		}
 	    }
+	  /* Ensure there is always at least space for 2 extra characters.  */
 	  if (bufptr + 2 >= buflen)
 	    {
-	      char *tmp;;
+	      char *tmp;
 	      if ((tmp = realloc (buf, buflen += 1024)) == NULL)
 		errorOutOfMem ();
 	      buf = tmp;
 	    }
-	  buf[bufptr++] = c;
+	  if (c != '\0')
+	    buf[bufptr++] = c;
+	  else
+	    {
+	      buf[bufptr++] = '\n';
+	      break;
+	    }
 	}
-      if (buf)
-	buf[bufptr++] = 10;	/* cope with blank line */
     }
   while (1);
-  if (buf)
-    buf[bufptr] = 0;
+  buf[bufptr] = '\0';
   m.file = FS_GetCurFileName ();
-  if ((m.buf = buf ? buf : strdup("")) == NULL)
-    errorOutOfMem ();
+  m.buf = buf;
 
   Macro *p;
   if ((p = malloc (sizeof (Macro))) == NULL)

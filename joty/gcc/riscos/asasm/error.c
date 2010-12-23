@@ -165,7 +165,7 @@ errorCore (ErrorTag e, const char *format, va_list ap)
 	    /* When lineNum is zero, we're processing the -PD options.  */
 	    if (pObjP->lineNum != 0)
 	      fprintf (stderr, "%s:%d:%zd: %s: %s\n",
-		       pObjP->name ? pObjP->name : "<stdin>",
+		       pObjP->name ? pObjP->name : "{standard input}",
 	               pObjP->lineNum,
 		       Input_GetColumn (),
 		       str, errbuf);
@@ -174,7 +174,7 @@ errorCore (ErrorTag e, const char *format, va_list ap)
 	    break;
 	  case POType_eMacro:
 	    fprintf (stderr, "%s:%d:%zd: %s: %s in macro %s\n",
-		     pObjP->name ? pObjP->name : "<stdin>",
+		     pObjP->name ? pObjP->name : "{standard input}",
 	             pObjP->lineNum,
 		     Input_GetColumn (),
 		     str, errbuf,
@@ -306,7 +306,10 @@ errorCoreLine (const char *file, int lineno, ErrorTag e,
     lineno = FS_GetCurLineNumber ();
   if (file == NULL)
     file = FS_GetCurFileName ();
-  fprintf (stderr, "%s:%d: %s: %s\n", file, lineno, str, errbuf);
+  if (lineno == 0)
+    fprintf (stderr, "%s: %s: %s\n", file, str, errbuf);
+  else
+    fprintf (stderr, "%s:%d: %s: %s\n", file, lineno, str, errbuf);
 
   DoThrowback (t, lineno, errbuf, file);
 }

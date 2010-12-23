@@ -32,19 +32,9 @@
 #include "asm.h"
 #include "error.h"
 #include "filestack.h"
-#include "input.h"
 #include "local.h"
-#include "main.h"
-#include "os.h"
 
-typedef struct localPos
-{
-  struct localPos *next;
-  int local;
-  const char *file;
-  int lineno;
-} localPos;
-
+#define kEmptyRoutineName "EmptyRName$$"
 
 typedef struct routPos
 {
@@ -54,18 +44,16 @@ typedef struct routPos
   int lineno;
 } routPos;
 
-
-int rout_lblno[100] = {0};
-const char *rout_id = "Local$$0";
-int rout_null = 0;
+static unsigned int rout_null = 0;
 static routPos *routList;
 static routPos *routListEnd;
 
-const char localFormat[] = "|Local$$%p$$%02i$$%i$$%s|";
+int Local_ROUTLblNo[100] = {0};
+const char *Local_CurROUTId = kEmptyRoutineName "0";
 
-int localCurrent = 0;
-static localPos *localList;
-static localPos *localListEnd;
+#define kIntLabelPrefix "$$AsAsm$$Local$$"
+/* Parameters: AREA ptr, 0 - 99 label digit, instance number, routine name.  */
+const char Local_IntLabelFormat[] = kIntLabelPrefix "%p$$%02i$$%i$$%s";
 
 
 /**
@@ -74,55 +62,38 @@ static localPos *localListEnd;
 bool
 c_rout (const Lex *label)
 {
-  routPos *p = malloc (sizeof (localPos));
-  memset (rout_lblno, 0, sizeof (rout_lblno));
+  memset (Local_ROUTLblNo, 0, sizeof (Local_ROUTLblNo));
+
   if (label->tag == LexId)
     {
-      ASM_DefineLabel (label, 0);
-      rout_id = strndup (label->Data.Id.str, label->Data.Id.len);
+      ASM_DefineLabel (label, 0); /* FIXME: should we really define this as a label ? */
+      if (Local_ROUTIsEmpty (label->Data.Id.str))
+	{
+	  error (ErrorError, "Illegal routine name");
+	  return false;
+	}
+      Local_CurROUTId = strndup (label->Data.Id.str, label->Data.Id.len);
     }
   else
     {
-      char *new_rout_id = malloc (16);
+      char *new_rout_id = malloc (sizeof (kEmptyRoutineName)-1 + 10);
       if (new_rout_id)
 	{
-	  sprintf (new_rout_id, "Local$$%i", rout_null++);
-	  rout_id = new_rout_id;
+	  sprintf (new_rout_id, kEmptyRoutineName "%i", ++rout_null);
+	  Local_CurROUTId = new_rout_id;
 	}
     }
-  if (rout_id == NULL || p == NULL)
+  routPos *p = malloc (sizeof (routPos));
+  if (Local_CurROUTId == NULL || p == NULL)
     errorOutOfMem ();
+
   if (routListEnd)
     routListEnd->next = p;
   routListEnd = p;
   if (!routList)
     routList = p;
-  p->id = rout_id;
-  p->file = FS_GetCurFileName ();
-  p->lineno = FS_GetCurLineNumber ();
-  return false;
-}
 
-
-/**
- * Implements LOCAL.
- * Is an ObjAsm extension.
- */
-bool
-c_local (const Lex *label)
-{
-  if (label->tag != LexNone)
-    error (ErrorWarning, "Label not allowed here - ignoring");
-  localCurrent++;
-  localPos *p;
-  if ((p = malloc (sizeof (localPos))) == NULL)
-    errorOutOfMem ();
-  if (localListEnd)
-    localListEnd->next = p;
-  localListEnd = p;
-  if (!localList)
-    localList = p;
-  p->local = localCurrent;
+  p->id = Local_CurROUTId;
   p->file = FS_GetCurFileName ();
   p->lineno = FS_GetCurLineNumber ();
   return false;
@@ -130,68 +101,31 @@ c_local (const Lex *label)
 
 
 bool
-localTest (const char *s)
+Local_ROUTIsEmpty (const char *routName)
 {
-  return !memcmp (s, localFormat + 1, sizeof ("Local$$")-1);
+  return !memcmp (routName, kEmptyRoutineName, sizeof (kEmptyRoutineName)-1);
+}
+
+
+bool
+Local_IsLocalLabel (const char *s)
+{
+  return !memcmp (s, Local_IntLabelFormat, sizeof (kIntLabelPrefix)-1);
 }
 
 
 void
-localMunge (Lex *label)
+Local_FindROUT (const char *rout, const char **file, int *lineno)
 {
-  if (!option_local)
-    return;
-
-  int i;
-  if (label->Data.Id.str[i = label->Data.Id.len - 2] == '$'
-      && (label->Data.Id.str[i + 1] == 'L' || label->Data.Id.str[i + 1] == 'l'))
+  for (const routPos *p = routList; p; p = p->next)
     {
-      char id[1024];
-      sprintf (id, "Local$$%i$$", localCurrent);
-      id[strlen (id) + label->Data.Id.len - 2] = 0;
-      memcpy (id + strlen (id), label->Data.Id.str, label->Data.Id.len - 2);
-
-      label->Data.Id.str = strdup (id);
-      label->Data.Id.len = strlen (id);
-      if (!label->Data.Id.str)
-	errorOutOfMem ();
+      if (!strcmp (p->id, rout))
+	{
+	  *file = p->file;
+	  *lineno = p->lineno;
+	  return;
+	}
     }
-}
-
-
-void
-localFindLocal (int local, const char **file, int *lineno)
-{
-  localPos *p;
-  for (p = localList; p && p->local != local; p = p->next)
-    /* */;
-  if (p)
-    {
-      *file = p->file;
-      *lineno = p->lineno;
-    }
-  else
-    {
-      *file = NULL;
-      *lineno = 0;
-    }
-}
-
-
-void
-localFindRout (const char *rout, const char **file, int *lineno)
-{
-  routPos *p;
-  for (p = routList; p && strcmp (p->id, rout); p = p->next)
-    /* */;
-  if (p)
-    {
-      *file = p->file;
-      *lineno = p->lineno;
-    }
-  else
-    {
-      *file = NULL;
-      *lineno = 0;
-    }
+  *file = NULL;
+  *lineno = 0;
 }

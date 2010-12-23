@@ -151,6 +151,9 @@ FS_PushFilePObject (const char *fileName)
 }
 
 
+/**
+ * Similar to FS_PopMacroPObject().
+ */
 static void
 FS_PopFilePObject (bool noCheck)
 {
@@ -200,8 +203,8 @@ const char *
 FS_GetCurFileName (void)
 {
   if (gCurPObjP == NULL)
-    return SourceFileName ? SourceFileName : "<stdin>";
-  return gCurPObjP->name ? gCurPObjP->name : "<stdin>";
+    return SourceFileName ? SourceFileName : "{standard input}";
+  return gCurPObjP->name ? gCurPObjP->name : "{standard input}";
 }
 
 
@@ -216,15 +219,29 @@ FS_GetCurLineNumber (void)
 
 
 static bool
-File_GetLine(char *bufP, size_t bufSize)
+File_GetLine (char *bufP, size_t bufSize)
 {
-  if (fgets (bufP, bufSize, gCurPObjP->d.file.fhandle) == NULL
-      || bufP[0] == '\0')
-    return true;
+  while (1)
+    {
+      if (fgets (bufP, bufSize, gCurPObjP->d.file.fhandle) == NULL
+	  || bufP[0] == '\0')
+	return true;
 
-  size_t lineLen = strlen (bufP);
-  if (bufP[lineLen - 1] != '\n')
-    errorAbort ("Line too long");
-  bufP[lineLen - 1] = '\0';
-  return false;
+      size_t lineLen = strlen (bufP);
+      if (lineLen > 0 && bufP[lineLen - 1] == '\n')
+	{
+	  if (lineLen > 1 && bufP[lineLen - 2] == '\\')
+	    {
+	      bufP += lineLen - 2;
+	      bufSize -= lineLen - 2;;
+	    }
+	  else
+	    {
+	      bufP[lineLen - 1] = '\0';
+	      return false;
+	    }
+	}
+      else
+	errorAbort ("Line too long");
+    }
 }

@@ -1,3 +1,230 @@
+Tue Dec 21 22:04:53 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* put.c (Put_Ins): Renamed from putIns.  Reimplement this using
+	Put_InsWithOffset.
+	* put.h (Put_Ins): Renamed from putIns.
+	* m_cpuctrl.c, m_cop.c, m_cpumem.c, m_copmem.c, m_cpu.c, m_fpumem.c,
+	m_fpu.c: Follow putIns to Put_Ins rename.
+	* area.c, area.h (Area_AlignTo): Add offset parameter.
+	* commands.c, lit.c, put.c: Follow new Area_AlignTo API.
+
+Tue Dec 21 06:00:34 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.c (File_GetLine): Support continuation lines.
+	* regression/tests_pass/long_line.s: Added.
+
+Tue Dec 21 05:32:48 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): Add ORG.
+	* m_cpuctrl.c (ADR_RelocUpdaterCore, ADR_RelocUpdater, m_adr): Add
+	absolute area support.
+	* code.c (codePosition): Likewise.
+	* asm.c (ASM_DefineLabel): Likewise.
+	* area.c: Likewise.
+	(c_org): Added.
+	* area.h (Area): Add baseAddr member.
+	* help_cpu.c,help_cpu.h (Help_SplitByImm8s4): Write result in an
+	array, instead of via individual argument pointers.
+	* output.c (outputAof): Support non-zero base area address.
+	* aoffile.h (AofEntry): Renamed Unused member into BaseAddr.
+	* commands.c (c_assert): Small cleanup.
+	* put.c, put.h (PutWord): Remove, use Put_InsWithOffset instead.
+	* macros.c (Macro_GetLine): Support empty line during macro replay.
+	(c_macro): Fix problem whe macro starts with one or more empty lines.
+	* regression/tests_pass/builtinvar_pc.s: Add test case when {PC} is
+	used in an absolute area.
+	* regression/tests_pass/adr.s: Add test case when ADR/ADRL are used
+	in an absolute area.
+	* regression/tests_pass/branch.s: Add test case when branches are used
+	in absolute area.
+	* regression/tests_pass/ldr_from_addr.s: Add test case when LDR is used
+	in absolute area.
+	* regression/tests_pass/load_literal.s: Add disabled test case for
+	LDR literals in absolute area.
+	* regression/tests_pass/variable_substitution.s: More variable & macro
+	argument substitution cases.
+
+Mon Dec 20 20:30:15 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (c_end): Use ErrorError instead of ErrorAbort.
+	(c_incbin): Renamed from c_bin.
+	(symFlag,c_globl,c_strong,c_keep,c_import): Move to...
+	* symbol.c, symbol.h: ...here.  Support for keep all symbols. Support
+	EXPORT arguments.
+	(c_extern): Added.
+	(symbolPrint): Revive relative symbols, more work to do.
+	* decode (oDecodeTable): Add EXTERN, renamed GLOBL to GLOBAL, rename
+	BIN to INCBIN.
+	* m_cpumem.c (m_pld): Use Input_Match instead of inputGet.
+	* variables.c (declare_var): Mark as ABSOLUTE variables.
+	* input.c (inputNextLineCore): Beter reporting of missing END.
+
+Mon Dec 20 15:53:22 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/dcb_dcw_dcd.s: Added DCI, DCWU and DCDU tests.
+	* regression/tests_pass/dcfs_dcfd.s: Added DCFSU and DCFDU tests.
+	* commands.c (c_head): Fix signature output.
+	(DefineInt_RelocUpdater, DefineInt, c_dcw, c_dcd, DefineReal_RelocUpdater,
+	DefineReal, c_dcfs, c_dcfd): Add support DCWU, DCDU, DCFSU, DCFDU.
+	(c_dci): Added.
+	(c_ltorg): Move to...
+	* lit.c: ...here.
+	* commands.h (c_dci): Add prototype.
+	(c_ltorg): Move prototype to...
+	* lit.h: ...here.
+	* put.c (Put_AlignDataWithOffset): Add.
+	(putData): Rename to Put_Data and implement using Put_DataWithOffset.
+	(Put_FloatDataWithOffset): Add alignBefore parameter.
+	* decode.c (oDecodeTable): Add SPACE, DCI, DCWU, DCDU, DCFSU and DCFDU.
+	* main.c, main.h (option_align): Remove noalign option.
+
+Sun Dec 19 03:19:05 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lit.c (Lit_RegisterInt): Do upfront trunctation + report when this
+	makes a difference.
+	(Lit_GetLitOffsetAsSymbol): Renamed from Lit_GetOffsetAsSymbol.
+	(Lit_DumpPool): Support ValueSymbol/ValueCode as literals.
+	* regression/tests_pass/load_literal.s: Enhance with PC relative
+	loading of literals.
+	* regression/tests_fail/load_constant.s: Move to...
+	* regression/tests_pass/load_literal2.s: ...here as it is now working.
+	* tests_fail/register_based_map_fail.s: Removed, was already working
+	and covered by tests_pass/ldr_from_addr.s.
+	* commands.c (DefineInt_RelocUpdater): Remove FIXMEs.
+	* area.c (Area_AlignTo): Report unaligned status as warning.
+	* reloc.c (relocFix): Fix number of relocations calculation.
+	(relocELFOutput): Fix typo.
+
+Sat Dec 18 18:58:17 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/int.s: Add string constant tests.
+	* help_lex.c, help_lex.h: Remove.
+	* commands.c, variables.c, Makefile.am: Follow the removal of
+	help_lex.c and help_lex.h.
+	* input.c, input.h (Input_GetString): Added.
+	(inputSymbol): Simplify as there are less usecases for this routine.
+	* macros.c (Macro_Call, c_macro): Use Input_GetString for double
+	quoted strings instead of inputSymbol.
+	* lex.c (Lex_Char2Int): Added and use it...
+	(lexGetPrim): ...here.  Use Input_GetString for double quoted string
+	lexing.
+	* symbol.c (symbolSymbolAOFOutput, symbolSymbolELFOutput): Restrict
+	the output of symbol to ValueInt and ValueBool.
+
+Sat Dec 18 16:24:41 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lex.c: Reindent.
+
+Sat Dec 18 14:42:42 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c (c_area): A BASED area does not need to be marked as READONLY.
+	* aoffile.h (HOW_TYPE2, HOW_TYPE3): Remove.
+
+Sat Dec 18 03:49:09 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_fail/label_space.s: Merge into...
+	* regression/tests_pass/operator_questionmark.s: ...here with a couple
+	of fixes.
+	* regression/tests_fail/local_label2.s: Added prototype test but is not
+	yet fully fleshed out.
+	* put.c, put.h (Put_FloatDataWithOffset): Renamed from putDataFloat
+	and add offset parameter.
+	* commands.c (DefineReal_RelocUpdater): Take offset into account.
+	Follow Put_FloatDataWithOffset rename.
+
+Fri Dec 17 18:30:42 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_index.s: Use once {VAR} instead of @.
+	* regression/tests_pass/local_label.s: Added.
+	* symbol.c (symbolFix): Fix test on unresolved local (forward) label.
+	* local.c, local.h: Cleanup.  Function & global variable rename.
+	* commands.c (symFlag): Follow localTest to Local_IsLocalLabel rename.
+	* expr.c (prim): Invalid Lex object should abort the expression
+	evaluations as otherwise asserts will go off later.
+	* output.c (countAreas): Merge into outputElf
+	* lex.c, lex.h (Lex_ReadLocalLabel, Lex_GetDefiningLabel): Add noCheck
+	parameter which needs to be set when skipping if branch or while body.
+	Clean up the local label code, more work is needed.
+	* whileif.c (if_skip,while_skip): Follow API change of
+	Lex_GetDefiningLabel.
+	* asm.c (ASM_Assemble): Likewise.
+	* lexAcorn.c (lexAcornUnop): Fix tokenizing of :FATTR:, :FEXEC:,
+	:FLOAD: and :FSIZE:.
+
+Thu Dec 16 17:35:59 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* local.c: Throw out original AS local variable support, we're only
+	going to support the ObjAsm one.
+	* local.h, input.c, main.c, lex.c: Follow.
+	* decode.c (oDecodeTable): Remove LOCAL.
+
+Thu Dec 16 04:20:50 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* code.c, code.h (Code_HasUndefSymbols): Made static.
+	(codeValue): Merge Code_AddValueCode code into it.
+	* decode.c (oDecodeTable): Add MAP/FIELD.
+	(decode): Support ValueCode for StorageV values.
+	* m_cpumem.c (DestMem_RelocUpdater): Don't assert on ValueInt result
+	when ValueCode has length non-1, this is just an error.
+	(dstmem): Follow codeValue API change.
+	* storage.c: Support ValueCode as storage base.
+	* regression/tests_pass/record_basic.s: Add MAP/FIELD tests, add test
+	for MAP	argument being a label in the current AREA.
+	* reloc.c (relocFix): Follow codeValue API change.
+	* lit.c (Lit_DumpPool): Likewise.
+
+Wed Dec 15 18:18:26 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/string.s: Enhance test with string escape
+	characters.
+	* regression/tests_pass/int.s: Added.
+	* symbol.c (symbolFix): Always emit the implicit symbol reference
+	warning.
+	* error.c (errorCoreLine): Don't print linenumber 0.
+	* macro.c (FS_PopMacroPObject): Reset pointer to NULL after freeing.
+	(FS_PushMacroPObject): Copy all macro arguments instead of only the
+	first one.
+	(Macro_Call,Macro_Find): Renamed from macroCall/macroFind.
+	(Macro_Call): Don't error on not using the macro label; Support default
+	argument values; More reliable argument excess check.
+	(c_macro): Support default argument values.
+	* macro.h (Macro): Add defArgs array.
+	(Macro_Call,Macro_Find): Renamed from macroCall/macroFind.
+	(macroGetLine): Remove prototype.
+	* decode.c: Follow the macroFind/macroCall rename.
+	* whileif.c (if_skip): Support macro labels.
+	* regression/tests_pass/macro_args.s: Added.
+
+Wed Dec 15 13:47:41 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): Add CODE16/CODE32.
+	* m_cpu.c (c_code16, c_code32): Added.
+	* m_cpu.h: Likewise.
+
+Wed Dec 15 13:09:16 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* error.c (errorCore): Change "<stdin>" to "{standard input}" like the
+	GNU tools are using.
+	* filestack.c (FS_GetCurFileName): Likewise.
+
+Tue Dec 14 02:08:35 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* tests_pass/ldr_from_addr.s: Enhance test.
+	* tests_pass/dcb_dcw_dcd.s: Added.
+	* tests_pass/storage_map.s: Added.
+
+Sat Dec 11 14:08:06 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (DefineInt_RelocUpdater, DefineReal_RelocUpdater): Add
+	check on operator Op_add being used. Add check on Reloc_Create return
+	value.
+	* m_cpuctrl.c (Branch_RelocUpdater, ADR_RelocUpdater): Likewise.
+	* m_cpumem.c (DestMem_RelocUpdater): Likewise.
+	* code.c (Code_EvalLowest): Allow ValueSymbol for Op_neg.
+	* reloc.c (Reloc_Create): Add check on negative symbols.  Simplify
+	code.
+	(relocAOFOutput, relocELFOutput): Remove FIXMEs.
+
 Thu Dec  9 01:24:47 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 	* put.c (putDataFloat): Write out double FPA value correctly on non-ARM
@@ -10,7 +237,7 @@ Thu Dec  9 01:24:47 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
 Tue Dec  7 23:57:07 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 	Start of v2.00 : too many changes to list them in detail, but:
-	- Rewrote relocation code, removal of LateValue.
+	- Rewrote relocation code, removal of ValueLateLabel.
 	- Significantly reworked the 'Code' evaluation.
 	- Previously known broken test cases are now working.
 

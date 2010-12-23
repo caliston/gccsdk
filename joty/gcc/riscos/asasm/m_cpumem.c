@@ -62,8 +62,13 @@ DestMem_RelocUpdater (const char *file, int lineno, ARMWord offset,
   for (size_t i = 0; i != valueP->Data.Code.len; ++i)
     {
       const Code *codeP = &valueP->Data.Code.c[i];
-      if (codeP->Tag != CodeValue)
-	continue;
+      if (codeP->Tag == CodeOperator)
+	{
+	  if (codeP->Data.op != Op_add)
+	    return true;
+	  continue;
+	}
+      assert (codeP->Tag == CodeValue);
       const Value *valP = &codeP->Data.value;
 
       switch (valP->Tag)
@@ -72,7 +77,8 @@ DestMem_RelocUpdater (const char *file, int lineno, ARMWord offset,
 	    {
 	      /* This can only happen when "LDR Rx, =<constant>" can be turned into
 		 MOV/MVN Rx, #<constant>.  */
-	      assert (valueP->Data.Code.len == 1);
+	      if (valueP->Data.Code.len != 1)
+		return true;
 	      ARMWord newIR = ir & NV;
 	      newIR |= DST_OP (GET_DST_OP (ir));
 	      ARMWord im;
@@ -80,9 +86,17 @@ DestMem_RelocUpdater (const char *file, int lineno, ARMWord offset,
 		newIR |= M_MOV | IMM_RHS | im;
 	      else if ((im = help_cpuImm8s4 (~valP->Data.Int.i)) != -1)
 		newIR |= M_MVN | IMM_RHS | im;
+	      else if (areaCurrentSymbol->area.info->type & AREA_ABS)
+		{
+		  ARMWord newOffset = valP->Data.Addr.i - (areaCurrentSymbol->area.info->baseAddr + offset + 8);
+		  ir |= LHS_OP (15);
+		  if (isAddrMode3)
+		    ir |= B_FLAG;
+		  newIR = Fix_CPUOffset (file, lineno, ir, newOffset);
+		}
 	      else
-		assert (0);
-	      PutWord (offset, newIR);
+		return true;
+	      Put_InsWithOffset (offset, newIR);
 	    }
 	    break;
 
@@ -92,14 +106,15 @@ DestMem_RelocUpdater (const char *file, int lineno, ARMWord offset,
 	      if (isAddrMode3)
 		ir |= B_FLAG;
 	      ir = Fix_CPUOffset (file, lineno, ir, valP->Data.Addr.i);
-	      PutWord (offset, ir);
+	      Put_InsWithOffset (offset, ir);
 	    }
 	    break;
 
 	  case ValueSymbol:
 	    if (!final)
 	      return true;
-	    Reloc_Create (HOW2_INIT | HOW2_WORD, offset, valP);
+	    if (Reloc_Create (HOW2_INIT | HOW2_WORD, offset, valP) == NULL)
+	      return true;
 	    break;
 
 	  default:
@@ -225,12 +240,12 @@ dstmem (ARMWord ir, const char *mnemonic)
 	    }
 
 	  codeInit ();
-	  codeValue (&symValue);
+	  codeValue (&symValue, true);
 	  const ARMWord offset = areaCurrentSymbol->value.Data.Int.i;
-	  putIns (ir);
+	  Put_Ins (ir);
 	  if (symValue.Tag != ValueIllegal
 	      && Reloc_QueueExprUpdate (DestMem_RelocUpdater, offset,
-					ValueAddr | ValueSymbol | ValueCode, NULL, 0))
+					ValueInt | ValueAddr | ValueSymbol | ValueCode, NULL, 0))
 	    error (ErrorError, "Illegal %s expression", mnemonic);
 	}
         break;
@@ -261,13 +276,10 @@ dstmem (ARMWord ir, const char *mnemonic)
 	    assert (0);
 	  Value value = Lit_RegisterInt (exprBuildAndEval (ValueInt | ValueSymbol | ValueCode), litSize);
 	  codeInit ();
-	  if (value.Tag == ValueCode)
-	    Code_AddValueCode (&value);
-	  else
-	    codeValue (&value);
+	  codeValue (&value, true);
 	  valueFree (&value);
 	  const ARMWord offset = areaCurrentSymbol->value.Data.Int.i;
-	  putIns (ir | P_FLAG);
+	  Put_Ins (ir | P_FLAG);
 	  /* The ValueInt | ValueAddr | ValueSymbol | ValueCode tags are what we
 	     support in the LDR instruction.  When we have ValueInt it is
 	     garanteed to be a valid immediate.  */
@@ -288,9 +300,9 @@ dstmem (ARMWord ir, const char *mnemonic)
 	  exprBuild ();
 	  const ARMWord offset = areaCurrentSymbol->value.Data.Int.i;
 	  /* Whatever happens, this must be a pre-increment.  */
-	  putIns (ir | P_FLAG);
+	  Put_Ins (ir | P_FLAG);
 	  if (Reloc_QueueExprUpdate (DestMem_RelocUpdater, offset,
-				     ValueAddr | ValueSymbol | ValueCode, NULL, 0))
+				     ValueInt | ValueAddr | ValueSymbol | ValueCode, NULL, 0))
 	    error (ErrorError, "Illegal %s expression", mnemonic);
 	}
 	break;
@@ -375,10 +387,9 @@ m_pld (void)
 
   skipblanks();
 
-  if (inputGet () != '[')
+  if (!Input_Match ('[', true))
     error (ErrorError, "Expected '[' after PLD instruction");
 
-  skipblanks();
   int op = getCpuReg (); /* Base register */
   ir |= LHS_OP (op);
   skipblanks();
@@ -390,22 +401,20 @@ m_pld (void)
   else
     {
       skipblanks();
-      if (inputGet () != ',')
+      if (!Input_Match (',', true))
 	error (ErrorError, "Expected ',' or ']' in PLD instruction");
-
-      skipblanks();
 
       if (Input_Match ('#', false))
 	{
 	  const Value *offset = exprBuildAndEval (ValueInt);
 	  switch (offset->Tag)
 	    {
-	    case ValueInt:
-	      ir = Fix_CPUOffset (NULL, 0, ir, offset->Data.Int.i);
-	      break;
-	    default:
-	      error (ErrorError, "Illegal offset expression");
-	      break;
+	      case ValueInt:
+		ir = Fix_CPUOffset (NULL, 0, ir, offset->Data.Int.i);
+		break;
+	      default:
+		error (ErrorError, "Illegal offset expression");
+		break;
 	    }
 
 	  /* U_FLAG is fixed in Fix_CPUOffset() */
@@ -428,7 +437,7 @@ m_pld (void)
       if (!Input_Match (']', true))
 	error (ErrorError, "Expected closing ]");
     }
-  putIns(ir);
+  Put_Ins(ir);
   return false;
 }
 
@@ -509,7 +518,7 @@ dstreglist (ARMWord ir)
 	error (ErrorInfo, "Writeback together with force user");
       ir |= FORCE_FLAG;
     }
-  putIns (ir);
+  Put_Ins (ir);
 }
 
 
@@ -564,6 +573,6 @@ m_swp (void)
   skipblanks ();
   if (!Input_Match (']', true))
     error (ErrorError, "Inserting missing ']'");
-  putIns (ir);
+  Put_Ins (ir);
   return false;
 }

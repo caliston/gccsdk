@@ -64,8 +64,6 @@ int option_pedantic = 0;
 int option_fussy = 0;
 int option_throwback = 0;
 int option_autocast = 0;
-int option_align = 1;
-int option_local = 1;
 int option_apcs_32bit = -1; /* -1 = option not specified.  */
 int option_apcs_fpv3 = -1; /* -1 = option not specified.  */
 int option_apcs_softfloat = -1; /* -1 = option not specified.  */
@@ -106,8 +104,6 @@ as_help (void)
 	   "-autocast      -ac         Enable casting from integer to float.\n"
 	   "-target        -t          Target ARM CPU (ARM2...SA110).\n"
 	   "-depend <file> -d <file>   Write 'make' source file dependency information to 'file'.\n"
-	   "-noalign       -na         Don't auto-align words and halfwords.\n"
-	   "-nolocal       -nl         No builtin LOCAL support.\n"
 	   "-help          -h -H -?    Display this help.\n"
 	   "-version       -ver        Display the version number.\n"
 	   "-From asmfile              Source assembler file (ObjAsm compatibility).\n"
@@ -255,10 +251,6 @@ main (int argc, char **argv)
 #endif
       else if (IS_ARG ("-autocast", "-ac"))
 	option_autocast++;
-      else if (IS_ARG ("-noalign", "-na"))
-	option_align = 0;
-      else if (IS_ARG ("-nolocal", "-nl"))
-	option_local = 0;
       else if (IS_ARG ("-pedantic", "-p"))
 	option_pedantic++;
       else if (IS_ARG ("-target", "-t"))

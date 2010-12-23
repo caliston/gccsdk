@@ -34,7 +34,6 @@
 
 #include "area.h"
 #include "error.h"
-#include "help_lex.h"
 #include "input.h"
 #include "lex.h"
 #include "lexAcorn.h"
@@ -155,8 +154,6 @@ lexGetIdNoError (void)
     {
       result.tag = LexId;
       result.Data.Id.hash = lexHashStr (result.Data.Id.str, result.Data.Id.len);
-      if (result.Data.Id.len > 1)
-        localMunge (&result);
     }
   else
     result.tag = LexNone;
@@ -175,56 +172,81 @@ lexGetId (void)
 }
 
 
-static const char *
-lexReadLocal (size_t *len, int *label)
+/**
+ * \return -1 when it wasn't able to read a local label, otherwise a local
+ * label value 0 - 99 (incl).
+ */
+static int
+Lex_ReadLocalLabel (bool noCheck)
 {
   if (!isdigit (inputLook ()))
     errorAbort ("Missing local label number");
-  *label = inputGet () - '0';
+  int label = inputGet () - '0';
   if (isdigit (inputLook ()))
-    *label = (*label * 10) + (inputGet () - '0');
-  const char *name = inputSymbol (len, 0);
-  if (len && strncmp (rout_id, name, *len))
+    label = 10*label + inputGet () - '0';
+
+  /* If a routinename is given, check if thats the one given with ROUT.  */
+  size_t len;
+  const char *name = inputSymbol (&len, 0);
+  if (!noCheck
+      && len
+      && !(!memcmp (Local_CurROUTId, name, len) && Local_CurROUTId[len] == '\0'))
     {
-      error (ErrorError, "Local label name (%s) does not match routine name (%s)", rout_id, name );
-      return NULL;
+      if (Local_ROUTIsEmpty (Local_CurROUTId))
+	error (ErrorError, "Local label can not have a routine name %.*s here", (int)len, name);
+      else
+	error (ErrorError, "Local label with routine name %.*s does not match with current routine name %s", (int)len, name, Local_CurROUTId);
+      return -1;
     }
 
-  return name;
+  return label;
 }
 
+typedef enum
+{
+  eThisLevelOnly,
+  eAllLevels,
+  eThisLevelAndHigher
+} LocalLabel_eSearch;
 
 static Lex
-lexMakeLocal (int dir)
+Lex_MakeLocalLabel (int dir, LocalLabel_eSearch level /* FIXME: use this */)
 {
-  Lex result;
-  result.tag = LexNone;
+  Lex result =
+    {
+      .tag = LexNone
+    };
 
-  size_t len;
-  int label;
-  if (!lexReadLocal (&len, &label))
+  int label = Lex_ReadLocalLabel (false);
+  if (label < 0)
     return result;
 
-  int i = 0;
+  int i;
   switch (dir)
     {
       case -1:
-        if ((i = rout_lblno[label] - 1) < 0)
+	/* Search backward.  */
+	if ((i = Local_ROUTLblNo[label] - 1) < 0)
 	  {
-	    errorAbort ("Missing local label (bwd) with ID %02i", label);
+	    errorAbort ("Missing local label %%b%02i", label);
 	    return result;
 	  }
-        break;
+	break;
+
+      default:
       case 0:
-        if ((i = rout_lblno[label] - 1) < 0)
-          i++;
-        break;
+	/* Search backward, when not found, search forward.  */
+	if ((i = Local_ROUTLblNo[label] - 1) < 0)
+	  i++;
+	break;
+
       case 1:
-        i = rout_lblno[label];
-        break;
+	/* Search forward.  */
+	i = Local_ROUTLblNo[label];
+	break;
     }
   char id[1024];
-  sprintf (id, localFormat, areaCurrentSymbol, label, i, rout_id);
+  snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, i, Local_CurROUTId);
 
   result.tag = LexId;
   result.Data.Id.str = strdup (id);
@@ -237,20 +259,25 @@ lexMakeLocal (int dir)
 
 
 Lex
-Lex_GetDefiningLabel (void)
+Lex_GetDefiningLabel (bool noCheck)
 {
   nextbinopvalid = false; /* FIXME: why would this be necessary ? */
+
   if (isdigit ((unsigned char)inputLook ()))
     {
-      Lex result;
-      result.tag = LexNone;
-      size_t len;
-      int label;
-      const char *name = lexReadLocal (&len, &label);
-      if (!name)
+      /* Looks like this is a local label.  */
+      Lex result =
+	{
+	  .tag = LexNone
+	};
+
+      int label = Lex_ReadLocalLabel (noCheck);
+      if (label < 0)
 	return result;
+
       char id[1024];
-      sprintf (id, localFormat, areaCurrentSymbol, label, rout_lblno[label]++, rout_id);
+      snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, Local_ROUTLblNo[label], Local_CurROUTId);
+      Local_ROUTLblNo[label]++;
 
       result.tag = LexId;
       result.Data.Id.str = strdup (id);
@@ -260,9 +287,26 @@ Lex_GetDefiningLabel (void)
       result.Data.Id.hash = lexHashStr (result.Data.Id.str, result.Data.Id.len);
       return result;
     }
+
   return lexGetId ();
 }
 
+bool
+Lex_Char2Int (size_t len, const char *str, ARMWord *result)
+{
+  *result = 0;
+
+  if (len > 4)
+    return true;
+
+  for (size_t i = 0; i != 4; ++i)
+    {
+      *result >>= 8;
+      if (i < len)
+	*result |= str[i] << 24;
+    }
+  return false;
+}
 
 Lex
 lexGetPrim (void)
@@ -274,279 +318,199 @@ lexGetPrim (void)
   char c;
   switch (c = inputGet ())
     {
-    case '+':
-      result.tag = LexOperator;
-      result.Data.Operator.op = Op_none; /* +XYZ */
-      result.Data.Operator.pri = PRI (10);
-      break;
+      case '+':
+	result.tag = LexOperator;
+	result.Data.Operator.op = Op_none; /* +XYZ */
+	result.Data.Operator.pri = PRI (10);
+	break;
 
-    case '-':
-      result.tag = LexOperator;
-      result.Data.Operator.op = Op_neg; /* -XYZ */
-      result.Data.Operator.pri = PRI (10);
-      break;
+      case '-':
+	result.tag = LexOperator;
+	result.Data.Operator.op = Op_neg; /* -XYZ */
+	result.Data.Operator.pri = PRI (10);
+	break;
 
-    case '!':
-      result.tag = LexOperator;
-      result.Data.Operator.op = Op_lnot; /* !XYZ */
-      result.Data.Operator.pri = PRI (10);
-      break;
+      case '!':
+	result.tag = LexOperator;
+	result.Data.Operator.op = Op_lnot; /* !XYZ */
+	result.Data.Operator.pri = PRI (10);
+	break;
 
-    case '~':
-      result.tag = LexOperator;
-      result.Data.Operator.op = Op_not; /* ~XYZ */
-      result.Data.Operator.pri = PRI (10);
-      break;
+      case '~':
+	result.tag = LexOperator;
+	result.Data.Operator.op = Op_not; /* ~XYZ */
+	result.Data.Operator.pri = PRI (10);
+	break;
 
-    case '?':
-      result.tag = LexOperator;
-      result.Data.Operator.op = Op_size; /* ?<label> */
-      result.Data.Operator.pri = PRI (10);
-      break;
+      case '?':
+	result.tag = LexOperator;
+	result.Data.Operator.op = Op_size; /* ?<label> */
+	result.Data.Operator.pri = PRI (10);
+	break;
 
-    case '(':
-    case ')':
-      result.tag = LexDelim;
-      result.Data.Delim.delim = c;
-      break;
+      case '(':
+      case ')':
+	result.tag = LexDelim;
+	result.Data.Delim.delim = c;
+	break;
 
-    case ':':
-      lexAcornUnop (&result);
-      break;
+      case ':':
+	lexAcornUnop (&result);
+	break;
 
-    case '&':
-      result.tag = LexInt;
-      result.Data.Int.value = lexint (16);
-      break;
-
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-      {
-	inputUnGet (c);
-	const char *mark = Input_GetMark ();
+      case '&':
 	result.tag = LexInt;
-	result.Data.Int.value = lexint (10);
-	if (Input_Match ('.', false))
-	  {
-	    Input_RollBackToMark (mark);
-	    result.tag = LexFloat;
-	    char *newMark;
-	    result.Data.Float.value = strtod (mark, &newMark);
-	    if (newMark == mark)
-	      error (ErrorError, "Failed to read floating point value");
-	    inputSkipN (newMark - mark);
-	  }
-      }
-      break;
+	result.Data.Int.value = lexint (16);
+	break;
 
-    case '\'': /* FIXME: test 'abcd' alike integers.  */
-      {
-        result.tag = LexInt;
-	size_t len;
-        const char *str = inputSymbol (&len, '\'');
-        if (inputGet () != '\'')
-	  error (ErrorError, "Character continues over newline");
-        result.Data.Int.value = lexChar2Int (true, len, str);
-      }
-      break;
-
-    case '"':
-      {
-        result.tag = LexString;
-        size_t len;
-        const char *strOrg = inputSymbol (&len, '"');
-        char *str;
-        if ((str = strndup (strOrg, len)) == NULL)
-	  errorOutOfMem();
-        if (inputGet () != '"')
-	error (ErrorError, "String continues over newline");
-	  const char *s1;
-	  char *s2;
-	  size_t l1;
-	  while (Input_Match ('"', false))
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+	{
+	  inputUnGet (c);
+	  const char *mark = Input_GetMark ();
+	  result.tag = LexInt;
+	  result.Data.Int.value = lexint (10);
+	  if (Input_Match ('.', false))
 	    {
-	      s1 = inputSymbol (&l1, '"');
-	      if (inputGet () != '"')
+	      Input_RollBackToMark (mark);
+	      result.tag = LexFloat;
+	      char *newMark;
+	      result.Data.Float.value = strtod (mark, &newMark);
+	      if (newMark == mark)
+		error (ErrorError, "Failed to read floating point value");
+	      inputSkipN (newMark - mark);
+	    }
+	}
+	break;
+
+      case '\'':
+	{
+	  char in[4];
+	  int i, ci;
+	  for (i = 0; i < 5 && (ci = (unsigned char)inputGet ()) != '\''; ++i)
+	    {
+	      if (ci == '\\')
+		ci = inputGet ();
+	      if (ci == '\0')
 		{
-		  error (ErrorError, "String continues over newline");
+		  error (ErrorError, "Constant specification continues over newline");
 		  break;
 		}
-	      if ((s2 = malloc (len + l1 + 1)) == NULL)
-		errorOutOfMem ();
-	      memcpy (s2, str, len);
-	      s2[len] = '"';
-	      memcpy (s2 + len + 1, s1, l1);
-	      free ((void *)str);
-	      str = s2;
-	      len += l1 + 1;
-	    }
-	  /* now deal with \\ */
-	  s1 = s2 = str;
-	  while (*s1)
-	    {
-	      if (*s1 == '\\')
+	      if (i == 4)
 		{
-		  switch (l1 = *++s1)
-		    {
-		    case '0':
-		    case '1':
-		    case '2':
-		    case '3':
-		    case '4':
-		    case '5':
-		    case '6':
-		    case '7':
-		      l1 = *s1++ - '0';
-		      if (*s1 >= '0' && *s1 <= '7')
-			{
-			  l1 = l1 * 8 + *s1++ - '0';
-			  if (*s1 >= '0' && *s1 <= '7')
-			    l1 = l1 * 8 + *s1++ - '0';
-			}
-		      break;
-		    case 'x':
-		      if (isxdigit (*++s1))
-			{	/* implied ASCII-like */
-			  l1 = *s1 - '0' - 7 * (*s1 > '9') - 32 * (*s1 >= 'a');
-			  if (isxdigit (*++s1))
-			    {
-			      l1 = l1 * 16 + *s1 - '0' - 7 * (*s1 > '9') - 32 * (*s1 >= 'a');
-			      s1++;
-			    }
-			}
-		      break;
-		    case 'a':
-		      l1 = 7;
-		      s1++;
-		      break;
-		    case 'b':
-		      l1 = 8;
-		      s1++;
-		      break;
-		    case 'f':
-		      l1 = 12;
-		      s1++;
-		      break;
-		    case 'n':
-		      l1 = 10;
-		      s1++;
-		      break;
-		    case 'r':
-		      l1 = 13;
-		      s1++;
-		      break;
-		    case 't':
-		      l1 = 9;
-		      s1++;
-		      break;
-		    case 'v':
-		      l1 = 11;
-		      s1++;
-		      break;
-		    default:
-		      s1++;
-		      break;
-		    }
-		  *s2++ = l1;
+		  error (ErrorError, "Illegal constant specification");
+		  break;
 		}
-	      else
-		*s2++ = *s1++;
+	      in[i] = ci;
 	    }
-	  *s2 = 0;
-	  len -= s1 - s2;
-	  str = realloc (str, len);	/* try to reduce size of block */
-        result.Data.String.str = str;
-        result.Data.String.len = len;
-      }
-      break;
 
-    case '.':
-      {
-	/* Do we have the position mark '.' or start of floating point number ? */
-	if (isdigit ((unsigned char)inputLook ()))
+	  result.tag = LexInt;
+	  Lex_Char2Int (i, in, (ARMWord *)&result.Data.Int.value);
+	}
+	break;
+
+      case '"':
+	{
+	  result.tag = LexString;
+	  result.Data.String.str = Input_GetString (&result.Data.String.len);
+	}
+	break;
+
+      case '.':
+	{
+	  /* Do we have the position mark '.' or start of floating point
+	     number ? */
+	  if (isdigit ((unsigned char)inputLook ()))
+	    {
+	      /* Looks like a floating point number.  */
+	      inputUnGet (c);
+	      const char *mark = Input_GetMark ();
+	      result.tag = LexFloat;
+	      char *newMark;
+	      result.Data.Float.value = strtod (mark, &newMark);
+	      if (newMark == mark)
+		error (ErrorError, "Failed to read floating point value");
+	      inputSkipN (newMark - mark);
+	    }
+	  else
+	    result.tag = LexPosition;
+	}
+	break;
+
+      case '@':
+	result.tag = LexStorage;
+	break;
+
+      case '%':
+	{
+	  /* Local label reference.  */
+	  int dir;
+	  switch (inputLookLower ())
+	    {
+	      case 'f':
+		/* Forward looking.  */
+		inputSkip ();
+		dir = 1;
+		break;
+  
+	      case 'b':
+		/* Backword looking.  */
+		inputSkip ();
+		dir = -1;
+		break;
+  
+	      default:
+		/* Search backwards first, then forward.  */
+		dir = 0;
+		break;
+	    }
+	  LocalLabel_eSearch level;
+	  switch (inputLookLower ())
+	    {
+	      case 't':
+		/* Only at this macro level.  */
+		inputSkip ();
+		level = eThisLevelOnly;
+		break;
+  
+	      case 'a':
+		/* All macro levels.  */
+		inputSkip ();
+		level = eAllLevels;
+		break;
+  
+	      default:
+		/* At this macro level and all upper levels.  */
+		level = eThisLevelAndHigher;
+		break;
+	    }
+	  return Lex_MakeLocalLabel (dir, level);
+	}
+	break;
+
+      case '{':
+	lexAcornPrim (&result);
+	break;
+
+      default:
+	/* Try to read a symbol.  */
+	inputUnGet (c);
+	if ((result.Data.Id.str = Input_Symbol (&result.Data.Id.len)) != NULL)
 	  {
-	    /* Looks like a floating point number.  */
-	    inputUnGet (c);
-	    const char *mark = Input_GetMark ();
-	    result.tag = LexFloat;
-	    char *newMark;
-	    result.Data.Float.value = strtod (mark, &newMark);
-	    if (newMark == mark)
-	      error (ErrorError, "Failed to read floating point value");
-	    inputSkipN (newMark - mark);
+	    result.Data.Id.hash = lexHashStr (result.Data.Id.str, result.Data.Id.len);
+	    result.tag = LexId;
 	  }
 	else
-	  result.tag = LexPosition;
-      }
-      break;
-
-    case '@':
-      result.tag = LexStorage;
-      break;
-
-    case '%':
-      {
-	int dir;
-	switch (inputLookLower ())
-	  {
-	  case 'f':
-	    inputSkip ();
-	    dir = 1;
-	    break;
-	  case 'b':
-	    inputSkip ();
-	    dir = -1;
-	    break;
-	  default:
-	    dir = 0;
-	    break;
-	  }
-	switch (inputLookLower ())
-	  {
-	  case 't':
-	    inputSkip ();
-	    if (option_pedantic) /* TODO: */
-	      error (ErrorWarning,
-	             "Range qualifiers in local label names are not implemented. Ignored 't' in local label name");
-	    break;
-	  case 'a':
-	    inputSkip ();
-	    break;
-	  default:
-	    if (option_pedantic) /* TODO: */
-	      error (ErrorWarning,
-	             "Range qualifiers in local label names are not implemented. 'all macro levels' is assumed");
-	    break;
-	  }
-	return lexMakeLocal (dir);
-      }
-      break;
-
-    case '{':
-      lexAcornPrim (&result);
-      break;
-
-    default:
-      /* Try to read a symbol.  */
-      inputUnGet (c);
-      if ((result.Data.Id.str = Input_Symbol (&result.Data.Id.len)) != NULL)
-	{
-	  result.Data.Id.hash = lexHashStr (result.Data.Id.str, result.Data.Id.len);
-	  if (result.Data.Id.len > 1)
-	    localMunge (&result);
-	  result.tag = LexId;
-	}
-      else
-	result.tag = LexNone;
-      break;
+	  result.tag = LexNone;
+	break;
     }
 
   return result;
@@ -560,168 +524,169 @@ lexGetBinop (void)
       nextbinopvalid = false;
       return nextbinop;
     }
+
   skipblanks ();
   Lex result;
   int c;
   switch (c = inputGet ())
     {
-    case '*':
-      result.tag = LexOperator;
-      result.Data.Operator.op = Op_mul; /* * */
-      result.Data.Operator.pri = PRI (10);
-      break;
+      case '*':
+	result.tag = LexOperator;
+	result.Data.Operator.op = Op_mul; /* * */
+	result.Data.Operator.pri = PRI (10);
+	break;
 
-    case '/':
-      result.tag = LexOperator;
-      switch (inputLook ())
-	{
-	case '=': /* /= */
-	  inputSkip ();
-	  result.Data.Operator.op = Op_ne;
-	  result.Data.Operator.pri = PRI (3); /* /= */
-	  break;
-	default:
-	  result.Data.Operator.op = Op_div; /* / */
-	  result.Data.Operator.pri = PRI (10);
-	  break;
-	}
-      break;
-
-    case '%':
-      result.tag = LexOperator;
-      result.Data.Operator.op = Op_mod; /* % */
-      result.Data.Operator.pri = PRI (10);
-      break;
-
-    case '+':
-      result.tag = LexOperator;
-      result.Data.Operator.op = Op_add; /* + */
-      result.Data.Operator.pri = PRI (9);
-      break;
-
-    case '-':
-      result.tag = LexOperator;
-      result.Data.Operator.op = Op_sub; /* - */
-      result.Data.Operator.pri = PRI (9);
-      break;
-
-    case '^':
-      result.tag = LexOperator;
-      result.Data.Operator.op = Op_xor; /* ^ */
-      result.Data.Operator.pri = PRI (6);
-      break;
-
-    case '>':
-      result.tag = LexOperator;
-      switch (inputLook ())
-	{
-	case '>':
-	  result.Data.Operator.pri = PRI (5);
-	  if (inputSkipLook () == '>')
-	    {
+      case '/':
+	result.tag = LexOperator;
+	switch (inputLook ())
+	  {
+	    case '=': /* /= */
 	      inputSkip ();
-	      result.Data.Operator.op = Op_asr; /* >>> */
-	    }
-	  else
-	    result.Data.Operator.op = Op_sr; /* >> */
-	  break;
+	      result.Data.Operator.op = Op_ne;
+	      result.Data.Operator.pri = PRI (3); /* /= */
+	      break;
+	    default:
+	      result.Data.Operator.op = Op_div; /* / */
+	      result.Data.Operator.pri = PRI (10);
+	      break;
+	  }
+	break;
 
-	case '=':
-	  inputSkip ();
-	  result.Data.Operator.op = Op_ge;
-	  result.Data.Operator.pri = PRI (4); /* >= */
-	  break;
+      case '%':
+	result.tag = LexOperator;
+	result.Data.Operator.op = Op_mod; /* % */
+	result.Data.Operator.pri = PRI (10);
+	break;
 
-	default:
-	  result.Data.Operator.op = Op_gt;
-	  result.Data.Operator.pri = PRI (4); /* > */
-	  break;
-	}
-      break;
+      case '+':
+	result.tag = LexOperator;
+	result.Data.Operator.op = Op_add; /* + */
+	result.Data.Operator.pri = PRI (9);
+	break;
 
-    case '<':
-      result.tag = LexOperator;
-      switch (inputLook ())
-	{
-	case '<':
-	  inputSkip ();
-	  result.Data.Operator.op = Op_sl; /* << */
-	  result.Data.Operator.pri = PRI (5);
-	  break;
+      case '-':
+	result.tag = LexOperator;
+	result.Data.Operator.op = Op_sub; /* - */
+	result.Data.Operator.pri = PRI (9);
+	break;
 
-	case '=':
-	  inputSkip ();
-	  result.Data.Operator.op = Op_le; /* <= */
-	  result.Data.Operator.pri = PRI (4);
-	  break;
+      case '^':
+	result.tag = LexOperator;
+	result.Data.Operator.op = Op_xor; /* ^ */
+	result.Data.Operator.pri = PRI (6);
+	break;
 
-	case '>':
-	  inputSkip ();
-	  result.Data.Operator.op = Op_ne; /* <> */
-	  result.Data.Operator.pri = PRI (3);
-	  break;
+      case '>':
+	result.tag = LexOperator;
+	switch (inputLook ())
+	  {
+	    case '>':
+	      result.Data.Operator.pri = PRI (5);
+	      if (inputSkipLook () == '>')
+		{
+		  inputSkip ();
+		  result.Data.Operator.op = Op_asr; /* >>> */
+		}
+	      else
+		result.Data.Operator.op = Op_sr; /* >> */
+	      break;
 
-	default:
-	  result.Data.Operator.op = Op_lt; /* < */
-	  result.Data.Operator.pri = PRI (4);
-	  break;
-	}
-      break;
+	    case '=':
+	      inputSkip ();
+	      result.Data.Operator.op = Op_ge;
+	      result.Data.Operator.pri = PRI (4); /* >= */
+	      break;
+  
+	    default:
+	      result.Data.Operator.op = Op_gt;
+	      result.Data.Operator.pri = PRI (4); /* > */
+	      break;
+	  }
+	break;
 
-    case '=':
-      Input_Match ('=', false); /* Deals with '==' */
-      result.tag = LexOperator;
-      result.Data.Operator.pri = PRI (3);
-      result.Data.Operator.op = Op_eq; /* = == */
-      break;
+      case '<':
+	result.tag = LexOperator;
+	switch (inputLook ())
+	  {
+	    case '<':
+	      inputSkip ();
+	      result.Data.Operator.op = Op_sl; /* << */
+	      result.Data.Operator.pri = PRI (5);
+	      break;
+    
+	    case '=':
+	      inputSkip ();
+	      result.Data.Operator.op = Op_le; /* <= */
+	      result.Data.Operator.pri = PRI (4);
+	      break;
+    
+	    case '>':
+	      inputSkip ();
+	      result.Data.Operator.op = Op_ne; /* <> */
+	      result.Data.Operator.pri = PRI (3);
+	      break;
+    
+	    default:
+	      result.Data.Operator.op = Op_lt; /* < */
+	      result.Data.Operator.pri = PRI (4);
+	      break;
+	  }
+	break;
 
-    case '!':
-      if (Input_Match ('=', false))
-	{
-	  result.tag = LexOperator;
-	  result.Data.Operator.pri = PRI (3);
-	  result.Data.Operator.op = Op_ne; /* != */
-	}
-      else
+      case '=':
+	Input_Match ('=', false); /* Deals with '==' */
+	result.tag = LexOperator;
+	result.Data.Operator.pri = PRI (3);
+	result.Data.Operator.op = Op_eq; /* = == */
+	break;
+
+      case '!':
+	if (Input_Match ('=', false))
+	  {
+	    result.tag = LexOperator;
+	    result.Data.Operator.pri = PRI (3);
+	    result.Data.Operator.op = Op_ne; /* != */
+	  }
+	else
+	  result.tag = LexNone;
+	break;
+
+      case '|':
+	result.tag = LexOperator;
+	if (Input_Match ('|', false))
+	  {
+	    result.Data.Operator.pri = PRI (1);
+	    result.Data.Operator.op = Op_lor; /* || */
+	  }
+	else
+	  {
+	    result.Data.Operator.pri = PRI (7);
+	    result.Data.Operator.op = Op_or; /* | */
+	  }
+	break;
+
+      case '&':
+	result.tag = LexOperator;
+	if (Input_Match ('&', false))
+	  {
+	    result.Data.Operator.pri = PRI (2);
+	    result.Data.Operator.op = Op_land; /* && */
+	  }
+	else
+	  {
+	    result.Data.Operator.pri = PRI (8);
+	    result.Data.Operator.op = Op_and; /* & */
+	  }
+	break;
+
+      case ':':
+	lexAcornBinop (&result); /* :XYZ: */
+	break;
+
+      default:
+	inputUnGet (c);
 	result.tag = LexNone;
-      break;
-
-    case '|':
-      result.tag = LexOperator;
-      if (Input_Match ('|', false))
-	{
-	  result.Data.Operator.pri = PRI (1);
-	  result.Data.Operator.op = Op_lor; /* || */
-	}
-      else
-	{
-	  result.Data.Operator.pri = PRI (7);
-	  result.Data.Operator.op = Op_or; /* | */
-	}
-      break;
-
-    case '&':
-      result.tag = LexOperator;
-      if (Input_Match ('&', false))
-	{
-	  result.Data.Operator.pri = PRI (2);
-	  result.Data.Operator.op = Op_land; /* && */
-	}
-      else
-	{
-	  result.Data.Operator.pri = PRI (8);
-	  result.Data.Operator.op = Op_and; /* & */
-	}
-      break;
-
-    case ':':
-      lexAcornBinop (&result); /* :XYZ: */
-      break;
-
-    default:
-      inputUnGet (c);
-      result.tag = LexNone;
-      break;
+	break;
     }
 
   return result;
@@ -805,7 +770,7 @@ OperatorAsStr (Operator op)
   static const char * const opStr[] =
     {
       ":FLOAD:",	/* Op_fload */
-      ":FEXEC:", 	/* Op_fexec */
+      ":FEXEC:",	/* Op_fexec */
       ":FSIZE:",	/* Op_fsize */
       ":FATTR:",	/* Op_fattr */
       ":LNOT:",		/* Op_lnot */

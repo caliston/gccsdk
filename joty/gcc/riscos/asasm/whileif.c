@@ -70,13 +70,31 @@ if_skip (const char *onerror, bool closeOnly)
       if (Input_IsEolOrCommentStart ())
 	continue;
 
-      /* Check for label and skip it.  */
+      /* Check for label and skip it.
+         Make special exception for '$' starting labels, i.e. macro arguments.  */
       Lex label;
-      if (!isspace ((unsigned char)inputLook ()))
-	label = Lex_GetDefiningLabel ();
-      else
+      if (isspace ((unsigned char)inputLook ()))
 	label.tag = LexNone;
+      else if (inputLook () == '$')
+	{
+	  size_t len;
+	  (void) inputSymbol (&len, '\0');
+	  if (Input_Match ('.', false))
+	    (void) inputSymbol (&len, '\0');
+	  label.tag = LexNone;
+	}
+      else
+	label = Lex_GetDefiningLabel (true);
       skipblanks ();
+
+      /* Check for 'END'.  */
+      if (inputLookN (0) == 'E'
+	  && inputLookN (1) == 'N'
+          && inputLookN (2) == 'D'
+          && (inputLookN (3) == '\0'
+	      || isspace ((unsigned char)inputLookN (3))
+	      || inputLookN (3) == ';'))
+	break;
 
       /* Check for '[', '|', ']', 'IF', 'ELSE', 'ENDIF'.  */
       enum { t_unknown, t_if, t_else, t_endif } toktype;
@@ -240,7 +258,7 @@ while_skip (void)
     {
       /* Skip label (if there is one).  */
       if (!isspace ((unsigned char)inputLook ()))
-	(void) Lex_GetDefiningLabel ();
+	(void) Lex_GetDefiningLabel (true);
       skipblanks ();
 
       /* Look for WHILE and WEND.  */

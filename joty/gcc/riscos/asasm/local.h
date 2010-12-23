@@ -26,18 +26,15 @@
 #include <stdbool.h>
 #include "lex.h"
 
-extern int rout_lblno[100];
-extern const char *rout_id;
+extern int Local_ROUTLblNo[100];
+extern const char *Local_CurROUTId;
 
-extern const char localFormat[];
-extern int localCurrent;
+extern const char Local_IntLabelFormat[];
 
-bool c_local (const Lex *label);
 bool c_rout (const Lex *label);
 
-bool localTest (const char *);
-void localMunge (Lex *);
-void localFindLocal (int local, const char **file, int *lineno);
-void localFindRout (const char *rout, const char **file, int *lineno);
+bool Local_ROUTIsEmpty (const char *routName);
+bool Local_IsLocalLabel (const char *);
+void Local_FindROUT (const char *rout, const char **file, int *lineno);
 
 #endif

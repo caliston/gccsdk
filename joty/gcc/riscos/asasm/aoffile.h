@@ -32,7 +32,7 @@ typedef struct
   uint32_t Type;
   uint32_t Size;		/* Size of area, must be divisible by four */
   uint32_t noRelocations;	/* Size of relocation table */
-  uint32_t Unused;		/* Unused, must be zero */
+  uint32_t BaseAddr;		/* Base address or 0.  */
 } AofEntry;
 
 #define AofHeaderID 0xc5e2d080
@@ -65,7 +65,6 @@ typedef struct
 #define HOW1_SIDMASK  0x0000ffff
 
 /* Type 2 relocation directive.  */
-#define HOW_TYPE2     0x80000000
 #define HOW2_INIT     0x80000000
 #define HOW2_BYTE     0x00000000
 #define HOW2_HALF     0x01000000
@@ -79,7 +78,6 @@ typedef struct
 #define HOW2_SIDMASK  0x00ffffff
 
 /* Type 3 relocation directive.  */
-#define HOW_TYPE3     (1U << 31)
 #define HOW3_INIT     (1U << 31)
 /* Field to be relocated is a byte.  */
 #define HOW3_BYTE     (0 << 24)

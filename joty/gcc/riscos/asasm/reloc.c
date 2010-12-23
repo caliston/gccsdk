@@ -142,6 +142,10 @@ Reloc_QueueExprUpdate (RelocUpdater callback, ARMWord offset, ValueTag legal,
 Reloc *
 Reloc_Create (uint32_t how, uint32_t offset, const Value *value)
 {
+  /* Check if we can create a relocation for given value.  */
+  if (value->Tag != ValueSymbol || value->Data.Symbol.factor <= 0)
+    return NULL;
+
   Reloc *newReloc;
   if ((newReloc = malloc (sizeof (Reloc))) == NULL)
     errorOutOfMem ();
@@ -154,31 +158,15 @@ Reloc_Create (uint32_t how, uint32_t offset, const Value *value)
   areaCurrentSymbol->area.info->relocs = newReloc;
 
   /* Mark we want this symbol in our output.  */
-  if (newReloc->value.Tag == ValueSymbol)
-    {
-      if ((newReloc->value.Data.Symbol.symbol->type & SYMBOL_AREA) == 0)
-        newReloc->value.Data.Symbol.symbol->used = 0;
-    }
-  else
-    {
-      assert (newReloc->value.Tag == ValueCode);
-      size_t len = newReloc->value.Data.Code.len;
-      const Code *code = newReloc->value.Data.Code.c;
-      for (size_t i = 0; i != len; ++i)
-	{
-	  if (code->Tag == CodeValue
-	      && code->Data.value.Tag == ValueSymbol
-	      && (code->Data.value.Data.Symbol.symbol->type & SYMBOL_AREA) == 0)
-	    code->Data.value.Data.Symbol.symbol->used = 0;
-	}
-    } 
+  if ((newReloc->value.Data.Symbol.symbol->type & SYMBOL_AREA) == 0)
+    newReloc->value.Data.Symbol.symbol->used = 0;
   
   return newReloc;
 }
 
 
 /**
- * Returns the number of relocations associated with given area.
+ * \return The number of relocations associated with given area.
  */
 int
 relocFix (const Symbol *area)
@@ -191,10 +179,7 @@ relocFix (const Symbol *area)
       /* Re-evaluate value.  By now we can get a different result which we can
          use.  */
       codeInit ();
-      if (relQueue->expr.Tag == ValueCode)
-	Code_AddValueCode (&relQueue->expr); /* We want expansion of ValueCode.  */ /* FIXME: we could use codeEvalLow() instead and run directly using relQueue->expr contents.  */
-      else
-        codeValue (&relQueue->expr);
+      codeValue (&relQueue->expr, true);
       const Value *value = codeEval (relQueue->legal | ValueCode,
 				     relQueue->legal & ValueAddr ? &relQueue->offset : NULL);
       if (value->Tag == ValueIllegal)
@@ -220,11 +205,28 @@ relocFix (const Symbol *area)
     }
   areaCurrentSymbol = NULL;
 
+  /* Calculate the number of relocations, i.e. per Reloc object, count all
+     ValueSymbols.  */
   int norelocs = 0;
   for (const Reloc *relocs = area->area.info->relocs;
        relocs != NULL;
        relocs = relocs->next)
-    ++norelocs;
+    {
+      if (relocs->value.Tag == ValueSymbol)
+	norelocs += relocs->value.Data.Symbol.factor;
+      else
+	{
+	  assert (relocs->value.Tag == ValueCode);
+	  size_t len = relocs->value.Data.Code.len;
+	  const Code *code = relocs->value.Data.Code.c;
+	  for (size_t i = 0; i != len; ++i)
+	    {
+	      if (code->Tag == CodeValue
+	          && code->Data.value.Tag == ValueSymbol)
+		norelocs += code->Data.value.Data.Symbol.factor;
+	    }
+	}
+    }
 
   return norelocs;
 }
@@ -250,9 +252,9 @@ relocAOFOutput (FILE *outfile, const Symbol *area)
 	    areloc.How |= HOW2_SYMBOL;
 	  areloc.How = armword (areloc.How);
 	  int loop = value->Data.Symbol.factor;
-	  assert (loop > 0); /* FIXME: I'm sure this can become negative (but not zero).  Where to give an error on that ? */
+	  assert (loop > 0 && "Reloc_Create() check on this got ignored");
 	  while (loop--)
-	    fwrite (&areloc, 1, sizeof(AofReloc), outfile);
+	    fwrite (&areloc, 1, sizeof (AofReloc), outfile);
 	}
       else
 	{
@@ -272,9 +274,9 @@ relocAOFOutput (FILE *outfile, const Symbol *area)
 		    areloc.How |= HOW2_SYMBOL;
 		  areloc.How = armword (areloc.How);
 		  int loop = value->Data.Symbol.factor;
-		  assert (loop > 0); /* FIXME: I'm sure this can become negative (but not zero).  Where to give an error on that ? */
+		  assert (loop > 0 && "Reloc_Create() check on this got ignored");
 		  while (loop--)
-		    fwrite (&areloc, 1, sizeof(AofReloc), outfile);
+		    fwrite (&areloc, 1, sizeof (AofReloc), outfile);
 		}
 	    }
 	}
@@ -307,9 +309,9 @@ relocELFOutput (FILE *outfile, const Symbol *area)
 	  areloc.r_info = armword (ELF32_R_INFO (symbol, type));
 	  areloc.r_info = armword (areloc.r_info);
 	  int loop = value->Data.Symbol.factor;
-	  assert (loop > 0); /* FIXME: I'm sure this can become negative (but not zero).  Where to give an error on that ? */
+	  assert (loop > 0 && "Reloc_Create() check on this got ignored");
 	  while (loop--)
-	    fwrite (&areloc, 1, sizeof(Elf32_Rel), outfile);
+	    fwrite (&areloc, 1, sizeof (Elf32_Rel), outfile);
 	}
       else
 	{
@@ -333,9 +335,9 @@ relocELFOutput (FILE *outfile, const Symbol *area)
 		  areloc.r_info = armword (ELF32_R_INFO (symbol, type));
 		  areloc.r_info = armword (areloc.r_info);
 		  int loop = value->Data.Symbol.factor;
-		  assert (loop > 0); /* FIXME: I'm sure this can become negative (but not zero).  Where to give an error on that ? */
+		  assert (loop > 0 && "Reloc_Create() check on this got ignored");
 		  while (loop--)
-		    fwrite (&areloc, 1, sizeof(AofReloc), outfile);
+		    fwrite (&areloc, 1, sizeof (Elf32_Rel), outfile);
 		}
 	    }
 	}

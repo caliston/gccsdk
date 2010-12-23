@@ -123,12 +123,14 @@ typedef struct
     } Data;
 } Lex;
 
-Lex Lex_GetDefiningLabel (void);
+Lex Lex_GetDefiningLabel (bool noCheck);
 Lex lexGetId (void);
 Lex lexGetIdNoError (void);
 Lex lexGetPrim (void);
 Lex lexGetBinop (void);
 int lexNextPri (void);
+
+bool Lex_Char2Int (size_t len, const char *str, ARMWord *result);
 
 Lex lexTempLabel (const char *str, size_t len);
 

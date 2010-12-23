@@ -58,6 +58,8 @@ Symbol *areaEntrySymbol = NULL;
 int areaEntryOffset;
 Symbol *areaHeadSymbol = NULL;
 
+static uint32_t oNextAreaOrg;
+static bool oNextAreaOrgIsSet;
 
 static Area *
 areaNew (Symbol *sym, int type)
@@ -70,6 +72,7 @@ areaNew (Symbol *sym, int type)
   res->type = type;
   res->imagesize = 0;
   res->image = NULL;
+  res->baseAddr = 0;
 
   res->relocQueue = NULL;
   res->norelocs = 0;
@@ -184,7 +187,7 @@ c_entry (void)
 
 
 /**
- * Implements ALIGN.
+ * Implements ALIGN [<power-of-2> [, <offset>]]
  */
 bool
 c_align (void)
@@ -263,29 +266,28 @@ c_align (void)
 
 
 /**
- * \param align Needs to be power of 2 except value 1.
+ * \param align Needs to be power of 2 except value 0.
  */
-void
-Area_AlignTo (int align, const char *msg)
+size_t
+Area_AlignTo (size_t offset, int align, const char *msg)
 {
-  assert (align != 1 && (align & (align - 1)) == 0);
-  int off = areaCurrentSymbol->value.Data.Int.i & (align - 1);
-  if (off)
-    {
-      if (msg)
-	error (ErrorInfo, "Unaligned %s", msg);
-
-      int grow = align - off;
-      if (AREA_NOSPACE (areaCurrentSymbol->area.info, areaCurrentSymbol->value.Data.Int.i + grow))
-	areaGrow (areaCurrentSymbol->area.info, grow);
-      while (grow--)
-	areaCurrentSymbol->area.info->image[areaCurrentSymbol->value.Data.Int.i++] = 0;
-    }
+  assert (align && (align & (align - 1)) == 0);
+  if (msg && (offset & (align - 1)) != 0)
+    error (ErrorWarning, "Unaligned %s", msg);
+  bool atAreaEnd = areaCurrentSymbol->value.Data.Int.i == offset;
+  size_t newOffset = (offset + align-1) & -align;      
+  if (AREA_NOSPACE (areaCurrentSymbol->area.info, newOffset))
+    areaGrow (areaCurrentSymbol->area.info, newOffset - areaCurrentSymbol->value.Data.Int.i);
+  for (size_t i = areaCurrentSymbol->value.Data.Int.i; i < newOffset; ++i)
+    areaCurrentSymbol->area.info->image[i++] = 0;
+  if (atAreaEnd)
+    areaCurrentSymbol->value.Data.Int.i = newOffset;
+  return newOffset;
 }
 
 
 /**
- * Implements '%'.
+ * Implements '%' and 'SPACE'.
  */
 bool
 c_reserve (void)
@@ -352,7 +354,7 @@ c_area (void)
   Symbol *sym = symbolGet (&lex);
   int oldtype = 0;  
   if (sym->type & SYMBOL_DEFINED)
-    error (ErrorError, "Redefinition of label to area %s", sym->str);
+    error (ErrorError, "Redefinition of label as area %s", sym->str);
   else if (sym->type & SYMBOL_AREA)
     oldtype = sym->area.info->type;
   else
@@ -423,7 +425,7 @@ c_area (void)
 	{
 	  skipblanks ();
 	  ARMWord reg = getCpuReg ();
-	  newtype |= AREA_BASED | AREA_READONLY | (reg << 24);
+	  newtype |= AREA_BASED | (reg << 24);
 	}
       else if (attribute.Data.Id.len == sizeof ("LINKONCE")-1
 	       && !memcmp ("LINKONCE", attribute.Data.Id.str, attribute.Data.Id.len))
@@ -451,6 +453,14 @@ c_area (void)
 	error (ErrorError, "Illegal area attribute %.*s",
 	       (int)attribute.Data.Id.len, attribute.Data.Id.str);
       skipblanks ();
+    }
+
+  /* Pending ORG to be taken into account ? */
+  if (oNextAreaOrgIsSet)
+    {
+      newtype |= AREA_ABS;
+      sym->area.info->baseAddr = oNextAreaOrg;
+      oNextAreaOrgIsSet = false;
     }
 
   /* Any alignment specified ? No, take default alignment (2) */
@@ -500,5 +510,36 @@ c_area (void)
     error (ErrorError, "Changing attribute of area %s", sym->str);
   sym->area.info->type |= newtype;
   areaCurrentSymbol = sym;
+  return false;
+}
+
+/**
+ * Implements ORG.
+ */
+bool
+c_org (void)
+{
+  const Value *value = exprBuildAndEval (ValueInt);
+  if (value->Tag == ValueInt)
+    {
+      if (!strcmp (areaCurrentSymbol->str, IMPLICIT_AREA_NAME))
+	{
+	  oNextAreaOrg = value->Data.Int.i;
+	  oNextAreaOrgIsSet = true;
+	}
+      else
+	{
+	  if (areaCurrentSymbol->value.Data.Int.i)
+	    error (ErrorError, "Too late to set ORG of current area");
+	  else
+	    {
+	      areaCurrentSymbol->area.info->type |= AREA_ABS;
+	      areaCurrentSymbol->area.info->baseAddr = value->Data.Int.i;
+	    }
+	}
+    }
+  else
+    error (ErrorError, "ORG needs explicit address");
+
   return false;
 }

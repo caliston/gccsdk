@@ -40,7 +40,6 @@
 #include "expr.h"
 #include "filestack.h"
 #include "fix.h"
-#include "help_lex.h"
 #include "include.h"
 #include "input.h"
 #include "lex.h"
@@ -111,6 +110,7 @@ declare_var (const char *ptr, size_t len, ValueTag type, bool localMacro)
   else
     sym = symbolAdd (&var);
 
+  sym->type |= SYMBOL_ABSOLUTE;
   if (localMacro)
     sym->type |= SYMBOL_MACRO_LOCAL;
   assign_var (sym, type);
