@@ -26,8 +26,8 @@ AUTOCONF_FOR_GCC_VERSION=2.64
 AUTOMAKE_FOR_GCC_VERSION=1.11.1
 GCC_VERSION=$(GCCSDK_SUPPORTED_GCC_RELEASE)
 GCC_USE_SCM=yes
-NEWLIB_VERSION=1.18.1
-NEWLIB_USE_SCM=yes
+NEWLIB_VERSION=1.19.0
+NEWLIB_USE_SCM=no
 GDB_VERSION=7.2
 GMP_VERSION=5.0.1
 MPFR_VERSION=3.0.0
@@ -79,7 +79,11 @@ GDB_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 1 Develo
 BINUTILS_CONFIG_ARGS += --enable-maintainer-mode --disable-werror --with-gcc --enable-interwork --disable-nls
 # --disable-werror is added because --enable-maintainer-mode turns all warnings into errors and
 # the gcc build is not 100% warning free.
-GCC_CONFIG_ARGS += --enable-maintainer-mode --disable-werror --enable-interwork --disable-nls --disable-libquadmath
+# However, this does not help for libstdc++ builds when newlib is used, cfr http://gcc.gnu.org/PR47058.
+ifeq ($(TARGET),arm-unknown-riscos)
+GCC_CONFIG_ARGS += --enable-maintainer-mode --disable-werror
+endif
+GCC_CONFIG_ARGS += --enable-interwork --disable-nls --disable-libquadmath
 GDB_CONFIG_ARGS += --disable-werror --enable-interwork --disable-multilib --disable-nls
 
 # When debugging/testing/validating the compiler add "--enable-checking=all",
