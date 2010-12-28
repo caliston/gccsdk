@@ -35,6 +35,8 @@ MPC_VERSION=0.8.2
 GCC_USE_PPL_CLOOG=yes
 PPL_VERSION=0.10.2
 CLOOG_VERSION=0.15.9
+GCC_USE_LTO=yes
+LIBELF_VERSION=0.8.13
 
 # Notes:
 #   1) --with-cross-host is needed to correctly find the target libraries in
@@ -121,6 +123,10 @@ ifeq "$(GCC_USE_PPL_CLOOG)" "yes"
 CROSS_GCC_CONFIG_ARGS += --with-ppl=$(PREFIX_CROSSGCC_LIBS) --with-host-libstdcxx='-Wl,-lstdc++' --with-cloog=$(PREFIX_CROSSGCC_LIBS)
 RONATIVE_GCC_CONFIG_ARGS += --with-ppl=$(PREFIX_RONATIVEGCC_LIBS) --with-host-libstdcxx='-Wl,-lstdc++' --with-cloog=$(PREFIX_RONATVEGCC_LIBS)
 endif
+ifeq ($(GCC_USE_LTO),yes)
+CROSS_GCC_CONFIG_ARGS += --enable-lto --with-libelf=$(PREFIX_CROSSGCC_LIBS)
+RONATIVE_GCC_CONFIG_ARGS += --enable-lto --with-libelf=$(PREFIX_RONATIVEGCC_LIBS)
+endif
 
 # Configure arguments Binutils & GCC:
 CROSS_CONFIG_ARGS := --target=$(TARGET) --prefix=$(PREFIX_CROSS)
@@ -149,6 +155,10 @@ RONATIVE_PPL_CONFIG_ARGS := --disable-shared --with-libgmp-prefix=$(PREFIX_RONAT
 # Configure arguments CLooG:
 CROSS_CLOOG_CONFIG_ARGS := --disable-shared --with-gmp=$(PREFIX_CROSSGCC_LIBS) --with-bits=gmp --with-ppl=$(PREFIX_CROSSGCC_LIBS) --with-host-libstdcxx='-Wl,-lstdc++' --prefix=$(PREFIX_CROSSGCC_LIBS)
 RONATIVE_CLOOG_CONFIG_ARGS := --disable-shared --with-gmp=$(PREFIX_RONATIVEGCC_LIBS) --with-bits=gmp --with-ppl=$(PREFIX_RONATIVEGCC_LIBS) --with-host-libstdcxx='-Wl,-lstdc++' --host=$(TARGET) --prefix=$(PREFIX_RONATIVEGCC_LIBS)
+
+# Configure arguments libelf:
+CROSS_LIBELF_CONFIG_ARGS := --disable-shared --prefix=$(PREFIX_CROSSGCC_LIBS)
+RONATIVE_LIBELF_CONFIG_ARGS := --disable-shared --host=$(TARGET) --prefix=$(PREFIX_RONATIVEGCC_LIBS)
 
 # To respawn Makefile with setup-gccsdk-param environment loaded.
 GCCSDK_INTERNAL_GETENV=getenv
@@ -269,6 +279,9 @@ endif
 ifeq "$(GCC_USE_PPL_CLOOG)" "yes"
 cross-gcc-configured: cross-ppl-built cross-cloog-built
 endif
+ifeq "$(GCC_USE_LTO)" "yes"
+cross-gcc-configured: cross-libelf-built
+endif
 cross-gcc-configured: src-gcc-copied cross-binutils-built cross-gmp-built cross-mpc-built cross-mpfr-built
 	-rm -rf $(SRCDIR)/gcc/newlib
 	-rm -rf $(SRCDIR)/gcc/libgloss
@@ -291,6 +304,9 @@ cross-gcc-built: cross-gcc-configured
 ifeq "$(GCC_USE_PPL_CLOOG)" "yes"
 ronative-gcc-configured: ronative-ppl-built ronative-cloog-built
 endif
+ifeq "$(GCC_USE_LTO)" "yes"
+ronative-gcc-configured: ronative-libelf-built
+endif
 ronative-gcc-configured: cross-done ronative-gmp-built ronative-mpc-built ronative-mpfr-built
 	-rm -rf $(BUILDDIR)/ronative-gcc
 	mkdir -p $(BUILDDIR)/ronative-gcc
@@ -310,7 +326,7 @@ cross-gmp-built: src-gmp-copied
 	touch $(BUILDSTEPSDIR)/cross-gmp-built
 
 # Configure & build gmp ronative:
-ronative-gmp-built: src-gmp-copied
+ronative-gmp-built: cross-gcc-built src-gmp-copied
 	-rm -rf $(BUILDDIR)/ronative-gmp
 	mkdir -p $(BUILDDIR)/ronative-gmp
 	cd $(BUILDDIR)/ronative-gmp && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gmp/configure $(RONATIVE_GMP_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
@@ -324,7 +340,7 @@ cross-mpc-built: src-mpc-copied cross-gmp-built cross-mpfr-built
 	touch $(BUILDSTEPSDIR)/cross-mpc-built
 
 # Configure & build mpc ronative:
-ronative-mpc-built: src-mpc-copied ronative-gmp-built ronative-mpfr-built
+ronative-mpc-built: cross-gcc-built src-mpc-copied ronative-gmp-built ronative-mpfr-built
 	-rm -rf $(BUILDDIR)/ronative-mpc
 	mkdir -p $(BUILDDIR)/ronative-mpc
 	cd $(BUILDDIR)/ronative-mpc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/mpc/configure $(RONATIVE_MPC_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
@@ -338,7 +354,7 @@ cross-mpfr-built: src-mpfr-copied cross-gmp-built
 	touch $(BUILDSTEPSDIR)/cross-mpfr-built
 
 # Configure & build mpfr ronative:
-ronative-mpfr-built: src-mpfr-copied ronative-gmp-built
+ronative-mpfr-built: cross-gcc-built src-mpfr-copied ronative-gmp-built
 	-rm -rf $(BUILDDIR)/ronative-mpfr
 	mkdir -p $(BUILDDIR)/ronative-mpfr
 	cd $(BUILDDIR)/ronative-mpfr && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/mpfr/configure $(RONATIVE_MPFR_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
@@ -352,7 +368,7 @@ cross-ppl-built: src-ppl-copied cross-gmp-built
 	touch $(BUILDSTEPSDIR)/cross-ppl-built
 
 # Configure & build ppl ronative:
-ronative-ppl-built: src-ppl-copied ronative-gmp-built
+ronative-ppl-built: cross-gcc-built src-ppl-copied ronative-gmp-built
 	-rm -rf $(BUILDDIR)/ronative-ppl
 	mkdir -p $(BUILDDIR)/ronative-ppl
 	cd $(BUILDDIR)/ronative-ppl && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/ppl/configure $(RONATIVE_PPL_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
@@ -366,11 +382,32 @@ cross-cloog-built: src-cloog-copied cross-gmp-built cross-ppl-built
 	touch $(BUILDSTEPSDIR)/cross-cloog-built
 
 # Configure & build cloog ronative:
-ronative-cloog-built: src-cloog-copied ronative-gmp-built ronative-ppl-built
+ronative-cloog-built: cross-gcc-built src-cloog-copied ronative-gmp-built ronative-ppl-built
 	-rm -rf $(BUILDDIR)/ronative-cloog
 	mkdir -p $(BUILDDIR)/ronative-cloog
 	cd $(BUILDDIR)/ronative-cloog && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/cloog/configure $(RONATIVE_CLOOG_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
 	touch $(BUILDSTEPSDIR)/ronative-cloog-built
+
+# Configure & build libelf cross:
+cross-libelf-built: src-libelf-copied
+	-rm -rf $(BUILDDIR)/cross-libelf
+	mkdir -p $(BUILDDIR)/cross-libelf
+	cd $(BUILDDIR)/cross-libelf && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/libelf/configure $(CROSS_LIBELF_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
+	touch $(BUILDSTEPSDIR)/cross-libelf-built
+
+# Configure & build libelf ronative:
+ronative-libelf-built: cross-gcc-built src-libelf-copied
+	-rm -rf $(BUILDDIR)/ronative-libelf
+	mkdir -p $(BUILDDIR)/ronative-libelf
+	cd $(BUILDDIR)/ronative-libelf && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/libelf/configure $(RONATIVE_LIBELF_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
+	touch $(BUILDSTEPSDIR)/ronative-libelf-built
+
+# Configure & build gdb cross:
+cross-gdb-built: src-gdb-copied
+	-rm -rf $(BUILDDIR)/cross-gdb
+	mkdir -p $(BUILDDIR)/cross-gdb
+	cd $(BUILDDIR)/cross-gdb && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gdb/configure $(CROSS_CONFIG_ARGS) $(GDB_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
+	touch $(BUILDSTEPSDIR)/cross-gdb-built
 
 # Build the RISC OS related tools (cmunge, elf2aif, asasm, etc) cross:
 cross-riscostools-built: cross-gcc-built
@@ -381,13 +418,6 @@ cross-riscostools-built: cross-gcc-built
 ronative-riscostools-built: ronative-gcc-built
 	cd $(RISCOSTOOLSDIR) && ./build-it riscos
 	touch $(BUILDSTEPSDIR)/ronative-riscostools-built
-
-# Configure & build gdb cross:
-cross-gdb-built: src-gdb-copied
-	-rm -rf $(BUILDDIR)/cross-gdb
-	mkdir -p $(BUILDDIR)/cross-gdb
-	cd $(BUILDDIR)/cross-gdb && PATH="$(PREFIX_CROSS)/bin:$(PATH)" && $(SRCDIR)/gdb/configure $(CROSS_CONFIG_ARGS) $(GDB_CONFIG_ARGS) && $(MAKE) && $(MAKE) install
-	touch $(BUILDSTEPSDIR)/cross-gdb-built
 
 # -- Source unpacking.
 
@@ -496,6 +526,14 @@ src-cloog-copied: $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz
 	cp -T -p -r $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION) $(SRCDIR)/cloog
 	touch $(BUILDSTEPSDIR)/src-cloog-copied
 
+# Unpack libelf source:
+src-libelf-copied: $(SRCORIGDIR)/libelf-$(LIBELF_VERSION).tar.gz
+	-rm -rf $(SRCORIGDIR)/libelf-$(LIBELF_VERSION) $(SRCDIR)/libelf
+	cd $(SRCORIGDIR) && tar xfz libelf-$(LIBELF_VERSION).tar.gz
+	-mkdir -p $(SRCDIR)/libelf
+	cp -T -p -r $(SRCORIGDIR)/libelf-$(LIBELF_VERSION) $(SRCDIR)/libelf
+	touch $(BUILDSTEPSDIR)/src-libelf-copied
+
 # Unpack newlib source:
 ifeq "$(NEWLIB_USE_SCM)" "yes"
 src-newlib-copied:
@@ -601,6 +639,12 @@ $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz:
 	cd $(SRCORIGDIR) && wget -c ftp://gcc.gnu.org/pub/gcc/infrastructure/cloog-ppl-$(CLOOG_VERSION).tar.gz
 	touch $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz
 
+# Download libelf source:
+$(SRCORIGDIR)/libelf-$(LIBELF_VERSION).tar.gz:
+	-mkdir -p $(SRCORIGDIR)
+	cd $(SRCORIGDIR) && wget -c http://www.mr511.de/software/libelf-$(LIBELF_VERSION).tar.gz
+	touch $(SRCORIGDIR)/libelf-$(LIBELF_VERSION).tar.gz
+
 # Download newlib source:
 $(SRCORIGDIR)/newlib-$(NEWLIB_VERSION).tar.gz:
 	-mkdir -p $(SRCORIGDIR)
@@ -612,3 +656,4 @@ $(SRCORIGDIR)/gdb-$(GDB_VERSION).tar.bz2:
 	-mkdir -p $(SRCORIGDIR)
 	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/gdb/gdb-$(GDB_VERSION).tar.bz2
 	touch $(SRCORIGDIR)/gdb-$(GDB_VERSION).tar.bz2
+
