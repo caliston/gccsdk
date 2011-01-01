@@ -20,6 +20,9 @@ Status build:
 
 - Enable languages c and c++, multilib configuration with static target libs
   cleanly builds.
+  *** Build breaks in libstdc++ (see http://gcc.gnu.org/bugzilla/show_bug.cgi?id=47145)
+      because of gcc change r168382 (back out that if you want to have a successful
+      build).
 - Didn't try any other languages nor shared library configuration.
 
 Code generation:
