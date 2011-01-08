@@ -32,7 +32,7 @@
 
 /* Lowest 8 bits encode the alignment of the start of the area as a power
    of 2 and has a value between 2 and 32.  */
-#define AREA_INIT		0x00000002
+#define AREA_DEFAULT_ALIGNMENT	0x00000002
 #define AREA_ABS		0x00000100
 #define AREA_CODE		0x00000200
 #define AREA_COMMONDEF		0x00000400 /* Common block definition */
@@ -101,5 +101,19 @@ bool c_area (void);
 bool c_entry (void);
 bool c_org (void);
 bool c_reserve (void);
+
+typedef enum
+{
+  ePreserve8_Guess, /** We have to guess.  */
+  ePreserve8_Yes,
+  ePreserve8_No
+} Preserve8_eValue;
+
+extern bool gArea_Require8;
+extern Preserve8_eValue gArea_Preserve8;
+extern bool gArea_Preserve8Guessed;
+
+bool c_preserve8 (void);
+bool c_require8 (void);
 
 #endif

@@ -24,40 +24,14 @@
 #define whileif_header_included
 
 #include <stdbool.h>
-#include "symbol.h"
 
-typedef enum
-{
-  WhileNull = 0,
-  WhileInFile = 1,
-  WhileInMacro = 2
-} WhileTag;
+bool c_if (void);
+bool c_else (void);
+bool c_elif (void);
+bool c_endif (void);
 
-typedef struct WhileBlock
-{
-  struct WhileBlock *prev;
-  WhileTag tag;
-  const char *expr;	/* Ptr to malloced block holding the expression */
-  union
-    {
-      struct
-	{
-	  int offset;
-	} file;		/* Valid when tag == WhileInFile */
-      struct
-	{
-	  const char *offset;
-	} macro;	/* Valid when tag == WhileInMacro */
-    } ptr;
-  int lineno;
-} WhileBlock;
-
-bool c_if (const Lex *);
-bool c_else (const Lex *);
-bool c_endif (const Lex *);
-
-bool c_while (const Lex *);
-bool c_wend (const Lex *);
+bool c_while (void);
+bool c_wend (void);
 
 void FS_PopIfWhile (bool noCheck);
 

@@ -1,3 +1,212 @@
+Sun Jan  2 22:06:06 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/dcb_dcw_dcd.s: Enhanced test case with '&'.
+	* commands.c (*, EQU, RN, FN, CN, CP): Better behaviour when symbol
+	was already defined (when value is the same, don't complain).
+	* decode.c (oDecodeTable): Fix inconsistency for '&'.
+	(decode): Always pass on symbol for .sym callback.
+	* input.c (Input_ShowLine): Use stderr instead of stdout.
+
+Sun Jan  2 20:21:18 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/macro.s: New.
+	* regression/tests_pass/while.s: New.
+	* error.c (MAXERROR): Reduced to 30.
+	* whileif.c, whileif.h: Merge if/while tracking together.
+	* filestack.h (PObject): Follow if/while changes.
+	* filestack.c (FS_PushFilePObject): Likewise.
+	(File_GetLine): Parsing long lines didn't correctly increment line
+	number.
+	* variables.c (c_lcl, c_gbl, c_set): Properly test end of keyword.
+	(c_lcl): Restore local variable only once.
+	* macros.c: Follow if/while changes.
+	(c_mend): Simplify implementation.
+	(c_mexit): Call FS_PopPObject instead of FS_PopMacroPObject (which was
+	not meant to be called by anything else than FS_PopPObject).
+
+Thu Dec 30 02:32:50 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/dsp.s: Move PLD tests to...
+	* regression/tests_pass/pld_pldw_pli.s: ...here.
+	* regression/tests_pass/nop.s: New.
+	* regression/tests_pass/branch.s: Move BX/BLX tests to separate
+	section and add BXJ test.
+	* regression/tests_pass/arithmetic2.s: Move MUL/MLA tests to...
+	* regression/tests_pass/mul_mla_mls.s: ...here and add MLS test.
+	* regression/tests_pass/ldm_stm_pop_push.s: Add test on UAL syntax
+	and condition codes.
+	* regression/Makefile: Change asasm option -t into -cpu.
+	* decode.c (oDecodeTable): Reinstate BIN; add BXJ, MLS, NOP; change PLD
+	into PL; add suggestions for improvement.
+	* m_cpuctrl.c: Use Target_NeedAtLeastArch.
+	(m_bxj): New.
+	* help_cop.c (help_copInt): Move to...
+	* m_cop.c (CopInt): ...here. Use Target_NeedAtLeastArch.
+	* m_cpumem.c: Use Target_NeedAtLeastArch.
+	* option.c (GetCCode): Renamed from getCond and cleanup.
+	(IsEndOfKeyword): Make use of Input_IsEndOfKeyword.
+	(optionCondS): Support UAL syntax.
+	(optionCondLdmStm): Support case where stack mode is not specified.
+	* m_copmem.c (m_ldc2, m_stc2): Simplify. Use Target_NeedAtLeastArch.
+	* m_cpu.c (m_nop): Support ARMv6K/ARMv6T2/ARMv7 NOP flavour.
+	(onlyregs): Support MLS, check on PC being used.
+	Use Target_NeedAtLeastArch.
+	* targetcpu.c, targetcpu.h: Reimplemented to support -cpu fully.
+	* input.c, input.h (notinput): Remove.
+	(Input_MatchString, Input_IsEndOfKeyword): Added.
+	* lexAcorn.c: Use Input_MatchString instead of notinput.
+	(lexAcornPrim): Support {ARCHITECTURE}, {CPU}.
+	* main.c: Drop -target option, add -cpu.
+
+Tue Dec 28 17:30:18 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/rfe_srs.s: New.
+	* decode.c (oDecodeTable): Add RFE and SRS.
+	* m_cpuctrl.c (m_cps): Limit mode to 5 bits.
+	* m_cpuctrl.c, m_cpuctrl.h (IsValidARMMode, ARM_MODE_*): Move to...
+	* option.c, option.h: ...here.
+	(GetStackMode): Renamed from getDir.
+	(Option_CondRfeSrs): Added.
+	* m_cpumem.c, m_cpumem.h (m_rfe, m_srs): New.
+	* lex.c (lexGetBinop): Don't eat lonely exclamation marks.
+
+Tue Dec 28 14:02:11 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/ldrex_strex.s: Renamed to...
+	* regression/tests_pass/clrex_ldrex_strex.s: ...this. Add CLREX test.
+	* decode.c (oDecodeTable): Add CLREX.
+	* m_cpumem.c, m_cpumem.h (m_clrex): New.
+
+Tue Dec 28 02:32:35 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/sev_wfe_wfi_yield.s: New.
+	* regression/tests_pass/ldrex_strex.s: New.
+	* regression/tests_pass/misc.s: Move SWI test to...
+	* regression/tests_pass/swi.s: ...here. Update test for SVC and '#'
+	usage.
+	* decode.c (oDecodeTable): Add LDREX, STREX, SEV, SVC, WFE, WFI, YIELD.
+	* m_cpuctrl.c (m_swi): Fix # usage.
+	(m_sev, m_wfe, m_wfi, m_yield): Added.
+	* m_cpumem.c (LdrStrEx, m_ldrex, m_strex): Added.
+
+Mon Dec 27 22:11:02 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/symbols.s: New.
+	* area.h (AREA_DEFAULT_ALIGNMENT): Renamed from AREA_INIT.
+	* area.c (Area_Ensure): Follow AREA_INIT rename to AREA_DEFAULT_ALIGNMENT.
+	(c_area): Area alignment is from 2 up to 31 (incl).
+	* input.c (Input_Symbol): Support double bar symbol name bracketing.
+
+Mon Dec 27 21:35:46 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/asr_lsl_lsr_ror_rrx.s: New.
+	* decode.c (oDecodeTable): Add ASR, LSL, LSR, ROR and RRX.
+	(decode): Issue error instead of abort when there are unused input
+	characters left.
+	* get.c (Get_CPURegNoError): Renamed from getCpuRegNoError and make
+	sure if it fails, it doesn't consume any input characters.
+	* m_cpuctrl.c (m_blx): Follow Get_CPURegNoError changes.
+	(m_cps): Use Input_MatchKeyword.
+	* m_cpumem.c (dstreglist): Add skip blanks for POP/PUSH case.
+	(BL_eIllegal): Remove.
+	* option.c (IsEndOfKeyword): Renamed from isOK.
+	(Option_SCond): New.
+	* option.h (Option_SCond): New.
+	* m_cpu.c, m_cpu.h (UALShift, m_asr, m_lsl, m_lsr, m_ror, m_rrx): New.
+	* fix.h (RRX, LSL, ASL, LSR, ASR, ROR, NO_SHIFT, SHIFT_OP, SHIFT_REG,
+	SHIFT_IMM): Move to...
+	* get.h: ...here.
+	* fix.c (Fix_ShiftImm): Renamed from fixShiftImm and added filename
+	parameter.
+
+Mon Dec 27 17:17:04 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/dmb_dsb_isb.s: New.
+	* decode.c (oDecodeTable): Add DMB, ISB and DSB.
+	* m_cpumem.c (Barrier_eType, GetBarrierType, m_dmb, m_isb, m_dsb): New.
+	* whileif.c (if_skip): Add extra token for better error reporting.
+	Use Input_MatchKeyword.
+	(c_if, c_else, c_elif): Follow if_skip API change.
+	(c_while): Use Input_MatchKeyword.
+	* input.c, input.h (Input_MatchKeyword, Input_MatchKeywordLower): New.
+
+Mon Dec 27 03:52:29 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (c_define): Fix SYMBOL_ABSOLUTE.
+	* symbol.c (symbolAdd): Use assert.
+	(symbolSymbolAOFOutput,symbolSymbolELFOutput): Constify.
+	(symbolPrint): Enalbe SYMBOL_ABSOLUTE assert.
+	* decode.c (DTABLE_CALLBACK_NOLEX): New.
+	(oDecodeTable): Call c_allow with Lex instead of Symbol, check for
+	non-LexId for c_else, c_elif, c_endif, c_gbl, c_if, c_lcl, c_macro,
+	c_record, c_mexit, c_wend, c_while.
+	(decode): Support DTABLE_CALLBACK_NOLEX.  In case of
+	DTABLE_CALLBACK_SYMBOL, don't call ASM_DefineLabel for defining the
+	symbol.
+	* storage (c_alloc): Deal with Lex instead of Symbol parameter.
+	* area.c (c_area): Give warning instead of error when 2nd instance
+	of same area differs in attributes.
+	* variables.c, variables.h (c_gbl, c_lbl): Drop Lex parameter.
+	* macros.c, macros.h (c_macro, c_mexit): Likewise.
+	* whileif.c, whileif.h (c_if, c_else, c_elif, c_endif, c_while, c_wend):
+	Likewise.
+	* get.c (getTypeInternal): Drop SYMBOL_ABSOLUTE check.
+	* asm.c (ASM_DefineLabel): Proper support for SYMBOL_ABSOLUTE.
+	* lit.c (Lit_DumpPool): Likewise.
+
+Sun Dec 26 23:40:44 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/cps.s: New.
+	* decode.c (oDecodeTable): Add CPS.
+	* m_cpuctrl.c, m_cpuctrl.h (ARM_MODE_*, m_cps, IsValidMode): New.
+
+Sun Dec 26 20:16:33 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* macros.c (Macro_Call): Don't pass the comment as part of the last macro
+	argument.
+	* regression/tests_pass/macro_args.s: Update test.
+	* input.h (TOLOWER): Remove.
+
+Sun Dec 26 19:00:22 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/if_else.s: Add ELIF tests.
+	* symbol.c (symbolPrint): Make more robust.
+	* decode.c (oDecodeTable): Add ARM, ELIF, THUMB and THUMBX.
+	* m_cpu.c, m_cpu.h (c_thumb, c_thumbx): New.
+	* whileif.c (if_skip): Add ELIF support.
+	* whileif.c, whileif.h (c_elif): New.
+	* input.c (Input_Symbol): Allow symbols to start with an underscore
+	character.
+
+Sun Dec 26 16:47:19 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/require8_preserve8.s: New.
+	* decode.c (oDecodeTable): Add PRESERVE8/REQUIRE8.
+	* m_cpumem.c (dstreglist): Add check for when PRESERVE8 is declared.
+	* filestack.c (File_GetLine): Fix no-newline-before-EOF case.
+	* area.c, area.h (c_preserve8, c_require8, gArea_Require8,
+	gArea_Preserve8, gArea_Preserve8Guessed): New.
+	* lexAcorn.c (lexAcornPrim): Drop {MODULE}.
+	* get.h (GET_BASE_MULTI): New.
+	* main.c (option_rma_module, -module): Remove.
+	(main): Support double dash option prefix, add implemented -apcs,
+	more foolproof -From/-o/-To parsing.
+	* main.h (option_rma_module): Remove.
+
+Sun Dec 26 02:54:13 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+  
+	* regression/tests_pass/loadstore3.s: Rename to...
+	* regression/tests_pass/ldm_stm_pop_push.s: ...this.  Add PUSH/POP
+	tests.
+	* decode.c (oDecodeTable): Add PUSH/POP.
+	* m_cpumem.c (dstreglist): Add isPushPop parameter, drop #<num reg>
+	feature.
+	(m_ldm, m_stm): Follow optionCondDirLdm/optionCondDirStm merge.
+	(m_pop,m_push): New.
+	* m_cpumem.h (m_pop, m_push): New.
+	* option.c, option.h (optionCondLdmStm): Merged from optionCondDirLdm
+	and optionCondDirStm.
+
 Tue Dec 21 22:04:53 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 	* put.c (Put_Ins): Renamed from putIns.  Reimplement this using

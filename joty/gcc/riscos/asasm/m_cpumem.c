@@ -40,6 +40,7 @@
 #include "help_cpu.h"
 #include "input.h"
 #include "lit.h"
+#include "main.h"
 #include "m_cpu.h"
 #include "m_cpumem.h"
 #include "option.h"
@@ -134,8 +135,10 @@ dstmem (ARMWord ir, const char *mnemonic)
   bool isAddrMode3;
   if ((ir & 0x04000090) == 0x90)
     {
-      if (!cpuWarn (ARM7M) && (ir & H_FLAG) && targetCPU < ARM10)
-	error (ErrorWarning, "Half-word ops only work correctly when accessed location is cached");
+      if (ir & S_FLAG)
+	Target_NeedAtLeastArch (ARCH_ARMv5TE);
+      else
+	Target_NeedAtLeastArch (ARCH_ARMv4);
       isAddrMode3 = true;
     }
   else
@@ -199,7 +202,6 @@ dstmem (ARMWord ir, const char *mnemonic)
 		    }
 		  ir |= isAddrMode3 ? 0 : REG_FLAG;
 		  ir = getRhs (true, !isAddrMode3, ir);
-		  /* Reg {,shiftop {#shift}} */
 		  offValue = true;
 		}
 	      skipblanks ();
@@ -331,17 +333,127 @@ m_ldr (void)
   return dstmem (cc, "LDR");
 }
 
-#if 0
-// FIXME:
+static bool
+LdrStrEx (bool isLoad)
+{
+  enum { wtype = 0x18<<20, dtype = 0x1A<<20, btype = 0x1C<<20, htype = 0x1E<<20 } type;
+  switch (inputLook ())
+    {
+      case 'B':
+	inputSkip ();
+	type = btype;
+        break;
+
+      case 'D':
+	inputSkip ();
+	type = dtype;
+	break;
+
+      case 'H':
+	/* Small hack needed : 'H' can also be the first condition character
+	   of 'HS' or 'HI'.  */
+	if (inputLookN (1) != 'I' && inputLookN (1) != 'S')
+	  {
+	    inputSkip ();
+	    type = htype;
+	    break;
+	  }
+	/* Fall through.  */
+
+      default:
+	type = wtype;
+	break;
+    }
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+
+  if (type == wtype)
+    Target_NeedAtLeastArch (ARCH_ARMv6);
+  else
+    {
+      if (Target_GetArch () != ARCH_ARMv6K)
+	Target_NeedAtLeastArch (ARCH_ARMv7);
+    }
+  
+  /* The STREX* versions have an extra Rd register.  */
+  ARMWord regD;
+  if (!isLoad)
+    {
+      skipblanks ();
+      regD = getCpuReg ();
+      if (regD == INVALID_REG)
+	return false;
+      skipblanks ();
+      if (!Input_Match (',', true))
+	{
+	  error (ErrorError, "Missing ,");
+	  return false;
+	}
+    }
+
+  skipblanks ();
+  ARMWord regT = getCpuReg ();
+  if (regT == INVALID_REG)
+    return false;
+  if (type == dtype && (regT & 1))
+    error (ErrorError, "Register needs to be even");
+  skipblanks ();
+  if (!Input_Match (',', true))
+    {
+      error (ErrorError, "Missing ,");
+      return false;
+    }
+
+  if (type == dtype)
+    {
+      skipblanks ();
+      ARMWord regT2 = getCpuReg ();
+      if (regT2 == INVALID_REG)
+	return false;
+      if (regT2 != regT + 1)
+	error (ErrorError, "Registers are not consecutive");
+      skipblanks ();
+      if (!Input_Match (',', true))
+	{
+	  error (ErrorError, "Missing ,");
+	  return false;
+	}
+    }
+  
+  if (!Input_Match ('[', true))
+    {
+      error (ErrorError, "Missing [");
+      return false;
+    }
+  ARMWord regN = getCpuReg ();
+  if (regN == INVALID_REG)
+    return false;
+  skipblanks ();
+  if (!Input_Match (']', false))
+    {
+      error (ErrorError, "Missing ]");
+      return false;
+    }
+  if (isLoad)
+    Put_Ins (cc | 0x00100F9F | type | (regN<<16) | (regT<<12));
+  else
+    Put_Ins (cc | 0x00000F90 | type | (regN<<16) | (regD<<12) | regT);
+  return false;
+}
+
 /**
- * Implements LDREX.
+ * Implements LDREX/LDREXB/LDREXH.
  *   LDREX[<cond>] <Rd>, [<Rn>]
+ *   LDREXB[<cond>] <Rd>, [<Rn>]
+ *   LDREXH[<cond>] <Rd>, [<Rn>]
+ *   LDREXD[<cond>] <Rd>, <Rd2>, [<Rn>]
  */
 bool
 m_ldrex (void)
 {
+  return LdrStrEx (true);
 }
-#endif
 
 /**
  * Implements STR<cond>[B].
@@ -360,36 +472,75 @@ m_str (void)
   ARMWord cc = optionCondBT (true);
   if (cc == optionError)
     return true;
-  return dstmem (cc, "LDR");
+  return dstmem (cc, "STR");
 }
 
-#if 0
-// FIXME:
 /**
- * Implements STREX.
+ * Implements STREX/LDREXB/LDREXH.
  *   STREX[<cond>] <Rd>, [<Rn>]
+ *   STREXB[<cond>] <Rd>, [<Rn>]
+ *   STREXH[<cond>] <Rd>, [<Rn>]
+ *   STREXD[<cond>] <Rd>, <Rd2>, [<Rn>]
  */
 bool
 m_strex (void)
 {
+  return LdrStrEx (false);
 }
-#endif
+
 
 /**
- * Implements PLD.
+ * Implements CLREX.
  */
 bool
-m_pld (void)
+m_clrex (void)
 {
-  ARMWord ir = 0xf450f000 | P_FLAG;
+  if (Target_GetArch () != ARCH_ARMv6K)
+    Target_NeedAtLeastArch (ARCH_ARMv7);
+  Put_Ins (0xF57FF01F);
+  return false;
+}
 
-  cpuWarn (XSCALE);
+
+/**
+ * Implements PLD, PLDW and PLI.
+ *   PLD{W} [<Rn>, #+/-<imm12>]
+ *   PLD{W} <label>                        <= FIXME: not supported
+ *   PLD{W} [<Rn>,+/-<Rm>{, <shift>}]
+ *   PLI [<Rn>, #+/-<imm12>]
+ *   PLI <label>                        <= FIXME: not supported
+ *   PLI [<Rn>,+/-<Rm>{, <shift>}]
+ */
+/* FIXME: support PLDW & PLI  */
+bool
+m_pl (void)
+{
+  enum { isPLD, isPLDW, isPLI } type;
+  if (Input_Match ('D', false))
+    {
+      if (Input_Match ('W', false))
+	type = isPLDW;
+      else
+	type = isPLD;
+    }
+  else if (Input_Match ('I', false))
+    type = isPLI;
+  else
+    return true;
+
+  if (!Input_IsEndOfKeyword ())
+    return true;
+
+  /* FIXME: we don't check in case of isPLDW that ARMv7 has MP extensions
+     enabled.  */
+  Target_NeedAtLeastArch (type == isPLD ? ARCH_ARMv5TE : ARCH_ARMv7);
 
   skipblanks();
 
   if (!Input_Match ('[', true))
     error (ErrorError, "Expected '[' after PLD instruction");
 
+  ARMWord ir = 0xf450f000 | P_FLAG;
   int op = getCpuReg (); /* Base register */
   ir |= LHS_OP (op);
   skipblanks();
@@ -443,74 +594,82 @@ m_pld (void)
 
 
 static void
-dstreglist (ARMWord ir)
+dstreglist (ARMWord ir, bool isPushPop)
 {
-  int op = getCpuReg ();
-  ir |= BASE_MULTI (op);
-  skipblanks ();
-  if (Input_Match ('!', true))
-    ir |= W_FLAG;
-  if (!Input_Match (',', true))
-    error (ErrorError, "Inserting missing comma before reglist");
-  if (Input_Match ('#', false))		/* FIXME: document, test: <reg>!, #<int> */
+  if (isPushPop)
     {
-      /* Constant.  */
-      const Value *mask = exprBuildAndEval (ValueInt);
-      switch (mask->Tag)
-	{
-	  case ValueInt:
-	    ir |= fixMask (0, mask->Data.Int.i);
-	    break;
-	  default:
-	    error (ErrorError, "Illegal mask expression");
-	    break;
-	}
+      ir |= BASE_MULTI (13);
+      ir |= W_FLAG;
+      skipblanks ();
     }
   else
     {
-      if (!Input_Match ('{', true))
-	error (ErrorError, "Inserting missing '{' before reglist");
-      op = 0;
-      do
-	{
-	  int low = getCpuReg ();
-	  skipblanks ();
-	  int high;
-	  switch (inputLook ())
-	    {
-	      case '-':
-		inputSkip ();
-		skipblanks ();
-		high = getCpuReg ();
-		skipblanks ();
-		if (low > high)
-		  {
-		    error (ErrorInfo, "Register interval in wrong order r%d-r%d", low, high);
-		    int c = low;
-		    low = high;
-		    high = c;
-		  }
-		break;
-	      case ',':
-	      case '}':
-	        high = low;
-	        break;
-	      default:
-	        error (ErrorError, "Illegal character '%c' in register list", inputLook ());
-	        high = 15;
-	        break;
-	    }
-	  if ((1 << low) < op)
-	    error (ErrorInfo, "Registers in wrong order");
-	  if (((1 << (high + 1)) - (1 << low)) & op)
-	    error (ErrorInfo, "Register occurs more than once in register list");
-	  op |= (1 << (high + 1)) - (1 << low);
-	}
-      while (Input_Match (',', true));
-      if (!Input_Match ('}', false))
-	error (ErrorError, "Inserting missing '}' after reglist");
-      ir |= op;
+      ir |= BASE_MULTI (getCpuReg ());
+      skipblanks ();
+      if (Input_Match ('!', true))
+	ir |= W_FLAG;
+      if (!Input_Match (',', true))
+	error (ErrorError, "Inserting missing comma before reglist");
     }
+  if (!Input_Match ('{', true))
+    error (ErrorError, "Inserting missing '{' before reglist");
+  int op = 0;
+  do
+    {
+      int low = getCpuReg ();
+      skipblanks ();
+      int high;
+      switch (inputLook ())
+	{
+	  case '-':
+	    inputSkip ();
+	    skipblanks ();
+	    high = getCpuReg ();
+	    skipblanks ();
+	    if (low > high)
+	      {
+		error (ErrorInfo, "Register interval in wrong order r%d-r%d", low, high);
+		int c = low;
+		low = high;
+		high = c;
+	      }
+	    break;
+	  case ',':
+	  case '}':
+	    high = low;
+	    break;
+	  default:
+	    error (ErrorError, "Illegal character '%c' in register list", inputLook ());
+	    high = 15;
+	    break;
+        }
+      if ((1 << low) < op)
+	error (ErrorInfo, "Registers in wrong order");
+      if (((1 << (high + 1)) - (1 << low)) & op)
+	error (ErrorInfo, "Register occurs more than once in register list");
+      op |= (1 << (high + 1)) - (1 << low);
+    } while (Input_Match (',', true));
+  if (GET_BASE_MULTI (ir) == 13
+      && (ir & W_FLAG))
+    {
+      /* Count number of registers loaded or saved.  */
+      int i, c = 0;
+      for (i = 0; i < 16; ++i)
+	{
+	  if (op & (1<<i))
+	    ++c;
+	}
+      if (c & 1)
+	{
+	  if (gArea_Preserve8 == ePreserve8_Yes)
+	    error (ErrorWarning, "Stack pointer update potentially breaks 8 byte stack alignment");
+	  else if (gArea_Preserve8 == ePreserve8_Guess)
+	    gArea_Preserve8Guessed = false;
+	}
+    }
+  if (!Input_Match ('}', false))
+    error (ErrorError, "Inserting missing '}' after reglist");
+  ir |= op;
   skipblanks ();
   if (Input_Match ('^', true))
     {
@@ -528,12 +687,28 @@ dstreglist (ARMWord ir)
 bool
 m_ldm (void)
 {
-  ARMWord cc = optionCondDirLdm ();
+  ARMWord cc = optionCondLdmStm (true);
   if (cc == optionError)
     return true;
-  dstreglist (cc | 0x08100000);
+  dstreglist (cc | 0x08100000, false);
   return false;
 }
+
+
+/**
+ * Implements POP, i.e. LDM<cond>FD sp!, {...}
+ * (= LDM<cond>IA sp!, {...})
+ */
+bool
+m_pop (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+  dstreglist (cc | STACKMODE_IA | 0x08100000, true);
+  return false;
+}
+
 
 /**
  * Implements STM.
@@ -541,12 +716,28 @@ m_ldm (void)
 bool
 m_stm (void)
 {
-  ARMWord cc = optionCondDirStm ();
+  ARMWord cc = optionCondLdmStm (false);
   if (cc == optionError)
     return true;
-  dstreglist (cc | 0x08000000);
+  dstreglist (cc | 0x08000000, false);
   return false;
 }
+
+
+/**
+ * Implements PUSH, i.e. STM<cond>FD sp!, {...}
+ * (= STM<cond>DB sp!, {...})
+ */
+bool
+m_push (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+  dstreglist (cc | STACKMODE_DB | 0x08000000, true);
+  return false;
+}
+
 
 /**
  * Implements SWP.
@@ -557,8 +748,10 @@ m_swp (void)
   ARMWord cc = optionCondB ();
   if (cc == optionError)
     return true;
+
+  Target_NeedAtLeastArch (ARCH_ARMv2a);
+
   int ir = cc | 0x01000090;
-  cpuWarn (ARM250);
   ir |= DST_OP (getCpuReg ());
   skipblanks ();
   if (!Input_Match (',', true))
@@ -574,5 +767,221 @@ m_swp (void)
   if (!Input_Match (']', true))
     error (ErrorError, "Inserting missing ']'");
   Put_Ins (ir);
+  return false;
+}
+
+typedef enum
+{
+  BL_eSY = 0xF,
+  BL_eST = 0xE,
+  BL_eISH = 0xB,
+  BL_eSH = BL_eISH,
+  BL_eISHST = 0xA,
+  BL_eSHST = BL_eISHST,
+  BL_eNSH = 0x7,
+  BL_eUN = BL_eNSH,
+  BL_eNSHST = 0x6,
+  BL_eUNST = BL_eNSHST,
+  BL_eOSH = 0x3,
+  BL_eOSHST = 0x2
+} Barrier_eType;
+
+static Barrier_eType
+GetBarrierType (void)
+{
+  skipblanks ();
+
+  Barrier_eType result;
+  if (Input_IsEolOrCommentStart ())
+    result = BL_eSY;
+  else if (Input_MatchKeywordLower ("ish"))
+    result = BL_eISH;
+  else if (Input_MatchKeywordLower ("ishst"))
+    result = BL_eISHST;
+  else if (Input_MatchKeywordLower ("nsh"))
+    result = BL_eNSH;
+  else if (Input_MatchKeywordLower ("nshst"))
+    result = BL_eNSHST;
+  else if (Input_MatchKeywordLower ("osh"))
+    result = BL_eOSH;
+  else if (Input_MatchKeywordLower ("oshst"))
+    result = BL_eOSHST;
+  else if (Input_MatchKeywordLower ("sh"))
+    {
+      if (option_pedantic)
+	error (ErrorWarning, "Use barrier type %s instead of %s", "ISH", "SH");
+      result = BL_eSH;
+    }
+  else if (Input_MatchKeywordLower ("shst"))
+    {
+      if (option_pedantic)
+	error (ErrorWarning, "Use barrier type %s instead of %s", "ISHST", "SHST");
+      result = BL_eSHST;
+    }
+  else if (Input_MatchKeywordLower ("sy"))
+    result = BL_eSY;
+  else if (Input_MatchKeywordLower ("st"))
+    result = BL_eST;
+  else if (Input_MatchKeywordLower ("un"))
+    {
+      if (option_pedantic)
+	error (ErrorWarning, "Use barrier type %s instead of %s", "NSH", "UN");
+      result = BL_eUN;
+    }
+  else if (Input_MatchKeywordLower ("unst"))
+    {
+      if (option_pedantic)
+	error (ErrorWarning, "Use barrier type %s instead of %s", "NSHST", "UNST");
+      result = BL_eUNST;
+    }
+  else
+    {
+      error (ErrorError, "Unknown barrier type");
+      result = BL_eSY;
+    }
+
+  return result;
+}
+
+/**
+ * Implements DMB.
+ * ARM DMB is unconditional.
+ */
+bool
+m_dmb (void)
+{
+  Target_NeedAtLeastArch (ARCH_ARMv7);
+  Barrier_eType bl = GetBarrierType ();
+  Put_Ins (0xF57FF050 | bl);
+  return false;
+}
+
+
+/**
+ * Implements DSB.
+ * ARM DSB is unconditional.
+ */
+bool
+m_dsb (void)
+{
+  Target_NeedAtLeastArch (ARCH_ARMv7);
+  Barrier_eType bl = GetBarrierType ();
+  Put_Ins (0xF57FF040 | bl);
+  return false;
+}
+
+
+/**
+ * Implements ISB.
+ * ARM ISB is unconditional.
+ */
+bool
+m_isb (void)
+{
+  Target_NeedAtLeastArch (ARCH_ARMv7);
+  Barrier_eType bl = GetBarrierType ();
+  if (option_pedantic && bl != BL_eSY)
+    error (ErrorWarning, "Using reserved barrier type");
+  Put_Ins (0xF57FF060 | bl);
+  return false;
+}
+
+
+/**
+ * Implements RFE.
+ *   RFE{<amode>} <Rn>{!}
+ */
+bool
+m_rfe (void)
+{
+  ARMWord option = Option_CondRfeSrs (true);
+  if (option == optionError)
+    return true;
+
+  Target_NeedAtLeastArch (ARCH_ARMv6);
+
+  skipblanks ();
+  ARMWord regN = getCpuReg ();
+  if (regN == INVALID_REG)
+    return false;
+  if (regN == 15)
+    error (ErrorError, "Using PC as base register is unpredictable");
+
+  skipblanks ();
+  bool updateStack = Input_Match ('!', false);
+
+  if (updateStack)
+    option |= W_FLAG;
+  Put_Ins (0xF8100A00 | option | (regN<<16));
+  return false;
+}
+
+
+/**
+ * Implements SRS.
+ *   SRS{<amode>} SP{!},#<mode>  : UAL syntax
+ *   SRS{<amode>} #<mode>{!}     : pre-UAL syntax
+ */
+bool
+m_srs (void)
+{
+  ARMWord option = Option_CondRfeSrs (false);
+  if (option == optionError)
+    return true;
+
+  Target_NeedAtLeastArch (ARCH_ARMv6);
+
+  skipblanks ();
+  bool isUALSyntax, updateStack;
+  if (!Input_Match ('#', false))
+    {
+      isUALSyntax = true;
+      ARMWord sp = getCpuReg ();
+      if (sp == INVALID_REG)
+	return false;
+      if (sp != 13)
+	{
+	  error (ErrorError, "SRS can only be used with stack register 13 (sp)");
+	  return false;
+	}
+      skipblanks ();
+      updateStack = Input_Match ('!', true);
+      if (!Input_Match (',', true))
+	{
+	  error (ErrorError, "Missing ,");
+	  return false;
+	}
+      if (!Input_Match ('#', false))
+	{
+	  error (ErrorError, "%s needs a mode specified", "SRS");
+	  return false;
+	}
+    }
+  else
+    isUALSyntax = false;
+
+  const Value *im = exprBuildAndEval (ValueInt);
+  if (im->Tag != ValueInt)
+    {
+      error (ErrorError, "Illegal immediate expression");
+      return false;
+    }
+  int mode = im->Data.Int.i;
+  if (!Option_IsValidARMMode (mode))
+    {
+      error (ErrorWarning, "Mode 0x%x is not a valid ARM mode", mode);
+      mode &= 0x1F;
+    }
+
+  if (!isUALSyntax)
+    {
+      skipblanks ();
+      updateStack = Input_Match ('!', false);
+    }
+
+  if (updateStack)
+    option |= W_FLAG;
+  Put_Ins (0xF84D0500 | option | mode);
+
   return false;
 }

@@ -58,6 +58,11 @@ Symbol *areaEntrySymbol = NULL;
 int areaEntryOffset;
 Symbol *areaHeadSymbol = NULL;
 
+/* FIXME: gArea_Require8 & gArea_Preserve8(Guessed) needs to be written in ELF output.  */
+bool gArea_Require8 = false; /* Absense of REQUIRE8 => {FALSE} */
+Preserve8_eValue gArea_Preserve8 = ePreserve8_Guess;
+bool gArea_Preserve8Guessed = true;
+
 static uint32_t oNextAreaOrg;
 static bool oNextAreaOrgIsSet;
 
@@ -328,7 +333,7 @@ Area_Ensure (void)
     {
       sym->type = SYMBOL_AREA | SYMBOL_DECLARED;
       sym->value = Value_Int (0);
-      sym->area.info = areaNew (sym, AREA_CODE | AREA_READONLY | AREA_INIT);
+      sym->area.info = areaNew (sym, AREA_CODE | AREA_READONLY | AREA_DEFAULT_ALIGNMENT);
     }
 
   areaCurrentSymbol = sym;
@@ -441,8 +446,8 @@ c_area (void)
 	  const Value *value = exprBuildAndEval (ValueInt);
 	  if (value->Tag == ValueInt)
 	    {
-	      if (value->Data.Int.i < 2 || value->Data.Int.i > 12)
-		error (ErrorError, "ALIGN attribute value must be between 2 (incl) and 12 (incl)");
+	      if (value->Data.Int.i < 2 || value->Data.Int.i > 31)
+		error (ErrorError, "ALIGN attribute value must be between 2 (incl) and 31 (incl)");
 	      else
 		newtype |= value->Data.Int.i;
 	    }
@@ -465,7 +470,7 @@ c_area (void)
 
   /* Any alignment specified ? No, take default alignment (2) */
   if ((newtype & 0xFF) == 0)
-    newtype |= AREA_INIT;
+    newtype |= AREA_DEFAULT_ALIGNMENT;
 
   /* AREA_COMMONDEF + AREA_COMMONREF => AREA_COMMONDEF */
   if (newtype & AREA_COMMONDEF)
@@ -507,8 +512,9 @@ c_area (void)
     error (ErrorError, "Attribute BASED may not be set for CODE area");
 
   if (newtype && oldtype && newtype != oldtype)
-    error (ErrorError, "Changing attribute of area %s", sym->str);
-  sym->area.info->type |= newtype;
+    error (ErrorWarning, "Change in attribute of area %s will be ignored", sym->str);
+  else
+    sym->area.info->type |= newtype;
   areaCurrentSymbol = sym;
   return false;
 }
@@ -541,5 +547,46 @@ c_org (void)
   else
     error (ErrorError, "ORG needs explicit address");
 
+  return false;
+}
+
+
+/**
+ * Implements PRESERVE8.
+ */
+bool
+c_preserve8 (void)
+{
+  skipblanks ();
+  if (Input_IsEolOrCommentStart ())
+    gArea_Preserve8 = ePreserve8_Yes;
+  else
+    {
+      const Value *value = exprBuildAndEval (ValueBool);
+      if (value->Tag == ValueBool)
+	gArea_Preserve8 = value->Data.Bool.b ? ePreserve8_Yes : ePreserve8_No;
+      else
+	error (ErrorError, "PRESERVE8 needs boolean argument");
+    }
+  return false;
+}
+
+/**
+ * Implements REQUIRE8.
+ */
+bool
+c_require8 (void)
+{
+  skipblanks ();
+  if (Input_IsEolOrCommentStart ())
+    gArea_Require8 = true;
+  else
+    {
+      const Value *value = exprBuildAndEval (ValueBool);
+      if (value->Tag == ValueBool)
+	gArea_Require8 = value->Data.Bool.b;
+      else
+	error (ErrorError, "REQUIRE8 needs boolean argument");
+    }
   return false;
 }

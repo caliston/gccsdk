@@ -29,11 +29,19 @@ bool m_bkpt (void);
 bool m_blx (void);
 bool m_branch (void);
 bool m_bx (void);
+bool m_bxj (void);
 bool m_mrs (void);
 bool m_msr (void);
 bool m_ret (void);
 bool m_stack (void);
 bool m_swi (void);
 bool m_tail (void);
+
+bool m_sev (void);
+bool m_wfe (void);
+bool m_wfi (void);
+bool m_yield (void);
+
+bool m_cps (void);
 
 #endif

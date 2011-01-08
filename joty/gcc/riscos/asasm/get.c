@@ -43,20 +43,21 @@ static ARMWord
 getTypeInternal (bool genError, unsigned int type, const char *typeStr)
 {
   const Lex lexSym = genError ? lexGetId () : lexGetIdNoError ();
-  if (lexSym.tag != LexId)
-    return genError ? 0 : INVALID_REG;
-
-  const Symbol *sym = symbolFind (&lexSym);
-  if (sym && (sym->type & SYMBOL_DEFINED) && (sym->type & SYMBOL_ABSOLUTE))
+  if (lexSym.tag == LexId)
     {
-      if (SYMBOL_GETREGTYPE (sym->type) == type)
-	return sym->value.Data.Int.i;
-      if (genError)
-	error (ErrorError, "'%s' is not a %s", sym->str, typeStr);
+      const Symbol *sym = symbolFind (&lexSym);
+      if (sym && (sym->type & SYMBOL_DEFINED))
+	{
+	  if (SYMBOL_GETREGTYPE (sym->type) == type)
+	    return sym->value.Data.Int.i;
+	  if (genError)
+	    error (ErrorError, "'%s' is not a %s", sym->str, typeStr);
+	}
+      else if (genError)
+	error (ErrorError, "Undefined %s %.*s", typeStr,
+	  (int)lexSym.Data.Id.len, lexSym.Data.Id.str);
     }
-  else if (genError)
-    error (ErrorError, "Undefined %s %.*s", typeStr,
-	   (int)lexSym.Data.Id.len, lexSym.Data.Id.str);
+
   return genError ? 0 : INVALID_REG;
 }
 
@@ -67,9 +68,13 @@ getCpuReg (void)
 }
 
 ARMWord
-getCpuRegNoError (void)
+Get_CPURegNoError (void)
 {
-  return getTypeInternal (false, SYMBOL_CPUREG, "CPU register");
+  const char * const inputMark = Input_GetMark ();
+  ARMWord reg = getTypeInternal (false, SYMBOL_CPUREG, "CPU register");
+  if (reg == INVALID_REG)
+    Input_RollBackToMark (inputMark);
+  return reg;
 }
 
 ARMWord
@@ -96,77 +101,75 @@ getShiftOp (void)
   ARMWord r = 0;
   switch (inputLookLower ())
     {
-      case 'a':
-	if (inputLookNLower (1) == 's')
+      case 'a': /* ASL, ASR */
 	{
+	  if (inputLookNLower (1) != 's')
+	    goto illegal;
 	  switch (inputLookNLower (2))
 	    {
 	      case 'l':
 		r = ASL;
-		inputSkipN (3);
 		break;
+
 	      case 'r':
 		r = ASR;
-		inputSkipN (3);
 		break;
+
 	      default:
 		goto illegal;
 	    }
+	  inputSkipN (3);
+	  break;
 	}
-	else
-	  goto illegal;
-	break;
-      case 'l':
-	if (inputLookNLower (1) == 's')
+      case 'l': /* LSL, LSR */
 	{
+	  if (inputLookNLower (1) != 's')
+	    goto illegal;
 	  switch (inputLookNLower (2))
 	    {
 	      case 'l':
 		r = LSL;
-		inputSkipN (3);
 		break;
+
 	      case 'r':
 		r = LSR;
-		inputSkipN (3);
 		break;
+
 	      default:
 		goto illegal;
 	    }
+	  inputSkipN (3);
+	  break;
 	}
-	else
-	  goto illegal;
-	break;
-      case 'r':
-	switch (inputLookNLower (1))
+      case 'r': /* ROR, RRX */
 	{
-	  case 'o':
-	    if (inputLookNLower (2) == 'r')
-	      {
+	  switch (inputLookNLower (1))
+	    {
+	      case 'o':
+		if (inputLookNLower (2) != 'r')
+		  goto illegal;
 		r = ROR;
-		inputSkipN (3);
 		break;
-	      }
-	    else
-	      goto illegal;
-	  case 'r':
-	    if (inputLookNLower (2) == 'x')
-	      {
+
+	      case 'r':
+		if (inputLookNLower (2) != 'x')
+		  goto illegal;
 		r = RRX;
-		inputSkipN (2);
-		inputSkip ();
 		break;
-	      }
-	    else
-	      goto illegal;
-	  default:
-	    goto illegal;
+
+	      default:
+		goto illegal;
+	    }
+	  inputSkipN (3);
+	  break;
 	}
-	break;
+
       default:
 illegal:
 	error (ErrorError, "Illegal shiftop %c%c%c", inputLook (), inputLookN (1), inputLookN (2));
 	break;
     }
+
   return r;
 }
 
@@ -197,7 +200,7 @@ getShift (bool immonly)
 	  switch (im->Tag)
 	    {
 	      case ValueInt:
-		op = fixShiftImm (0, shift, im->Data.Int.i); /* !! Fixed !! */
+		op = Fix_ShiftImm (NULL, 0, shift, im->Data.Int.i); /* !! Fixed !! */
 		break;
 	      default:
 		error (ErrorError, "Illegal shift expression");
@@ -265,6 +268,7 @@ getRhs (bool immonly, bool shift, ARMWord ir)
 	    break;
 
 	  case ValueString:
+	    /* FIXME: Use Lex_Char2Int ? */
 	    if (im->Data.String.len != 1)
 	      error (ErrorError, "String too long to be an immediate expression");
 	    else

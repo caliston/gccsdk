@@ -190,15 +190,6 @@ skiprest (void)
   input_pos = input_buff;
 }
 
-bool
-notinput (const char *str)
-{
-  while (*str)
-    if (*str++ != inputGet ())
-      return true;
-  return false;
-}
-
 /**
  * Returns the position of the current input pointer.  Only to be use to
  * restore the current input pointer using Input_RollBackToMark().
@@ -634,6 +625,85 @@ Input_Match (char c, bool spacesToo)
   return true;
 }
 
+
+/**
+ * Try to read the keyword followed by space, NUL or start comment character.
+ * \param keyword Keyword to match
+ * \return true when keyword got matched, the corresponding input characters
+ * get consumed. Otherwise, false, and no input characters get consumed.
+ * See also Input_MatchKeywordLower().
+ */
+bool
+Input_MatchKeyword (const char *keyword)
+{
+  int matched = 0;
+  while (input_pos[matched] && input_pos[matched] == keyword[matched])
+    ++matched;
+  if (keyword[matched] == '\0'
+      && (isspace ((unsigned char)input_pos[matched])
+          || input_pos[matched] == ';'
+          || input_pos[matched] == '\0'))
+    {
+      input_pos += matched;
+      return true;
+    }
+  return false;
+}
+
+
+/**
+ * Try to read the keyword case insensitive followed by space, NUL or start
+ * comment character.
+ * \param keyword Keyword to match, needs to be lowercase.
+ * \return true when keyword got matched, the corresponding input characters
+ * get consumed. Otherwise, false, and no input characters get consumed.
+ * See also Input_MatchKeyword().
+ */
+bool
+Input_MatchKeywordLower (const char *keyword)
+{
+  int matched = 0;
+  while (input_pos[matched]
+	 && tolower ((unsigned char)input_pos[matched]) == keyword[matched])
+    ++matched;
+  if (keyword[matched] == '\0'
+      && (isspace ((unsigned char)input_pos[matched])
+          || input_pos[matched] == ';'
+          || input_pos[matched] == '\0'))
+    {
+      input_pos += matched;
+      return true;
+    }
+  return false;
+}
+
+
+bool
+Input_MatchString (const char *str)
+{
+  int matched = 0;
+  while (input_pos[matched] && input_pos[matched] == str[matched])
+    ++matched;
+  if (str[matched] == '\0')
+    {
+      input_pos += matched;
+      return true;
+    }
+  return false;
+}
+
+
+/**
+ * Checks if the end of the current keyword has been reached.
+ */
+bool
+Input_IsEndOfKeyword (void)
+{
+  unsigned char c = *input_pos;
+  return c == '\0' || isspace (c) || c == ';';
+}
+
+
 /**
  * Try to read a symbol.
  * \return NULL on error, otherwise points to begin of symbol and symbol length
@@ -646,28 +716,44 @@ Input_Symbol (size_t *ilen)
   size_t len;
   if (*input_pos == '|')
     {
-      /* Symbol is bracketed between two '|'.  */
+      /* Symbol is bracketed between two '|'.  Support double '||' bracketing
+         as well.  */
+      bool isDbl;
+      if (input_pos[1] == '|')
+	{
+	  ++input_pos;
+	  isDbl = true;
+	}
+      else
+	isDbl = false;
       rslt = ++input_pos;
-      for (len = 0; input_pos[len] != '\0' && input_pos[len] != '|'; ++len)
+      for (len = 0;
+	   input_pos[len] != '\0' && !(input_pos[len] == '|' && (!isDbl || input_pos[len + 1] == '|'));
+	   ++len)
 	/* */;
       if (input_pos[len] == '\0')
 	{
-	  error (ErrorError, "Failed to read symbol (forgot second '|' ?)");
+	  error (ErrorError, "Failed to read symbol (forgot second '%s' ?)", isDbl ? "||" : "|");
 	  *ilen = 0;
 	  return NULL;
 	}
-      ++input_pos; /* Skip second '|'.  */
+      if (isDbl)
+	input_pos += 2; /* Skip second '||'  */
+      else
+        input_pos += 1; /* Skip second '|'.  */
     }
   else
     {
       /* Symbol needs to start with a letter (upper- or lowercase), followed by
-	 letter, digits and underscore.  */
+	 letter, digits and underscore.
+	 We do allow an underscore as starting character as well.  */
       rslt = input_pos;
       for (len = 0; input_pos[len] != '\0'; ++len)
 	{
           if (len == 0)
 	    {
-	      if (!isalpha ((unsigned char)input_pos[len]))
+	      if (!isalpha ((unsigned char)input_pos[len])
+	          && input_pos[len] != '_')
 	        break;
 	    }
           else
@@ -888,12 +974,12 @@ Input_ShowLine (void)
 	    ++posReal;
 	  --posNoTAB;
 	}
-      putchar (input_buff[len]);
+      putc (input_buff[len], stderr);
     }
-  putchar ('\n');
+  putc ('\n', stderr);
   while (posReal--)
-    putchar ('-');
-  puts ("^");
+    putc ('-', stderr);
+  fputs ("^\n", stderr);
 }
 
 size_t

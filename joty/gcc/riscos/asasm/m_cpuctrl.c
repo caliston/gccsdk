@@ -190,24 +190,19 @@ m_blx (void)
   if (cc == optionError)
     return true;
 
-  cpuWarn (XSCALE);
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
 
-  const char * const inputMark = Input_GetMark ();
-  ARMWord reg = getCpuRegNoError ();
-  ARMWord ir;
+  ARMWord reg = Get_CPURegNoError ();
   if (reg == INVALID_REG)
     { /* BLXcc <target_addr> */
-      Input_RollBackToMark (inputMark);
-
       if (cc != AL)
         error (ErrorError, "BLX <target_addr> must be unconditional");
 
       return branch_shared (NV, true);
     }
   else
-    ir = cc | 0x012FFF30 | RHS_OP (reg); /* BLX <Rm> */
+    Put_Ins (cc | 0x012FFF30 | RHS_OP (reg)); /* BLX <Rm> */
 
-  Put_Ins (ir);
   return false;
 }
 
@@ -221,7 +216,7 @@ m_bx (void)
   if (cc == optionError)
     return true;
 
-  cpuWarn (XSCALE);
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
 
   int dst = getCpuReg ();
   if (dst == 15)
@@ -232,7 +227,30 @@ m_bx (void)
 }
 
 /**
- * Implements SWI.
+ * Implements BXJ.
+ */
+bool
+m_bxj (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+
+  Target_NeedAtLeastArch (ARCH_ARMv5TEJ);
+
+  int dst = getCpuReg ();
+  if (dst == 15)
+    error (ErrorWarning, "Use of PC with BXJ is discouraged");
+
+  Put_Ins (cc | 0x012fff20 | dst);
+  return false;
+}
+
+/**
+ * Implements SVC / SWI.
+ *   SVC/SWI #<24 bit int>
+ *   SVC/SWI <24 bit int>
+ *   SVC/SWI <string>
  */
 bool
 m_swi (void)
@@ -241,9 +259,9 @@ m_swi (void)
   if (cc == optionError)
     return true;
 
-  if (Input_Match ('#', false))
-    error (ErrorInfo, "SWI is always immediate");
-  const Value *im = exprBuildAndEval (ValueInt | ValueString);
+  skipblanks ();
+  ValueTag valueOK = Input_Match ('#', false) ? ValueInt : ValueInt | ValueString;
+  const Value *im = exprBuildAndEval (valueOK);
   ARMWord ir = cc | 0x0F000000;
   switch (im->Tag)
     {
@@ -252,23 +270,23 @@ m_swi (void)
 	break;
 
       case ValueString:
-#ifdef __riscos__
 	{
+#ifdef __riscos__
 	  /* ValueString is not NUL terminated.  */
 	  char swiname[im->Data.String.len + 1];
 	  memcpy (swiname, im->Data.String.s, im->Data.String.len);
 	  swiname[im->Data.String.len] = '\0';
 	  ir |= switonum (swiname);
 	  if (ir == 0xFFFFFFFF)
-	    error (ErrorError, "Unknown SWI name");
-	}
+	    error (ErrorError, "Unknown SVC/SWI name");
 #else
-	error (ErrorError, "RISC OS is required to look up the SWI name");
+	  error (ErrorError, "RISC OS is required to look up the SVC/SWI name");
 #endif
+	}
 	break;
 
       default:
-	error (ErrorError, "Illegal SWI expression");
+	error (ErrorError, "Illegal SVC/SWI expression");
 	break;
     }
   Put_Ins (ir);
@@ -281,7 +299,7 @@ m_swi (void)
 bool
 m_bkpt (void)
 {
-  cpuWarn (XSCALE);
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
 
   if (Input_Match ('#', false))
     error (ErrorInfo, "BKPT is always immediate");
@@ -772,7 +790,8 @@ m_msr (void)
   if (cc == optionError)
     return true;
 
-  cpuWarn (ARM6);
+  Target_NeedAtLeastArch (ARCH_ARMv4);
+
   cc |= getpsr (false) | 0x0120F000;
   skipblanks ();
   if (!Input_Match (',', true))
@@ -804,12 +823,175 @@ m_mrs (void)
   if (cc == optionError)
     return true;
 
-  cpuWarn (ARM6);
+  Target_NeedAtLeastArch (ARCH_ARMv4);
+
   cc |= getCpuReg () << 12 | 0x01000000;
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
   cc |= getpsr (true);
   Put_Ins (cc);
+  return false;
+}
+
+
+/**
+ * Implements SEV.
+ *   SEV<cond>
+ */
+bool
+m_sev (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+
+  if (Target_GetArch() != ARCH_ARMv6K)
+    Target_NeedAtLeastArch (ARCH_ARMv7);
+  
+  Put_Ins (cc | 0x0320F004);
+  return false;
+}
+
+
+/**
+ * Implements WFE.
+ *   WFE<cond>
+ */
+bool
+m_wfe (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+
+  if (Target_GetArch() != ARCH_ARMv6K)
+    Target_NeedAtLeastArch (ARCH_ARMv7);
+  
+  Put_Ins (cc | 0x0320F002);
+  return false;
+}
+
+
+/**
+ * Implements WFI.
+ *   WFI<cond>
+ */
+bool
+m_wfi (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+
+  if (Target_GetArch() != ARCH_ARMv6K)
+    Target_NeedAtLeastArch (ARCH_ARMv7);
+  
+  Put_Ins (cc | 0x0320F003);
+  return false;
+}
+
+
+/**
+ * Implements YIELD.
+ *   YIELD<cond>
+ */
+bool
+m_yield (void)
+{
+  ARMWord cc = optionCond ();
+  if (cc == optionError)
+    return true;
+
+  Put_Ins (cc | 0x0320F001);
+  return false;
+}
+
+
+/**
+ * Implements CPS.
+ *   CPS<effect> <iflags>{, #<mode>}
+ *   CPS #<mode>
+ * where:
+ *   effect   is one of:
+ *            IE  Interrupt or abort enable.
+ *            ID  Interrupt or abort disable.
+ *   iflags   is a sequence of one or more of:
+ *            a : Enables or disables imprecise aborts.
+ *            i : Enables or disables IRQ interrupts.
+ *            f : Enables or disables FIQ interrupts.
+ *   mode     specifies the number of the mode to change to.
+ */
+bool
+m_cps (void)
+{
+  int imod;
+  if (isspace ((unsigned char)inputLookN (0)))
+    imod = 0<<18;
+  else if (Input_MatchKeyword ("ID"))
+    imod = 3<<18;
+  else if (Input_MatchKeyword ("IE"))
+    imod = 2<<18;
+  else
+    return true;
+  skipblanks ();
+
+  bool readMode;
+  int iflags = 0;
+  if (imod)
+    {
+      /* Read iflags.  */
+      if (inputLookLower () == 'a')
+	{
+	  inputSkip ();
+	  iflags |= 1<<8;
+	}
+      if (inputLookLower () == 'i')
+	{
+	  inputSkip ();
+	  iflags |= 1<<7;
+	}
+      if (inputLookLower () == 'f')
+	{
+	  inputSkip ();
+	  iflags |= 1<<6;
+	}
+      if (iflags == 0)
+	error (ErrorWarning, "CPS did not have any interrupt disable flags specified");
+      skipblanks ();
+      readMode = Input_Match (',', true);
+    }
+  else
+    readMode = true;
+
+  int mode = 0;
+  if (readMode)
+    {
+      if (!Input_Match ('#', true))
+	{
+	  readMode = false;
+	  error (ErrorError, "%s needs a mode specified", "CPS");
+	}
+      else
+	{
+	  const Value *val = exprBuildAndEval (ValueInt);
+          if (val->Tag != ValueInt)
+	    {
+	      readMode = false;
+	      error (ErrorError, "Illegal immediate expression");
+	    }
+	  else
+	    {
+	      mode = val->Data.Int.i;
+	      if (!Option_IsValidARMMode (mode))
+		{
+		  error (ErrorWarning, "Mode 0x%x is not a valid ARM mode", mode);
+		  mode &= 0x1F;
+		}
+	    }
+	}
+    }
+  assert(!(((imod == (0<<18) || imod == (1<<18)) && !readMode) || (imod == (1<<18) && readMode)) && "We shouldn't be generating this");
+  Put_Ins ((0xF << 28) | (1<<24) | imod | (readMode ? (1<<17) : 0) | iflags | mode);
   return false;
 }

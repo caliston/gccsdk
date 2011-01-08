@@ -24,11 +24,23 @@
 
 #include <stdbool.h>
 
+bool m_clrex (void);
 bool m_ldm (void);
 bool m_ldr (void);
-bool m_pld (void);
+bool m_ldrex (void);
+bool m_pl (void);
+bool m_pop (void);
+bool m_push (void);
 bool m_stm (void);
 bool m_str (void);
+bool m_strex (void);
 bool m_swp (void);
+
+bool m_dmb (void);
+bool m_dsb (void);
+bool m_isb (void);
+
+bool m_rfe (void);
+bool m_srs (void);
 
 #endif

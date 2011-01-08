@@ -33,184 +33,188 @@
 #include "main.h"
 #include "option.h"
 
+/**
+ * Try to parse a 2 character condition code.
+ */
 static ARMWord
-getCond (void)
+GetCCode (void)
 {
-  ARMWord cc = AL;
+  ARMWord cc = optionError;
   switch (inputLook ())
     {
-    case 'A':
-      switch (inputLookN (1))
-	{
-	case 'L':
-	  cc = AL;
-	  inputSkipN (2);
-	  break;
-	}
-      break;
-    case 'C':
-      switch (inputLookN (1))
-	{
-	case 'C':
-	  cc = CC;
-	  break;
-	case 'S':
-	  cc = CS;
-	  break;
-	}
-      break;
-    case 'E':
-      switch (inputLookN (1))
-	{
-	case 'Q':
-	  cc = EQ;
-	  break;
-	}
-      break;
-    case 'G':
-      switch (inputLookN (1))
-	{
-	case 'E':
-	  cc = GE;
-	  break;
-	case 'T':
-	  cc = GT;
-	  break;
-	}
-      break;
-    case 'H':
-      switch (inputLookN (1))
-	{
-	case 'I':
-	  cc = HI;
-	  break;
-	case 'S':
-	  cc = HS;
-	  break;
-	}
-      break;
-    case 'L':
-      switch (inputLookN (1))
-	{
-	case 'E':
-	  cc = LE;
-	  break;
-	case 'O':
-	  cc = LO;
-	  break;
-	case 'S':
-	  cc = LS;
-	  break;
-	case 'T':
-	  cc = LT;
-	  break;
-	}
-      break;
-    case 'M':
-      switch (inputLookN (1))
-	{
-	case 'I':
-	  cc = MI;
-	  break;
-	}
-      break;
-    case 'N':
-      switch (inputLookN (1))
-	{
-	case 'E':
-	  cc = NE;
-	  break;
-	case 'V':
-	  cc = NV;
-	  break;
-	}
-      break;
-    case 'P':
-      switch (inputLookN (1))
-	{
-	case 'L':
-	  cc = PL;
-	  break;
-	}
-      break;
-    case 'V':
-      switch (inputLookN (1))
-	{
-	case 'C':
-	  cc = VC;
-	  break;
-	case 'S':
-	  cc = VS;
-	  break;
-	}
-      break;
+      case 'A':
+	switch (inputLookN (1))
+	  {
+	    case 'L':
+	      cc = AL;
+	      break;
+	  }
+	break;
+      case 'C':
+	switch (inputLookN (1))
+	  {
+	    case 'C':
+	      cc = CC;
+	      break;
+	    case 'S':
+	      cc = CS;
+	      break;
+	  }
+	break;
+      case 'E':
+	switch (inputLookN (1))
+	  {
+	    case 'Q':
+	      cc = EQ;
+	      break;
+	  }
+	break;
+      case 'G':
+	switch (inputLookN (1))
+	  {
+	    case 'E':
+	      cc = GE;
+	      break;
+	    case 'T':
+	      cc = GT;
+	      break;
+	  }
+	break;
+      case 'H':
+	switch (inputLookN (1))
+	  {
+	    case 'I':
+	      cc = HI;
+	      break;
+	    case 'S':
+	      cc = HS;
+	      break;
+	  }
+	break;
+      case 'L':
+	switch (inputLookN (1))
+	  {
+	    case 'E':
+	      cc = LE;
+	      break;
+	    case 'O':
+	      cc = LO;
+	      break;
+	    case 'S':
+	      cc = LS;
+	      break;
+	    case 'T':
+	      cc = LT;
+	      break;
+	  }
+	break;
+      case 'M':
+	switch (inputLookN (1))
+	  {
+	    case 'I':
+	      cc = MI;
+	      break;
+	  }
+	break;
+      case 'N':
+	switch (inputLookN (1))
+	  {
+	    case 'E':
+	      cc = NE;
+	      break;
+	    case 'V':
+	      cc = NV;
+	      break;
+	  }
+	break;
+      case 'P':
+	switch (inputLookN (1))
+	  {
+	    case 'L':
+	      cc = PL;
+	      break;
+	  }
+	break;
+      case 'V':
+	switch (inputLookN (1))
+	  {
+	    case 'C':
+	      cc = VC;
+	      break;
+	    case 'S':
+	      cc = VS;
+	      break;
+	  }
+	break;
     }
-  if (cc != AL)
+  if (cc != optionError)
     inputSkipN (2);
+  else
+    cc = AL;
   return cc;
 }
 
 
+/**
+ * Tried to read stackmode for LDM/STM/RFE/SRS.
+ * \return optionError is no stackmode can be read, otherwise the stackmode
+ * bits.
+ */
 static ARMWord
-getDir (bool ldm)
+GetStackMode (bool isLoad)
 {
-  ARMWord dir = optionError;
+  ARMWord stackMode = optionError;
   switch (inputLook ())
     {
-    case 'D':
-      switch (inputLookN (1))
-	{
-	case 'B':
-	  dir = DB;
-	  inputSkipN (2);
-	  break;
-	case 'A':
-	  dir = DA;
-	  inputSkipN (2);
-	  break;
-	}
-      break;
-    case 'E':
-      switch (inputLookN (1))
-	{
-	case 'D':
-	  dir = (ldm ? IB : DA);
-	  inputSkipN (2);
-	  break;
-	case 'A':
-	  dir = (ldm ? DB : IA);
-	  inputSkipN (2);
-	  break;
-	}
-      break;
-    case 'F':
-      switch (inputLookN (1))
-	{
-	case 'D':
-	  dir = (ldm ? IA : DB);
-	  inputSkipN (2);
-	  break;
-	case 'A':
-	  dir = (ldm ? DA : IB);
-	  inputSkipN (2);
-	  break;
-	}
-      break;
-    case 'I':
-      switch (inputLookN (1))
-	{
-	case 'B':
-	  dir = IB;
-	  inputSkipN (2);
-	  break;
-	case 'A':
-	  dir = IA;
-	  inputSkipN (2);
-	  break;
-	}
-      break;
+      case 'D':
+	switch (inputLookN (1))
+	  {
+	    case 'B':
+	      stackMode = STACKMODE_DB;
+	      break;
+	    case 'A':
+	      stackMode = STACKMODE_DA;
+	      break;
+	  }
+	break;
+      case 'E':
+	switch (inputLookN (1))
+	  {
+	    case 'D':
+	      stackMode = isLoad ? STACKMODE_IB : STACKMODE_DA;
+	      break;
+	    case 'A':
+	      stackMode = isLoad ? STACKMODE_DB : STACKMODE_IA;
+	      break;
+	  }
+	break;
+      case 'F':
+	switch (inputLookN (1))
+	  {
+	    case 'D':
+	      stackMode = isLoad ? STACKMODE_IA : STACKMODE_DB;
+	      break;
+	    case 'A':
+	      stackMode = isLoad ? STACKMODE_DA : STACKMODE_IB;
+	      break;
+	  }
+	break;
+      case 'I':
+	switch (inputLookN (1))
+	  {
+	    case 'B':
+	      stackMode = STACKMODE_IB;
+	      break;
+	    case 'A':
+	      stackMode = STACKMODE_IA;
+	      break;
+	  }
+	break;
     }
-  return dir;
+  if (stackMode != optionError)
+    inputSkipN (2);
+
+  return stackMode;
 }
 
 
@@ -220,13 +224,13 @@ getPrec (int P)
   switch (inputGet ())
     {
       case 'S':
-        return P ? PRECISION_MEM_SINGLE : PRECISION_SINGLE;
+	return P ? PRECISION_MEM_SINGLE : PRECISION_SINGLE;
       case 'D':
-        return P ? PRECISION_MEM_DOUBLE : PRECISION_DOUBLE;
+	return P ? PRECISION_MEM_DOUBLE : PRECISION_DOUBLE;
       case 'E':
-        return P ? PRECISION_MEM_EXTENDED : PRECISION_EXTENDED;
+	return P ? PRECISION_MEM_EXTENDED : PRECISION_EXTENDED;
       case 'P':
-        return P ? PRECISION_MEM_PACKED : optionError;
+	return P ? PRECISION_MEM_PACKED : optionError;
     }
   return optionError;
 }
@@ -238,43 +242,70 @@ getRound (void)
   switch (inputLook ())
     {
       case 'P':
-        inputSkip ();
-        return ROUND_PLUSINF;
+	inputSkip ();
+	return ROUND_PLUSINF;
       case 'M':
-        inputSkip ();
-        return ROUND_MINUSINF;
+	inputSkip ();
+	return ROUND_MINUSINF;
       case 'Z':
-        inputSkip ();
-        return ROUND_ZERO;
+	inputSkip ();
+	return ROUND_ZERO;
     }
   return ROUND_NEAREST;
 }
 
 
+/**
+ * Checks if the end of the current keyword has been reached.
+ * \param option Value to return when the end of current keyword has been
+ * reached.
+ * \return -1 when end of current keyword has not been reached, otherwise
+ * the given option value.
+ */
 static ARMWord
-isOK (ARMWord option)
+IsEndOfKeyword (ARMWord option)
 {
-  if (inputLook () && !isspace ((unsigned char)inputGet ()))
-    return optionError;
-  else
-    return option;
+  return Input_IsEndOfKeyword () ? option : optionError;
 }
 
 
 ARMWord
 optionCond (void)
 {
-  return isOK (getCond ());
+  return IsEndOfKeyword (GetCCode ());
 }
 
 
+/**
+ * Tries to parse condition code and "S" (both optionally and in any order)
+ * and that should terminate the keyword.
+ * I.e. support pre-UAL and UAL syntax.
+ */
 ARMWord
 optionCondS (void)
 {
-  ARMWord option = getCond ();
+  ARMWord option;
   if (Input_Match ('S', false))
-    option |= PSR_S_FLAG;
-  return isOK (option);
+    option = PSR_S_FLAG | GetCCode ();
+  else
+    {
+      option = GetCCode ();
+      if (Input_Match ('S', false))
+	option |= PSR_S_FLAG;
+    }
+  return IsEndOfKeyword (option);
+}
+
+
+/**
+ * Tries to parse "S" (optionally) followed by condition code (i.e. strictly
+ * UAL syntax only) and that should terminate the keyword.
+ */
+ARMWord
+Option_SCond (void)
+{
+  ARMWord option = Input_Match ('S', false) ? PSR_S_FLAG : 0;
+  return IsEndOfKeyword (option | GetCCode ());
 }
 
 
@@ -284,7 +315,7 @@ optionCondS (void)
 ARMWord
 optionCondSP (void)
 {
-  ARMWord option = getCond () | PSR_S_FLAG;
+  ARMWord option = GetCCode () | PSR_S_FLAG;
   if (Input_Match ('S', false) && option_pedantic)
     error (ErrorInfo, "S is implicit in test instructions");
   if (Input_Match ('P', false))
@@ -293,17 +324,17 @@ optionCondSP (void)
       if (option_apcs_32bit)
 	error (ErrorWarning, "TSTP/TEQP/CMNP/CMPP inadvisable in 32-bit PC configurations");
     }
-  return isOK (option);
+  return IsEndOfKeyword (option);
 }
 
 
 ARMWord
 optionCondB (void)
 {
-  ARMWord option = getCond ();
+  ARMWord option = GetCCode ();
   if (Input_Match ('B', false))
     option |= B_FLAG;
-  return isOK (option);
+  return IsEndOfKeyword (option);
 }
 
 
@@ -316,7 +347,7 @@ optionCondB (void)
 ARMWord
 optionCondBT (bool isStore)
 {
-  ARMWord option = getCond ();
+  ARMWord option = GetCCode ();
   if (Input_Match ('S', false))
     {
       if (isStore)
@@ -375,75 +406,82 @@ optionCondBT (bool isStore)
 	}
     }
 
-  return isOK (option);
+  return IsEndOfKeyword (option);
+}
+
+
+/**
+ * Tries to parse address mode used in RFE and SRS.
+ * Note, no condition code are read (that's only possible with Thumb-2).
+ */
+ARMWord
+Option_CondRfeSrs (bool isLoad)
+{
+  ARMWord option = GetStackMode (isLoad);
+  /* When there is no stack mode specified for SRS and RFE, it is implicitely
+     IA for *both* cases.  */
+  return IsEndOfKeyword (option == optionError ? STACKMODE_IA : option);
 }
 
 
 ARMWord
-optionCondDirLdm (void)
+optionCondLdmStm (bool isLDM)
 {
-  ARMWord option = getCond ();
-  if (optionError == (option |= getDir (true)))
+  ARMWord option = GetCCode ();
+  if (option == optionError)
     return optionError;
-  return isOK (option);
-}
-
-
-ARMWord
-optionCondDirStm (void)
-{
-  ARMWord option = getCond ();
-  if (optionError == (option |= getDir (false)))
-    return optionError;
-  return isOK (option);
+  ARMWord stackMode = GetStackMode (isLDM);
+  if (stackMode == optionError)
+    stackMode = (isLDM) ? STACKMODE_IA : STACKMODE_DB;
+  return IsEndOfKeyword (option | stackMode);
 }
 
 
 ARMWord
 optionCondLfmSfm (void)
 {
-  return getCond ();
+  return GetCCode ();
 }
 
 
 ARMWord
 optionCondPrecRound (void)
 {
-  ARMWord option = getCond ();
+  ARMWord option = GetCCode ();
   if (optionError == (option |= getPrec (false)))
     return optionError;
-  return isOK (option | getRound ());
+  return IsEndOfKeyword (option | getRound ());
 }
 
 
 ARMWord
 optionCondOptPrecRound (void)
 {
-  ARMWord optionCC = getCond ();
+  ARMWord optionCC = GetCCode ();
   ARMWord optionPrec = getPrec (false);
   if (optionError == optionPrec)
     optionPrec = PRECISION_EXTENDED;
-  return isOK (optionCC | optionPrec | getRound ());
+  return IsEndOfKeyword (optionCC | optionPrec | getRound ());
 }
 
 
 ARMWord
 optionCondPrec_P (void)
 {
-  ARMWord option = getCond ();
+  ARMWord option = GetCCode ();
   if (optionError == (option |= getPrec (true)))
     return optionError;
-  return isOK (option);
+  return IsEndOfKeyword (option);
 }
 
 
 ARMWord
 optionCondL (void)
 {
-  ARMWord option = getCond ();
+  ARMWord option = GetCCode ();
   if (Input_Match ('L', false))
     option |= N_FLAG;
-  return isOK (option);
+  return IsEndOfKeyword (option);
 }
 
 
@@ -454,8 +492,8 @@ optionCondL (void)
 ARMWord
 optionCondOptRound (void)
 {
-  ARMWord optionCC = getCond ();
-  return isOK (optionCC | PRECISION_SINGLE | getRound ());
+  ARMWord optionCC = GetCCode ();
+  return IsEndOfKeyword (optionCC | PRECISION_SINGLE | getRound ());
 }
 
 
@@ -464,7 +502,7 @@ ARMWord
 optionLinkCond (void)
 {
   if (inputLook () != 'L')
-    return isOK (getCond ()); /* Only b.CC possible  */
+    return IsEndOfKeyword (GetCCode ()); /* Only b.CC possible  */
 
   inputSkip ();		/* bl.CC or b.l?  */
   switch (inputLook ())
@@ -475,21 +513,21 @@ optionLinkCond (void)
 	  {
 	    case 'Q':		/* Only bl.eq */
 	      inputSkip ();
-	      return isOK (EQ | LINK_BIT);
+	      return IsEndOfKeyword (EQ | LINK_BIT);
 	    default:		/* Only b.le */
-	      return isOK (LE);
+	      return IsEndOfKeyword (LE);
 	  }
       case 'O':		/* Only b.lo possible */
 	inputSkip ();
-	return isOK (LO);
+	return IsEndOfKeyword (LO);
       case 'S':		/* Only b.ls possible */
 	inputSkip ();
-	return isOK (LS);
+	return IsEndOfKeyword (LS);
       case 'T':		/* Only b.lt possible */
 	inputSkip ();
-	return isOK (LT);
+	return IsEndOfKeyword (LT);
       default:		/* Only bl.CC possible */
-	return isOK (getCond () | LINK_BIT);
+	return IsEndOfKeyword (GetCCode () | LINK_BIT);
     }
   return optionError;
 }
@@ -499,20 +537,33 @@ ARMWord
 optionExceptionCond (void)
 {
   if (!Input_Match ('E', false))
-    return isOK (getCond ()); /* Only cmf.CC possible  */
+    return IsEndOfKeyword (GetCCode ()); /* Only cmf.CC possible  */
   /* cmf.eq or cmfe.CC */
   if (Input_Match ('Q', false))
-    return isOK (EQ); /* Only cmf.eq */
+    return IsEndOfKeyword (EQ); /* Only cmf.eq */
   /* Only cmfe.CC */
-  return isOK (getCond () | EXEPTION_BIT);
+  return IsEndOfKeyword (GetCCode () | EXEPTION_BIT);
 }
 
 
 ARMWord
 optionAdrL (void)
 {
-  ARMWord option = getCond ();
+  ARMWord option = GetCCode ();
   if (Input_Match ('L', false))
     option |= 1;
-  return isOK (option);
+  return IsEndOfKeyword (option);
+}
+
+
+bool
+Option_IsValidARMMode (int armMode)
+{
+  return armMode == ARM_MODE_USR
+	   || armMode == ARM_MODE_FIQ
+	   || armMode == ARM_MODE_IRQ
+	   || armMode == ARM_MODE_SVC
+	   || armMode == ARM_MODE_ABORT
+	   || armMode == ARM_MODE_UNDEF
+	   || armMode == ARM_MODE_SYSTEM;
 }

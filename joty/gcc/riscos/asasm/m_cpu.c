@@ -29,6 +29,7 @@
 
 #include "error.h"
 #include "expr.h"
+#include "fix.h"
 #include "get.h"
 #include "global.h"
 #include "input.h"
@@ -38,13 +39,43 @@
 #include "put.h"
 #include "targetcpu.h"
 
+/**
+ * Implements CODE16.
+ * What follows is in pre-UAL notation.
+ */
 bool
 c_code16 (void)
 {
-  error (ErrorError, "Thumb code is not yet supported");
+  error (ErrorError, "Thumb code is not yet supported"); /* FIXME */
   return false;
 }
 
+/**
+ * Implements THUMB.
+ * What follows in in UAL notation.
+ */
+bool
+c_thumb (void)
+{
+  error (ErrorError, "Thumb code is not yet supported"); /* FIXME */
+  return false;
+}
+
+/**
+ * Implements THUMBX.
+ * What follows is in UAL notation.
+ */
+bool
+c_thumbx (void)
+{
+  error (ErrorError, "Thumb-2EE code is not yet supported"); /* FIXME */
+  return false;
+}
+
+/**
+ * Implements ARM / CODE32.
+ * What follows can be in UAL or pre-UAL notation.
+ */
 bool
 c_code32 (void)
 {
@@ -56,19 +87,34 @@ c_code32 (void)
 
 /**
  * Implements NOP.
+ * Pre-UAL:
+ *   NOP (no condition code !)
+ *     MOV R0, R0 (ARM code)
+ *     MOV R8, R8 (Thumb code)
+ * UAL and with target ARMv6K, ARMv6T2 and ARMv7
+ *   NOP<cond> : own encoding allowing a condition code
  */
 bool
 m_nop (void)
 {
-  if (!Input_IsEolOrCommentStart ())
+  switch (Target_GetArch ())
     {
-      ARMWord op = getCpuReg ();
-      if (op == 15)
-	error (ErrorError, "Cannot use R15 in NOP");
-      Put_Ins (0xE1A00000 | DST_OP (op) | RHS_OP (op)); /* FIXME: check if this is the correct opcode.  */
+      case ARCH_ARMv6K:
+      case ARCH_ARMv6T2:
+      case ARCH_ARMv7:
+	{
+	  ARMWord cc = optionCond ();
+	  if (cc == optionError)
+	    return true;
+	  Put_Ins (0x0320F000 | cc);
+	  break;
+	}
+      default:
+	if (!Input_IsEndOfKeyword ())
+	  return true;
+	Put_Ins (0xE1A00000); /* MOV R0, R0 */
+	break;
     }
-  else
-    Put_Ins (0xE1A00000);
   return false;
 }
 
@@ -328,48 +374,70 @@ m_tst (void)
 
 /** DATA 1a **/
 
+/**
+ * Used for MUL, MLA and MLS.
+ */
+typedef enum { Is_eMUL, Is_eMLA, Is_eMLS } MulFlavour_e;
 static void
-onlyregs (bool acc, ARMWord ir)
+onlyregs (MulFlavour_e mulType, ARMWord ir)
 {
-  ARMWord dst, rhs, lhs;
-  dst = getCpuReg ();
-  ir |= DST_MUL (dst);
+  /* Read Rd.  */
+  ARMWord regD = getCpuReg ();
+  if (regD == 15)
+    error (ErrorWarning, "Use of register PC is unpredictable");
+
+  /* Read Rn (lhs).  */
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
-  lhs = getCpuReg ();
+  ARMWord regN = getCpuReg ();
+  if (regN == 15)
+    error (ErrorWarning, "Use of register PC is unpredictable");
+
+  /* Read Rm (rhs).  */
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
-  rhs = getCpuReg ();
-  if (dst == lhs)
+  ARMWord regM = getCpuReg ();
+  if (regM == 15)
+    error (ErrorWarning, "Use of register PC is unpredictable");
+  if (mulType != Is_eMLS)
     {
-      if (dst == rhs)
-	error (ErrorError, "Destination and left operand are the same register %d", dst);
-      else
+      if (regD == regN)
 	{
-	  if (option_fussy)
-	    error (ErrorInfo, "Changing order of operands in %s", acc ? "MLA" : "MUL");
-	  int t = lhs;
-	  lhs = rhs;
-	  rhs = t;
+	  if (regN == regM)
+	    error (ErrorError, "Destination and left operand are the same register %d", regD);
+	  else
+	    {
+	      error (ErrorInfo, "Changing order of operands in %s to avoid unpredicability", mulType == Is_eMLA ? "MLA" : "MUL");
+	      int t = regN;
+	      regN = regM;
+	      regM = t;
+	    }
 	}
     }
-  ir |= LHS_MUL (lhs);
-  ir |= RHS_MUL (rhs);
-  skipblanks ();
-  if (acc)
+
+  if (mulType != Is_eMUL)
     {
+      /* Read Ra.  */
+      skipblanks ();
       if (!Input_Match (',', true))
 	error (ErrorError, "%srhs", InsertCommaAfter);
-      ir |= ACC_MUL (getCpuReg ());
-      skipblanks ();
+      ARMWord regA = getCpuReg ();
+      if (regA == 15)
+	error (ErrorWarning, "Use of register PC is unpredictable");
+      ir |= ACC_MUL (regA);
     }
+  ir |= DST_MUL (regD);
+  ir |= LHS_MUL (regN);
+  ir |= RHS_MUL (regM);
+
   Put_Ins (ir);
 }
 
 /**
  * Implements MLA.
+ *   MLA{S}<cond> <Rd>, <Rn>, <Rm>, <Ra>
  */
 bool
 m_mla (void)
@@ -377,12 +445,31 @@ m_mla (void)
   ARMWord cc = optionCondS ();
   if (cc == optionError)
     return true;
-  onlyregs (true, cc | M_MLA);
+
+  Target_NeedAtLeastArch (ARCH_ARMv2);
+  onlyregs (Is_eMLA, cc | M_MLA);
+  return false;
+}
+
+/**
+ * Implements MLS.
+ *   MLS<cond> <Rd>, <Rn>, <Rm>, <Ra>
+ */
+bool
+m_mls (void)
+{
+  ARMWord cc = optionCond (); /* Note, no 'S' */
+  if (cc == optionError)
+    return true;
+
+  Target_NeedAtLeastArch (ARCH_ARMv6T2);
+  onlyregs (Is_eMLS, cc | M_MLS);
   return false;
 }
 
 /**
  * Implements MUL.
+ *   MUL{S}<cond> <Rd>, <Rn>, <Rm>, <Ra>
  */
 bool
 m_mul (void)
@@ -390,23 +477,25 @@ m_mul (void)
   ARMWord cc = optionCondS ();
   if (cc == optionError)
     return true;
-  onlyregs (false, cc | M_MUL);
+
+  Target_NeedAtLeastArch (ARCH_ARMv2);
+  onlyregs (Is_eMUL, cc | M_MUL);
   return false;
 }
 
 static void
 l_onlyregs (ARMWord ir, const char *op)
 {
-  ARMWord dstl, dsth, lhs, rhs;
   /* This bit only set for smulxx */
-  int issmull = !(ir & 0x01000000);
-  int issmlaxy = ((ir & 0x00600000) == 0);
-  int issmlalxy = ((ir & 0x00600000) == 0x00400000);
-  int issmlawy = ((ir & 0x00600020) == 0x00200000);
+  bool issmull = !(ir & 0x01000000);
+  bool issmlaxy = (ir & 0x00600000) == 0;
+  bool issmlalxy = (ir & 0x00600000) == 0x00400000;
+  bool issmlawy = (ir & 0x00600020) == 0x00200000;
 
+  ARMWord dstl;
   if (issmull)
     {
-      cpuWarn (ARM7M);
+      Target_NeedAtLeastArch (ARCH_ARMv4);
       skipblanks ();
       dstl = getCpuReg ();
       if (!Input_Match (',', true))
@@ -414,7 +503,7 @@ l_onlyregs (ARMWord ir, const char *op)
     }
   else
     {
-      cpuWarn (XSCALE);
+      Target_NeedAtLeastArch (ARCH_ARMv5TE);
       skipblanks ();
       if (issmlalxy)
         {
@@ -426,15 +515,15 @@ l_onlyregs (ARMWord ir, const char *op)
         dstl = 0;
     }
 
-  dsth = getCpuReg ();
+  ARMWord dsth = getCpuReg ();
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%sdst_l", InsertCommaAfter);
-  lhs = getCpuReg ();
+  ARMWord lhs = getCpuReg ();
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
-  rhs = getCpuReg ();
+  ARMWord rhs = getCpuReg ();
   if (issmull)
     {
       if (dstl == dsth)
@@ -480,6 +569,7 @@ m_smull (void)
   ARMWord cc = optionCondS ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv3M);
   l_onlyregs (cc | M_SMULL, "SMULL");
   return false;
 }
@@ -493,6 +583,7 @@ m_smulbb (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMULBB, "SMULBB");
   return false;
 }
@@ -506,6 +597,7 @@ m_smulbt (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMULBT, "SMULBT");
   return false;
 }
@@ -519,6 +611,7 @@ m_smultb (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMULTB, "SMULTB");
   return false;
 }
@@ -532,6 +625,7 @@ m_smultt (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMULTT, "SMULTT");
   return false;
 }
@@ -545,6 +639,7 @@ m_smulwb (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMULWB, "SMULWB");
   return false;
 }
@@ -558,6 +653,7 @@ m_smulwt (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMULWT, "SMULWT");
   return false;
 }
@@ -571,6 +667,7 @@ m_smlal (void)
   ARMWord cc = optionCondS ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv3M);
   l_onlyregs (cc | M_SMLAL, "SMLAL");
   return false;
 }
@@ -584,6 +681,7 @@ m_smlalbb (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMLALBB, "SMLALBB");
   return false;
 }
@@ -597,6 +695,7 @@ m_smlalbt (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMLALBT, "SMLALBT");
   return false;
 }
@@ -610,6 +709,7 @@ m_smlaltb (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMLALTB, "SMLALTB");
   return false;
 }
@@ -623,6 +723,7 @@ m_smlaltt (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMLALTT, "SMLALTT");
   return false;
 }
@@ -636,6 +737,7 @@ m_smlabb (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMLABB, "SMLABB");
   return false;
 }
@@ -649,6 +751,7 @@ m_smlabt (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMLABT, "SMLABT");
   return false;
 }
@@ -662,6 +765,7 @@ m_smlatb (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMLATB, "SMLATB");
   return false;
 }
@@ -675,6 +779,7 @@ m_smlatt (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMLATT, "SMLATT");
   return false;
 }
@@ -688,6 +793,7 @@ m_smlawb (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMLAWB, "SMLAWB");
   return false;
 }
@@ -701,6 +807,7 @@ m_smlawt (void)
   ARMWord cc = optionCond ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
   l_onlyregs (cc | M_SMLAWT, "SMLAWT");
   return false;
 }
@@ -714,6 +821,7 @@ m_umull (void)
   ARMWord cc = optionCondS ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv3M);
   l_onlyregs (cc | M_UMULL, "UMULL");
   return false;
 }
@@ -727,6 +835,7 @@ m_umlal (void)
   ARMWord cc = optionCondS ();
   if (cc == optionError)
     return true;
+  Target_NeedAtLeastArch (ARCH_ARMv3M);
   l_onlyregs (cc | M_UMLAL, "UMLAL");
   return false;
 }
@@ -742,22 +851,21 @@ m_clz (void)
   if (cc == optionError)
     return true;
 
+  Target_NeedAtLeastArch (ARCH_ARMv5);
+
   ARMWord ir = cc | M_CLZ;
-  ARMWord dst, rhs;
 
-  cpuWarn (XSCALE);
-
-  dst = getCpuReg ();
+  ARMWord dst = getCpuReg ();
   ir |= DST_OP (dst);
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
 
-  rhs = getCpuReg ();
+  ARMWord rhs = getCpuReg ();
   ir |= RHS_OP (rhs);
 
   if (dst == 15 || rhs == 15)
-    error(ErrorError, "Use of R15 in CLZ is unpredictable");
+    error (ErrorError, "Use of R15 in CLZ is unpredictable");
 
   Put_Ins (ir);
   return false;
@@ -766,20 +874,19 @@ m_clz (void)
 static void
 q_onlyregs (ARMWord ir, const char *op)
 {
-  ARMWord dst, lhs, rhs;
+  Target_NeedAtLeastArch (ARCH_ARMv5TE);
 
-  cpuWarn (XSCALE);
   skipblanks ();
 
-  dst = getCpuReg ();
+  ARMWord dst = getCpuReg ();
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
-  lhs = getCpuReg ();
+  ARMWord lhs = getCpuReg ();
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
-  rhs = getCpuReg ();
+  ARMWord rhs = getCpuReg ();
   if (dst == 15 || lhs == 15 || rhs == 15)
     error (ErrorError, "Cannot use R15 with %s", op);
 
@@ -836,5 +943,136 @@ m_qsub (void)
   if (cc == optionError)
     return true;
   q_onlyregs (cc | M_QSUB, "QSUB");
+  return false;
+}
+
+static bool
+UALShift (ARMWord shiftType)
+{
+  ARMWord cc = Option_SCond ();
+  if (cc == optionError)
+    return true;
+
+  skipblanks ();
+  ARMWord regD = getCpuReg ();
+  if (regD == INVALID_REG)
+    return false;
+  if (!Input_Match (',', true))
+    {
+      error (ErrorError, "Missing ,");
+      return false;
+    }
+  ARMWord regM = Get_CPURegNoError ();
+  ARMWord regS;
+  if (regM == INVALID_REG)
+    {
+      regM = regD;
+      regS = INVALID_REG;
+    }
+  else
+    {
+      if (!Input_Match (',', true))
+	{
+	  regS = regM;
+	  regM = regD;
+	}
+      else
+	regS = Get_CPURegNoError ();
+    }
+
+  cc |= M_MOV | DST_OP (regD) | regM;
+  if (regS == INVALID_REG)
+    {
+      if (!Input_Match ('#', false))
+	{
+	  error (ErrorError, "Missing immediate constant");
+	  return false;
+	}
+      const Value *im = exprBuildAndEval (ValueInt);
+      if (im->Tag != ValueInt)
+	{
+	  error (ErrorError, "Failed to evaluate immediate constant");
+	  return false;
+	}
+      Put_Ins (cc | Fix_ShiftImm (NULL, 0, shiftType, im->Data.Int.i));
+    }
+  else
+    Put_Ins (cc | SHIFT_REG (regS) | SHIFT_OP (shiftType));
+  
+  return false;
+}
+
+/**
+ * Implements ASR.
+ *   ASR<S><CC> {Rd,} Rm, #<num> : UAL version of MOV<CC><S> Rd, Rm, ASR#<num>
+ *   ASR<S><CC> {Rd,} Rm, Rs : UAL version of MOV<CC><S> Rd, Rm, ASR Rs
+ */
+bool
+m_asr (void)
+{
+  return UALShift (ASR);
+}
+
+/**
+ * Implements LSL.
+ *   LSL<S><CC> {Rd,} Rm, #<num> : UAL version of MOV<CC><S> Rd, Rm, LSL#<num>
+ *   LSL<S><CC> {Rd,} Rm, Rn : UAL version of MOV<CC><S> Rd, Rm, LSL Rs
+ */
+bool
+m_lsl (void)
+{
+  return UALShift (LSL);
+}
+
+/**
+ * Implements LSR.
+ *   LSR<S><CC> {Rd,} Rm, #<num> : UAL version of MOV<CC><S> Rd, Rm, LSR#<num>
+ *   LSR<S><CC> {Rd,} Rm, Rs : UAL version of MOV<CC><S> Rd, Rm, LSR Rs
+ */
+bool
+m_lsr (void)
+{
+  return UALShift (LSR);
+}
+
+/**
+ * Implements ROR.
+ *   ROR<S><CC> {Rd,} Rm, #<num> : UAL version of MOV<CC><S> Rd, Rm, ROR#<num>
+ *   ROR<S><CC> {Rd,} Rm, Rs : UAL version of MOV<CC><S> Rd, Rm, ROR Rs
+ */
+bool
+m_ror (void)
+{
+  return UALShift (ROR);
+}
+
+/**
+ * Implements RRX.
+ *   RRX<S><CC> {Rd,} Rm : UAL version of MOV<CC><S> Rd, Rm, RRX
+ */
+bool
+m_rrx (void)
+{
+  ARMWord cc = Option_SCond ();
+  if (cc == optionError)
+    return true;
+
+  skipblanks ();
+  ARMWord regD = getCpuReg ();
+  if (regD == INVALID_REG)
+    return false;
+  skipblanks ();
+  ARMWord regM;
+  if (Input_Match (',', true))
+    {
+      regM = getCpuReg ();
+      if (regM == INVALID_REG)
+	return false;
+    }
+  else
+    regM = regD;
+
+  Put_Ins (cc | M_MOV | DST_OP (regD) | regM | SHIFT_OP (RRX));
+  
   return false;
 }

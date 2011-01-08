@@ -30,8 +30,6 @@
 #include "global.h"
 #include "macros.h"
 
-#define TOLOWER(x) tolower((x))
-
 #define MAX_PREDEFINES 10
 extern const char *predefines[MAX_PREDEFINES];
 extern int num_predefines;
@@ -39,6 +37,10 @@ extern int num_predefines;
 void inputInit (const char *infile);
 
 bool Input_Match (char c, bool spacesToo);
+bool Input_MatchKeyword (const char *keyword);
+bool Input_MatchKeywordLower (const char *keyword);
+bool Input_MatchString (const char *str);
+bool Input_IsEndOfKeyword (void);
 
 #if DEBUG
 const char *inputGiveRestLine (void);
@@ -49,8 +51,6 @@ bool inputNextLineNoSubst (void);
 
 void skipblanks (void);
 void skiprest (void);
-
-bool notinput (const char *str);
 
 bool Input_IsEolOrCommentStart (void);
 char inputLook (void);
