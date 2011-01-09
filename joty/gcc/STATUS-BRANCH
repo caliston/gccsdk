@@ -18,8 +18,6 @@ Status patch merging:
 
 Status build:
 
-- GCC 4.6.0 trunk change r168593 breaks libgcc build.
-  See http://gcc.gnu.org/bugzilla/show_bug.cgi?id=47225
 - Enable languages c and c++, multilib configuration with static target libs
   cleanly builds.
 - Didn't try any other languages nor shared library configuration.

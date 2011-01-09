@@ -48,16 +48,15 @@ LIBELF_VERSION=0.8.13
 ifeq ($(TARGET),arm-unknown-riscos)
 # Case GCCSDK arm-unknown-riscos target:
 # Variations: --disable-shared vs --enable-shared=libunixlib,libgcc,libstdc++
-## FIXME: --disable-shared -> --enable-shared=libunixlib,libgcc,libstdc++
+## FIXME: target_configargs=--disable-shared -> target_configargs=--enable-shared=libunixlib,libgcc,libstdc++
 ## FIXME: Consider --enable-__cxa_atexit (but this can require UnixLib changes).
-## FIXME: enable LTO ?
 GCC_CONFIG_ARGS := \
 	--enable-threads=posix \
 	--enable-sjlj-exceptions=no \
 	--enable-c99 \
 	--enable-cmath \
 	--enable-multilib \
-	--disable-shared \
+	target_configargs=--disable-shared \
 	--disable-c-mbchar \
 	--disable-libstdcxx-pch \
 	--disable-tls \
@@ -67,8 +66,8 @@ BINUTILS_CONFIG_ARGS :=
 GDB_CONFIG_ARGS :=
 else
 # Case arm-unknown-eabi target (use newlib):
-GCC_CONFIG_ARGS := --disable-threads --disable-multilib --disable-shared --with-newlib
-BINUTILS_CONFIG_ARGS := --disable-multilib --disable-shared
+GCC_CONFIG_ARGS := --disable-threads --disable-multilib target_configargs=--disable-shared --with-newlib
+BINUTILS_CONFIG_ARGS := --disable-multilib
 GDB_CONFIG_ARGS :=
 endif
 GCC_CONFIG_ARGS += --with-pkgversion='GCCSDK GCC $(GCC_VERSION) Release 1 Development' \
