@@ -64,6 +64,7 @@ STANDARD_INCLUDE_DIR = $(srcdir)/../libunixlib/include
 
 TARGET_LIBGCC2_CFLAGS = -Dinhibit_libc
 
+# FIXME: for these SH* entries, why not use t-slibgcc-elf-ver instead ?
 # Build a shared libgcc library.
 SHLIB_EXT = .so
 SHLIB_NAME = @shlib_base_name@.so
