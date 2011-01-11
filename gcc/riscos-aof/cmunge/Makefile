@@ -1,5 +1,5 @@
 # Makefile for "A free alternative to CMHG" - CMunge
-# Copyright (c) 2005-2006 GCCSDK Developers
+# Copyright (c) 2005-2011 GCCSDK Developers
 
 ifeq (${STAGE},stage1)
 prefix = $(unix_prefix)
@@ -14,7 +14,7 @@ CFLAGS = $(CROSS_CFLAGS) -mlibscl
 endif
 
 INCLUDES = -I. -I../../
-CFLAGS += -Wall
+CFLAGS += -Wall -std=c89
 
 cmungeobjdir = $(objdir)/riscos-aof/cmunge/$(STAGE)
 
