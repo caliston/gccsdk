@@ -1,5 +1,5 @@
 # Automake style makefile for UnixLib
-# Copyright (c) 2005-2010 UnixLib developers
+# Copyright (c) 2005-2011 UnixLib developers
 # Written by Nick Burrett <nick@sqrt.co.uk>
 
 # Directory where headers will be installed.
@@ -967,6 +967,7 @@ endif
 string_src += \
 	string/memccpy.c \
 	string/memchr.c \
+	string/mempcpy.c \
 	string/stpcpy.c \
 	string/stpncpy.c \
 	string/strdup.c \
@@ -1213,6 +1214,7 @@ wchar_src = \
 	wchar/wmemcmp.c \
 	wchar/wmemcpy.c \
 	wchar/wmemmove.c \
+	wchar/wmempcpy.c \
 	wchar/wmemset.c
 endif
 wchar_src += \
@@ -1248,6 +1250,7 @@ libc_headers = \
 	bits/nan.h \
 	bits/netdb.h \
 	bits/posix_opt.h \
+	bits/resource.h \
 	bits/sched.h \
 	bits/signum.h \
 	bits/sockaddr.h \
