@@ -39,10 +39,7 @@ GCC_USE_LTO=yes
 LIBELF_VERSION=0.8.13
 
 # Notes:
-#   1) --with-cross-host is needed to correctly find the target libraries in
-#      $GCCSDK_{CROSS|RISCOS}_PREFIX/arm-unknown-riscos/lib instead of
-#      $GCCSDK_{CROSS|RISCOS}_PREFIX/lib.
-#   2) Configure options are explained at http://gcc.gnu.org/install/configure.html
+#   1) Configure options are explained at http://gcc.gnu.org/install/configure.html
 #      but note that this explanation is for the latest gcc version released and
 #      not necessary the gcc version we're building here.
 ifeq ($(TARGET),arm-unknown-riscos)
@@ -59,8 +56,7 @@ GCC_CONFIG_ARGS := \
 	target_configargs=--disable-shared \
 	--disable-c-mbchar \
 	--disable-libstdcxx-pch \
-	--disable-tls \
-	--with-cross-host
+	--disable-tls
 # FIXME: for Java support: --without-x --enable-libgcj
 BINUTILS_CONFIG_ARGS :=
 GDB_CONFIG_ARGS :=
