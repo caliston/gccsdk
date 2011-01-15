@@ -21,6 +21,11 @@ Wed Jun 23 01:08:51 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 // ------------------------------------ ^^^ gcc4.6trunk ^^^ port -----------------
 
+Sat Jan 15 22:33:33 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* incl-local/internal/elf-macros.s (CHGMODE): Fix bug exposed by
+	binutils 2.21.
+
 Mon Jan 10 03:24:52 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* resource/getrlimit.c (getrlimit): Follow prototype change.
