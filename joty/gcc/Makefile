@@ -47,12 +47,13 @@ ifeq ($(TARGET),arm-unknown-riscos)
 # Variations: --disable-shared vs --enable-shared=libunixlib,libgcc,libstdc++
 ## FIXME: target_configargs=--disable-shared -> target_configargs=--enable-shared=libunixlib,libgcc,libstdc++
 ## FIXME: Consider --enable-__cxa_atexit (but this can require UnixLib changes).
+# Note: --enable-multilib is the default.  Don't specify it unless you want to get hit
+# by PR43328/PR45174
 GCC_CONFIG_ARGS := \
 	--enable-threads=posix \
 	--enable-sjlj-exceptions=no \
 	--enable-c99 \
 	--enable-cmath \
-	--enable-multilib \
 	target_configargs=--disable-shared \
 	--disable-c-mbchar \
 	--disable-libstdcxx-pch \
@@ -108,10 +109,7 @@ RECIPEDIR := $(ROOT)/recipe
 RISCOSTOOLSDIR := $(GCCSDK_RISCOS)
 
 # GCC-only configure arguments which are dependant on cross vs ronative building:
-## FIXME: Added --with-system-zlib as otherwise zlib as multilib build fails
-## (which shouldn't so this is a hack). Believed to be
-## http://gcc.gnu.org/bugzilla/show_bug.cgi?id=45174
-CROSS_GCC_CONFIG_ARGS := --with-gmp=$(PREFIX_CROSSGCC_LIBS) --with-mpfr=$(PREFIX_CROSSGCC_LIBS) --with-mpc=$(PREFIX_CROSSGCC_LIBS) --with-system-zlib
+CROSS_GCC_CONFIG_ARGS := --with-gmp=$(PREFIX_CROSSGCC_LIBS) --with-mpfr=$(PREFIX_CROSSGCC_LIBS) --with-mpc=$(PREFIX_CROSSGCC_LIBS)
 RONATIVE_GCC_CONFIG_ARGS := --with-gmp=$(PREFIX_RONATIVEGCC_LIBS) --with-mpfr=$(PREFIX_RONATIVEGCC_LIBS) --with-mpc=$(PREFIX_RONATIVEGCC_LIBS)
 ifeq "$(GCC_USE_PPL_CLOOG)" "yes"
 CROSS_GCC_CONFIG_ARGS += --with-ppl=$(PREFIX_CROSSGCC_LIBS) --with-host-libstdcxx='-Wl,-lstdc++' --with-cloog=$(PREFIX_CROSSGCC_LIBS)
