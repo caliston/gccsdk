@@ -1,6 +1,6 @@
 @ Exception handling support
 @ This source is used by the call frame C++ exception handling code.
-@ Copyright (c) 2009-2010 UnixLib Developers
+@ Copyright (c) 2009-2011 UnixLib Developers
 
 @ The SharedCLibrary versions of these routines may be called in either
 @ USR mode or, in the case of a module, SVC mode. In the latter case,
@@ -343,5 +343,85 @@ __ehs_trim_stack:
 #else
 #  error "Unsupported runtime"
 #endif
+
+	@ void __ehs_unwind_stack_chunk (void *fp, void **pc, void **sl)
+	@
+	@ Check if the return address in PC is either __gcc_alloca_free
+	@ or __free_stack_chunk and return the real return address. In
+	@ the latter case, step back to the previous stack chunk and
+	@ update SL.
+	@ This is used by the ARM stack unwinder (gcc/config/arm/unwind-arm.c)
+	.global	__ehs_unwind_stack_chunk
+	NAME	__ehs_unwind_stack_chunk
+#if __TARGET_UNIXLIB__
+__ehs_unwind_stack_chunk:
+#if __UNIXLIB_CHUNKED_STACK
+	MOV	ip, sp
+ PICNE "STMFD	sp!, {v1-v3, fp, ip, lr, pc}"
+ PICEQ "STMFD	sp!, {v1-v4, fp, ip, lr, pc}"
+	SUB	fp, ip, #4
+
+	MOV	v2, a2
+	MOV	v3, a3
+
+	MOVS	v1, a1
+ PICNE "LDMEQEA	fp, {v1, v2, fp, sp, pc}"
+ PICEQ "LDMEQEA	fp, {v1, v2, v4, fp, sp, pc}"
+
+ PICEQ "LDR	v4, .L4"
+.LPIC1:
+ PICEQ "ADD	v4, pc, v4"			@ v4 = Library public GOT
+ PICEQ "LDMIA	v4, {v4, v5}"			@ v4 = Object index, v4 = GOT table location
+ PICEQ "LDR	v5, [v5, #0]"			@ v5 = GOT table
+ PICEQ "LDR	v4, [v5, v4, LSL#4]"		@ v4 = Library private GOT
+
+	LDR	a1, [v2, #0]			@ Retrieve old return address (pc)
+	TEQ	a1, a1				@ 32bit mode check
+	TEQ	pc, pc
+	BICNE	a1, a1, #0xfc000003		@ If running 26bit, clear PSR bits.
+
+	LDR	lr, .L1				@ __gcc_alloca_free
+ PICEQ "LDR	lr, [v4, lr]"
+	TEQ	a1, lr
+	BNE	0f
+
+	@ Return address was __gcc_alloca_free, find real return address and store
+	@ ready for return.
+	MOV	a1, v1
+	BL	__gcc_alloca_return_address
+	STR	a1, [v2, #0]
+	@ Fall through - alloca could have stored __free_stack_chunk.
+0:
+	LDR	lr, .L2				@ __free_stack_chunk
+ PICEQ "LDR	lr, [v4, lr]"
+	TEQ	a1, lr
+ PICNE "LDMNEEA	fp, {v1-v3, fp, sp, pc}"
+ PICEQ "LDMNEEA	fp, {v1-v4, fp, sp, pc}"
+
+	@ Return address was __free_stack_chunk, unwind to previous stack chunk
+	LDR	a2, [v3, #0]			@ Retrieve old stack limit
+	SUB	a2, a2, #512 + CHUNK_OVERHEAD	@ Find start of stack chunk
+	LDR	a1, [a2, #CHUNK_RETURN]		@ Find return address for this chunk
+	LDR	a2, [a2, #CHUNK_PREV]		@ Unwind to previous chunk
+	ADD	a2, a2, #512 + CHUNK_OVERHEAD	@ Calculate stack limit for new chunk
+	STR	a1, [v2, #0]			@ Store new return address for return
+	STR	a2, [v3, #0]			@ Store new stack limit for return
+
+ PICNE "LDMEA	fp, {v1-v3, fp, sp, pc}"
+ PICEQ "LDMEA	fp, {v1-v4, fp, sp, pc}"
+.L4:
+ PICEQ ".word	_GLOBAL_OFFSET_TABLE_-(.LPIC1+4)"
+#else /* !__UNIXLIB_CHUNKED_STACK */
+	@ Nothing to do for a flat stack.
+	MOV	pc, lr
+#endif
+#elif __TARGET_SCL__
+__ehs_unwind_stack_chunk:
+	@ TODO
+	MOV	pc, lr
+#else
+#  error "Unsupported runtime"
+#endif
+	DECLARE_FUNCTION __ehs_unwind_stack_chunk
 
 	.end

@@ -1,3 +1,10 @@
+Fri Jan 21 20:40:11 2011  Lee Noar <leenoar@sky.com>
+
+	* gcccompat/_eh_support.s(__ehs_unwind_stack_chunk): New
+	function. Used by the ARM stack unwinder to track the
+	current stack chunk and stack limit. UnixLib version only
+	to begin with.
+
 Sat Aug 21 16:55:44 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 	* unix/unix.c (exit): Revert previous workaround. gcc bug
