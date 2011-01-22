@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.c
 ===================================================================
---- gcc/config/arm/arm.c	(revision 168391)
+--- gcc/config/arm/arm.c	(revision 169099)
 +++ gcc/config/arm/arm.c	(working copy)
 @@ -123,6 +123,8 @@
  #if TARGET_DLLIMPORT_DECL_ATTRIBUTES
@@ -1176,7 +1176,53 @@ Index: gcc/config/arm/arm.c
  }
  
  /* Dwarf models VFPv3 registers as 32 64-bit registers.
-@@ -23004,6 +23550,10 @@
+@@ -22457,6 +23003,31 @@
+       break;
+ 
+     case REG:
++#ifdef TARGET_RISCOSELF
++      if (REGNO (e0) == IP_REGNUM
++	      && GET_CODE (e1) == PLUS
++	      && GET_CODE (XEXP (e1, 0)) == REG
++	      && (REGNO (XEXP (e1, 0)) == IP_REGNUM
++		  || REGNO (XEXP (e1, 0)) == SP_REGNUM)
++	      && GET_CODE (XEXP (e1, 1)) == CONST_INT)
++	{
++	  /* Ignore any prologue related instructions that we inserted for
++	     stack extension.  */
++	  break;
++	}
++      else if (REGNO (e0) == 9
++	       && GET_CODE (e1) == REG
++	       && REGNO (e1) == SP_REGNUM)
++	{
++	  /* A "mov r9, sp" instruction is emitted when not optimising or
++	     when alloca is called with no stack checking (which may be possible
++	     in module code). This causes another ".movsp" unwind directive to be
++	     generated besides the one at the top of the function. The assembler
++	     generates an error because of it, so we suppress it here. */
++	  break;
++	}
++      else
++#endif
+       if (REGNO (e0) == SP_REGNUM)
+ 	{
+ 	  /* A stack increment.  */
+@@ -22559,6 +23130,13 @@
+       arm_unwind_emit_sequence (asm_out_file, pat);
+       break;
+ 
++#ifdef TARGET_RISCOSELF
++    case PARALLEL:
++      /* The rt_stkovf instruction pattern is interpreted as PARALLEL.
++         As it doesn't actually affect the stack pointer, do nothing.  */
++      break;
++#endif
++
+     default:
+       abort();
+     }
+@@ -23004,6 +23582,10 @@
  bool
  arm_frame_pointer_required (void)
  {
@@ -1187,7 +1233,7 @@ Index: gcc/config/arm/arm.c
    return (cfun->has_nonlocal_label
            || SUBTARGET_FRAME_POINTER_REQUIRED
            || (TARGET_ARM && TARGET_APCS_FRAME && ! leaf_function_p ()));
-@@ -23542,10 +24092,10 @@
+@@ -23542,10 +24124,10 @@
        fixed_regs[PIC_OFFSET_TABLE_REGNUM] = 1;
        call_used_regs[PIC_OFFSET_TABLE_REGNUM] = 1;
      }
