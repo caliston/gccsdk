@@ -44,12 +44,9 @@ along with GCC; see the file COPYING3.  If not see
 #undef ARM_DEFAULT_ABI
 #define ARM_DEFAULT_ABI ARM_ABI_APCS32
 
-#if 0
-FIXME: enable this !
 /* We like unwind data.  */
 #undef ARM_UNWIND_INFO
 #define ARM_UNWIND_INFO 1
-#endif
 
 /* For PIC code we need to explicitly specify (PLT) and (GOT) relocs. (PLT) is
    not needed for module code.  */
@@ -112,12 +109,14 @@ FIXME: enable this !
      When building with --disable-shared:
        libgcc.a = support routines including EH
    Even when --enable-shared is used, the SCL cases are all forced
-   to a --disable-shared alike mode and don't have a libgcc_eh.a built.
+   to a --disable-shared alike mode.
    For the non-SCL cases, we only link with libgcc_s.so when linking with
-   shared libraries as we can't have text relocations coming from libgcc.a.  */
+   shared libraries as we can't have text relocations coming from libgcc.a.
+   We need libgcc_eh for SCL as well, because the division routines pull in
+   the stack unwinder.  */
 #ifdef ENABLE_SHARED_LIBGCC
 #  define REAL_LIBGCC_SPEC \
-     "%{mmodule|mlibscl:-lgcc;:%{static|static-libgcc:-lgcc -lgcc_eh;:-lgcc_s%{!shared: -lgcc}}}"
+     "%{mmodule|mlibscl:-lgcc -lgcc_eh;:%{static|static-libgcc:-lgcc -lgcc_eh;:-lgcc_s%{!shared: -lgcc}}}"
 #else
 #  define REAL_LIBGCC_SPEC \
      "-lgcc"
