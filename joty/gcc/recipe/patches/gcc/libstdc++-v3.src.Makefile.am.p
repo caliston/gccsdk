@@ -1,21 +1,21 @@
 Index: libstdc++-v3/src/Makefile.am
 ===================================================================
---- libstdc++-v3/src/Makefile.am	(revision 168231)
+--- libstdc++-v3/src/Makefile.am	(revision 169099)
 +++ libstdc++-v3/src/Makefile.am	(working copy)
 @@ -27,6 +27,22 @@
  # Cross compiler support.
  toolexeclib_LTLIBRARIES = libstdc++.la
  
-+headers = \
-+	../libsupc++/exception \
-+	../libsupc++/new \
-+	../libsupc++/typeinfo \
-+	../libsupc++/cxxabi.h \
-+	../libsupc++/cxxabi-forced.h \
-+	../libsupc++/exception_defines.h \
-+	../libsupc++/initializer_list \
-+	../libsupc++/exception_ptr.h \
-+	../libsupc++/nested_exception.h
++std_HEADERS = \
++	../libsupc++/cxxabi.h ../libsupc++/exception \
++	../libsupc++/initializer_list ../libsupc++/new \
++	../libsupc++/typeinfo 
++
++bits_HEADERS = \
++	../libsupc++/cxxabi_forced.h ../libsupc++/hash_bytes.h \
++	../libsupc++/exception_defines.h ../libsupc++/exception_ptr.h ../libsupc++/nested_exception.h 
++
++headers = $(std_HEADERS) $(bits_HEADERS)
 +
 +if GLIBCXX_HOSTED
 +  c_sources = \
@@ -81,7 +81,7 @@ Index: libstdc++-v3/src/Makefile.am
  # Sources present in the src directory.
  sources = \
  	atomic.cc \
-@@ -220,26 +285,29 @@
+@@ -221,20 +286,20 @@
  	thread.cc \
  	future.cc \
  	${host_sources} \
@@ -89,11 +89,9 @@ Index: libstdc++-v3/src/Makefile.am
 +	${host_sources_extra} \
 +	${supc_sources}
  
--vpath % $(top_srcdir)/src
--vpath % $(top_srcdir)
-+VPATH = $(top_srcdir)/src:$(top_srcdir)/libsupc++
-+#vpath % $(top_srcdir)/src
-+#vpath % $(top_srcdir)
++vpath % $(top_srcdir)/libsupc++
+ vpath % $(top_srcdir)/src
+ vpath % $(top_srcdir)
  
  libstdc___la_SOURCES = $(sources)
  
@@ -109,16 +107,7 @@ Index: libstdc++-v3/src/Makefile.am
  
  libstdc___la_LDFLAGS = \
  	-version-info $(libtool_VERSION) ${version_arg} -lm 
- 
- libstdc___la_LINK = $(CXXLINK) $(libstdc___la_LDFLAGS)
- 
-+glibcxxinstalldir = $(gxx_include_dir)
-+glibcxxinstall_HEADERS = $(headers)
-+
- # Use special rules for the deprecated source files so that they find
- # deprecated include files.
- GLIBCXX_INCLUDE_DIR=$(glibcxx_builddir)/include
-@@ -374,7 +442,27 @@
+@@ -380,7 +445,27 @@
  	$(OPTIMIZE_CXXFLAGS) \
  	$(CONFIG_CXXFLAGS)
  
@@ -146,7 +135,7 @@ Index: libstdc++-v3/src/Makefile.am
  # libstdc++ libtool notes
  
  # 1) Need to explicitly set LTCXXCOMPILE so that AM_CXXFLAGS is
-@@ -394,7 +482,7 @@
+@@ -400,7 +485,7 @@
  # CXXLINK, just after $(LIBTOOL), so that libtool doesn't have to
  # attempt to infer which configuration to use
  LTCXXCOMPILE = $(LIBTOOL) --tag CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile \
@@ -155,3 +144,47 @@ Index: libstdc++-v3/src/Makefile.am
  
  LTLDFLAGS = $(shell $(SHELL) $(top_srcdir)/../libtool-ldflags $(LDFLAGS))
  
+@@ -450,3 +535,43 @@
+ install_debug:
+ 	(cd ${debugdir} && $(MAKE) \
+ 	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install)
++
++# Install notes
++# We have to have rules modified from the default to counteract SUN make
++# prepending each of $(*_HEADERS) with VPATH below.
++stddir = $(gxx_include_dir)
++bitsdir = $(gxx_include_dir)/bits
++
++install-stdHEADERS: $(std_HEADERS)
++	@$(NORMAL_INSTALL)
++	$(mkinstalldirs) $(DESTDIR)$(stddir)
++	@list='$(std_HEADERS)'; for p in $$list; do \
++	  q=`echo $$p | sed -e 's,.*/,,'`; \
++	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
++	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(stddir)/$$q"; \
++	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(stddir)/$$q; \
++	done
++
++install-bitsHEADERS: $(bits_HEADERS)
++	@$(NORMAL_INSTALL)
++	$(mkinstalldirs) $(DESTDIR)$(bitsdir)
++	@list='$(bits_HEADERS)'; for p in $$list; do \
++	  q=`echo $$p | sed -e 's,.*/,,'`; \
++	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
++	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(bitsdir)/$$q"; \
++	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(bitsdir)/$$q; \
++	done
++
++uninstall-stdHEADERS:
++	@$(NORMAL_UNINSTALL)
++	list='$(std_HEADERS)'; for p in $$list; do \
++	  q=`echo $$p | sed -e 's,.*/,,'`; \
++	  rm -f $(DESTDIR)$(stddir)/$$q; \
++	done
++
++uninstall-bitsHEADERS:
++	@$(NORMAL_UNINSTALL)
++	list='$(bits_HEADERS)'; for p in $$list; do \
++	  q=`echo $$p | sed -e 's,.*/,,'`; \
++	  rm -f $(DESTDIR)$(bitsdir)/$$q; \
++	done
