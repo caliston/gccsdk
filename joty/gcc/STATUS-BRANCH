@@ -20,7 +20,15 @@ Status build:
 
 - Enable languages c and c++, multilib configuration with static target libs
   cleanly builds.
-- Didn't try any other languages nor shared library configuration.
+- Didn't try any other languages.
+- Shared libraries build without error, but there is a fault in the PIC code
+  generation.
+- Compiler builds without error when using dwarf stack unwinder, but C++
+  programs built using it fail at link time because the wrong personality
+  routine is being referenced. It's unlikely that this will be fixed as we
+  are aiming to use the ARM stack unwinder instead.
+- C++ Exception handling using ARM stack unwinder works for UnixLib based
+  programs (subject to more testing). SCL based programs are not supported yet.
 
 Code generation:
 
