@@ -416,7 +416,7 @@ inputEnvSub (const char **inPP, size_t *outOffsetP)
  * Buffer overflow will be deteced by the caller when not all the input has
  * been consumed together with *outOffsetP == sizeof (input_buff).
  *
- * Corrupts input_pos.
+ * Temporarily changes input_pos.
  */
 static void
 inputVarSub (const char **inPP, size_t *outOffsetP, bool inString)
@@ -435,8 +435,10 @@ inputVarSub (const char **inPP, size_t *outOffsetP, bool inString)
     }
 
   /* Replace symbol by its definition.  */
+  assert (input_pos == NULL);
   input_pos = inP;
   Lex label = lexGetIdNoError ();
+  input_pos = NULL;
   if (label.tag != LexId)
     {
       if (!inString)
@@ -491,7 +493,7 @@ inputVarSub (const char **inPP, size_t *outOffsetP, bool inString)
 	  *outOffsetP += toCopyLen;
 
 	  /* Update our input ptr with what we have successfully consumed.  */
-	  inP = input_pos;
+	  inP += label.Data.Id.len;
 	  /* Skip any . after the id - it indicates concatenation (e.g.
 	     $foo.bar).  */
 	  if (*inP == '.')
@@ -503,11 +505,11 @@ inputVarSub (const char **inPP, size_t *outOffsetP, bool inString)
   if (!inString)
     {
       /* Not in string literal, so this is an error.  */
-      error (ErrorError, "Unknown variable '%.*s' for $ expansion",
+      error (ErrorWarning, "Unknown variable '%.*s' for $ expansion, you want to use vertical bars ?",
 	     (int)label.Data.Id.len, label.Data.Id.str);
     }
   else if (option_pedantic)
-    error (ErrorWarning, "No $ expansion as variable '%.*s' is not defined",
+    error (ErrorWarning, "No $ expansion as variable '%.*s' is not defined, you want to use double $ ?",
 	   (int)label.Data.Id.len, label.Data.Id.str);
   if (*outOffsetP < sizeof (input_buff))
     input_buff[(*outOffsetP)++] = '$';
@@ -573,19 +575,22 @@ inputArgSub (void)
 	       fails.  */
 	    if (outOffset < sizeof (input_buff))
 	      input_buff[outOffset++] = *inP++;
+	    bool disableVarSubst = false;
 	    while (outOffset < sizeof (input_buff) && *inP)
 	      {
 		char cc = *inP++;
-		if (cc == '$')
+		if (cc == '$' && !disableVarSubst)
 		  inputVarSub (&inP, &outOffset, true);
 		else
 		  {
 		    input_buff[outOffset++] = cc;
+		    if (cc == '|')
+		      disableVarSubst ^= true;
 		    if (cc == c)
 		      break;
 		  }
 	      }
-	    /* We don't check on unmatched '/".  */
+	    /* We don't check on unmatched ' or ".  */
 	    break;
 
 	  case '$': /* Do variable substitution - $ */
@@ -933,7 +938,7 @@ inputSymbol (size_t *ilen, char del)
   if (del)
     {
       int c;
-      while ((c = (unsigned char)*p) != 0 && c != del)
+      while ((c = (unsigned char)*p) != 0 && c != del && c != ';')
 	p++;
     }
   else
