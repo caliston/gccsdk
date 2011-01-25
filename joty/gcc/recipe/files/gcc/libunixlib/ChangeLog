@@ -1,3 +1,8 @@
+Tue Jan 25 19:59:02 2011  Lee Noar <leenoar@sky.com>
+
+	* scl/chunkid01.s: Make sure bss section has word alignment.
+	* scl/chunkid02.s: Likewise.
+
 Fri Jan 21 20:40:11 2011  Lee Noar <leenoar@sky.com>
 
 	* gcccompat/_eh_support.s(__ehs_unwind_stack_chunk): New
