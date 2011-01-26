@@ -1,4 +1,4 @@
-# Build GCCSDK
+# To build GCCSDK cross-compiler and RISC OS native compiler.
 # Written by John Tytgat / BASS
 #
 # Build requirements:
@@ -33,8 +33,8 @@ GMP_VERSION=5.0.1
 MPFR_VERSION=3.0.0
 MPC_VERSION=0.8.2
 GCC_USE_PPL_CLOOG=yes
-PPL_VERSION=0.10.2
-CLOOG_VERSION=0.15.9
+PPL_VERSION=0.11
+CLOOG_VERSION=0.15.10
 GCC_USE_LTO=yes
 LIBELF_VERSION=0.8.13
 
@@ -141,8 +141,8 @@ CROSS_MPFR_CONFIG_ARGS := --disable-shared --with-gmp=$(PREFIX_CROSSGCC_LIBS) --
 RONATIVE_MPFR_CONFIG_ARGS := --disable-shared --with-gmp=$(PREFIX_RONATIVEGCC_LIBS) --host=$(TARGET) --prefix=$(PREFIX_RONATIVEGCC_LIBS)
 
 # Configure arguments PPL:
-CROSS_PPL_CONFIG_ARGS := --disable-shared --with-libgmp-prefix=$(PREFIX_CROSSGCC_LIBS) --with-libgmpxx-prefix=$(PREFIX_CROSSGCC_LIBS) --prefix=$(PREFIX_CROSSGCC_LIBS)
-RONATIVE_PPL_CONFIG_ARGS := --disable-shared --with-libgmp-prefix=$(PREFIX_RONATIVEGCC_LIBS) --with-libgmpxx-prefix=$(PREFIX_RONATIVEGCC_LIBS) --host=$(TARGET) --prefix=$(PREFIX_RONATIVEGCC_LIBS)
+CROSS_PPL_CONFIG_ARGS := --disable-shared --with-gnu-ld --with-gmp-prefix=$(PREFIX_CROSSGCC_LIBS) --prefix=$(PREFIX_CROSSGCC_LIBS)
+RONATIVE_PPL_CONFIG_ARGS := --disable-shared --with-gnu-ld --with-gmp-prefix=$(PREFIX_RONATIVEGCC_LIBS) --host=$(TARGET) --prefix=$(PREFIX_RONATIVEGCC_LIBS)
 
 # Configure arguments CLooG:
 CROSS_CLOOG_CONFIG_ARGS := --disable-shared --with-gmp=$(PREFIX_CROSSGCC_LIBS) --with-bits=gmp --with-ppl=$(PREFIX_CROSSGCC_LIBS) --with-host-libstdcxx='-Wl,-lstdc++' --prefix=$(PREFIX_CROSSGCC_LIBS)
@@ -506,8 +506,6 @@ src-ppl-copied: $(SRCORIGDIR)/ppl-$(PPL_VERSION).tar.gz
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/ppl-$(PPL_VERSION).tar.gz
 	-mkdir -p $(SRCDIR)/ppl
 	cp -T -p -r $(SRCORIGDIR)/ppl-$(PPL_VERSION) $(SRCDIR)/ppl
-	# The following is temporary until ppl 0.11 is out:
-	cd $(SRCDIR)/ppl && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(RECIPEDIR)/scripts/ppl/reconf-ppl
 	touch $(BUILDSTEPSDIR)/src-ppl-copied
 
 # Unpack cloog source:
@@ -516,6 +514,8 @@ src-cloog-copied: $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION).tar.gz
 	-mkdir -p $(SRCDIR)/cloog
 	cp -T -p -r $(SRCORIGDIR)/cloog-ppl-$(CLOOG_VERSION) $(SRCDIR)/cloog
+	# The following is temporary fix for CLoog 0.15.10
+	cd $(SRCDIR)/cloog && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 	touch $(BUILDSTEPSDIR)/src-cloog-copied
 
 # Unpack libelf source:
