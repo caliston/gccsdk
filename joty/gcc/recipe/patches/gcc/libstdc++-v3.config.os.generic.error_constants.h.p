@@ -1,8 +1,8 @@
 Index: libstdc++-v3/config/os/generic/error_constants.h
 ===================================================================
---- libstdc++-v3/config/os/generic/error_constants.h	(revision 162285)
+--- libstdc++-v3/config/os/generic/error_constants.h	(revision 169462)
 +++ libstdc++-v3/config/os/generic/error_constants.h	(working copy)
-@@ -94,7 +94,10 @@
+@@ -96,7 +96,10 @@
        no_message_available = 			ENODATA, 
  #endif
  
