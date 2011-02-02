@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2010 GCCSDK Developersrs
+ * Copyright (c) 2000-2011 GCCSDK Developersrs
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+
 #ifdef HAVE_STDINT_H
 #  include <stdint.h>
 #elif HAVE_INTTYPES_H
@@ -31,8 +32,10 @@
 #include "code.h"
 #include "error.h"
 #include "expr.h"
+#include "filestack.h"
 #include "fix.h"
 #include "get.h"
+#include "help_cop.h"
 #include "input.h"
 #include "m_fpu.h"
 #include "option.h"
@@ -41,7 +44,89 @@
 #include "value.h"
 #include "main.h"
 
-ARMWord
+#define M_ADF 0x0e000100
+#define M_DVF 0x0e400100
+#define M_FDV 0x0ea00100
+#define M_FML 0x0e900100
+#define M_FRD 0x0eb00100
+#define M_MUF 0x0e100100
+#define M_POL 0x0ec00100
+#define M_POW 0x0e600100
+#define M_RDF 0x0e500100
+#define M_RMF 0x0e800100
+#define M_RPW 0x0e700100
+#define M_RSF 0x0e300100
+#define M_SUF 0x0e200100
+#define M_ABS 0x0e208100
+#define M_ACS 0x0ec08100
+#define M_ASN 0x0eb08100
+#define M_ATN 0x0ed08100
+#define M_COS 0x0e908100
+#define M_EXP 0x0e708100
+#define M_LGN 0x0e608100
+#define M_LOG 0x0e508100
+#define M_MNF 0x0e108100
+#define M_MVF 0x0e008100
+#define M_RND 0x0e308100
+#define M_SIN 0x0e808100
+#define M_SQT 0x0e408100
+#define M_TAN 0x0ea08100
+#define M_FIX 0x0e100110
+#define M_FLT 0x0e000110
+#define M_WFS 0x0e200110
+#define M_RFS 0x0e300110
+#define M_WFC 0x0e400110
+#define M_RFC 0x0e500110
+#define M_CMF 0x0e90f110
+#define M_CNF 0x0eb0f110
+
+#define M_URD 0x0ee08100
+#define M_NRM 0x0ef08100
+#define M_LFM 0x0c100200
+#define M_SFM 0x0c000200
+
+#define M_FMNEM 0x0ef08110
+
+typedef enum
+{
+  eFPUsage_Possible,
+  eFPUsage_AlreadyUsed,
+  eFPUsage_Forbidden
+} FPUsage_e;
+
+static FPUsage_e oFPUsage = eFPUsage_Possible;
+static const char *oFPUsageFirstUse_File = NULL; /**< First usage of FP instruction/directive (file).  */
+static int oFPUsageFirstUse_Line = 0; /**< First usage of FP instruction/directive (linenumber).  */
+static const char *oFPUsageNOFP_File = NULL; /**< Place of NOFP (file).  */
+static int oFPUsageNOFP_Line = 0; /**< Place of NOFP (linenumber).  */
+
+/**
+ * \return always return false (so it can be used as tail-call).
+ */
+static bool
+CheckFPUsageIsAllowed (void)
+{
+  switch (oFPUsage)
+    {
+      case eFPUsage_Possible:
+	oFPUsage = eFPUsage_AlreadyUsed;
+	oFPUsageFirstUse_File = FS_GetCurFileName ();
+	oFPUsageFirstUse_Line = FS_GetCurLineNumber ();
+	break;
+
+      case eFPUsage_AlreadyUsed:
+	break;
+	
+      case eFPUsage_Forbidden:
+	error (ErrorError, "FP usage is not allowed");
+	errorLine (oFPUsageNOFP_File, oFPUsageNOFP_Line, ErrorError, "note: NOFP was mentioned here");
+	break;
+    }
+
+  return false;
+}
+
+static ARMWord
 fpuImm (ARMFloat d)
 {
   if (d == 0.0)
@@ -65,6 +150,84 @@ fpuImm (ARMFloat d)
 }
 
 static ARMWord
+fixImmFloat (ARMWord ir, ARMFloat im)
+{
+  static const char op3[] = "Changing \"%s F_, F_, #%.1f\" to \"%s F_, F_, #%.1f\"";
+  static const char op2[] = "Changing \"%s F_, #%.1f\" to \"%s F_, #%.1f\"";
+
+  int f = fpuImm (im);
+  if (f != -1)
+    return ir | f;
+
+  /* Immediate float constant was illegal.  */
+  f = fpuImm (-im);
+  if (f == -1)
+    {
+      /* Even the inverse cannot be represented.  */
+      error (ErrorError, "Illegal immediate constant %g", im);
+      return ir;
+    }
+
+  /* Inverse immediate constant can be represented, so try to invert
+     the mnemonic.  */
+  ARMWord mnemonic = ir & M_FMNEM;
+  ir &= ~M_FMNEM;
+  const char *m1, *m2, *optype;
+  switch (mnemonic)
+    {
+      case M_ADF:
+        ir |= M_SUF;
+        optype = op3; m1 = "ADF"; m2 = "SUF";
+        break;
+
+      case M_SUF:
+        ir |= M_ADF;
+        optype = op3; m1 = "SUF"; m2 = "ADF";
+        break;
+
+      case M_MVF:
+        ir |= M_MNF;
+        optype = op2; m1 = "MVF"; m2 = "MNF";
+        break;
+
+      case M_MNF:
+        ir |= M_MVF;
+        optype = op2; m1 = "MNF"; m2 = "MVF";
+        break;
+
+      case M_CMF & M_FMNEM:
+        ir |= M_CNF;
+        optype = op2; m1 = "CMF"; m2 = "CNF";
+        break;
+
+      case M_CNF & M_FMNEM:
+        ir |= M_CMF;
+        optype = op2; m1 = "CNF"; m2 = "CMF";
+        break;
+
+      case (M_CMF | EXEPTION_BIT) & M_FMNEM:
+        ir |= M_CNF | EXEPTION_BIT;
+        optype = op2; m1 = "CMFE"; m2 = "CNFE";
+        break;
+
+      case (M_CNF | EXEPTION_BIT) & M_FMNEM:
+        ir |= M_CMF | EXEPTION_BIT;
+        optype = op2; m1 = "CNFE"; m2 = "CMFE";
+        break;
+
+      default:
+        errorAbort ("Internal fixImmFloat: unknown mnemonic");
+        return ir;
+        break;
+    }
+
+  if (option_fussy > 1)
+    error (ErrorInfo, optype, m1, im, m2, -im);
+
+  return ir | f;
+}
+
+static ARMWord
 getFloatRhs (ARMWord ir)
 {
   if (Input_Match ('#', false))
@@ -74,10 +237,10 @@ getFloatRhs (ARMWord ir)
       switch (im->Tag)
 	{
 	  case ValueInt:
-	    ir = fixImmFloat (0, ir, im->Data.Int.i);
+	    ir = fixImmFloat (ir, im->Data.Int.i);
 	    break;
 	  case ValueFloat:
-	    ir = fixImmFloat (0, ir, im->Data.Float.f);
+	    ir = fixImmFloat (ir, im->Data.Float.f);
 	    break;
 	  default:
 	    error (ErrorError, "Illegal float immediate");
@@ -122,7 +285,7 @@ m_adf (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_ADF | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -135,7 +298,7 @@ m_dvf (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_DVF | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -148,7 +311,7 @@ m_fdv (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_FDV | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -161,7 +324,7 @@ m_fml (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_FML | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -174,7 +337,7 @@ m_frd (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_FRD | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -187,7 +350,7 @@ m_muf (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_MUF | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -200,7 +363,7 @@ m_pol (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_POL | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -213,7 +376,7 @@ m_pow (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_POW | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -226,7 +389,7 @@ m_rdf (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_RDF | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -239,7 +402,7 @@ m_rmf (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_RMF | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -252,7 +415,7 @@ m_rpw (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_RPW | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -265,7 +428,7 @@ m_rsf (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_RSF | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -278,7 +441,7 @@ m_suf (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_SUF | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 
@@ -308,7 +471,7 @@ m_abs (void)
   if (cc == optionError)
     return true;
   dstrhs (M_ABS | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -321,7 +484,7 @@ m_acs (void)
   if (cc == optionError)
     return true;
   dstrhs (M_ACS | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -334,7 +497,7 @@ m_asn (void)
   if (cc == optionError)
     return true;
   dstrhs (M_ASN | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -347,7 +510,7 @@ m_atn (void)
   if (cc == optionError)
     return true;
   dstrhs (M_ATN | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -360,7 +523,7 @@ m_cos (void)
   if (cc == optionError)
     return true;
   dstrhs (M_COS | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -373,7 +536,7 @@ m_exp (void)
   if (cc == optionError)
     return true;
   dstrhs (M_EXP | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -386,7 +549,7 @@ m_lgn (void)
   if (cc == optionError)
     return true;
   dstrhs (M_LGN | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -399,7 +562,7 @@ m_log (void)
   if (cc == optionError)
     return true;
   dstrhs (M_LOG | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -412,7 +575,7 @@ m_mnf (void)
   if (cc == optionError)
     return true;
   dstrhs (M_MNF | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -425,7 +588,7 @@ m_mvf (void)
   if (cc == optionError)
     return true;
   dstrhs (M_MVF | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -438,7 +601,7 @@ m_rnd (void)
   if (cc == optionError)
     return true;
   dstrhs (M_RND | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -451,7 +614,7 @@ m_sin (void)
   if (cc == optionError)
     return true;
   dstrhs (M_SIN | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -464,7 +627,7 @@ m_sqt (void)
   if (cc == optionError)
     return true;
   dstrhs (M_SQT | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -477,7 +640,7 @@ m_tan (void)
   if (cc == optionError)
     return true;
   dstrhs (M_TAN | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -490,7 +653,7 @@ m_urd (void)
   if (cc == optionError)
     return true;
   dstrhs (M_URD | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -503,7 +666,7 @@ m_nrm (void)
   if (cc == optionError)
     return true;
   dstrhs (M_NRM | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 static void
@@ -529,7 +692,7 @@ m_cmf (void)
   if (cc == optionError)
     return true;
   comparelow (M_CMF | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -542,7 +705,7 @@ m_cnf (void)
   if (cc == optionError)
     return true;
   comparelow (M_CNF | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /** REGISTER TRANSFER **/
@@ -566,7 +729,7 @@ m_fix (void)
   if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
   Put_Ins (getFloatRhs (ir));
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -589,7 +752,7 @@ m_flt (void)
     error (ErrorError, "%sdst", InsertCommaAfter);
   ir |= DST_OP (getCpuReg ());
   Put_Ins (ir);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 static void
@@ -613,7 +776,7 @@ m_wfs (void)
   if (cc == optionError)
     return true;
   flagtransfer (M_WFS | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -626,7 +789,7 @@ m_rfs (void)
   if (cc == optionError)
     return true;
   flagtransfer (M_RFS | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -639,7 +802,7 @@ m_wfc (void)
   if (cc == optionError)
     return true;
   flagtransfer (M_WFC | cc);
-  return false;
+  return CheckFPUsageIsAllowed ();
 }
 
 /**
@@ -652,5 +815,146 @@ m_rfc (void)
   if (cc == optionError)
     return true;
   flagtransfer (M_RFC | cc);
+  return CheckFPUsageIsAllowed ();
+}
+
+static void
+dstmem (ARMWord ir)
+{
+  if (option_apcs_softfloat)
+    error (ErrorWarning, "soft-float code uses hard FP instructions");
+    
+  ir |= DST_OP (getFpuReg ());
+  ir = help_copAddr (ir, false);
+  Put_Ins (ir);
+}
+
+/**
+ * Implements STF.
+ */
+bool
+m_stf (void)
+{
+  ARMWord cc = optionCondPrec_P ();
+  if (cc == optionError)
+    return true;
+  dstmem (0x0c000100 | cc);
+  return CheckFPUsageIsAllowed ();
+}
+
+/**
+ * Implements LDF.
+ */
+bool
+m_ldf (void)
+{
+  ARMWord cc = optionCondPrec_P ();
+  if (cc == optionError)
+    return true;
+  dstmem (0x0c100100 | cc);
+  return CheckFPUsageIsAllowed ();
+}
+
+
+static void
+dstmemx (ARMWord ir)
+{
+  if (option_apcs_softfloat)
+    error (ErrorWarning, "soft-float code uses hard FP instructions");
+
+  const char * const inputMark = Input_GetMark ();
+  bool stack_ia = false;
+  bool stack = !isspace ((unsigned char)inputLook ());
+  if (stack)
+    {
+      char c1 = toupper (inputLook ());
+      char c2 = toupper (inputLookN (1));
+      if (c1 == 'D' && c2 == 'B')
+	stack_ia = false;
+      else if (c1 == 'I' && c2 == 'A')
+	stack_ia = true;
+      else if (c1 == 'E' && c2 == 'A')
+	stack_ia = (ir & 0x100000) ? false : true;
+      else if (c1 == 'F' && c2 == 'D')
+	stack_ia = (ir & 0x100000) ? true : false;
+      else
+	error (ErrorError, "Illegal stack type for %cfm (%c%c)",
+	       (ir & 0x100000) ? 'l' : 's', c1, c2);
+      inputSkipN (2);
+      if (stack_ia)
+	ir |= 0x800000;
+    }
+  if (inputLook () && !isspace ((unsigned char)inputLook ()))
+    {
+      errorAbort ("Can't parse \"%s\" of SFM/LFM", inputMark);
+      return;
+    }
+  skipblanks ();
+  ir |= DST_OP (getFpuReg ());
+  skipblanks ();
+  if (!Input_Match (',', false))
+    error (ErrorError, "Inserting comma after dst");
+  const Value *im = exprBuildAndEval (ValueInt);
+  if (im->Tag == ValueInt)
+    {
+      if (im->Data.Int.i < 1 || im->Data.Int.i > 4)
+	error (ErrorError, "Number of fp registers out of range");
+    }
+  else
+    error (ErrorError, "Illegal %cfm expression", (ir & 0x100000) ? 'l' : 's');
+  ir |= (im->Data.Int.i & 1) << 15;
+  ir |= (im->Data.Int.i & 2) << 21;
+  if (stack)
+    ir |= stack_ia ? 0x800000 : 0x1000000;
+  ir = help_copAddr (ir, stack);
+  if (stack && (!stack_ia || (ir & 0x200000)))
+    ir |= 3 * im->Data.Int.i;
+  Put_Ins (ir);
+}
+
+/**
+ * Implements SFM.
+ */
+bool
+m_sfm (void)
+{
+  ARMWord cc = optionCondLfmSfm ();
+  if (cc == optionError)
+    return true;
+  dstmemx (0x0c000200 | cc);
+  return CheckFPUsageIsAllowed ();
+}
+
+/**
+ * Implements LFM.
+ */
+bool
+m_lfm (void)
+{
+  ARMWord cc = optionCondLfmSfm ();
+  if (cc == optionError)
+    return true;
+  dstmemx (0x0c100200 | cc);
+  return CheckFPUsageIsAllowed ();
+}
+
+/**
+ * Implements NOFP.
+ */
+bool
+c_nofp (void)
+{
+  if (oFPUsage == eFPUsage_AlreadyUsed)
+    {
+      error (ErrorError, "Too late to ban floating point");
+      errorLine (oFPUsageFirstUse_File, oFPUsageFirstUse_Line, ErrorError, "note: first floating point usage was here");
+    }
+  else
+    {
+      oFPUsageNOFP_File = FS_GetCurFileName ();
+      oFPUsageNOFP_Line = FS_GetCurLineNumber ();
+      oFPUsage = eFPUsage_Forbidden;
+    }
+
   return false;
 }
