@@ -1,6 +1,6 @@
 Index: gcc/config/arm/unwind-arm.c
 ===================================================================
---- gcc/config/arm/unwind-arm.c	(revision 168231)
+--- gcc/config/arm/unwind-arm.c	(revision 169815)
 +++ gcc/config/arm/unwind-arm.c	(working copy)
 @@ -44,6 +44,10 @@
  __gnu_Unwind_Find_exidx (_Unwind_Ptr, int *);
@@ -19,13 +19,13 @@ Index: gcc/config/arm/unwind-arm.c
  
 +#ifdef __riscos__
 +
-+void __ehs_unwind_stack_chunk (void *fp,
++void __ehs_unwind_stack_chunk (void **fp,
 +			       void **pc,
 +			       void **sl);
 +void __ehs_trim_stack (void);
 +
-+/* Make sure that when we return to the exception handler, the stack
-+   is trimmed back to the correct chunk.
++/* Make sure that when we return to the exception handler, any
++   excess stack chunks are freed.
 +   Note that __ehs_unwind_stack_chunk tracks sl, so we don't have
 +   to restore it here.  */
 +static void
@@ -60,7 +60,7 @@ Index: gcc/config/arm/unwind-arm.c
    do
      {
 +#ifdef __riscos__
-+      __ehs_unwind_stack_chunk ((void *)vrs->core.r[R_FP],
++      __ehs_unwind_stack_chunk ((void **)&vrs->core.r[R_FP],
 +				(void **)&vrs->core.r[R_PC],
 +				(void **)&vrs->core.r[R_SL]);
 +#endif
@@ -86,7 +86,7 @@ Index: gcc/config/arm/unwind-arm.c
        _Unwind_Reason_Code stop_code;
  
 +#ifdef __riscos__
-+      __ehs_unwind_stack_chunk ((void *)saved_vrs.core.r[R_FP],
++      __ehs_unwind_stack_chunk ((void **)&saved_vrs.core.r[R_FP],
 +				(void **)&saved_vrs.core.r[R_PC],
 +				(void **)&saved_vrs.core.r[R_SL]);
 +#endif
@@ -114,8 +114,8 @@ Index: gcc/config/arm/unwind-arm.c
    /* Unwind until we reach a propagation barrier.  */
    do
      {
-+#ifdef __riscos__      
-+      __ehs_unwind_stack_chunk ((void *)saved_vrs.core.r[R_FP],
++#ifdef __riscos__
++      __ehs_unwind_stack_chunk ((void **)&saved_vrs.core.r[R_FP],
 +				(void **)&saved_vrs.core.r[R_PC],
 +				(void **)&saved_vrs.core.r[R_SL]);
 +#endif
@@ -138,7 +138,7 @@ Index: gcc/config/arm/unwind-arm.c
    do
      {
 +#ifdef __riscos__
-+      __ehs_unwind_stack_chunk ((void *)saved_vrs.core.r[R_FP],
++      __ehs_unwind_stack_chunk ((void **)&saved_vrs.core.r[R_FP],
 +				(void **)&saved_vrs.core.r[R_PC],
 +				(void **)&saved_vrs.core.r[R_SL]);
 +#endif
