@@ -344,7 +344,7 @@ __ehs_trim_stack:
 #  error "Unsupported runtime"
 #endif
 
-	@ void __ehs_unwind_stack_chunk (void *fp, void **pc, void **sl)
+	@ void __ehs_unwind_stack_chunk (void **fp, void **pc, void **sl)
 	@
 	@ Check if the return address in PC is either __gcc_alloca_free
 	@ or __free_stack_chunk and return the real return address. In
@@ -364,9 +364,10 @@ __ehs_unwind_stack_chunk:
 	MOV	v2, a2
 	MOV	v3, a3
 
-	MOVS	v1, a1
- PICNE "LDMEQEA	fp, {v1, v2, fp, sp, pc}"
- PICEQ "LDMEQEA	fp, {v1, v2, v4, fp, sp, pc}"
+	LDR	v1, [a1, #0]
+	TEQ	v1, #0
+ PICNE "LDMEQEA	fp, {v1-v3, fp, sp, pc}"
+ PICEQ "LDMEQEA	fp, {v1-v4, fp, sp, pc}"
 
  PICEQ "LDR	v4, .L4"
 .LPIC1:
@@ -416,9 +417,77 @@ __ehs_unwind_stack_chunk:
 	MOV	pc, lr
 #endif
 #elif __TARGET_SCL__
+	@ void __ehs_unwind_stack_chunk (void **fp, void **pc, void **sl)
 __ehs_unwind_stack_chunk:
-	@ TODO
-	MOV	pc, lr
+	MOV	ip, sp
+	STMFD	sp!, {v1-v3, fp, ip, lr, pc}
+	SUB	fp, ip, #4
+
+	MOV	v1, a1
+	MOV	v2, a2
+	MOV	v3, a3
+
+	LDR	a1, [v2, #0]			@ Retrieve old return address (pc)
+	TEQ	a1, a1				@ 32bit mode check
+	TEQ	pc, pc
+	BICNE	a1, a1, #0xfc000003		@ If running 26bit, clear PSR bits.
+
+	LDR	lr, .L1				@ __gcc_alloca_free
+	TEQ	a1, lr
+	BNE	0f
+
+	@ Return address was __gcc_alloca_free, find real return address and store
+	@ ready for return.
+	MOV	a1, v1
+	BL	__gcc_alloca_return_address
+	STR	a1, [v2, #0]
+0:
+#if __TARGET_MODULE__
+	@ Check the processor mode to see if we have a chunked stack. If not,
+	@ then we can exit now.
+	TEQ	a1, a1
+	TEQ	pc, pc
+	MRSEQ	ip, cpsr
+	MOVNE	ip, pc
+	TST	ip, #3
+	LDMNEEA	fp, {v1-v3, fp, sp, pc}
+#endif
+
+	@ We can't determine the exact address of the stack chunk freeing function
+	@ in the SCL in order to test for it here as we do in the UnixLib code.
+	@ Instead, we check if the address lies within the SCL at all and if it
+	@ does, we assume that it's the stack chunk freeing function.
+	LDR	ip, .L2			@ scl_pos_block
+	LDMIA	ip, {a2, a3}
+	TEQ	a2, #0
+	BNE	0f
+
+	@ __ehs_init is called only once during the program's lifetime.
+	BL	__ehs_init
+	LDMIA	ip, {a2, a3}
+0:
+	CMP	a1, a2
+	LDMLOEA	fp, {v1-v3, fp, sp, pc}
+
+	CMP	a1, a3
+	LDMHSEA	fp, {v1-v3, fp, sp, pc}
+
+	@ If we get here, then the return address is in the SharedCLibrary
+	@ and is likely to be the function for freeing the stack chunk.
+	LDR	ip, [v1, #0]			@ Retrieve frame pointer from arg1
+	LDR	a1, [ip, #-4]			@ Retrieve real return address
+	STR	a1, [v2, #0]			@ Store in arg2 for return
+	LDR	a2, [v3, #0]			@ Retrieve old stack limit from arg3
+	SUB	a2, a2, #512 + CHUNK_OVERHEAD	@ Find start of old stack chunk
+	LDR	a2, [a2, #CHUNK_PREV]		@ Unwind to previous chunk
+	ADD	a2, a2, #512 + CHUNK_OVERHEAD	@ Calculate stack limit for new chunk
+	STR	a2, [v3, #0]			@ Store new stack limit in arg3 for return
+
+	@ Update frame pointer so that we skip the current frame
+	LDR	ip, [ip, #-12]
+	STR	ip, [v1, #0]
+
+	LDMEA	fp, {v1-v3, fp, sp, pc}
 #else
 #  error "Unsupported runtime"
 #endif

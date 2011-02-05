@@ -1,3 +1,12 @@
+Sat Feb  5 20:20:02 2011  Lee Noar <leenoar@sky.com>
+
+	* gcccompat/_eh_support.s(__ehs_unwind_stack_chunk): Add
+	implementation for SCL. 
+	(UnixLib version): Fix return register list in the case
+	of fp == 0. Change 1st arg to void ** (so the SCL version
+	can return a different frame pointer) and alter code
+	accordingly.
+
 Fri Jan 21 20:40:11 2011  Lee Noar <leenoar@sky.com>
 
 	* gcccompat/_eh_support.s(__ehs_unwind_stack_chunk): New
