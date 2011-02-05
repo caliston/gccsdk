@@ -110,6 +110,7 @@
                (match_operand:SI 1 "s_register_operand" "")
                (match_operand 2 "" "")] UNSPEC_STK)
    (clobber (reg:SI SL_REGNUM))
+   (use (reg:SI 11))
    (clobber (reg:SI IP_REGNUM))
    (clobber (reg:SI LR_REGNUM))
    (clobber (reg:CC CC_REGNUM))]
