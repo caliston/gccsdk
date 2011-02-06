@@ -1,10 +1,10 @@
 Index: libstdc++-v3/crossconfig.m4
 ===================================================================
---- libstdc++-v3/crossconfig.m4	(revision 162276)
+--- libstdc++-v3/crossconfig.m4	(revision 169861)
 +++ libstdc++-v3/crossconfig.m4	(working copy)
-@@ -198,6 +198,41 @@
-     AC_DEFINE(HAVE_SINHF)
-     AC_DEFINE(HAVE_SINHL)
+@@ -204,6 +204,41 @@
+     GLIBCXX_CHECK_MATH_SUPPORT
+     GLIBCXX_CHECK_STDLIB_SUPPORT
      ;;
 +  arm*-*-riscos*)
 +    SECTION_FLAGS='-ffunction-sections -fdata-sections'
