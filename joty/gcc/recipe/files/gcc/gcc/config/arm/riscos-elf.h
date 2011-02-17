@@ -68,13 +68,13 @@ along with GCC; see the file COPYING3.  If not see
 #ifdef CROSS_DIRECTORY_STRUCTURE
 #  define SUBTARGET_EXTRA_LINK_SPEC \
      "-m armelf_riscos -p %{!static:%{!fpic:-fPIC}} " \
-     "%{fpic:-fpic} %{mmodule:--ro-module-reloc} "
+     "%{fpic:-fpic} %{mmodule:--ro-module-reloc --target2=rel} "
 #else
 /* When building the native RISC OS compiler, we add an extra library path
    GCCSOLib:  */
 #  define SUBTARGET_EXTRA_LINK_SPEC \
      "-m armelf_riscos -p %{!static:%{!fpic:-fPIC -L/GCCSOLib:}} " \
-     "%{fpic:-fpic} %{mmodule:--ro-module-reloc} "
+     "%{fpic:-fpic} %{mmodule:--ro-module-reloc --target2=rel} "
 #endif
 
 /* libscl means hard-float only.  Module support means libscl and

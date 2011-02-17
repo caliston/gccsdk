@@ -46,7 +46,21 @@ Index: gcc/config/arm/unwind-arm.c
  /* Restore coprocessor state after phase1 unwinding.  */
  static void
  restore_non_core_regs (phase1_vrs * vrs)
-@@ -590,7 +620,7 @@
+@@ -210,9 +240,10 @@
+ extern int __text_start;
+ extern int __data_start;
+ 
+-/* The exception index table location.  */
+-extern __EIT_entry __exidx_start;
+-extern __EIT_entry __exidx_end;
++/* The exception index table location.
++   RISC OS: These must be const so that in module code, they are not relocated.  */
++extern const __EIT_entry __exidx_start;
++extern const __EIT_entry __exidx_end;
+ 
+ /* ABI defined personality routines.  */
+ extern _Unwind_Reason_Code __aeabi_unwind_cpp_pr0 (_Unwind_State,
+@@ -590,7 +621,7 @@
  {
    const __EIT_entry * eitp;
    int nrec;
@@ -55,7 +69,7 @@ Index: gcc/config/arm/unwind-arm.c
    /* The return address is the address of the instruction following the
       call instruction (plus one in thumb mode).  If this was the last
       instruction in the function the address will lie in the following
-@@ -682,6 +712,12 @@
+@@ -682,6 +713,12 @@
  
    do
      {
@@ -68,7 +82,7 @@ Index: gcc/config/arm/unwind-arm.c
        /* Find the entry for this routine.  */
        if (get_eit_entry (ucbp, vrs->core.r[R_PC]) != _URC_OK)
  	abort ();
-@@ -696,7 +732,11 @@
+@@ -696,7 +733,11 @@
    
    if (pr_result != _URC_INSTALL_CONTEXT)
      abort();
@@ -81,7 +95,7 @@ Index: gcc/config/arm/unwind-arm.c
    restore_core_regs (&vrs->core);
  }
  
-@@ -726,6 +766,12 @@
+@@ -726,6 +767,12 @@
        _Unwind_Reason_Code entry_code;
        _Unwind_Reason_Code stop_code;
  
@@ -94,7 +108,7 @@ Index: gcc/config/arm/unwind-arm.c
        /* Find the entry for this routine.  */
        entry_code = get_eit_entry (ucbp, saved_vrs.core.r[R_PC]);
  
-@@ -782,6 +828,10 @@
+@@ -782,6 +829,10 @@
        return _URC_FAILURE;
      }
  
@@ -105,7 +119,7 @@ Index: gcc/config/arm/unwind-arm.c
    restore_core_regs (&saved_vrs.core);
  }
  
-@@ -818,10 +868,16 @@
+@@ -818,10 +869,16 @@
    saved_vrs.core = entry_vrs->core;
    /* Set demand-save flags.  */
    saved_vrs.demand_save_flags = ~(_uw) 0;
@@ -123,7 +137,7 @@ Index: gcc/config/arm/unwind-arm.c
        /* Find the entry for this routine.  */
        if (get_eit_entry (ucbp, saved_vrs.core.r[R_PC]) != _URC_OK)
  	return _URC_FAILURE;
-@@ -892,6 +948,9 @@
+@@ -892,6 +949,9 @@
    switch (pr_result)
      {
      case _URC_INSTALL_CONTEXT:
@@ -133,7 +147,7 @@ Index: gcc/config/arm/unwind-arm.c
        /* Upload the registers to enter the landing pad.  */
        restore_core_regs (&entry_vrs->core);
  
-@@ -970,6 +1029,12 @@
+@@ -970,6 +1030,12 @@
    
    do
      {
