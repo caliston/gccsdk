@@ -1,6 +1,6 @@
 Index: libstdc++-v3/src/Makefile.am
 ===================================================================
---- libstdc++-v3/src/Makefile.am	(revision 170071)
+--- libstdc++-v3/src/Makefile.am	(revision 170259)
 +++ libstdc++-v3/src/Makefile.am	(working copy)
 @@ -27,6 +27,22 @@
  # Cross compiler support.
@@ -25,7 +25,7 @@ Index: libstdc++-v3/src/Makefile.am
  # Symbol versioning for shared libraries.
  if ENABLE_SYMVERS
  libstdc++-symbols.ver:  ${glibcxx_srcdir}/$(SYMVER_FILE) \
-@@ -160,6 +176,55 @@
+@@ -160,6 +176,56 @@
  ldbl_compat_sources =
  endif
  
@@ -60,6 +60,7 @@ Index: libstdc++-v3/src/Makefile.am
 +	function_type_info.cc \
 +	fundamental_type_info.cc \
 +	guard.cc \
++	guard_error.cc \
 +	hash_bytes.cc \
 +	new_handler.cc \
 +	new_op.cc \
@@ -81,7 +82,7 @@ Index: libstdc++-v3/src/Makefile.am
  # Sources present in the src directory.
  sources = \
  	atomic.cc \
-@@ -224,20 +289,20 @@
+@@ -224,20 +290,20 @@
  	thread.cc \
  	future.cc \
  	${host_sources} \
@@ -107,7 +108,7 @@ Index: libstdc++-v3/src/Makefile.am
  
  libstdc___la_LDFLAGS = \
  	-version-info $(libtool_VERSION) ${version_arg} -lm 
-@@ -388,7 +453,27 @@
+@@ -388,7 +454,27 @@
  	$(OPTIMIZE_CXXFLAGS) \
  	$(CONFIG_CXXFLAGS)
  
@@ -135,7 +136,7 @@ Index: libstdc++-v3/src/Makefile.am
  # libstdc++ libtool notes
  
  # 1) Need to explicitly set LTCXXCOMPILE so that AM_CXXFLAGS is
-@@ -408,7 +493,7 @@
+@@ -408,7 +494,7 @@
  # CXXLINK, just after $(LIBTOOL), so that libtool doesn't have to
  # attempt to infer which configuration to use
  LTCXXCOMPILE = $(LIBTOOL) --tag CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile \
@@ -144,7 +145,7 @@ Index: libstdc++-v3/src/Makefile.am
  
  LTLDFLAGS = $(shell $(SHELL) $(top_srcdir)/../libtool-ldflags $(LDFLAGS))
  
-@@ -458,3 +543,43 @@
+@@ -458,3 +544,43 @@
  install_debug:
  	(cd ${debugdir} && $(MAKE) \
  	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install)
