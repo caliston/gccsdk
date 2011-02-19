@@ -218,8 +218,8 @@ along with GCC; see the file COPYING3.  If not see
 #undef  CC1_SPEC
 #define CC1_SPEC "%{profile:-p}"
 
-#define LINK_GCC_C_SEQUENCE_SPEC \
-  "%{static:--start-group} %G %L %{static:--end-group}%{!static:%G}"
+#undef LINK_GCC_C_SEQUENCE_SPEC
+#define LINK_GCC_C_SEQUENCE_SPEC "--start-group %G %L --end-group"
 
 /* Same definition as in gcc.c but with --start-group / --end-group around
    %o.  */
