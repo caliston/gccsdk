@@ -13,8 +13,11 @@ Status patch merging:
 - recipe/files/gcc/gcc/config/arm/{riscos.c,riscos-elf.h}: the throwback
   support has been disabled (search for 'FIXME') as its implementation needs
   to be partially redone (hopefully in a cleaner way so that parallel building
-  works again).  Note gcc now reports columns as well in their warnings/errors
-  so this is something we can support in our throwback code as well.
+  works again).
+  As reference, the old throwback patches are at recipe/patches/gcc/todo.
+  Note that those old patches also contain the RISC OS path support for
+  including headers (i.e. #include "DeskLib:BackTrace.h") which needs
+  reactivation (bug #216).
 
 Status build:
 
