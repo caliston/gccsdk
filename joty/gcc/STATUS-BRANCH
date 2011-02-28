@@ -31,20 +31,12 @@ Status build:
   based programs, including modules (subject to more testing). Shared libraries
   are not supported yet.
 
-Code generation:
-
-- stack checking vs module is probably not working (joty: I can't remember what
-  the issues were).
-
 Upstream gcc bug tracking:
 
 - RISC OS target's option crash:
     "ICE in cancel_option()"
     http://gcc.gnu.org/bugzilla/show_bug.cgi?id=31980
   Currently patched by: recipe/patches/gcc/gcc.opts-common.c.p
-- Buffer overflow in *push_multi pattern
-    http://gcc.gnu.org/bugzilla/show_bug.cgi?id=45029
-  Currently patched by one of the hunks in recipe/patches/gcc/gcc.config.arm.arm.md.p
 
 // ---------------------------------------------
 

@@ -37,22 +37,6 @@ Index: gcc/config/arm/arm.md
        return \"bl\\t%__interwork_r7_call_via_%1\";
      else
        return \"bl\\t%__interwork_r11_call_via_%1\";
-@@ -10237,12 +10240,12 @@
-     else
-       {
- 	int i;
--	char pattern[100];
-+	char pattern[128];
- 
- 	if (TARGET_ARM)
--	    strcpy (pattern, \"stmfd\\t%m0!, {%1\");
-+	  strcpy (pattern, \"stmfd\\t%m0!, {%1\");
- 	else
--	    strcpy (pattern, \"push\\t{%1\");
-+	  strcpy (pattern, \"push\\t{%1\");
- 
- 	for (i = 1; i < num_saves; i++)
- 	  {
 @@ -10698,6 +10701,8 @@
  (include "ldmstm.md")
  ;; Load the FPA co-processor patterns
