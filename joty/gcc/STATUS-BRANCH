@@ -53,19 +53,14 @@ Development tracks:
 - gdbserver : very promising for remote debugging.  Proof of concept is working.  Implementation is
   a bit temperamental.  Still a lot of implementation is to be done.
 
-- asasm : an ObjAsm clone.  Biggest usecase is RISC OS source code base.
-  - Not fully compatible: not going to be easy as asasm is a one pass assembler.  Perhaps we should revise
-    that as it would make the implementation of the remaining incompatibilities much more easier.
-  - There is a huge catchup to do supporting the recent ARMv6/v7/thumb/NEON/VFP mnemonics.  Perhaps we
-    should take a fresh look at this and e.g. convert asasm to a ObjAsm -> GAS source converter and let
-    GAS do the actually assembling.
+- asasm : an ObjAsm/RealView clone.  Biggest usecase is RISC OS source code base.
+  - There is a huge catchup to do supporting the recent ARMv6/v7/thumb/NEON/VFP mnemonics.
 
 - Use http://www.nongnu.org/libunwind/ in libunixlib for AAPCS backtrace implementation ?
 
 - gcc4.6 + APCS-32 = branch gccsdk/branches/developers/joty/gcc branch with target = arm-unknown-riscos
   - status: see above
-  - module support (as we know it) is not finished
-  - no NEON/VFP support (unrealistic)
+  - no NEON/VFP support as hardfp fpu-abi because this is incompatible with FPA but softfp is a possibility (cfr Jeffrey Lee's patches).
 
 Two projects for AAPCS/EABI target: exact AAPCS flavour is not determined.
 
@@ -90,7 +85,7 @@ Two projects for AAPCS/EABI target: exact AAPCS flavour is not determined.
   - currently the build is huge because we're taking llvm-gcc + UnixLib along for just building and using clang.
     In the long run, this could be slimed down.
   - AAPCS support in UnixLib (see gcc4.6 topic)
-  - RISC OS native build: very large binaries, not sure if it is going to be realistic to have this running in a 28 MByte wimpslot.
+  - RISC OS native build: very large binaries, not sure if it is going to be realistic to have this running in a 28 MByte wimpslot for non-RISC OS 5 users.
 
 * No answer for module creation when AAPCS/EABI route is taken.  Should we consider to teach our ELF loader to
   load an ELF datablob (which is maded for module use) and install this as a module ? Perhaps it can even make use of shared ELF libraries
