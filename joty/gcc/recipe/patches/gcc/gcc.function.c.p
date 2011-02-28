@@ -1,8 +1,8 @@
 Index: gcc/function.c
 ===================================================================
---- gcc/function.c	(revision 169066)
+--- gcc/function.c	(revision 170576)
 +++ gcc/function.c	(working copy)
-@@ -4922,6 +4922,17 @@
+@@ -4936,6 +4936,17 @@
    force_next_line_note ();
    set_curr_insn_source_location (input_location);
  
