@@ -1,19 +1,5 @@
 --- libcpp/directives.c.orig	2008-12-13 20:11:03.000000000 +0100
 +++ libcpp/directives.c	2008-12-13 20:39:07.000000000 +0100
-@@ -675,9 +675,13 @@ parse_include (cpp_reader *pfile, int *p
-   header = get_token_no_padding (pfile);
-   if (header->type == CPP_STRING || header->type == CPP_HEADER_NAME)
-     {
-+      extern char *riscos_to_unix (char *);
-+
-       fname = XNEWVEC (char, header->val.str.len - 1);
-       memcpy (fname, header->val.str.text + 1, header->val.str.len - 2);
-       fname[header->val.str.len - 2] = '\0';
-+      /* Convert the #include filename to a Unix version.  */
-+      fname = riscos_to_unix (fname);
-       *pangle_brackets = header->type == CPP_HEADER_NAME;
-     }
-   else if (header->type == CPP_LESS)
 @@ -985,6 +989,18 @@ _cpp_do_file_change (cpp_reader *pfile, 
      pfile->cb.file_change (pfile, map);
  }

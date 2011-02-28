@@ -1,6 +1,6 @@
 /* RISC OS to Unix format file name conversion.
    (c) Copyright 1996, 2000, Nick Burrett.
-   (c) Copyright 2007-2010 GCCSDK Developers.
+   (c) Copyright 2007-2011 GCCSDK Developers.
 
    This source provides one function:
       extern char *riscos_to_unix (char *riscos)
@@ -64,7 +64,7 @@ riscos_to_unix (char *riscos)
 	    /* */;
 	  if (*e)
 	    {
-	      char *out = malloc (strlen (e) + strlen (riscos) + 1);
+	      char *out = (char *)malloc (strlen (e) + strlen (riscos) + 1);
 	      while (1)
 	        {
 	          const char *ed;
