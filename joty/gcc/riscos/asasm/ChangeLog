@@ -1,3 +1,74 @@
+Mon Feb 21 02:28:15 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/fpe_memory.s: Split of fp.s only containing
+	the FPE memory related mnemonics. Use DCI instead of DCD.
+	* regression/tests_pass/operator_index.s: Enabled disabled test lines.
+	* regression/tests_pass/ldr_from_addr.s: Likewise.
+	* regression/tests_pass/fpe.s: Renamed from fp.s.
+	* regression/tests_pass/fpa_immediate.s: Renamed from fpa_immediate.s
+	and addd -autocast test option.
+	* regression/tests_pass/fpe_literal.s: Added.
+	* commands.c (DefineInt_PrivData_t, DefineReal_PrivData_t): Move to
+	commands.h.
+	* m_fpu.c, m_fpu.h: Rename to m_fpe.c, m_fpe.h.
+	* help_cop.c (DestMem_RelocUpdaterCoPro): Added.
+	(help_copAddr): Support late definitions and literals.
+	* help_cop.h (CP_GET_NUMBER): Added.
+	* m_cpumem.c (dstmem): Support late immediate definitions. Refactoring.
+	Remove several unnecessary calls to skipblanks.
+	* option.h (PRECISION_MEM_MASK): Added.
+	* value.h (Value_Float): Added.
+	* m_fpe.c (M_*): Move to m_fpe.h.
+	(CheckFPUsageIsAllowedAndGiveHWWarning): Give warning only in
+	pedantic mode.
+	(fpuImm): Rename to FPE_ConvertImmediate, pre-add immediate bit and
+	export it.
+	(getFloatRhs): Only integer support when autocast is specified.
+	(m_lfd, m_stf): Add deprecated warning for packed option.
+	* m_cpu.c: Remove unnecessary skipblanks calls.
+	* fix.c, fix.h (fixCopOffset): Rename to Fix_CopOffset and add file
+	parameter.
+	* lit.c (Lit_RegisterInt): Add asserts and remove preliminary float
+	support.
+	(Lit_RegisterFloat): Added.
+	(Lit_DumpPool): Add float support and fix Reloc_QueueExprUpdate()
+	calls concerning passing on private data.
+	* lit.h (Lit_RegisterFloat): Added.
+	* Makefile.am: Follow m_fpu.c to m_fpe.c rename.
+
+Sat Feb 19 16:42:01 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/fpa_immediate.s: Add ABS test.
+	* code.c (codeEvalLow): One -fussy is enough.
+	* fix.c (fixImm8s4): Likewise.
+	* m_fpu.c (Fix_ImmFloat): Avoid unnecessary abort situation. One
+	-fussy is enough.
+	* main.c (asasm_help): Don't mention more than one -fussy.
+
+Wed Feb 16 00:56:28 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/fpa_immediate.s: New.
+	* regression/tests_pass/fp.s: Avoid using F0/R0.
+	* help_cop.c, help_cop.h (help_copAddr): Add stack parameter.
+	* m_cop.c (coprocessor): Also test on coprocessor 2.
+	* option.c (getPrec): Rename to GetFPAPrecision.
+	(getRound): Rename to GetFPARounding.
+	(optionCondOptPrecRound): Remove.
+	* option.h (optionCondOptPrecRound): Remove.
+	(PRECISION_MASK): Add.
+	* m_copmem.c (dstmem): Add literal parameter.
+	* m_fpu.c (CheckFPUsageIsAllowedAndGiveHWWarning): Add.
+	(m_fdv,m_fml,m_frd): Warn when used in non-single precision.
+	(m_pol,m_pow,m_rpw,m_acs,m_asn,m_atn,m_cos,m_exp,m_lgn,m_log,m_sin,
+	m_tan): Warn these will never be hardware accelerated.
+	(dstmemx): Add bool return value and return true when mnemonic is not
+	recognized.
+
+Sat Feb 12 16:02:33 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_fpu.c (CheckFPUsageIsAllowed): Move all soft-float option testing
+	to here.
+
 Wed Feb  2 01:46:54 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* regression/tests_pass/apcs.s: Moved to...

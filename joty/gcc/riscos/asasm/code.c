@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2010 GCCSDK Developers
+ * Copyright (c) 2000-2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -788,7 +788,6 @@ Code_Assign (Code *dst, const Code *src)
  * \param instrOffsetP It points to the instruction offset
  * which can be use to convert the current AREA symbol into a ValueAddr
  * [PC, #-(<instr offset> + 8)].
- * \param curAREASymbolToValueAddr
  * \return Result of evaluation.  Only to be used before next evaluation.
  * Use Value_Assign() to keep a non-temporary copy of it.
  */
@@ -831,7 +830,7 @@ codeEvalLow (ValueTag legal, size_t size, Code *program,
           && (legal & ValueFloat) && Stack[0].Data.value.Tag == ValueInt)
 	{
 	  ARMFloat f = Stack[0].Data.value.Data.Int.i;
-	  if (option_fussy > 1)
+	  if (option_fussy)
 	    error (ErrorInfo, "Changing integer %d to float %1.1f", Stack[0].Data.value.Data.Int.i, f);
 	  Stack[0].Data.value.Tag = ValueFloat;
 	  Stack[0].Data.value.Data.Float.f = f;

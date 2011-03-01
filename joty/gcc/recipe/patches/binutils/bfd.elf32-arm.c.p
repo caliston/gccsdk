@@ -118,16 +118,16 @@
 +  0xE59F1034,	/*	LDR	R1, RelocCode     */
 +  0xE24FB00C,	/*	ADR	R11, __RelocCode  */
 +  0xE05B1001,	/*	SUBS	R1, R11, R1       */
-+  0x01A0F00E,   /*      MOVEQ   PC, R14           */
++  0x01A0F00E,	/*	MOVEQ	PC, R14           */
 +  0xE59FB028,	/*	LDR	R11, ImageROBase  */
 +  0xE08BB001,	/*	ADD	R11, R11,R1       */
 +  0xE28F2024,	/*	ADR	R2, RelocCodeList */
 +		/* RelocCodeLoop:                 */
 +  0xE4920004,	/*	LDR	R0, [R2], #4      */
 +  0xE3700001,	/*	CMP	R0, #-1           */
-+  0x01A0F00E,   /*      MOVEQ   PC, R14           */
++  0x01A0F00E,	/*	MOVEQ	PC, R14           */
 +  0xE79B3000,	/*	LDR	R3, [R11, R0]     */
-+  0xE3330000,   /*      TEQ     r3, #0            */
++  0xE3330000,	/*	TEQ	R3, #0            */
 +  0x10833001,	/*	ADDNE	R3, R3, R1        */
 +  0x178B3000,	/*	STRNE	R3, [R11, R0]     */
 +  0xEAFFFFF7,	/*	B	RelocCodeLoop     */

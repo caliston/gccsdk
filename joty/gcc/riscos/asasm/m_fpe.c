@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developersrs
+ * Copyright (c) 2000-2011 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
- * m_fpu.c
+ * FPE (FPA10/FPA11 and FPASC) support.
  */
 
 #include "config.h"
@@ -37,55 +37,12 @@
 #include "get.h"
 #include "help_cop.h"
 #include "input.h"
-#include "m_fpu.h"
+#include "m_fpe.h"
 #include "option.h"
 #include "put.h"
 #include "reloc.h"
 #include "value.h"
 #include "main.h"
-
-#define M_ADF 0x0e000100
-#define M_DVF 0x0e400100
-#define M_FDV 0x0ea00100
-#define M_FML 0x0e900100
-#define M_FRD 0x0eb00100
-#define M_MUF 0x0e100100
-#define M_POL 0x0ec00100
-#define M_POW 0x0e600100
-#define M_RDF 0x0e500100
-#define M_RMF 0x0e800100
-#define M_RPW 0x0e700100
-#define M_RSF 0x0e300100
-#define M_SUF 0x0e200100
-#define M_ABS 0x0e208100
-#define M_ACS 0x0ec08100
-#define M_ASN 0x0eb08100
-#define M_ATN 0x0ed08100
-#define M_COS 0x0e908100
-#define M_EXP 0x0e708100
-#define M_LGN 0x0e608100
-#define M_LOG 0x0e508100
-#define M_MNF 0x0e108100
-#define M_MVF 0x0e008100
-#define M_RND 0x0e308100
-#define M_SIN 0x0e808100
-#define M_SQT 0x0e408100
-#define M_TAN 0x0ea08100
-#define M_FIX 0x0e100110
-#define M_FLT 0x0e000110
-#define M_WFS 0x0e200110
-#define M_RFS 0x0e300110
-#define M_WFC 0x0e400110
-#define M_RFC 0x0e500110
-#define M_CMF 0x0e90f110
-#define M_CNF 0x0eb0f110
-
-#define M_URD 0x0ee08100
-#define M_NRM 0x0ef08100
-#define M_LFM 0x0c100200
-#define M_SFM 0x0c000200
-
-#define M_FMNEM 0x0ef08110
 
 typedef enum
 {
@@ -106,6 +63,12 @@ static int oFPUsageNOFP_Line = 0; /**< Place of NOFP (linenumber).  */
 static bool
 CheckFPUsageIsAllowed (void)
 {
+  if (option_apcs_softfloat)
+    {
+      error (ErrorError, "soft-float code uses hard FP instructions");
+      return false;
+    }
+
   switch (oFPUsage)
     {
       case eFPUsage_Possible:
@@ -126,102 +89,125 @@ CheckFPUsageIsAllowed (void)
   return false;
 }
 
-static ARMWord
-fpuImm (ARMFloat d)
+/**
+ * Called for:
+ *   <POW|RPW|POL> {cond} <S|D|E>{P|M|Z} Fd, Fn, <Fm|#value>
+ *   <LOG|LGN|EXP|SIN|COS|TAN|ASN|ACS|ATN> {cond}<S|D|E>{P|M|Z} Fd, <Fm|#value>
+ * These FPA instructions are always trapped.
+ */
+static bool
+CheckFPUsageIsAllowedAndGiveHWWarning (void)
 {
-  if (d == 0.0)
-    return 0;
-  if (d == 1.0)
-    return 1;
-  if (d == 2.0)
-    return 2;
-  if (d == 3.0)
-    return 3;
-  if (d == 4.0)
-    return 4;
-  if (d == 5.0)
-    return 5;
-  if (d == 0.5)
-    return 6;
-  if (d == 10.0)
-    return 7;
+  bool rtrn = CheckFPUsageIsAllowed ();
+  if (option_pedantic)
+    error (ErrorWarning, "FPA opcode will never be executed hardware accelerated");
+  return rtrn;
+}
+
+ARMWord
+FPE_ConvertImmediate (ARMFloat d)
+{
+  if (d == 0.)
+    return 8 | 0;
+  if (d == 1.)
+    return 8 | 1;
+  if (d == 2.)
+    return 8 | 2;
+  if (d == 3.)
+    return 8 | 3;
+  if (d == 4.)
+    return 8 | 4;
+  if (d == 5.)
+    return 8 | 5;
+  if (d == .5)
+    return 8 | 6;
+  if (d == 10.)
+    return 8 | 7;
 
   return -1;
 }
 
 static ARMWord
-fixImmFloat (ARMWord ir, ARMFloat im)
+Fix_ImmFloat (ARMWord ir, ARMFloat im)
 {
-  static const char op3[] = "Changing \"%s F_, F_, #%.1f\" to \"%s F_, F_, #%.1f\"";
-  static const char op2[] = "Changing \"%s F_, #%.1f\" to \"%s F_, #%.1f\"";
+  static const char op3[] = "Changing \"%s Fx, Fy, #%.1f\" to \"%s Fx, Fy, #%.1f\"";
+  static const char op2[] = "Changing \"%s Fx, #%.1f\" to \"%s Fx, #%.1f\"";
 
-  int f = fpuImm (im);
+  int f = FPE_ConvertImmediate (im);
   if (f != -1)
     return ir | f;
 
-  /* Immediate float constant was illegal.  */
-  f = fpuImm (-im);
+  /* Immediate float constant was illegal, try the inverse.  */
+  f = FPE_ConvertImmediate (-im);
+
+  const ARMWord mnemonic = ir & M_FMNEM;
+  ir &= ~M_FMNEM;
+  const char *m1, *m2, *optype;
   if (f == -1)
+    optype = NULL;
+  else
+    {
+      switch (mnemonic)
+	{
+	  case M_ADF:
+	    ir |= M_SUF;
+	    optype = op3; m1 = "ADF"; m2 = "SUF";
+	    break;
+
+	  case M_SUF:
+	    ir |= M_ADF;
+	    optype = op3; m1 = "SUF"; m2 = "ADF";
+	    break;
+
+	  case M_MVF:
+	    ir |= M_MNF;
+	    optype = op2; m1 = "MVF"; m2 = "MNF";
+	    break;
+
+	  case M_MNF:
+	    ir |= M_MVF;
+	    optype = op2; m1 = "MNF"; m2 = "MVF";
+	    break;
+
+	  case M_CMF & M_FMNEM:
+	    ir |= M_CNF;
+	    optype = op2; m1 = "CMF"; m2 = "CNF";
+	    break;
+
+	  case M_CNF & M_FMNEM:
+	    ir |= M_CMF;
+	    optype = op2; m1 = "CNF"; m2 = "CMF";
+	    break;
+
+	  case (M_CMF | EXEPTION_BIT) & M_FMNEM:
+	    ir |= M_CNF | EXEPTION_BIT;
+	    optype = op2; m1 = "CMFE"; m2 = "CNFE";
+	    break;
+
+	  case (M_CNF | EXEPTION_BIT) & M_FMNEM:
+	    ir |= M_CMF | EXEPTION_BIT;
+	    optype = op2; m1 = "CNFE"; m2 = "CMFE";
+	    break;
+
+          case M_ABS:
+	    ir |= M_ABS;
+	    optype = op2; m1 = m2 = "ABS";
+	    break;
+	    
+	  default:
+	    optype = NULL;
+	    break;
+	}
+    }
+
+  if (optype == NULL)
     {
       /* Even the inverse cannot be represented.  */
       error (ErrorError, "Illegal immediate constant %g", im);
       return ir;
     }
 
-  /* Inverse immediate constant can be represented, so try to invert
-     the mnemonic.  */
-  ARMWord mnemonic = ir & M_FMNEM;
-  ir &= ~M_FMNEM;
-  const char *m1, *m2, *optype;
-  switch (mnemonic)
-    {
-      case M_ADF:
-        ir |= M_SUF;
-        optype = op3; m1 = "ADF"; m2 = "SUF";
-        break;
-
-      case M_SUF:
-        ir |= M_ADF;
-        optype = op3; m1 = "SUF"; m2 = "ADF";
-        break;
-
-      case M_MVF:
-        ir |= M_MNF;
-        optype = op2; m1 = "MVF"; m2 = "MNF";
-        break;
-
-      case M_MNF:
-        ir |= M_MVF;
-        optype = op2; m1 = "MNF"; m2 = "MVF";
-        break;
-
-      case M_CMF & M_FMNEM:
-        ir |= M_CNF;
-        optype = op2; m1 = "CMF"; m2 = "CNF";
-        break;
-
-      case M_CNF & M_FMNEM:
-        ir |= M_CMF;
-        optype = op2; m1 = "CNF"; m2 = "CMF";
-        break;
-
-      case (M_CMF | EXEPTION_BIT) & M_FMNEM:
-        ir |= M_CNF | EXEPTION_BIT;
-        optype = op2; m1 = "CMFE"; m2 = "CNFE";
-        break;
-
-      case (M_CNF | EXEPTION_BIT) & M_FMNEM:
-        ir |= M_CMF | EXEPTION_BIT;
-        optype = op2; m1 = "CNFE"; m2 = "CMFE";
-        break;
-
-      default:
-        errorAbort ("Internal fixImmFloat: unknown mnemonic");
-        return ir;
-        break;
-    }
-
-  if (option_fussy > 1)
+  if (option_fussy)
     error (ErrorInfo, optype, m1, im, m2, -im);
 
   return ir | f;
@@ -232,16 +218,20 @@ getFloatRhs (ARMWord ir)
 {
   if (Input_Match ('#', false))
     {
-      ir |= 8; /* Immediate float.  */
-      const Value *im = exprBuildAndEval (ValueInt | ValueFloat);
+      ValueTag valueTag = ValueFloat;
+      if (option_autocast)
+	valueTag |= ValueInt;
+      const Value *im = exprBuildAndEval (valueTag);
       switch (im->Tag)
 	{
 	  case ValueInt:
-	    ir = fixImmFloat (ir, im->Data.Int.i);
+	    ir = Fix_ImmFloat (ir, im->Data.Int.i);
 	    break;
+
 	  case ValueFloat:
-	    ir = fixImmFloat (ir, im->Data.Float.f);
+	    ir = Fix_ImmFloat (ir, im->Data.Float.f);
 	    break;
+
 	  default:
 	    error (ErrorError, "Illegal float immediate");
 	    break;
@@ -258,9 +248,6 @@ getFloatRhs (ARMWord ir)
 static void
 dstlhsrhs (ARMWord ir)
 {
-  if (option_apcs_softfloat)
-    error (ErrorWarning, "soft-float code uses hard FP instructions");
-
   ARMWord op = getFpuReg ();
   ir |= DST_OP (op);
   skipblanks ();
@@ -276,7 +263,8 @@ dstlhsrhs (ARMWord ir)
 
 
 /**
- * Implements ADF.
+ * Implements ADF (add).
+ *   Fd := Fn + Fm
  */
 bool
 m_adf (void)
@@ -289,7 +277,8 @@ m_adf (void)
 }
 
 /**
- * Implements DVF.
+ * Implements DVF (divide).
+ *   Fd := Fn / Fm
  */
 bool
 m_dvf (void)
@@ -302,7 +291,8 @@ m_dvf (void)
 }
 
 /**
- * Implements FDV.
+ * Implements FDV (fast divide).
+ *   Fd := Fn / Fm
  */
 bool
 m_fdv (void)
@@ -310,12 +300,15 @@ m_fdv (void)
   ARMWord cc = optionCondPrecRound ();
   if (cc == optionError)
     return true;
+  if ((cc & PRECISION_MASK) != PRECISION_SINGLE)
+    error (ErrorWarning, "%s is only defined for single precision use", "FDV");
   dstlhsrhs (M_FDV | cc);
   return CheckFPUsageIsAllowed ();
 }
 
 /**
- * Implements FML.
+ * Implements FML (fast multiply).
+ *   Fd := Fn * Fm
  */
 bool
 m_fml (void)
@@ -323,12 +316,15 @@ m_fml (void)
   ARMWord cc = optionCondPrecRound ();
   if (cc == optionError)
     return true;
+  if ((cc & PRECISION_MASK) != PRECISION_SINGLE)
+    error (ErrorWarning, "%s is only defined for single precision use", "FML");
   dstlhsrhs (M_FML | cc);
   return CheckFPUsageIsAllowed ();
 }
 
 /**
- * Implements FRD.
+ * Implements FRD (fast reverse divide).
+ *   Fd := Fm / Fn 
  */
 bool
 m_frd (void)
@@ -336,12 +332,15 @@ m_frd (void)
   ARMWord cc = optionCondPrecRound ();
   if (cc == optionError)
     return true;
+  if ((cc & PRECISION_MASK) != PRECISION_SINGLE)
+    error (ErrorWarning, "%s is only defined for single precision use", "FRD");
   dstlhsrhs (M_FRD | cc);
   return CheckFPUsageIsAllowed ();
 }
 
 /**
- * Implements MUF.
+ * Implements MUF (multiply).
+ *   Fd := Fn * Fm 
  */
 bool
 m_muf (void)
@@ -354,7 +353,8 @@ m_muf (void)
 }
 
 /**
- * Implements POL.
+ * Implements POL (polar angle, arctan2).
+ *   Fd := polar angle of (Fn, Fm) 
  */
 bool
 m_pol (void)
@@ -363,11 +363,12 @@ m_pol (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_POL | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements POW.
+ * Implements POW (power).
+ *   Fd := Fn raised to the power of Fm 
  */
 bool
 m_pow (void)
@@ -376,11 +377,12 @@ m_pow (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_POW | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements RDF.
+ * Implements RDF (reverse divide).
+ *   Fd := Fm / Fn 
  */
 bool
 m_rdf (void)
@@ -393,7 +395,8 @@ m_rdf (void)
 }
 
 /**
- * Implements RMF.
+ * Implements RMF (remainder).
+ *   Fd := IEEE remainder of Fn / Fm 
  */
 bool
 m_rmf (void)
@@ -406,7 +409,8 @@ m_rmf (void)
 }
 
 /**
- * Implements RPW.
+ * Implements RPW (reverse power).
+ *   Fd := Fm raised to the power of Fn 
  */
 bool
 m_rpw (void)
@@ -415,11 +419,12 @@ m_rpw (void)
   if (cc == optionError)
     return true;
   dstlhsrhs (M_RPW | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements RSF.
+ * Implements RSF (reverse subtract).
+ *   Fd := Fm - Fn
  */
 bool
 m_rsf (void)
@@ -432,7 +437,8 @@ m_rsf (void)
 }
 
 /**
- * Implements SUF.
+ * Implements SUF (subtract).
+ *   Fd := Fn - Fm 
  */
 bool
 m_suf (void)
@@ -450,9 +456,6 @@ m_suf (void)
 static void
 dstrhs (ARMWord ir)
 {
-  if (option_apcs_softfloat)
-    error (ErrorWarning, "soft-float code uses hard FP instructions");
-
   ARMWord op = getFpuReg ();
   ir |= DST_OP (op);
   skipblanks ();
@@ -462,7 +465,8 @@ dstrhs (ARMWord ir)
 }
 
 /**
- * Implements ABS.
+ * Implements ABS (absolute value).
+ *   Fd := ABS ( Fm ) 
  */
 bool
 m_abs (void)
@@ -475,7 +479,8 @@ m_abs (void)
 }
 
 /**
- * Implements ACS.
+ * Implements ACS (arc cosine).
+ *   Fd := arccosine of Fm
  */
 bool
 m_acs (void)
@@ -484,11 +489,12 @@ m_acs (void)
   if (cc == optionError)
     return true;
   dstrhs (M_ACS | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements ASN.
+ * Implements ASN (arc sine).
+ *   Fd := arcsine of Fm
  */
 bool
 m_asn (void)
@@ -497,11 +503,12 @@ m_asn (void)
   if (cc == optionError)
     return true;
   dstrhs (M_ASN | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements ATN.
+ * Implements ATN (arc tanget).
+ *   Fd := arctangent of Fm
  */
 bool
 m_atn (void)
@@ -510,11 +517,12 @@ m_atn (void)
   if (cc == optionError)
     return true;
   dstrhs (M_ATN | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements COS.
+ * Implements COS (cosine).
+ *   Fd := cosine of Fm 
  */
 bool
 m_cos (void)
@@ -523,11 +531,12 @@ m_cos (void)
   if (cc == optionError)
     return true;
   dstrhs (M_COS | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements EXP.
+ * Implements EXP (exponent).
+ *   Fd := e ** Fm 
  */
 bool
 m_exp (void)
@@ -536,11 +545,12 @@ m_exp (void)
   if (cc == optionError)
     return true;
   dstrhs (M_EXP | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements LGN.
+ * Implements LGN (logarithm to base e).
+ *   Fd := ln of Fm 
  */
 bool
 m_lgn (void)
@@ -549,11 +559,12 @@ m_lgn (void)
   if (cc == optionError)
     return true;
   dstrhs (M_LGN | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements LOG.
+ * Implements LOG (logarithm to base 10).
+ *   Fd := log10 of Fm
  */
 bool
 m_log (void)
@@ -562,11 +573,12 @@ m_log (void)
   if (cc == optionError)
     return true;
   dstrhs (M_LOG | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements MNF.
+ * Implements MNF (move negated).
+ *   Fd := - Fm 
  */
 bool
 m_mnf (void)
@@ -579,7 +591,8 @@ m_mnf (void)
 }
 
 /**
- * Implements MVF.
+ * Implements MVF (move).
+ *   Fd := Fm 
  */
 bool
 m_mvf (void)
@@ -592,7 +605,8 @@ m_mvf (void)
 }
 
 /**
- * Implements RND.
+ * Implements RND (round to integral value).
+ *   Fd := integer value of Fm 
  */
 bool
 m_rnd (void)
@@ -605,7 +619,8 @@ m_rnd (void)
 }
 
 /**
- * Implements SIN.
+ * Implements SIN (sine).
+ *   Fd := sine of Fm 
  */
 bool
 m_sin (void)
@@ -614,11 +629,12 @@ m_sin (void)
   if (cc == optionError)
     return true;
   dstrhs (M_SIN | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements SQT.
+ * Implements SQT (square root).
+ *   Fd := square root of Fm
  */
 bool
 m_sqt (void)
@@ -631,7 +647,8 @@ m_sqt (void)
 }
 
 /**
- * Implements TAN.
+ * Implements TAN (tanget).
+ *   Fd := tangent of Fm
  */
 bool
 m_tan (void)
@@ -640,11 +657,12 @@ m_tan (void)
   if (cc == optionError)
     return true;
   dstrhs (M_TAN | cc);
-  return CheckFPUsageIsAllowed ();
+  return CheckFPUsageIsAllowedAndGiveHWWarning ();
 }
 
 /**
- * Implements URD.
+ * Implements URD (unnormalized round).
+ *   Fd := integer value of Fm, possibly in abnormal form
  */
 bool
 m_urd (void)
@@ -657,7 +675,8 @@ m_urd (void)
 }
 
 /**
- * Implements NRM.
+ * Implements NRM (normalize).
+ *   Fd := normalized form of Fm 
  */
 bool
 m_nrm (void)
@@ -672,9 +691,6 @@ m_nrm (void)
 static void
 comparelow (ARMWord ir)		/* No precision and no rounding allowed ? */
 {
-  if (option_apcs_softfloat)
-    error (ErrorWarning, "soft-float code uses hard FP instructions");
-
   ir |= LHS_OP (getFpuReg ());
   skipblanks ();
   if (!Input_Match (',', true))
@@ -683,7 +699,7 @@ comparelow (ARMWord ir)		/* No precision and no rounding allowed ? */
 }
 
 /**
- * Implements CMF.
+ * Implements CMF/CMFE (compare floating).
  */
 bool
 m_cmf (void)
@@ -696,7 +712,7 @@ m_cmf (void)
 }
 
 /**
- * Implements CNF.
+ * Implements CNF/CNFE (compare negated floating).
  */
 bool
 m_cnf (void)
@@ -711,7 +727,8 @@ m_cnf (void)
 /** REGISTER TRANSFER **/
 
 /**
- * Implements FIX.
+ * Implements FIX (convert floating-point to integer).
+ *   Rd := Fm
  */
 bool
 m_fix (void)
@@ -719,9 +736,6 @@ m_fix (void)
   ARMWord cc = optionCondOptRound ();
   if (cc == optionError)
     return true;
-
-  if (option_apcs_softfloat)
-    error (ErrorWarning, "soft-float code uses hard FP instructions");
 
   ARMWord ir = M_FIX | cc;
   ir |= DST_OP (getCpuReg ());
@@ -733,7 +747,8 @@ m_fix (void)
 }
 
 /**
- * Implements FLT.
+ * Implements FLT (convert integer to floating-point).
+ *   Fn := Rd
  */
 bool
 m_flt (void)
@@ -741,9 +756,6 @@ m_flt (void)
   ARMWord cc = optionCondPrecRound ();
   if (cc == optionError)
     return true;
-
-  if (option_apcs_softfloat)
-    error (ErrorWarning, "soft-float code uses hard FP instructions");
 
   ARMWord ir = M_FLT | cc;
   ir |= LHS_OP (getFpuReg ());
@@ -758,16 +770,14 @@ m_flt (void)
 static void
 flagtransfer (ARMWord ir)
 {
-  if (option_apcs_softfloat)
-    error (ErrorWarning, "soft-float code uses hard FP instructions");
-
   ARMWord op = getCpuReg ();
   ir |= DST_OP (op);
   Put_Ins (ir);
 }
 
 /**
- * Implements WFS.
+ * Implements WFS (write floating point status register).
+ *   FPSR := Rd
  */
 bool
 m_wfs (void)
@@ -780,7 +790,8 @@ m_wfs (void)
 }
 
 /**
- * Implements RFS.
+ * Implements RFS (read floating point status register).
+ *   Rd := FPSR 
  */
 bool
 m_rfs (void)
@@ -793,7 +804,8 @@ m_rfs (void)
 }
 
 /**
- * Implements WFC.
+ * Implements WFC (write floating point control register).
+ *   FPCR:= Rd 
  */
 bool
 m_wfc (void)
@@ -806,7 +818,8 @@ m_wfc (void)
 }
 
 /**
- * Implements RFC.
+ * Implements RFC (read floating pointer control register).
+ *   Rd := FPCR
  */
 bool
 m_rfc (void)
@@ -819,14 +832,10 @@ m_rfc (void)
 }
 
 static void
-dstmem (ARMWord ir)
+dstmem (ARMWord ir, bool literal)
 {
-  if (option_apcs_softfloat)
-    error (ErrorWarning, "soft-float code uses hard FP instructions");
-    
   ir |= DST_OP (getFpuReg ());
-  ir = help_copAddr (ir, false);
-  Put_Ins (ir);
+  help_copAddr (ir, literal, false);
 }
 
 /**
@@ -838,7 +847,12 @@ m_stf (void)
   ARMWord cc = optionCondPrec_P ();
   if (cc == optionError)
     return true;
-  dstmem (0x0c000100 | cc);
+  dstmem (M_STF | cc, false);
+  /* LDFP and STFP are deprecated instructions and are intended for backwards
+     compatibility only. These functions are typically implemented by
+     appropriate calls to support code.  */
+  if ((cc & PRECISION_MEM_MASK) == PRECISION_MEM_PACKED)
+    return CheckFPUsageIsAllowedAndGiveHWWarning ();
   return CheckFPUsageIsAllowed ();
 }
 
@@ -851,22 +865,35 @@ m_ldf (void)
   ARMWord cc = optionCondPrec_P ();
   if (cc == optionError)
     return true;
-  dstmem (0x0c100100 | cc);
+  dstmem (M_LDF | cc, true);
+  /* LDFP and STFP are deprecated instructions and are intended for backwards
+     compatibility only. These functions are typically implemented by
+     appropriate calls to support code.  */
+  if ((cc & PRECISION_MEM_MASK) == PRECISION_MEM_PACKED)
+    return CheckFPUsageIsAllowedAndGiveHWWarning ();
   return CheckFPUsageIsAllowed ();
 }
 
 
-static void
+/**
+ * Parses the rest of the mnemonic after the "<LFM|SFM>{cond}" part:
+ *
+ *   <LFM|SFM>{cond} Fd, <count>, [Rn]
+ *                                [Rn, #<expression>]{!}
+ *                                [Rn],#<expression>
+ *   <LFM|SFM>{cond}<FD,EA> Fd, <count>, [Rn]{!}       (stack variant)
+ *
+ * \return false when rest of the mnemonic gets recognized as part of LFM/SFM.
+ * true otherwise (so we can reparse it as macro).
+ */
+static bool
 dstmemx (ARMWord ir)
 {
-  if (option_apcs_softfloat)
-    error (ErrorWarning, "soft-float code uses hard FP instructions");
-
-  const char * const inputMark = Input_GetMark ();
-  bool stack_ia = false;
-  bool stack = !isspace ((unsigned char)inputLook ());
+  bool isLoad = (ir & L_FLAG) != 0;
+  bool stack = !Input_IsEndOfKeyword ();
   if (stack)
     {
+      bool stack_ia;
       char c1 = toupper (inputLook ());
       char c2 = toupper (inputLookN (1));
       if (c1 == 'D' && c2 == 'B')
@@ -874,26 +901,25 @@ dstmemx (ARMWord ir)
       else if (c1 == 'I' && c2 == 'A')
 	stack_ia = true;
       else if (c1 == 'E' && c2 == 'A')
-	stack_ia = (ir & 0x100000) ? false : true;
+	stack_ia = !isLoad;
       else if (c1 == 'F' && c2 == 'D')
-	stack_ia = (ir & 0x100000) ? true : false;
+	stack_ia = isLoad;
       else
-	error (ErrorError, "Illegal stack type for %cfm (%c%c)",
-	       (ir & 0x100000) ? 'l' : 's', c1, c2);
+	return true;
       inputSkipN (2);
-      if (stack_ia)
-	ir |= 0x800000;
+      ir |= stack_ia ? U_FLAG : P_FLAG;
     }
-  if (inputLook () && !isspace ((unsigned char)inputLook ()))
-    {
-      errorAbort ("Can't parse \"%s\" of SFM/LFM", inputMark);
-      return;
-    }
+  if (!Input_IsEndOfKeyword ())
+    return true;
+
   skipblanks ();
   ir |= DST_OP (getFpuReg ());
   skipblanks ();
   if (!Input_Match (',', false))
-    error (ErrorError, "Inserting comma after dst");
+    {
+      error (ErrorError, "Inserting comma after dst");
+      return false;
+    }
   const Value *im = exprBuildAndEval (ValueInt);
   if (im->Tag == ValueInt)
     {
@@ -901,15 +927,14 @@ dstmemx (ARMWord ir)
 	error (ErrorError, "Number of fp registers out of range");
     }
   else
-    error (ErrorError, "Illegal %cfm expression", (ir & 0x100000) ? 'l' : 's');
+    {
+      error (ErrorError, "Illegal %cFM expression", isLoad ? 'L' : 'S');
+      return false;
+    }
   ir |= (im->Data.Int.i & 1) << 15;
-  ir |= (im->Data.Int.i & 2) << 21;
-  if (stack)
-    ir |= stack_ia ? 0x800000 : 0x1000000;
-  ir = help_copAddr (ir, stack);
-  if (stack && (!stack_ia || (ir & 0x200000)))
-    ir |= 3 * im->Data.Int.i;
-  Put_Ins (ir);
+  ir |= (im->Data.Int.i & 2) << (22 - 1);
+  help_copAddr (ir, isLoad, stack);
+  return false;
 }
 
 /**
@@ -921,7 +946,8 @@ m_sfm (void)
   ARMWord cc = optionCondLfmSfm ();
   if (cc == optionError)
     return true;
-  dstmemx (0x0c000200 | cc);
+  if (dstmemx (M_SFM | cc))
+    return true;
   return CheckFPUsageIsAllowed ();
 }
 
@@ -934,7 +960,8 @@ m_lfm (void)
   ARMWord cc = optionCondLfmSfm ();
   if (cc == optionError)
     return true;
-  dstmemx (0x0c100200 | cc);
+  if (dstmemx (M_LFM | cc))
+    return true;
   return CheckFPUsageIsAllowed ();
 }
 
