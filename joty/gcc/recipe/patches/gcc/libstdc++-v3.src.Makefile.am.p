@@ -1,6 +1,6 @@
 Index: libstdc++-v3/src/Makefile.am
 ===================================================================
---- libstdc++-v3/src/Makefile.am	(revision 170259)
+--- libstdc++-v3/src/Makefile.am	(revision 170686)
 +++ libstdc++-v3/src/Makefile.am	(working copy)
 @@ -27,6 +27,22 @@
  # Cross compiler support.
@@ -25,8 +25,8 @@ Index: libstdc++-v3/src/Makefile.am
  # Symbol versioning for shared libraries.
  if ENABLE_SYMVERS
  libstdc++-symbols.ver:  ${glibcxx_srcdir}/$(SYMVER_FILE) \
-@@ -160,6 +176,56 @@
- ldbl_compat_sources =
+@@ -184,6 +200,56 @@
+ inst_sources =
  endif
  
 +# Sources present in the libsupc++ directory.
@@ -79,14 +79,14 @@ Index: libstdc++-v3/src/Makefile.am
 +	vterminate.cc \
 +	$(c_sources)
 +
- # Sources present in the src directory.
+ # Sources present in the src directory, always present.
  sources = \
  	atomic.cc \
-@@ -224,20 +290,20 @@
- 	thread.cc \
+@@ -233,20 +299,20 @@
  	future.cc \
+ 	valarray.cc \
  	${host_sources} \
--	${host_sources_extra} 
+-	${host_sources_extra}
 +	${host_sources_extra} \
 +	${supc_sources}
  
@@ -107,8 +107,8 @@ Index: libstdc++-v3/src/Makefile.am
 +	${version_dep}
  
  libstdc___la_LDFLAGS = \
- 	-version-info $(libtool_VERSION) ${version_arg} -lm 
-@@ -388,7 +454,27 @@
+ 	-version-info $(libtool_VERSION) ${version_arg} -lm
+@@ -397,7 +463,27 @@
  	$(OPTIMIZE_CXXFLAGS) \
  	$(CONFIG_CXXFLAGS)
  
@@ -136,16 +136,16 @@ Index: libstdc++-v3/src/Makefile.am
  # libstdc++ libtool notes
  
  # 1) Need to explicitly set LTCXXCOMPILE so that AM_CXXFLAGS is
-@@ -408,7 +494,7 @@
- # CXXLINK, just after $(LIBTOOL), so that libtool doesn't have to
+@@ -418,7 +504,7 @@
  # attempt to infer which configuration to use
- LTCXXCOMPILE = $(LIBTOOL) --tag CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile \
--	       $(CXX) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-+	       $(CXX) $(INCLUDES) $(TOPLEVEL_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+ LTCXXCOMPILE = $(LIBTOOL) --tag CXX \
+ 	       $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile \
+-	       $(CXX) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
++	       $(CXX) $(INCLUDES) $(TOPLEVEL_INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+ 	       $(AM_CXXFLAGS) $(CXXFLAGS)
  
  LTLDFLAGS = $(shell $(SHELL) $(top_srcdir)/../libtool-ldflags $(LDFLAGS))
- 
-@@ -458,3 +544,43 @@
+@@ -469,3 +555,43 @@
  install_debug:
  	(cd ${debugdir} && $(MAKE) \
  	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install)
