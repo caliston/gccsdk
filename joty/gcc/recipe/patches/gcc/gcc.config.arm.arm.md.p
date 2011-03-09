@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.md
 ===================================================================
---- gcc/config/arm/arm.md	(revision 168172)
+--- gcc/config/arm/arm.md	(revision 170835)
 +++ gcc/config/arm/arm.md	(working copy)
 @@ -31,6 +31,7 @@
  ;; Register numbers
@@ -19,7 +19,7 @@ Index: gcc/config/arm/arm.md
    ]
  )
  
-@@ -7883,7 +7886,7 @@
+@@ -7882,7 +7885,7 @@
        return thumb_call_via_reg (operands[0]);
      else if (operands[1] == const0_rtx)
        return \"bl\\t%__interwork_call_via_%0\";
@@ -28,7 +28,7 @@ Index: gcc/config/arm/arm.md
        return \"bl\\t%__interwork_r7_call_via_%0\";
      else
        return \"bl\\t%__interwork_r11_call_via_%0\";
-@@ -7995,7 +7998,7 @@
+@@ -7994,7 +7997,7 @@
        return thumb_call_via_reg (operands[1]);
      else if (operands[2] == const0_rtx)
        return \"bl\\t%__interwork_call_via_%1\";
@@ -37,7 +37,7 @@ Index: gcc/config/arm/arm.md
        return \"bl\\t%__interwork_r7_call_via_%1\";
      else
        return \"bl\\t%__interwork_r11_call_via_%1\";
-@@ -10698,6 +10701,8 @@
+@@ -10697,6 +10700,8 @@
  (include "ldmstm.md")
  ;; Load the FPA co-processor patterns
  (include "fpa.md")
