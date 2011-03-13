@@ -36,6 +36,7 @@ GCC_USE_PPL_CLOOG=yes
 PPL_VERSION=0.11.2
 CLOOG_VERSION=0.15.10
 GCC_USE_LTO=yes
+# FIXME: libelf is currently not used but maybe it will by asasm one day.
 LIBELF_VERSION=0.8.13
 
 # Notes:
@@ -116,8 +117,8 @@ CROSS_GCC_CONFIG_ARGS += --with-ppl=$(PREFIX_CROSSGCC_LIBS) --with-host-libstdcx
 RONATIVE_GCC_CONFIG_ARGS += --with-ppl=$(PREFIX_RONATIVEGCC_LIBS) --with-host-libstdcxx='-Wl,-lstdc++' --with-cloog=$(PREFIX_RONATVEGCC_LIBS)
 endif
 ifeq ($(GCC_USE_LTO),yes)
-CROSS_GCC_CONFIG_ARGS += --enable-lto --with-libelf=$(PREFIX_CROSSGCC_LIBS)
-RONATIVE_GCC_CONFIG_ARGS += --enable-lto --with-libelf=$(PREFIX_RONATIVEGCC_LIBS)
+CROSS_GCC_CONFIG_ARGS += --enable-lto
+RONATIVE_GCC_CONFIG_ARGS += --enable-lto
 endif
 
 # Configure arguments Binutils & GCC:
@@ -271,9 +272,6 @@ endif
 ifeq "$(GCC_USE_PPL_CLOOG)" "yes"
 cross-gcc-configured: cross-ppl-built cross-cloog-built
 endif
-ifeq "$(GCC_USE_LTO)" "yes"
-cross-gcc-configured: cross-libelf-built
-endif
 cross-gcc-configured: src-gcc-copied cross-binutils-built cross-gmp-built cross-mpc-built cross-mpfr-built
 	-rm -rf $(SRCDIR)/gcc/newlib
 	-rm -rf $(SRCDIR)/gcc/libgloss
@@ -295,9 +293,6 @@ cross-gcc-built: cross-gcc-configured
 # Configure gcc ronative:
 ifeq "$(GCC_USE_PPL_CLOOG)" "yes"
 ronative-gcc-configured: ronative-ppl-built ronative-cloog-built
-endif
-ifeq "$(GCC_USE_LTO)" "yes"
-ronative-gcc-configured: ronative-libelf-built
 endif
 ronative-gcc-configured: cross-done ronative-gmp-built ronative-mpc-built ronative-mpfr-built
 	-rm -rf $(BUILDDIR)/ronative-gcc
