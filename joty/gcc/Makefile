@@ -586,7 +586,7 @@ ifeq "$(GCC_USE_SCM)" "yes"
 # Checkout gcc source:
 $(SRCORIGDIR)/gcc-trunk/LAST_UPDATED:
 	-mkdir -p $(SRCORIGDIR)
-	cd $(SRCORIGDIR) && svn co svn://gcc.gnu.org/svn/gcc/trunk gcc-trunk
+	cd $(SRCORIGDIR) && svn co svn://gcc.gnu.org/svn/gcc/branches/gcc-4_6-branch gcc-trunk
 	cd $(SRCORIGDIR)/gcc-trunk && ./contrib/gcc_update
 else
 # Download gcc source:
