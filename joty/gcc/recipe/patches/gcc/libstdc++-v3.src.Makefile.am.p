@@ -1,6 +1,6 @@
 Index: libstdc++-v3/src/Makefile.am
 ===================================================================
---- libstdc++-v3/src/Makefile.am	(revision 170686)
+--- libstdc++-v3/src/Makefile.am	(revision 171118)
 +++ libstdc++-v3/src/Makefile.am	(working copy)
 @@ -27,6 +27,22 @@
  # Cross compiler support.
@@ -82,7 +82,7 @@ Index: libstdc++-v3/src/Makefile.am
  # Sources present in the src directory, always present.
  sources = \
  	atomic.cc \
-@@ -233,20 +299,20 @@
+@@ -235,20 +301,20 @@
  	future.cc \
  	valarray.cc \
  	${host_sources} \
@@ -108,7 +108,7 @@ Index: libstdc++-v3/src/Makefile.am
  
  libstdc___la_LDFLAGS = \
  	-version-info $(libtool_VERSION) ${version_arg} -lm
-@@ -397,7 +463,27 @@
+@@ -409,7 +475,27 @@
  	$(OPTIMIZE_CXXFLAGS) \
  	$(CONFIG_CXXFLAGS)
  
@@ -136,7 +136,7 @@ Index: libstdc++-v3/src/Makefile.am
  # libstdc++ libtool notes
  
  # 1) Need to explicitly set LTCXXCOMPILE so that AM_CXXFLAGS is
-@@ -418,7 +504,7 @@
+@@ -430,7 +516,7 @@
  # attempt to infer which configuration to use
  LTCXXCOMPILE = $(LIBTOOL) --tag CXX \
  	       $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile \
@@ -145,7 +145,7 @@ Index: libstdc++-v3/src/Makefile.am
  	       $(AM_CXXFLAGS) $(CXXFLAGS)
  
  LTLDFLAGS = $(shell $(SHELL) $(top_srcdir)/../libtool-ldflags $(LDFLAGS))
-@@ -469,3 +555,43 @@
+@@ -481,3 +567,43 @@
  install_debug:
  	(cd ${debugdir} && $(MAKE) \
  	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install)
