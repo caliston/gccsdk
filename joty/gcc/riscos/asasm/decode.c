@@ -119,7 +119,7 @@ static const decode_table_t oDecodeTable[] =
   { "COS", DTABLE_CALLBACK_VOID | DTABLE_PART_MNEMONIC, { .vd = m_cos } }, /* COS CC P R */
   { "CP", DTABLE_CALLBACK_SYMBOL, { .sym = c_cp } }, /* CP */
   { "CPS", DTABLE_CALLBACK_VOID | DTABLE_PART_MNEMONIC, { .vd = m_cps } }, /* CPS */
-  /* FIXME: DBG */
+  { "DBG", DTABLE_CALLBACK_VOID | DTABLE_PART_MNEMONIC, { .vd = m_dbg } }, /* DBG */
   { "DCB", DTABLE_CALLBACK_VOID, { .vd = c_dcb } }, /* = / DCB */
   { "DCD", DTABLE_CALLBACK_VOID | DTABLE_PART_MNEMONIC, { .vd = c_dcd } }, /* & / DCD / DCDU */
   { "DCFD", DTABLE_CALLBACK_VOID | DTABLE_PART_MNEMONIC, { .vd = c_dcfd } }, /* DCFD / DCFDU */
@@ -241,7 +241,8 @@ static const decode_table_t oDecodeTable[] =
   /* FIXME: SHASX/SHSAX */
   /* FIXME: SHSUB16/SHSUB8 */
   { "SIN", DTABLE_CALLBACK_VOID | DTABLE_PART_MNEMONIC, { .vd = m_sin } }, /* SIN CC P R */
-  /* FIXME: SMC (SMI ?) */
+  { "SMC", DTABLE_CALLBACK_VOID | DTABLE_PART_MNEMONIC, { .vd = m_smc } }, /* SMC CC */
+  { "SMI", DTABLE_CALLBACK_VOID | DTABLE_PART_MNEMONIC, { .vd = m_smc } }, /* SMI CC (pre-UAL) */
   { "SMLABB", DTABLE_CALLBACK_VOID | DTABLE_PART_MNEMONIC, { .vd = m_smlabb } }, /* SMLABB CC */
   { "SMLABT", DTABLE_CALLBACK_VOID | DTABLE_PART_MNEMONIC, { .vd = m_smlabt } }, /* SMLABT CC */
   /* FIXME: SMLAD */

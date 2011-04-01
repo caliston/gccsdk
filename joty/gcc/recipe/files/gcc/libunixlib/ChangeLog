@@ -37,6 +37,69 @@ Wed Jun 23 01:08:51 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 // ------------------------------------ ^^^ gcc4.6trunk ^^^ port -----------------
 
+Tue Mar 29 23:14:41 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile.am (common/cvttime.c): Add to SCL build.
+	(time/utimes.c): Remove from SCL build.
+	(time/calendconv.c): Remove.
+	* time/calendconv.c: Remove after merging its contents as inline
+	assembler with...
+	* time/gmtime_r.c (gmtime_r): ...this and...
+	(SWI_Territory_ConvertTimeToUTCOrdinals): Add.
+	* time/localtime_r.c (localtime_r): ...this.
+	(SWI_Territory_ConvertTimeToOrdinals): Add.
+	* incl-local/time.h (__cvt_broken_time): Change return type from void
+	to const _kernel_oserror.
+	* time/asctime_r.c (asctime_r): Check return value __cvt_broken_time.
+	* time/mktime.c (mktime): Likewise.
+	* time/strftime.c (strftime): Likewise.
+	* time/stdtime.c (__standard_time): Use inline assembler.
+	(SWI_Territory_ConvertDateAndTime): Add.
+	* time/broken.c (__cvt_broken_time): Use inline assembler.
+	(SWI_Territory_ConvertOrdinalsToTime): Add.
+	(__cvt_broken_time): Return error if there was one.
+	* incl-local/locale.h (__locale_territory, __setlocale_called,
+	__build_ctype_tables): Don't prototype these for SCL build.
+	* incl-local/internal/os.h (__ul_seterr): Fix outdated comment.
+
+Tue Mar 29 00:52:27 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* incl-local/internal/os.h (__os_cli, __os_byte): Change into inline
+	assembler versions.
+	* sys/_os.s (__os_cli,__os_bytes): Remove.
+	* unix/unix.c (__unixinit, _exit): Follow __os_byte API change.
+	* unix/gethostnam.c (fakehostname): Likewise.
+	* sys/vfork.c (__fork_post): Likewise.
+	* unix/tty.c (__tty_console_gterm, __tty_console_sterm, __ttyicanon):
+	Likewise.
+	* locale/iconv.c (iconv_open, iconv, iconv_close): Don't use __os_swi
+	but use SWI_Iconv_Open, SWI_Iconv_Iconv and SWI_Iconv_Close.
+	(SWI_Iconv_Open, SWI_Iconv_Iconv, SWI_Iconv_Close): Add.
+	* configure.ac (AC_OUTPUT): Add test/iconv/Makefile.
+	* test/iconv/{test-iconv-h.c,signature.h,test-iconv-utf.c,
+	test-iconv-h-c++.cc,macros.h,test-iconv.c
+	* test/iconv/config.h: Add.
+	* string/strnicmp.c (strncasecmp): Add strong alias for SCL case as
+	well.
+
+Tue Mar 22 01:04:59 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/netinet/in.h: Sync with glibc 2.11.
+	* include/bits/sockaddr.h: Likewise.
+	* include/bits/byteswap.h: Likewise.
+	* include/bits/in.h: Likewise.
+	* include/sys/socket.h: Likewise.
+	* include/bits/socket.h: Likewise (i.e. use 4.4 BSD version instead
+	of 4.3 BSD).
+	* incl-local/sys/socket.h (__SYS_SOCKET_H): Trim one leading
+	underscore.
+	* include/endian.h (__ENDIAN_H): Trim one leading underscore.
+	* include/sys/byteorder.h: Likewise.
+
+Sat Mar 12 15:04:27 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* stdio/perror.c (perror): Add check on empty string.
+
 Wed Mar  2 23:43:45 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* signal/killpg.c: Add.
@@ -259,7 +322,7 @@ Thu Sep  9 00:21:32 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 	* unix/dev.c (__fsopen): Give error EISDIR when directory is opened
 	for O_RDWR.  Reported by John-Mark Bell.
 	* Makefile.am: Removed unexisting sys/netdb.h for install.  Avoid
-	creating emtpy resolv include subdirectory.
+	creating empty resolv include subdirectory.
 
 Thu Aug 26 03:36:17 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 

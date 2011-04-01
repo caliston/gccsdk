@@ -359,7 +359,7 @@ inputNextLine (void)
  * \param outOffset On entry, offset in input_buff buffer.  On exit, offset
  * will be updated reflecting the written charactes in input_buff.
  *
- * Buffer overflow will be deteced by the caller when not all the input has
+ * Buffer overflow will be detected by the caller when not all the input has
  * been consumed together with *outOffsetP == sizeof (input_buff).
  */
 static void
@@ -405,33 +405,34 @@ inputEnvSub (const char **inPP, size_t *outOffsetP)
 
 /**
  * Perform variable substitution.
- * \param inPP On entry, pointer to the input pointer to first input character
- * after the $.
+ * \param inPP On entry, pointer to the input pointer to '$'.
  * On exit, the input pointer will be updated reflecting the characters used.
  * \param outOffset On entry, offset in input_buff buffer.  On exit, offset
  * will be updated reflecting the written charactes in input_buff.
  * \param inString Flags whether the variable we're processing is in a string
  * literal.
+ * \return false when produced output needs environment variable expansion.
+ * true when this may not be done.
  *
  * Buffer overflow will be deteced by the caller when not all the input has
  * been consumed together with *outOffsetP == sizeof (input_buff).
  *
  * Temporarily changes input_pos.
  */
-static void
+static bool
 inputVarSub (const char **inPP, size_t *outOffsetP, bool inString)
 {
   const char *inP = *inPP;
 
+  assert (*inP == '$');
+
   /* $$ -> $.  */
-  if (*inP == '$')
+  if (*++inP == '$')
     {
+      *inPP += 2;
       if (*outOffsetP < sizeof (input_buff))
-	{
-	  input_buff[(*outOffsetP)++] = '$';
-	  ++(*inPP);
-	}
-      return;
+	input_buff[(*outOffsetP)++] = '$';
+      return true;
     }
 
   /* Replace symbol by its definition.  */
@@ -445,74 +446,77 @@ inputVarSub (const char **inPP, size_t *outOffsetP, bool inString)
 	error (ErrorWarning, "Non-ID in $ expansion");
       else if (option_pedantic)
 	error (ErrorWarning, "No $ expansion - did you perhaps mean $$");
-      if (*outOffsetP < sizeof (input_buff))
-	input_buff[(*outOffsetP)++] = '$';
-      return;
     }
-
-  Symbol *sym = symbolFind (&label);
-  if (sym)
+  else
     {
-      char buf[32];
-      const char *toCopy;
-      size_t toCopyLen;
-      switch (sym->value.Tag)
+      Symbol *sym = symbolFind (&label);
+      if (sym)
 	{
-	  case ValueInt:
-	    toCopyLen = sprintf (buf, "%.8X", sym->value.Data.Int.i);
-	    toCopy = buf;
-	    break;
-	  case ValueFloat:
-	    toCopyLen = sprintf (buf, "%f", sym->value.Data.Float.f);
-	    toCopy = buf;
-	    break;
-	  case ValueString:
-	    toCopyLen = sym->value.Data.String.len;
-	    toCopy = sym->value.Data.String.s;
-	    break;
-	  case ValueBool:
-	    toCopyLen = 1;
-	    toCopy = (sym->value.Data.Bool.b) ? "T" : "F";
-	    break;
-	  default:
-	    if (!inString)
-	      {
-		error (ErrorError, "$ expansion of '%.*s' can't be done",
-		       (int)label.Data.Id.len, label.Data.Id.str);
-		return;
-	      }
-	    toCopyLen = 0;
-	    toCopy = NULL;
-	    break;
-	}
-      if (toCopy)
-	{
-	  if (*outOffsetP + toCopyLen >= MAX_LINE)
-	    toCopyLen = MAX_LINE - *outOffsetP;
-	  memcpy (&input_buff[*outOffsetP], toCopy, toCopyLen);
-	  *outOffsetP += toCopyLen;
+	  char buf[32];
+	  const char *toCopy;
+	  size_t toCopyLen;
+	  switch (sym->value.Tag)
+	    {
+	      case ValueInt:
+		toCopyLen = sprintf (buf, "%.8X", sym->value.Data.Int.i);
+		toCopy = buf;
+		break;
+	      case ValueFloat:
+		toCopyLen = sprintf (buf, "%f", sym->value.Data.Float.f);
+		toCopy = buf;
+		break;
+	      case ValueString:
+		toCopyLen = sym->value.Data.String.len;
+		toCopy = sym->value.Data.String.s;
+		break;
+	      case ValueBool:
+		toCopyLen = 1;
+		toCopy = (sym->value.Data.Bool.b) ? "T" : "F";
+		break;
+	      default:
+		{
+		  if (!inString)
+		    {
+		      error (ErrorError, "$ expansion of '%.*s' can't be done",
+			     (int)label.Data.Id.len, label.Data.Id.str);
+		      return true;
+		    }
+		  toCopyLen = 0;
+		  toCopy = NULL;
+		  break;
+		}
+	    }
+	  if (toCopy)
+	    {
+	      if (*outOffsetP + toCopyLen >= MAX_LINE)
+		toCopyLen = MAX_LINE - *outOffsetP;
+	      memcpy (&input_buff[*outOffsetP], toCopy, toCopyLen);
+	      *outOffsetP += toCopyLen;
 
-	  /* Update our input ptr with what we have successfully consumed.  */
-	  inP += label.Data.Id.len;
-	  /* Skip any . after the id - it indicates concatenation (e.g.
-	     $foo.bar).  */
-	  if (*inP == '.')
-	    ++inP;
-	  *inPP = inP;
-	  return;
+	      /* Update our input ptr with what we have successfully consumed.  */
+	      inP += label.Data.Id.len;
+	      /* Skip any . after the id - it indicates concatenation (e.g.
+		 $foo.bar).  */
+	      if (*inP == '.')
+		++inP;
+	      *inPP = inP;
+	      return false;
+	    }
 	}
+      if (!inString)
+	{
+	  /* Not in string literal, so this is an error.  */
+	  error (ErrorWarning, "Unknown variable '%.*s' for $ expansion, you want to use vertical bars ?",
+		 (int)label.Data.Id.len, label.Data.Id.str);
+	}
+      else if (option_pedantic)
+	error (ErrorWarning, "No $ expansion as variable '%.*s' is not defined, you want to use double $ ?",
+	       (int)label.Data.Id.len, label.Data.Id.str);
     }
-  if (!inString)
-    {
-      /* Not in string literal, so this is an error.  */
-      error (ErrorWarning, "Unknown variable '%.*s' for $ expansion, you want to use vertical bars ?",
-	     (int)label.Data.Id.len, label.Data.Id.str);
-    }
-  else if (option_pedantic)
-    error (ErrorWarning, "No $ expansion as variable '%.*s' is not defined, you want to use double $ ?",
-	   (int)label.Data.Id.len, label.Data.Id.str);
   if (*outOffsetP < sizeof (input_buff))
     input_buff[(*outOffsetP)++] = '$';
+  *inPP = inP;
+  return true;
 }
 
 /**
@@ -578,14 +582,14 @@ inputArgSub (void)
 	    bool disableVarSubst = false;
 	    while (outOffset < sizeof (input_buff) && *inP)
 	      {
-		char cc = *inP++;
-		if (cc == '$' && !disableVarSubst)
+		if (*inP == '$' && !disableVarSubst)
 		  inputVarSub (&inP, &outOffset, true);
 		else
 		  {
+		    char cc = *inP++;
 		    input_buff[outOffset++] = cc;
 		    if (cc == '|')
-		      disableVarSubst ^= true;
+		      disableVarSubst = !disableVarSubst;
 		    if (cc == c)
 		      break;
 		  }
@@ -594,8 +598,30 @@ inputArgSub (void)
 	    break;
 
 	  case '$': /* Do variable substitution - $ */
-	    ++inP;
-	    inputVarSub (&inP, &outOffset, false);
+	    {
+	      const size_t origOutOffset = outOffset;
+	      bool dontReExpand = inputVarSub (&inP, &outOffset, false);
+	      size_t expandedLen = outOffset - origOutOffset;
+	      if (expandedLen && !dontReExpand)
+		{
+		  size_t remainingInput = strlen (inP) + 1;
+		  if (expandedLen + remainingInput <= sizeof (workBuff))
+		    {
+		      /* Reprocess the expanded variable as input data.  */
+		      memmove (workBuff + expandedLen, inP, remainingInput);
+		      memcpy (workBuff, input_buff + origOutOffset, expandedLen);
+		      outOffset = origOutOffset;
+		      inP = workBuff;
+		    }
+		  else
+		    {
+		      /* Would overflow workBuff.  */
+		      errorAbort ("Line expansion resulted in overflow - line ignored");
+		      input_buff[0] = 0;
+		      return false;
+		    }
+		}
+	    }
 	    break;
 	}
     }
