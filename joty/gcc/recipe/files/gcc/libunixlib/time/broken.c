@@ -7,14 +7,14 @@
 #include <locale.h>
 #include <swis.h>
 
-static inline const _kernel_oserror *
+static __inline__ const _kernel_oserror * __attribute__ ((always_inline))
 SWI_Territory_ConvertOrdinalsToTime (int __territory,
 				     char __ro_time[],
 				     const unsigned int __ordinals[])
 {
   register int territory __asm ("r0") = __territory;
   register char *ro_time __asm ("r1") = __ro_time;
-  register const unsigned int ordinals __asm ("r2") = __ordinals;
+  register const unsigned int *ordinals __asm ("r2") = __ordinals;
   register const _kernel_oserror *err __asm ("r0");
   __asm__ volatile ("SWI\t%[SWI_Territory_ConvertOrdinalsToTime]\n\t"
 		    "MOVVC\tr0, #0\n\t"
