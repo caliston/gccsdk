@@ -1,4 +1,0 @@
-Tue Jan 11 01:27:18 CET 2011  David Thomas
-
-	* readfile.c (preprocess): Fix sscanf() call.
-
