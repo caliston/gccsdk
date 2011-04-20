@@ -1,8 +1,8 @@
 Index: gcc/unwind-dw2.c
 ===================================================================
---- gcc/unwind-dw2.c	(revision 162037)
+--- gcc/unwind-dw2.c	(revision 172742)
 +++ gcc/unwind-dw2.c	(working copy)
-@@ -55,6 +55,12 @@
+@@ -59,6 +59,12 @@
  #define DWARF_REG_TO_UNWIND_COLUMN(REGNO) (REGNO)
  #endif
  
@@ -15,7 +15,7 @@ Index: gcc/unwind-dw2.c
  /* This is the register and unwind state for a particular frame.  This
     provides the information necessary to unwind up past a frame and return
     to its caller.  */
-@@ -1394,8 +1400,26 @@
+@@ -1398,8 +1404,26 @@
  static void
  uw_update_context (struct _Unwind_Context *context, _Unwind_FrameState *fs)
  {
@@ -42,7 +42,7 @@ Index: gcc/unwind-dw2.c
    /* In general this unwinder doesn't make any distinction between
       undefined and same_value rule.  Call-saved registers are assumed
       to have same_value rule by default and explicit undefined
-@@ -1412,6 +1436,7 @@
+@@ -1416,6 +1440,7 @@
         can change from frame to frame.  */
      context->ra = __builtin_extract_return_addr
        (_Unwind_GetPtr (context, fs->retaddr_column));
@@ -50,7 +50,7 @@ Index: gcc/unwind-dw2.c
  }
  
  static void
-@@ -1500,15 +1525,43 @@
+@@ -1510,15 +1535,43 @@
     macro because __builtin_eh_return must be invoked in the context of
     our caller.  */
  

@@ -3,9 +3,9 @@
 #
 # Build requirements:
 #   - apt-get install flex bison libgmp3-dev libmpfr-dev texinfo build-essential
-#   - binutils 2.21 and gcc 4.6 needs automake 1.11.1 and autoconf 2.64.
+#   - binutils 2.21 and gcc 4.7 needs automake 1.11.1 and autoconf 2.64.
 #     Note the required automake/autoconf sources will be fetched & built automatically.
-#   - gcc 4.6 needs at least GMP 4.3.2, MPFR 2.4.2 and MPC 0.8.1 (MPFR needs GMP, MPC needs GMP & MPFR)
+#   - gcc 4.7 needs at least GMP 4.3.2, MPFR 2.4.2 and MPC 0.8.1 (MPFR needs GMP, MPC needs GMP & MPFR)
 #     For MPFR/GMP/MPC version numbers, a good set can be found mentioned at gcc/contrib/download_prerequisites.
 #   - gdb requires libncurses5-dev
 
@@ -586,7 +586,7 @@ ifeq "$(GCC_USE_SCM)" "yes"
 # Checkout gcc source:
 $(SRCORIGDIR)/gcc-trunk/LAST_UPDATED:
 	-mkdir -p $(SRCORIGDIR)
-	cd $(SRCORIGDIR) && svn co svn://gcc.gnu.org/svn/gcc/branches/gcc-4_6-branch gcc-trunk
+	cd $(SRCORIGDIR) && svn co svn://gcc.gnu.org/svn/gcc/trunk gcc-trunk
 	cd $(SRCORIGDIR)/gcc-trunk && ./contrib/gcc_update
 else
 # Download gcc source:

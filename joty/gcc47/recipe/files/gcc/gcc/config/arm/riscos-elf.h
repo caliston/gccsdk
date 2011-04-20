@@ -1,5 +1,5 @@
 /* Definitions for ARM running RISC OS using ELF
-   Copyright (C) 2005-2010 Free Software Foundation, Inc.
+   Copyright (C) 2005-2011 Free Software Foundation, Inc.
    Contributed by Nick Burrett (nick@sqrt.co.uk>),
    John Tytgat (John.Tytgat@aaug.net) and Lee Noar (leenoar@sky.com).
 
@@ -23,10 +23,6 @@ along with GCC; see the file COPYING3.  If not see
    any conflicting definitions and add any extras.  */
 
 #include <stdarg.h>
-
-/* Run-time Target Specification.  */
-#undef  TARGET_VERSION
-#define TARGET_VERSION fputs (" (ARM RISC OS with ELF)", stderr)
 
 /* Do not assume anything about header files.  */
 #define NO_IMPLICIT_EXTERN_C
@@ -256,8 +252,8 @@ along with GCC; see the file COPYING3.  If not see
 /* If we're targeting explicit APCS stack checks, then force calls to
    __builtin_return_address and __builtin_frame_address as library
    function calls.  */
-#define HAVE_BUILTIN_RETURN_ADDR_FUNC (OPTION_APCS_STACK)
-#define HAVE_BUILTIN_FRAME_ADDR_FUNC (OPTION_APCS_STACK)
+#define HAVE_BUILTIN_RETURN_ADDR_FUNC (TARGET_APCS_STACK)
+#define HAVE_BUILTIN_FRAME_ADDR_FUNC (TARGET_APCS_STACK)
 
 #define TARGET_RISCOSELF
 
