@@ -1,6 +1,6 @@
 Index: configure.ac
 ===================================================================
---- configure.ac	(revision 173141)
+--- configure.ac	(revision 173392)
 +++ configure.ac	(working copy)
 @@ -153,6 +153,7 @@
  target_libraries="target-libgcc \
@@ -10,7 +10,7 @@ Index: configure.ac
  		target-newlib \
  		target-libgomp \
  		target-libstdc++-v3 \
-@@ -1076,6 +1077,14 @@
+@@ -1091,6 +1092,14 @@
      ;;
  esac
  
@@ -25,7 +25,7 @@ Index: configure.ac
  # If we aren't building newlib, then don't build libgloss, since libgloss
  # depends upon some newlib header files.
  case "${noconfigdirs}" in
-@@ -2949,6 +2958,10 @@
+@@ -2964,6 +2973,10 @@
     ;;
    esac
    ;;
