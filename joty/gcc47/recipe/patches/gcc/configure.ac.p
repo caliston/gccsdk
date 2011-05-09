@@ -1,6 +1,6 @@
 Index: configure.ac
 ===================================================================
---- configure.ac	(revision 173506)
+--- configure.ac	(revision 173589)
 +++ configure.ac	(working copy)
 @@ -153,6 +153,7 @@
  target_libraries="target-libgcc \
@@ -25,7 +25,7 @@ Index: configure.ac
  # If we aren't building newlib, then don't build libgloss, since libgloss
  # depends upon some newlib header files.
  case "${noconfigdirs}" in
-@@ -2899,6 +2908,10 @@
+@@ -2901,6 +2910,10 @@
     ;;
    esac
    ;;
