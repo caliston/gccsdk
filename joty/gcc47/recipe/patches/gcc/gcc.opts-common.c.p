@@ -1,8 +1,8 @@
 Index: gcc/opts-common.c
 ===================================================================
---- gcc/opts-common.c	(revision 172742)
+--- gcc/opts-common.c	(revision 173874)
 +++ gcc/opts-common.c	(working copy)
-@@ -743,7 +743,8 @@
+@@ -759,7 +759,8 @@
    if (cl_options [next_opt_idx].neg_index == opt_idx)
      return true;
  
