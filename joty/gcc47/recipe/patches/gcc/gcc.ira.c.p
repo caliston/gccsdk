@@ -1,8 +1,8 @@
 Index: gcc/ira.c
 ===================================================================
---- gcc/ira.c	(revision 173802)
+--- gcc/ira.c	(revision 174131)
 +++ gcc/ira.c	(working copy)
-@@ -1749,7 +1749,9 @@
+@@ -1775,7 +1775,9 @@
       sp-adjusting insns for this case.  */
    int need_fp
      = (! flag_omit_frame_pointer
