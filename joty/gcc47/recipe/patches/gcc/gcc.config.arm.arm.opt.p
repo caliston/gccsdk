@@ -1,8 +1,8 @@
 Index: gcc/config/arm/arm.opt
 ===================================================================
---- gcc/config/arm/arm.opt	(revision 173874)
+--- gcc/config/arm/arm.opt	(revision 175348)
 +++ gcc/config/arm/arm.opt	(working copy)
-@@ -42,6 +42,9 @@
+@@ -52,6 +52,9 @@
  Enum(arm_abi_type) String(iwmmxt) Value(ARM_ABI_IWMMXT)
  
  EnumValue
