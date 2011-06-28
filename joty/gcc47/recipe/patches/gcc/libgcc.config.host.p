@@ -1,8 +1,8 @@
 Index: libgcc/config.host
 ===================================================================
---- libgcc/config.host	(revision 174860)
+--- libgcc/config.host	(revision 175591)
 +++ libgcc/config.host	(working copy)
-@@ -269,6 +269,8 @@
+@@ -272,6 +272,8 @@
  	;;
  arm*-*-eabi* | arm*-*-symbianelf* )
  	;;
