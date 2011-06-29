@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.c
 ===================================================================
---- gcc/config/arm/arm.c	(revision 175591)
+--- gcc/config/arm/arm.c	(revision 175661)
 +++ gcc/config/arm/arm.c	(working copy)
 @@ -124,6 +124,8 @@
  #if TARGET_DLLIMPORT_DECL_ATTRIBUTES
@@ -10,8 +10,8 @@ Index: gcc/config/arm/arm.c
 +static void require_pic_register (void);
  static void arm_output_function_epilogue (FILE *, HOST_WIDE_INT);
  static void arm_output_function_prologue (FILE *, HOST_WIDE_INT);
- static void thumb1_output_function_prologue (FILE *, HOST_WIDE_INT);
-@@ -1464,6 +1466,36 @@
+ static int arm_comp_type_attributes (const_tree, const_tree);
+@@ -1463,6 +1465,36 @@
        target_flags |= MASK_APCS_FRAME;
      }
  
@@ -48,7 +48,7 @@ Index: gcc/config/arm/arm.c
    if (TARGET_POKE_FUNCTION_NAME)
      target_flags |= MASK_APCS_FRAME;
  
-@@ -1481,8 +1513,10 @@
+@@ -1480,8 +1512,10 @@
        && (TARGET_DEFAULT & MASK_APCS_FRAME))
      warning (0, "-g with -mno-apcs-frame may not give sensible debugging");
  
@@ -59,7 +59,7 @@ Index: gcc/config/arm/arm.c
  
    /* Initialize boolean versions of the flags, for use in the arm.md file.  */
    arm_arch3m = (insn_flags & FL_ARCH3M) != 0;
-@@ -1623,6 +1657,17 @@
+@@ -1622,6 +1656,17 @@
    if (TARGET_SOFT_FLOAT)
      arm_fpu_attr = FPU_NONE;
  
@@ -77,7 +77,7 @@ Index: gcc/config/arm/arm.c
    if (TARGET_AAPCS_BASED)
      {
        if (arm_abi == ARM_ABI_IWMMXT)
-@@ -1692,6 +1737,11 @@
+@@ -1691,6 +1736,11 @@
        flag_pic = 0;
      }
  
@@ -89,7 +89,7 @@ Index: gcc/config/arm/arm.c
    /* If stack checking is disabled, we can use r10 as the PIC register,
       which keeps r9 available.  The EABI specifies r9 as the PIC register.  */
    if (flag_pic && TARGET_SINGLE_PIC_BASE)
-@@ -1703,6 +1753,7 @@
+@@ -1702,6 +1752,7 @@
  
    if (flag_pic && TARGET_VXWORKS_RTP)
      arm_pic_register = 9;
@@ -97,7 +97,7 @@ Index: gcc/config/arm/arm.c
  
    if (arm_pic_register_string != NULL)
      {
-@@ -2033,11 +2084,14 @@
+@@ -2032,11 +2083,14 @@
  
    /* So do interrupt functions that use the frame pointer and Thumb
       interrupt functions.  */
@@ -114,7 +114,7 @@ Index: gcc/config/arm/arm.c
  
    /* As do variadic functions.  */
    if (crtl->args.pretend_args_size
-@@ -2045,10 +2099,10 @@
+@@ -2044,10 +2098,10 @@
        /* Or if the function calls __builtin_eh_return () */
        || crtl->calls_eh_return
        /* Or if the function calls alloca */
@@ -127,7 +127,7 @@ Index: gcc/config/arm/arm.c
  				 && stack_adjust == 4)))
      return 0;
  
-@@ -4319,6 +4373,7 @@
+@@ -4318,6 +4372,7 @@
        pcum->aapcs_partial = 0;
        pcum->aapcs_arg_processed = false;
        pcum->aapcs_cprc_slot = -1;
@@ -135,7 +135,7 @@ Index: gcc/config/arm/arm.c
        pcum->can_split = true;
  
        if (pcum->pcs_variant != ARM_PCS_AAPCS)
-@@ -4339,6 +4394,7 @@
+@@ -4338,6 +4393,7 @@
    /* On the ARM, the offset starts at 0.  */
    pcum->nregs = 0;
    pcum->iwmmxt_nregs = 0;
@@ -143,7 +143,7 @@ Index: gcc/config/arm/arm.c
    pcum->can_split = true;
  
    /* Varargs vectors are treated the same as long long.
-@@ -4422,6 +4478,16 @@
+@@ -4421,6 +4477,16 @@
  	}
      }
  
@@ -160,7 +160,7 @@ Index: gcc/config/arm/arm.c
    /* Put doubleword aligned quantities in even register pairs.  */
    if (pcum->nregs & 1
        && ARM_DOUBLEWORD_ALIGN
-@@ -4466,6 +4532,10 @@
+@@ -4465,6 +4531,10 @@
    if (TARGET_IWMMXT_ABI && arm_vector_mode_supported_p (mode))
      return 0;
  
@@ -171,7 +171,7 @@ Index: gcc/config/arm/arm.c
    if (NUM_ARG_REGS > nregs
        && (NUM_ARG_REGS < nregs + ARM_NUM_REGS2 (mode, type))
        && pcum->can_split)
-@@ -4508,6 +4578,9 @@
+@@ -4507,6 +4577,9 @@
  	  && pcum->named_count > pcum->nargs
  	  && TARGET_IWMMXT_ABI)
  	pcum->iwmmxt_nregs += 1;
@@ -181,7 +181,7 @@ Index: gcc/config/arm/arm.c
        else
  	pcum->nregs += ARM_NUM_REGS2 (mode, type);
      }
-@@ -4856,6 +4929,25 @@
+@@ -4855,6 +4928,25 @@
    if (IS_STACKALIGN (func_type))
      return false;
  
@@ -207,7 +207,7 @@ Index: gcc/config/arm/arm.c
    /* Everything else is ok.  */
    return true;
  }
-@@ -4950,12 +5042,85 @@
+@@ -4949,12 +5041,85 @@
  	  reg = gen_reg_rtx (Pmode);
  	}
  
@@ -293,7 +293,7 @@ Index: gcc/config/arm/arm.c
        if ((GET_CODE (orig) == LABEL_REF
  	   || (GET_CODE (orig) == SYMBOL_REF &&
  	       SYMBOL_REF_LOCAL_P (orig)))
-@@ -4963,6 +5128,7 @@
+@@ -4962,6 +5127,7 @@
  	  && !TARGET_VXWORKS_RTP)
  	insn = arm_pic_static_addr (orig, reg);
        else
@@ -301,7 +301,7 @@ Index: gcc/config/arm/arm.c
  	{
  	  rtx pat;
  	  rtx mem;
-@@ -4980,6 +5146,7 @@
+@@ -4979,6 +5145,7 @@
  
  	  insn = emit_insn (pat);
  	}
@@ -309,7 +309,7 @@ Index: gcc/config/arm/arm.c
  
        /* Put a REG_EQUAL note on this insn, so that it can be optimized
  	 by loop.  */
-@@ -5129,6 +5296,17 @@
+@@ -5128,6 +5295,17 @@
    gcc_assert (flag_pic);
  
    pic_reg = cfun->machine->pic_reg;
@@ -327,7 +327,7 @@ Index: gcc/config/arm/arm.c
    if (TARGET_VXWORKS_RTP)
      {
        pic_rtx = gen_rtx_SYMBOL_REF (Pmode, VXWORKS_GOTT_BASE);
-@@ -5151,7 +5329,7 @@
+@@ -5150,7 +5328,7 @@
  
        /* On the ARM the PC register contains 'dot + 8' at the time of the
  	 addition, on the Thumb it is 'dot + 4'.  */
@@ -336,7 +336,7 @@ Index: gcc/config/arm/arm.c
        pic_rtx = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, pic_rtx),
  				UNSPEC_GOTSYM_OFF);
        pic_rtx = gen_rtx_CONST (Pmode, pic_rtx);
-@@ -5160,7 +5338,15 @@
+@@ -5159,7 +5337,15 @@
  	{
  	  emit_insn (gen_pic_load_addr_32bit (pic_reg, pic_rtx));
  	  if (TARGET_ARM)
@@ -353,7 +353,7 @@ Index: gcc/config/arm/arm.c
  	  else
  	    emit_insn (gen_pic_add_dot_plus_four (pic_reg, pic_reg, labelno));
  	}
-@@ -14040,7 +14226,7 @@
+@@ -14039,7 +14225,7 @@
  	 compromise save just the frame pointers.  Combined with the link
  	 register saved elsewhere this should be sufficient to get
  	 a backtrace.  */
@@ -362,7 +362,7 @@ Index: gcc/config/arm/arm.c
  	save_reg_mask |= 1 << HARD_FRAME_POINTER_REGNUM;
        if (df_regs_ever_live_p (ARM_HARD_FRAME_POINTER_REGNUM))
  	save_reg_mask |= 1 << ARM_HARD_FRAME_POINTER_REGNUM;
-@@ -14056,7 +14242,7 @@
+@@ -14055,7 +14241,7 @@
  	  save_reg_mask |= (1 << reg);
  
        /* Handle the frame pointer as a special case.  */
@@ -371,7 +371,7 @@ Index: gcc/config/arm/arm.c
  	save_reg_mask |= 1 << HARD_FRAME_POINTER_REGNUM;
  
        /* If we aren't loading the PIC register,
-@@ -14065,7 +14251,8 @@
+@@ -14064,7 +14250,8 @@
  	  && !TARGET_SINGLE_PIC_BASE
  	  && arm_pic_register != INVALID_REGNUM
  	  && (df_regs_ever_live_p (PIC_OFFSET_TABLE_REGNUM)
@@ -381,7 +381,7 @@ Index: gcc/config/arm/arm.c
  	save_reg_mask |= 1 << PIC_OFFSET_TABLE_REGNUM;
  
        /* The prologue will copy SP into R0, so save it.  */
-@@ -14100,7 +14287,7 @@
+@@ -14099,7 +14286,7 @@
    unsigned long func_type = arm_current_func_type ();
    int static_chain_stack_bytes = 0;
  
@@ -390,7 +390,7 @@ Index: gcc/config/arm/arm.c
        IS_NESTED (func_type) &&
        df_regs_ever_live_p (3) && crtl->args.pretend_args_size == 0)
      static_chain_stack_bytes = 4;
-@@ -14126,7 +14313,7 @@
+@@ -14125,7 +14312,7 @@
  
    /* If we are creating a stack frame, then we must save the frame pointer,
       IP (which will hold the old stack pointer), LR and the PC.  */
@@ -399,7 +399,7 @@ Index: gcc/config/arm/arm.c
      save_reg_mask |=
        (1 << ARM_HARD_FRAME_POINTER_REGNUM)
        | (1 << IP_REGNUM)
-@@ -14216,7 +14403,7 @@
+@@ -14215,7 +14402,7 @@
      mask |= 1 << PIC_OFFSET_TABLE_REGNUM;
  
    /* See if we might need r11 for calls to _interwork_r11_call_via_rN().  */
@@ -408,7 +408,7 @@ Index: gcc/config/arm/arm.c
      mask |= 1 << ARM_HARD_FRAME_POINTER_REGNUM;
  
    /* LR will also be pushed if any lo regs are pushed.  */
-@@ -14377,7 +14564,7 @@
+@@ -14376,7 +14563,7 @@
  	     corrupted it, or 3) it was saved to align the stack on
  	     iWMMXt.  In case 1, restore IP into SP, otherwise just
  	     restore IP.  */
@@ -417,7 +417,7 @@ Index: gcc/config/arm/arm.c
  	    {
  	      live_regs_mask &= ~ (1 << IP_REGNUM);
  	      live_regs_mask |=   (1 << SP_REGNUM);
-@@ -14410,8 +14597,18 @@
+@@ -14409,8 +14596,18 @@
  
  	  /* Generate the load multiple instruction to restore the
  	     registers.  Note we can get here, even if
@@ -437,7 +437,7 @@ Index: gcc/config/arm/arm.c
  	  if (live_regs_mask & (1 << SP_REGNUM))
  	    {
  	      unsigned HOST_WIDE_INT stack_adjust;
-@@ -14612,12 +14809,13 @@
+@@ -14609,12 +14806,13 @@
    if (IS_STACKALIGN (func_type))
      asm_fprintf (f, "\t%@ Stack Align: May be called with mis-aligned SP.\n");
  
@@ -454,7 +454,7 @@ Index: gcc/config/arm/arm.c
  	       cfun->machine->uses_anonymous_args);
  
    if (cfun->machine->lr_save_eliminated)
-@@ -14684,7 +14882,7 @@
+@@ -14681,7 +14879,7 @@
      if (saved_regs_mask & (1 << reg))
        floats_offset += 4;
  
@@ -463,7 +463,7 @@ Index: gcc/config/arm/arm.c
      {
        /* This variable is for the Virtual Frame Pointer, not VFP regs.  */
        int vfp_offset = offsets->frame;
-@@ -14808,6 +15006,10 @@
+@@ -14805,6 +15003,10 @@
        else
  	saved_regs_mask &= ~ (1 << PC_REGNUM);
  
@@ -474,7 +474,7 @@ Index: gcc/config/arm/arm.c
        /* We must use SP as the base register, because SP is one of the
           registers being restored.  If an interrupt or page fault
           happens in the ldm instruction, the SP might or might not
-@@ -14822,6 +15024,7 @@
+@@ -14819,6 +15021,7 @@
  	asm_fprintf (f, "\tsub\t%r, %r, #%d\n", SP_REGNUM, FP_REGNUM,
  		     4 * bit_count (saved_regs_mask));
        print_multi_reg (f, "ldmfd\t%r, ", SP_REGNUM, saved_regs_mask, 0);
@@ -482,7 +482,7 @@ Index: gcc/config/arm/arm.c
  
        if (IS_INTERRUPT (func_type))
  	/* Interrupt handlers will have pushed the
-@@ -14850,8 +15053,19 @@
+@@ -14847,8 +15050,19 @@
        unsigned HOST_WIDE_INT amount;
        int rfe;
        /* Restore stack pointer if necessary.  */
@@ -503,7 +503,7 @@ Index: gcc/config/arm/arm.c
  	  operands[0] = stack_pointer_rtx;
  	  operands[1] = hard_frame_pointer_rtx;
  	  
-@@ -14860,7 +15074,7 @@
+@@ -14857,7 +15071,7 @@
  	}
        else
  	{
@@ -512,7 +512,7 @@ Index: gcc/config/arm/arm.c
  	    {
  	      /* For Thumb-2 restore sp from the frame pointer.
  		 Operand restrictions mean we have to incrememnt FP, then copy
-@@ -14908,7 +15122,7 @@
+@@ -14905,7 +15119,7 @@
  	      operands[2] = GEN_INT (amount);
  	      output_add_immediate (operands);
  	    }
@@ -521,7 +521,7 @@ Index: gcc/config/arm/arm.c
  	    asm_fprintf (f, "\tmov\t%r, %r\n",
  			 SP_REGNUM, HARD_FRAME_POINTER_REGNUM);
  	}
-@@ -15109,8 +15323,11 @@
+@@ -15106,8 +15320,11 @@
  
        gcc_assert (!use_return_insn (FALSE, NULL)
  		  || (cfun->machine->return_used_this_function != 0)
@@ -535,7 +535,7 @@ Index: gcc/config/arm/arm.c
  
        /* Reset the ARM-specific per-function variables.  */
        after_arm_reorg = 0;
-@@ -15450,15 +15667,23 @@
+@@ -15447,15 +15664,23 @@
  
    /* Initially this is the size of the local variables.  It will translated
       into an offset once we have determined the size of preceding data.  */
@@ -560,7 +560,7 @@ Index: gcc/config/arm/arm.c
                     arm_compute_static_chain_stack_bytes();
  
    if (TARGET_32BIT)
-@@ -15512,6 +15737,7 @@
+@@ -15509,6 +15734,7 @@
    /* A leaf function does not need any stack alignment if it has nothing
       on the stack.  */
    if (leaf && frame_size == 0
@@ -568,7 +568,7 @@ Index: gcc/config/arm/arm.c
        /* However if it calls alloca(), we have a dynamically allocated
  	 block of BIGGEST_ALIGNMENT on stack, so still do stack alignment.  */
        && ! cfun->calls_alloca)
-@@ -15560,7 +15786,10 @@
+@@ -15557,7 +15783,10 @@
  	}
      }
  
@@ -580,7 +580,7 @@ Index: gcc/config/arm/arm.c
    offsets->outgoing_args = (offsets->locals_base
  			    + crtl->outgoing_args_size);
  
-@@ -15586,6 +15815,29 @@
+@@ -15583,6 +15812,29 @@
  
    offsets = arm_get_frame_offsets ();
  
@@ -610,7 +610,7 @@ Index: gcc/config/arm/arm.c
    /* OK, now we have enough information to compute the distances.
       There must be an entry in these switch tables for each pair
       of registers in ELIMINABLE_REGS, even if some of the entries
-@@ -15662,13 +15914,116 @@
+@@ -15659,13 +15911,116 @@
  bool
  arm_can_eliminate (const int from, const int to)
  {
@@ -728,7 +728,7 @@ Index: gcc/config/arm/arm.c
  /* Emit RTL to save coprocessor registers on function entry.  Returns the
     number of bytes pushed.  */
  
-@@ -15805,7 +16160,9 @@
+@@ -15802,7 +16157,9 @@
  void
  arm_expand_prologue (void)
  {
@@ -738,7 +738,7 @@ Index: gcc/config/arm/arm.c
    rtx insn;
    rtx ip_rtx;
    unsigned long live_regs_mask;
-@@ -15813,6 +16170,7 @@
+@@ -15810,6 +16167,7 @@
    int fp_offset = 0;
    int saved_pretend_args = 0;
    int saved_regs = 0;
@@ -746,7 +746,7 @@ Index: gcc/config/arm/arm.c
    unsigned HOST_WIDE_INT args_to_push;
    arm_stack_offsets *offsets;
  
-@@ -15822,6 +16180,16 @@
+@@ -15819,6 +16177,16 @@
    if (IS_NAKED (func_type))
      return;
  
@@ -763,7 +763,7 @@ Index: gcc/config/arm/arm.c
    /* Make a copy of c_f_p_a_s as we may need to modify it locally.  */
    args_to_push = crtl->args.pretend_args_size;
  
-@@ -15866,7 +16234,7 @@
+@@ -15863,7 +16231,7 @@
    /* For APCS frames, if IP register is clobbered
       when creating frame, save that register in a special
       way.  */
@@ -772,7 +772,7 @@ Index: gcc/config/arm/arm.c
      {
        if (IS_INTERRUPT (func_type))
  	{
-@@ -15973,7 +16341,7 @@
+@@ -15970,7 +16338,7 @@
       can be done with a single instruction.  */
    if ((func_type == ARM_FT_ISR || func_type == ARM_FT_FIQ)
        && (live_regs_mask & (1 << LR_REGNUM)) != 0
@@ -781,7 +781,7 @@ Index: gcc/config/arm/arm.c
        && TARGET_ARM)
      {
        rtx lr = gen_rtx_REG (SImode, LR_REGNUM);
-@@ -15984,7 +16352,7 @@
+@@ -15981,7 +16349,7 @@
    if (live_regs_mask)
      {
        saved_regs += bit_count (live_regs_mask) * 4;
@@ -790,7 +790,7 @@ Index: gcc/config/arm/arm.c
  	  && saved_regs == offsets->saved_regs - offsets->saved_args)
  	{
  	  /* If no coprocessor registers are being pushed and we don't have
-@@ -16011,7 +16379,17 @@
+@@ -16008,7 +16376,17 @@
    if (! IS_VOLATILE (func_type))
      saved_regs += arm_save_coproc_regs ();
  
@@ -809,7 +809,7 @@ Index: gcc/config/arm/arm.c
      {
        /* Create the new frame pointer.  */
        if (TARGET_APCS_FRAME)
-@@ -16020,6 +16398,48 @@
+@@ -16017,6 +16395,48 @@
  	  insn = emit_insn (gen_addsi3 (hard_frame_pointer_rtx, ip_rtx, insn));
  	  RTX_FRAME_RELATED_P (insn) = 1;
  
@@ -858,7 +858,7 @@ Index: gcc/config/arm/arm.c
  	  if (IS_NESTED (func_type))
  	    {
  	      /* Recover the static chain register.  */
-@@ -16049,17 +16469,14 @@
+@@ -16046,17 +16466,14 @@
      current_function_static_stack_size
        = offsets->outgoing_args - offsets->saved_args;
  
@@ -878,7 +878,7 @@ Index: gcc/config/arm/arm.c
        do
  	{
  	  last = last ? NEXT_INSN (last) : get_insns ();
-@@ -16070,16 +16487,29 @@
+@@ -16067,16 +16484,29 @@
        /* If the frame pointer is needed, emit a special barrier that
  	 will prevent the scheduler from moving stores to the frame
  	 before the stack adjustment.  */
@@ -911,7 +911,7 @@ Index: gcc/config/arm/arm.c
      {
        unsigned long mask;
  
-@@ -16992,6 +17422,11 @@
+@@ -16989,6 +17419,11 @@
        if (NEED_GOT_RELOC && flag_pic && making_const_table &&
  	  (GET_CODE (x) == SYMBOL_REF || GET_CODE (x) == LABEL_REF))
  	{
@@ -923,7 +923,7 @@ Index: gcc/config/arm/arm.c
  	  /* See legitimize_pic_address for an explanation of the
  	     TARGET_VXWORKS_RTP check.  */
  	  if (TARGET_VXWORKS_RTP
-@@ -17080,7 +17515,11 @@
+@@ -17077,7 +17512,11 @@
  static void
  arm_elf_asm_constructor (rtx symbol, int priority)
  {
@@ -935,7 +935,7 @@ Index: gcc/config/arm/arm.c
  }
  
  /* Add a function to the list of static destructors.  */
-@@ -17830,7 +18269,7 @@
+@@ -17827,7 +18266,7 @@
    /* If we are using the stack pointer to point at the
       argument, then an offset of 0 is correct.  */
    /* ??? Check this is consistent with thumb2 frame layout.  */
@@ -944,7 +944,7 @@ Index: gcc/config/arm/arm.c
        && REGNO (addr) == SP_REGNUM)
      return 0;
  
-@@ -20679,7 +21118,7 @@
+@@ -20683,7 +21122,7 @@
    unsigned long high_regs_pushed = bit_count (live_regs_mask & 0x0f00);
    int n_free, reg_base;
  
@@ -953,7 +953,7 @@ Index: gcc/config/arm/arm.c
      amount = offsets->locals_base - offsets->saved_regs;
    else
      amount = offsets->outgoing_args - offsets->saved_regs;
-@@ -20709,7 +21148,7 @@
+@@ -20713,7 +21152,7 @@
       between the push and the stack frame allocation.  */
    if (for_prologue
        && ((flag_pic && arm_pic_register != INVALID_REGNUM)
@@ -962,7 +962,7 @@ Index: gcc/config/arm/arm.c
      return 0;
  
    reg_base = 0;
-@@ -20919,6 +21358,7 @@
+@@ -20920,6 +21359,7 @@
  #if ARM_FT_UNKNOWN != 0
    machine->func_type = ARM_FT_UNKNOWN;
  #endif
@@ -970,7 +970,7 @@ Index: gcc/config/arm/arm.c
    return machine;
  }
  
-@@ -20930,6 +21370,21 @@
+@@ -20931,6 +21371,21 @@
    if (count != 0)
      return NULL_RTX;
  
@@ -992,7 +992,7 @@ Index: gcc/config/arm/arm.c
    return get_hard_reg_initial_val (Pmode, LR_REGNUM);
  }
  
-@@ -21035,7 +21490,7 @@
+@@ -21237,7 +21692,7 @@
    if (flag_pic && arm_pic_register != INVALID_REGNUM)
      arm_load_pic_register (live_regs_mask);
  
@@ -1001,7 +1001,7 @@ Index: gcc/config/arm/arm.c
      emit_move_insn (gen_rtx_REG (Pmode, ARM_HARD_FRAME_POINTER_REGNUM),
  		    stack_pointer_rtx);
  
-@@ -21092,7 +21547,7 @@
+@@ -21294,7 +21749,7 @@
  	}
      }
  
@@ -1010,7 +1010,7 @@ Index: gcc/config/arm/arm.c
      thumb_set_frame_pointer (offsets);
  
    /* If we are profiling, make sure no instructions are scheduled before
-@@ -21125,7 +21580,7 @@
+@@ -21327,7 +21782,7 @@
    offsets = arm_get_frame_offsets ();
    amount = offsets->outgoing_args - offsets->saved_regs;
  
@@ -1019,7 +1019,7 @@ Index: gcc/config/arm/arm.c
      {
        emit_insn (gen_movsi (stack_pointer_rtx, hard_frame_pointer_rtx));
        amount = offsets->locals_base - offsets->saved_regs;
-@@ -22442,7 +22897,7 @@
+@@ -22436,7 +22891,7 @@
      emit_move_insn (gen_rtx_REG (Pmode, LR_REGNUM), source);
    else
      {
@@ -1028,7 +1028,7 @@ Index: gcc/config/arm/arm.c
  	addr = plus_constant(hard_frame_pointer_rtx, -4);
        else
  	{
-@@ -22485,7 +22940,7 @@
+@@ -22479,7 +22934,7 @@
      {
        limit = 1024;
        /* Find the saved regs.  */
@@ -1037,7 +1037,7 @@ Index: gcc/config/arm/arm.c
  	{
  	  delta = offsets->soft_frame - offsets->saved_args;
  	  reg = THUMB_HARD_FRAME_POINTER_REGNUM;
-@@ -22630,7 +23085,92 @@
+@@ -22624,7 +23079,92 @@
    return mode == SImode ? 255 : 0;
  }
  
@@ -1130,7 +1130,7 @@ Index: gcc/config/arm/arm.c
  /* Map internal gcc register numbers to DWARF2 register numbers.  */
  
  unsigned int
-@@ -22644,6 +23184,9 @@
+@@ -22638,6 +23178,9 @@
    if (IS_FPA_REGNUM (regno))
      return (TARGET_AAPCS_BASED ? 96 : 16) + regno - FIRST_FPA_REGNUM;
  
@@ -1140,7 +1140,7 @@ Index: gcc/config/arm/arm.c
    if (IS_VFP_REGNUM (regno))
      {
        /* See comment in arm_dwarf_register_span.  */
-@@ -22659,7 +23202,13 @@
+@@ -22653,7 +23196,13 @@
    if (IS_IWMMXT_REGNUM (regno))
      return 112 + regno - FIRST_IWMMXT_REGNUM;
  
@@ -1155,7 +1155,7 @@ Index: gcc/config/arm/arm.c
  }
  
  /* Dwarf models VFPv3 registers as 32 64-bit registers.
-@@ -22836,6 +23385,31 @@
+@@ -22830,6 +23379,31 @@
        break;
  
      case REG:
@@ -1187,7 +1187,7 @@ Index: gcc/config/arm/arm.c
        if (REGNO (e0) == SP_REGNUM)
  	{
  	  /* A stack increment.  */
-@@ -22938,6 +23512,13 @@
+@@ -22932,6 +23506,13 @@
        arm_unwind_emit_sequence (asm_out_file, pat);
        break;
  
@@ -1201,7 +1201,7 @@ Index: gcc/config/arm/arm.c
      default:
        abort();
      }
-@@ -23362,6 +23943,10 @@
+@@ -23356,6 +23937,10 @@
  bool
  arm_frame_pointer_required (void)
  {
@@ -1212,7 +1212,7 @@ Index: gcc/config/arm/arm.c
    return (cfun->has_nonlocal_label
            || SUBTARGET_FRAME_POINTER_REQUIRED
            || (TARGET_ARM && TARGET_APCS_FRAME && ! leaf_function_p ()));
-@@ -23906,10 +24491,10 @@
+@@ -23900,10 +24485,10 @@
        fixed_regs[PIC_OFFSET_TABLE_REGNUM] = 1;
        call_used_regs[PIC_OFFSET_TABLE_REGNUM] = 1;
      }
