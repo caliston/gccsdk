@@ -68,8 +68,8 @@ Put_DataWithOffset (size_t offset, size_t size, ARMWord data)
 {
   if (AREA_IMAGE (areaCurrentSymbol->area.info))
     {
-      if (AREA_NOSPACE (areaCurrentSymbol->area.info, offset + size))
-	areaGrow (areaCurrentSymbol->area.info, size);
+      if (offset + size > (unsigned)areaCurrentSymbol->value.Data.Int.i)
+	Area_EnsureExtraSize (offset + size - (unsigned)areaCurrentSymbol->value.Data.Int.i);
 
       switch (size)
 	{
@@ -208,8 +208,9 @@ Put_FloatDataWithOffset (size_t offset, size_t size, ARMFloat data, bool alignBe
   
   if (AREA_IMAGE (areaCurrentSymbol->area.info))
     {
-      if (AREA_NOSPACE (areaCurrentSymbol->area.info, offset + size))
-	areaGrow (areaCurrentSymbol->area.info, size);
+      if (offset + size > (unsigned)areaCurrentSymbol->value.Data.Int.i)
+	Area_EnsureExtraSize (offset + size - (unsigned)areaCurrentSymbol->value.Data.Int.i);
+
       for (size_t i = 0; i < size; i++)
 	Put_DataWithOffset (offset + i, 1, toWrite[i]);
     }
@@ -224,8 +225,9 @@ Put_InsWithOffset (size_t offset, ARMWord ins)
 
   if (AREA_IMAGE (areaCurrentSymbol->area.info))
     {
-      if (AREA_NOSPACE (areaCurrentSymbol->area.info, offset + 4))
-	areaGrow (areaCurrentSymbol->area.info, 4);
+      if (offset + 4 > (unsigned)areaCurrentSymbol->value.Data.Int.i)
+	Area_EnsureExtraSize (offset + 4 - (unsigned)areaCurrentSymbol->value.Data.Int.i);
+
       areaCurrentSymbol->area.info->image[offset + 0] = ins & 0xff;
       areaCurrentSymbol->area.info->image[offset + 1] = (ins >> 8) & 0xff;
       areaCurrentSymbol->area.info->image[offset + 2] = (ins >> 16) & 0xff;

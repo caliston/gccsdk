@@ -59,7 +59,6 @@
 #define AREA_SOFTFLOAT		0x80000000 /* Avoids FP instructions (GCCSDK extension) Normally reserved bit. */
 
 #define AREA_IMAGE(x) (!((x)->type & AREA_UDATA))
-#define AREA_NOSPACE(x,v) ((x)->imagesize < v)
 
 #define AREA_DEFAULT_ALIGNMENT	0x00000002
 
@@ -93,7 +92,7 @@ extern Symbol *areaHeadSymbol; /** Start of the linked list of all area symbols 
 
 void areaInit (void);
 void areaFinish (void);
-void areaGrow (Area *area, size_t mingrow);
+void Area_EnsureExtraSize (size_t mingrow);
 
 bool Area_IsImplicit (const Symbol *sym);
 size_t Area_AlignTo (size_t offset, int align, const char *msg);

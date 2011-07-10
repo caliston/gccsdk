@@ -110,29 +110,34 @@ areaImage (Area *area, size_t newsize)
 }
 
 
+/**
+ * Ensures the current area has at least \t mingrow bytes free.
+ */
 void
-areaGrow (Area *area, size_t mingrow)
+Area_EnsureExtraSize (size_t mingrow)
 {
+  if ((unsigned)areaCurrentSymbol->value.Data.Int.i + mingrow <= areaCurrentSymbol->area.info->imagesize)
+    return;
+
   /* When we want to grow an implicit area, it is time to give an error as
      this is not something we want to output.  */
-  if (area->imagesize == 0)
+  if (areaCurrentSymbol->area.info->imagesize == 0)
     {
-      assert (areaCurrentSymbol->area.info == area);
       if (!strcmp (areaCurrentSymbol->str, IMPLICIT_AREA_NAME))
 	error (ErrorError, "No area defined");
     }
 
   size_t inc;
-  if (area->imagesize && area->imagesize < DOUBLE_UP_TO)
-    inc = area->imagesize;
+  if (areaCurrentSymbol->area.info->imagesize && areaCurrentSymbol->area.info->imagesize < DOUBLE_UP_TO)
+    inc = areaCurrentSymbol->area.info->imagesize;
   else
     inc = GROWSIZE;
   if (inc < mingrow)
     inc = mingrow;
-  while (inc > mingrow && !areaImage (area, area->imagesize + inc))
+  while (inc > mingrow && !areaImage (areaCurrentSymbol->area.info, areaCurrentSymbol->area.info->imagesize + inc))
     inc /= 2;
-  if (inc <= mingrow && !areaImage (area, area->imagesize + mingrow))
-    errorAbort ("Internal areaGrow: out of memory, minsize = %zd", mingrow);
+  if (inc <= mingrow && !areaImage (areaCurrentSymbol->area.info, areaCurrentSymbol->area.info->imagesize + mingrow))
+    errorAbort ("Area_EnsureExtraSize(): out of memory, minsize = %zd", mingrow);
 }
 
 void
@@ -262,8 +267,7 @@ c_align (void)
 
       bytesToStuff += (offsetValue / alignValue)*alignValue;
 
-      if (AREA_NOSPACE (areaCurrentSymbol->area.info, areaCurrentSymbol->value.Data.Int.i + bytesToStuff))
-	areaGrow (areaCurrentSymbol->area.info, bytesToStuff);
+      Area_EnsureExtraSize (bytesToStuff);
 
       while (bytesToStuff--)
 	areaCurrentSymbol->area.info->image[areaCurrentSymbol->value.Data.Int.i++] = 0;
@@ -282,9 +286,8 @@ Area_AlignTo (size_t offset, int align, const char *msg)
   assert (align && (align & (align - 1)) == 0);
   if (msg && (offset & (align - 1)) != 0)
     error (ErrorWarning, "Unaligned %s", msg);
-  size_t newOffset = (offset + align-1) & -align;      
-  if (AREA_NOSPACE (areaCurrentSymbol->area.info, newOffset))
-    areaGrow (areaCurrentSymbol->area.info, newOffset - areaCurrentSymbol->value.Data.Int.i);
+  size_t newOffset = (offset + align-1) & -align;
+  Area_EnsureExtraSize (newOffset - (unsigned)areaCurrentSymbol->value.Data.Int.i);
   if ((size_t)areaCurrentSymbol->value.Data.Int.i < newOffset)
     {
       for (size_t i = areaCurrentSymbol->value.Data.Int.i; i != newOffset; ++i)
@@ -304,15 +307,13 @@ c_reserve (void)
   const Value *value = exprBuildAndEval (ValueInt);
   if (value->Tag == ValueInt)
     {
+      if (value->Data.Int.i < 0)
+	error (ErrorWarning, "Reserve space value is considered unsigned, i.e. reserving %u bytes now\n", value->Data.Int.i);
+      Area_EnsureExtraSize ((unsigned)value->Data.Int.i);
+
       size_t i = areaCurrentSymbol->value.Data.Int.i;
-
-      if (AREA_NOSPACE (areaCurrentSymbol->area.info, i + value->Data.Int.i))
-	areaGrow (areaCurrentSymbol->area.info, value->Data.Int.i);
-
       areaCurrentSymbol->value.Data.Int.i += value->Data.Int.i;
-
-      while (i != (size_t)areaCurrentSymbol->value.Data.Int.i)
-	areaCurrentSymbol->area.info->image[i++] = 0;
+      memset (&areaCurrentSymbol->area.info->image[i], 0, (unsigned)value->Data.Int.i);
     }
   else
     error (ErrorError, "Unresolved reserve not possible");
