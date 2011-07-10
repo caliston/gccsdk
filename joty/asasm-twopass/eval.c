@@ -603,7 +603,7 @@ evalUnop (Operator op, Value *value)
 	  if ((s = strndup (value->Data.String.s, value->Data.String.len)) == NULL)
 	    errorOutOfMem();
 	  FILE *fp;
-	  if ((fp = getInclude (s, NULL)) == NULL)
+	  if ((fp = Include_Get (s, NULL, true)) == NULL)
 	    {
 	      error (ErrorError, "Cannot open file \"%s\"", s ? s : "");
 	      free (s);

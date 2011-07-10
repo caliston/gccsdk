@@ -552,7 +552,7 @@ c_incbin (void)
   *cptr = '\0';
 
   const char *newFilename;
-  FILE *binfp = getInclude (filename, &newFilename);
+  FILE *binfp = Include_Get (filename, &newFilename, true);
   if (!binfp)
     {
       error (ErrorError, "Cannot open file \"%s\"", filename);

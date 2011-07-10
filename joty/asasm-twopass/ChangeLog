@@ -1,3 +1,16 @@
+Sun Jul 10 15:05:20 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include.h (addInclude, getInclude): Rename to Include_Add, Include_Get.
+	* include.c: Likewise.
+	(Include_Add): Drop return value.
+	(Include_Get): Add inc parameter.
+	* commands.c (c_incbin): Follow Include_* API change.
+	* main.c (main): Likewise.
+	* eval.c (evalUnop): Likewise.
+	* filestack.c (FS_PushFilePObject): Use Include_Get to open the
+	command line specified assembler file.  This removes stdin support.
+	* regression/Makefile: Add V variable.
+
 Sun Jul 10 14:12:34 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* input.c (inputInit): Remove.

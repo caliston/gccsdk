@@ -48,12 +48,12 @@ static const char **incDirPP;
 static unsigned incDirCurSize;
 static unsigned incDirMaxSize;
 
-int
-addInclude (const char *path)
+void
+Include_Add (const char *path)
 {
   for (unsigned i = 0; i != incDirCurSize; i++)
     if (strcmp (incDirPP[i], path) == 0)
-      return 0; /* already in list */
+      return; /* already in list */
 
   /* Need to add to the list */
   if (incDirCurSize == incDirMaxSize)
@@ -70,20 +70,15 @@ addInclude (const char *path)
 
   char *newPath = strdup (path);
   if (newPath == NULL)
-    {
-      errorOutOfMem ();
-      return -1;
-    }
+    errorOutOfMem ();
   /* Strip trailing DIR separator */
   size_t len = strlen (newPath);
   if (newPath[len] == DIR)
     newPath[len] = '\0';
   incDirPP[incDirCurSize++] = newPath;
 #ifdef DEBUG
-  fprintf (stderr, "addInclude: added %s\n", newPath);
+  fprintf (stderr, "Include_Add: added %s\n", newPath);
 #endif
-
-  return 0;
 }
 
 
@@ -96,7 +91,7 @@ addInclude (const char *path)
  * \return When non-NULL, a std C file stream pointer.
  */
 static FILE *
-openInclude (const char *filename, const char **strdupFilename)
+Include_Open (const char *filename, const char **strdupFilename)
 {
   FILE *fp;
   if ((fp = fopen (filename, "r")) == NULL)
@@ -133,23 +128,21 @@ openInclude (const char *filename, const char **strdupFilename)
  * \param filename Filename of file which needs to be opened.
  * \param strdupFilename When non-NULL, is a pointer of a value containing
  * on return a malloc block holding the possibly better qualified filename.
+ * \param inc When true, consider user support include paths.
  * \return When non-NULL, a std C file stream pointer.
  */
 FILE *
-getInclude (const char *file, const char **strdupFilename)
+Include_Get (const char *file, const char **strdupFilename, bool inc)
 {
-  if (strdupFilename)
-    *strdupFilename = NULL;
-
 #ifdef __riscos__
   const char *filename = file;
 #else
-  char *filename = rname (file);
+  const char *filename = rname (file);
 #endif
   FILE *fp;
-  if ((fp = openInclude (filename, strdupFilename)) != NULL)
+  if ((fp = Include_Open (filename, strdupFilename)) != NULL || !inc)
     return fp;
-
+  
   /* Try to find the file via the user supplied include paths.  */
 #ifndef __riscos__
   if (filename[0] == '.' && filename[1] == '/')
@@ -165,7 +158,7 @@ getInclude (const char *file, const char **strdupFilename)
 	    *dot = '/';
 	}
       
-      return openInclude (filename, strdupFilename);
+      return Include_Open (filename, strdupFilename);
     }
 #else
   if (filename[0] == '@' && filename[1] == '.')
@@ -179,10 +172,10 @@ getInclude (const char *file, const char **strdupFilename)
       incpath[sizeof (incpath) - 1] = '\0';
 
 #ifdef DEBUG
-      fprintf (stderr, "getInclude: Searching for %s\n", incpath);
+      fprintf (stderr, "Include_Get: Searching for %s\n", incpath);
 #endif
 
-      if ((fp = openInclude (incpath, strdupFilename)) != NULL)
+      if ((fp = Include_Open (incpath, strdupFilename)) != NULL)
         return fp;
     }
 

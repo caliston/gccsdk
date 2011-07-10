@@ -381,8 +381,7 @@ main (int argc, char **argv)
 	        }
 	      inclDir = *++argv;
 	    }
-	  if (addInclude (inclDir) < 0)
-	    return EXIT_FAILURE;
+	  Include_Add (inclDir);
 	}
       else if (!strcasecmp (arg, "version") || !strcasecmp (arg, "ver"))
 	{
