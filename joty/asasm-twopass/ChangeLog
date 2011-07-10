@@ -18,6 +18,14 @@ Sun Jul 10 14:12:34 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 	* asm.c (ASM_Assemble): Call FS_PushFilePObject instead of inputInit.
 	* include.c (incDirCurSize, incDirMaxSize): Make type unsigned.
 
+===============================================================================
+
+Sun Jul 10 16:49:00 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* local.c (c_rout): When label is supplied, it should be defined as
+	global label just like any others.
+	* regression/tests_pass/local_label.s: Enhance ROUT test.
+
 Sat Jun 25 17:57:13 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* regression/tests_pass/rotator.s: Added.
