@@ -204,15 +204,6 @@ Input_RollBackToMark (const char *mark)
 }
 
 
-void
-inputInit (const char *infile)
-{
-  if (!strcmp (infile, "-"))
-    infile = NULL;
-  FS_PushFilePObject (infile == NULL ? NULL : infile);
-}
-
-
 /**
  * Read a line from the input file into file global |workBuff|, with some
  * minimal error checking.

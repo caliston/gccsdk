@@ -2,7 +2,7 @@
  * AS an assembler for ARM
  * Copyright (c) Andy Duplain, August 1992.
  * Converted to RISC OS by Niklas Röjemo
- * Copyright (c) 2002-2008 GCCSDK Developers
+ * Copyright (c) 2002-2011 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -45,24 +45,20 @@
 #define DIR '/'
 
 static const char **incDirPP;
-static int incDirCurSize;
-static int incDirMaxSize;
+static unsigned incDirCurSize;
+static unsigned incDirMaxSize;
 
 int
 addInclude (const char *path)
 {
-  int i;
-  size_t len;
-  char *newPath;
-
-  for (i = 0; i < incDirCurSize; i++)
+  for (unsigned i = 0; i != incDirCurSize; i++)
     if (strcmp (incDirPP[i], path) == 0)
       return 0; /* already in list */
 
   /* Need to add to the list */
   if (incDirCurSize == incDirMaxSize)
     {
-      int newDirMaxSize = 2*incDirMaxSize + 3;
+      size_t newDirMaxSize = 2*incDirMaxSize + 3;
       incDirPP = (const char **)realloc (incDirPP, newDirMaxSize * sizeof (const char *));
       if (incDirPP == NULL)
         {
@@ -72,14 +68,14 @@ addInclude (const char *path)
       incDirMaxSize = newDirMaxSize;
     }
 
-  newPath = strdup (path);
+  char *newPath = strdup (path);
   if (newPath == NULL)
     {
       errorOutOfMem ();
       return -1;
     }
   /* Strip trailing DIR separator */
-  len = strlen (newPath);
+  size_t len = strlen (newPath);
   if (newPath[len] == DIR)
     newPath[len] = '\0';
   incDirPP[incDirCurSize++] = newPath;
@@ -176,8 +172,7 @@ getInclude (const char *file, const char **strdupFilename)
     filename += 2; /* Skip @. */
 #endif
 
-  int i;
-  for (i = 0; i < incDirCurSize; i++)
+  for (unsigned i = 0; i != incDirCurSize; i++)
     {
       char incpath[MAXPATHLEN];
       snprintf (incpath, sizeof (incpath), "%s%c%s", incDirPP[i], DIR, filename);

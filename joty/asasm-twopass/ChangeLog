@@ -1,3 +1,10 @@
+Sun Jul 10 14:12:34 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c (inputInit): Remove.
+	* input.h: Likewise.
+	* asm.c (ASM_Assemble): Call FS_PushFilePObject instead of inputInit.
+	* include.c (incDirCurSize, incDirMaxSize): Make type unsigned.
+
 Sat Jun 25 17:57:13 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* regression/tests_pass/rotator.s: Added.

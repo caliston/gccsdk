@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2010 GCCSDK Developers
+ * Copyright (c) 2000-2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -56,7 +56,7 @@
 void
 ASM_Assemble (const char *asmFile)
 {
-  inputInit (asmFile);
+  FS_PushFilePObject (asmFile);
 
   setjmp (asmContinue); // FIXME: this will be wrong when we're skipping if/while contents.
   asmContinueValid = true;

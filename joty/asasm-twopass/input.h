@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2001-2010 GCCSDK Developers
+ * Copyright (c) 2001-2011 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,8 +33,6 @@
 #define MAX_PREDEFINES 10
 extern const char *predefines[MAX_PREDEFINES];
 extern int num_predefines;
-
-void inputInit (const char *infile);
 
 bool Input_Match (char c, bool spacesToo);
 bool Input_MatchKeyword (const char *keyword);
