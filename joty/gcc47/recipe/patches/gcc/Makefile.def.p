@@ -1,6 +1,6 @@
 Index: Makefile.def
 ===================================================================
---- Makefile.def	(revision 175348)
+--- Makefile.def	(revision 176351)
 +++ Makefile.def	(working copy)
 @@ -45,7 +45,8 @@
  host_modules= { module= flex; no_check_cross= true; };
@@ -20,7 +20,7 @@ Index: Makefile.def
  target_modules = { module= newlib; };
  target_modules = { module= libgcc; bootstrap=true; no_check=true; };
  target_modules = { module= libquadmath; };
-@@ -469,6 +471,7 @@
+@@ -470,6 +472,7 @@
  // environment (e.g. on libstdc++).  By default target modules depend
  // on libgcc and newlib/libgloss.
  lang_env_dependencies = { module=libjava; cxx=true; };
@@ -28,7 +28,7 @@ Index: Makefile.def
  lang_env_dependencies = { module=newlib; no_c=true; };
  lang_env_dependencies = { module=libgloss; no_c=true; };
  lang_env_dependencies = { module=libgcc; no_gcc=true; no_c=true; };
-@@ -505,6 +508,8 @@
+@@ -506,6 +509,8 @@
  
  dependencies = { module=all-target-libgloss; on=all-target-newlib; };
  dependencies = { module=all-target-winsup; on=all-target-libtermcap; };
