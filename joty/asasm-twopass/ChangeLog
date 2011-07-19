@@ -1,3 +1,16 @@
+Wed Jul 20 00:08:18 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* macros.c (Macro_Call): Duplicate default argument.
+	(c_macro): Don't do argument substitution when skipping until MEND.
+
+Sun Jul 10 19:21:24 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c, area.h (areaGrow): Rename to Area_EnsureExtraSize and drop area
+	parameter. Add test if there is anything to do so that AREA_NOSPACE is
+	no longer needed.
+	* put.c (Put_DataWithOffset, Put_FloatDataWithOffset,
+	Put_InsWithOffset): Follow areaGrow/Area_EnsureExtraSize change.
+
 Sun Jul 10 15:05:20 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* include.h (addInclude, getInclude): Rename to Include_Add, Include_Get.

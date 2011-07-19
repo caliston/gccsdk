@@ -166,7 +166,7 @@ Macro_Call (const Macro *m, const Lex *label)
 	{
 	  /* Argument '|' means taking the default argument value.  */
 	  free ((void *)arg);
-	  arg = m->defArgs[marg];
+	  arg = strdup (m->defArgs[marg]);
 	}
       args[marg++] = arg;
       skipblanks ();
@@ -448,7 +448,7 @@ c_macro (void)
 lookforMEND:
   do
     {
-      if (!inputNextLine ())
+      if (!inputNextLineNoSubst ())
 	{
 noMEND:
 	  errorAbort ("End of file found while looking for MEND");
