@@ -99,21 +99,29 @@ declare_var (const char *ptr, size_t len, ValueTag type, bool localMacro)
   Symbol *sym = symbolFind (&var);
   if (sym != NULL)
     {
+      if (sym->type & SYMBOL_AREA)
+	{
+	  error (ErrorError, "'%.*s' is already defined as an area",
+		 (int)len, ptr);
+	  return NULL;
+	}
       if (sym->value.Tag != type)
 	{
-	  error (ErrorError, "'%.*s' is already declared as a %s",
-	         (int)len, ptr, valueTagAsString (sym->value.Tag));
+	  error (ErrorError, "'%.*s' is already %s as a %s",
+		 (int)len, ptr,
+		 sym->type & SYMBOL_DEFINED ? "defined" : "declared",
+		 valueTagAsString (sym->value.Tag));
 	  return NULL;
 	}
       if (option_pedantic)
-        error (ErrorWarning, "Redeclaration of %s variable '%.*s'",
+	error (ErrorWarning, "Redeclaration of %s variable '%.*s'",
 	       valueTagAsString (sym->value.Tag),
 	       (int)var.Data.Id.len, var.Data.Id.str);
     }
   else
-    sym = symbolAdd (&var);
+    sym = symbolGet (&var);
 
-  sym->type |= SYMBOL_ABSOLUTE;
+  sym->type |= SYMBOL_DEFINED | SYMBOL_ABSOLUTE;
   if (localMacro)
     sym->type |= SYMBOL_MACRO_LOCAL;
   assign_var (sym, type);

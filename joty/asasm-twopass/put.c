@@ -211,7 +211,7 @@ Put_FloatDataWithOffset (size_t offset, size_t size, ARMFloat data, bool alignBe
       if (offset + size > (unsigned)areaCurrentSymbol->value.Data.Int.i)
 	Area_EnsureExtraSize (offset + size - (unsigned)areaCurrentSymbol->value.Data.Int.i);
 
-      for (size_t i = 0; i < size; i++)
+      for (size_t i = 0; i != size; i++)
 	Put_DataWithOffset (offset + i, 1, toWrite[i]);
     }
   else if (data)

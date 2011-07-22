@@ -1,3 +1,24 @@
+Fri Jul 22 16:00:45 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (Symbol_PreDefReg): Use symbolGet instead of symbolAdd.
+	(symbolAdd): Remove.
+	(symbolGet): Drop NULL assignment.
+	(Symbol_Define): New.
+	* symbol.h (Symbol_Define): Add declaration.
+	(symbolAdd): Remove declaration.
+	* commands.c (Define): Renamed from c_define.  Use Symbol_Define.
+	(c_equ, c_fn, c_rn, c_cn, c_cp): Use Define.
+	* decode.c (decode): Use symbolGet instead of symbolAdd.
+	* storate.c (c_alloc): Likewise.
+	* asm.c (ASM_DefineLabel): Likewise.
+	* variables.c (declare_var): Likewise.  Add AREA symbol clash test.
+	* include.c (Include_Get): Fix const problem.
+	* lit.h (struct LITPOOL): Move to...
+	* lit.c (struct LITPOOL): ...here.
+	(Lit_GetLitOffsetAsSymbol): Use snprintf instead of sprintf.
+	(Lit_RegisterInt): Store trunced values as unsigned.
+	(Lit_RegisterFloat): Test upfront on well known FPE constants.
+
 Wed Jul 20 00:08:18 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* macros.c (Macro_Call): Duplicate default argument.

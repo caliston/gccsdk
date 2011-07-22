@@ -59,7 +59,7 @@
  * symbol is already defined with a value different than parsed.
  */
 static bool
-c_define (const char *msg, Symbol *sym, ValueTag legal)
+Define (const char *msg, Symbol *sym, unsigned symType, ValueTag legal)
 {
   bool fail;
   if (sym == NULL)
@@ -76,19 +76,7 @@ c_define (const char *msg, Symbol *sym, ValueTag legal)
 	  fail = true;
 	}
       else
-	{
-	  if (sym->value.Tag != ValueIllegal && !valueEqual (&sym->value, value))
-	    {
-	      error (ErrorError, "Symbol %s is already defined", sym->str);
-	      fail = true;
-	    }
-	  else
-	    {
-	      Value_Assign (&sym->value, value);
-	      sym->type |= SYMBOL_DEFINED | SYMBOL_DECLARED | SYMBOL_ABSOLUTE;
-	      fail = false;
-	    }
-	}
+	fail = Symbol_Define (sym, SYMBOL_DEFINED | SYMBOL_DECLARED | SYMBOL_ABSOLUTE | symType, value);
     }
   return fail;
 }
@@ -99,7 +87,7 @@ c_define (const char *msg, Symbol *sym, ValueTag legal)
 bool
 c_equ (Symbol *symbol)
 {
-  c_define ("* or EQU", symbol, ValueAll);
+  Define ("* or EQU", symbol, 0, ValueAll);
   return false;
 }
 
@@ -109,9 +97,8 @@ c_equ (Symbol *symbol)
 bool
 c_fn (Symbol *symbol)
 {
-  if (!c_define ("float register", symbol, ValueInt))
+  if (!Define ("float register", symbol, SYMBOL_FPUREG, ValueInt))
     {
-      symbol->type |= SYMBOL_FPUREG;
       int no = symbol->value.Data.Int.i;
       if (no < 0 || no > 7)
 	{
@@ -128,9 +115,8 @@ c_fn (Symbol *symbol)
 bool
 c_rn (Symbol *symbol)
 {
-  if (!c_define ("register", symbol, ValueInt))
+  if (!Define ("register", symbol, SYMBOL_CPUREG, ValueInt))
     {
-      symbol->type |= SYMBOL_CPUREG;
       int no = symbol->value.Data.Int.i;
       if (no < 0 || no > 15)
 	{
@@ -147,9 +133,8 @@ c_rn (Symbol *symbol)
 bool
 c_cn (Symbol *symbol)
 {
-  if (!c_define ("coprocessor register", symbol, ValueInt))
+  if (!Define ("coprocessor register", symbol, SYMBOL_COPREG, ValueInt))
     {
-      symbol->type |= SYMBOL_COPREG;
       int no = symbol->value.Data.Int.i;
       if (no < 0 || no > 15)
 	{
@@ -166,9 +151,8 @@ c_cn (Symbol *symbol)
 bool
 c_cp (Symbol *symbol)
 {
-  if (!c_define ("coprocessor number", symbol, ValueInt))
+  if (!Define ("coprocessor number", symbol, SYMBOL_COPNUM, ValueInt))
     {
-      symbol->type |= SYMBOL_COPNUM;
       int no = symbol->value.Data.Int.i;
       if (no < 0 || no > 15)
 	{

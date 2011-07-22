@@ -137,7 +137,7 @@ Include_Get (const char *file, const char **strdupFilename, bool inc)
 #ifdef __riscos__
   const char *filename = file;
 #else
-  const char *filename = rname (file);
+  char *filename = rname (file);
 #endif
   FILE *fp;
   if ((fp = Include_Open (filename, strdupFilename)) != NULL || !inc)

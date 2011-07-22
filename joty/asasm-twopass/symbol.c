@@ -188,8 +188,8 @@ static void
 Symbol_PreDefReg (const char *regname, size_t namelen, int value, int type)
 {
   const Lex l = lexTempLabel (regname, namelen);
-  Symbol *s = symbolAdd (&l);
-  s->type |= SYMBOL_ABSOLUTE | SYMBOL_DECLARED | type;
+  Symbol *s = symbolGet (&l);
+  s->type |= SYMBOL_DEFINED | SYMBOL_ABSOLUTE | SYMBOL_DECLARED | type;
   s->value = Value_Int (value);
 }
 
@@ -220,54 +220,15 @@ Symbol_Init (void)
 
 
 /**
- * Adds a new symbol definition.  When the symbol was already defined, this is
- * flagged as an error unless it is an area symbol of zero size.
- * \return pointer to Symbol, never NULL.
- */
-Symbol *
-symbolAdd (const Lex *l)
-{
-  assert (l->tag == LexId && "Internal symbolAdd: non-ID");
-
-  Symbol **isearch;
-  for (isearch = &symbolTable[l->Data.Id.hash]; *isearch; isearch = &(*isearch)->next)
-    {
-      Symbol *search = *isearch;
-      if (EqSymLex (search, l))
-	{
-	  if ((search->type & SYMBOL_DEFINED) && !SYMBOL_GETREGTYPE (search->type))
-	    error (ErrorError, "Redefinition of '%.*s'",
-		   (int)l->Data.Id.len, l->Data.Id.str);
-	  else
-	    {
-	      if (search->type & SYMBOL_AREA)
-	        {
-	          if (areaCurrentSymbol->value.Data.Int.i != 0)
-		    error (ErrorError, "Symbol '%.*s' is already defined as area with incompatible definition",
-		           (int)l->Data.Id.len, l->Data.Id.str);
-		}
-	      else
-		search->type |= SYMBOL_DEFINED;
-	    }
-	  return search;
-	}
-    }
-  *isearch = symbolNew (l->Data.Id.str, l->Data.Id.len);
-  (*isearch)->type |= SYMBOL_DEFINED;
-  return *isearch;
-}
-
-
-/**
  * \return Always a non-NULL value pointing to symbol representing given Lex
  * object.
  */
 Symbol *
 symbolGet (const Lex *l)
 {
-  assert (l->tag == LexId);
+  assert (l->tag == LexId && "Internal symbolGet: non-ID");
 
-  Symbol **isearch = NULL;
+  Symbol **isearch;
   for (isearch = &symbolTable[l->Data.Id.hash]; *isearch; isearch = &(*isearch)->next)
     {
       if (EqSymLex (*isearch, l))
@@ -296,12 +257,87 @@ symbolFind (const Lex *l)
 
 
 /**
+ * Defines given symbol with given value and type.  Only to be used for symbols
+ * which can not be (or not supposed to be) redefined as this checks on
+ * redefinition with different value or inconsistencies like area vs area label
+ * definitions.
+ * \return false if successful
+ */
+bool
+Symbol_Define (Symbol *symbol, unsigned newSymbolType, const Value *newValue)
+{
+  if (symbol->type & SYMBOL_AREA)
+    {
+      if (!(newSymbolType & SYMBOL_AREA))
+	{
+	  error (ErrorError, "Area label %s can not be redefined", symbol->str);
+	  return true;
+	}
+    }
+  else if (newSymbolType & SYMBOL_AREA)
+    {
+      error (ErrorError, "Redefinition of label as area %s", symbol->str);
+      return true;
+    }
+  Value newValueCopy = { .Tag = ValueIllegal };
+  if (symbol->type & SYMBOL_DEFINED)
+    {
+      if (SYMBOL_GETREGTYPE(symbol->type) != SYMBOL_GETREGTYPE(newSymbolType))
+	{
+	  error (ErrorError, "Label %s is already defined as a different register type", symbol->str);
+	  return true;
+	}
+      if (symbol->value.Tag != ValueIllegal)
+	{
+	  bool diffValue;
+	  if (valueEqual (&symbol->value, newValue))
+	    diffValue = false;
+	  else
+	    {
+	      if (symbol->value.Tag == ValueSymbol || newValue->Tag == ValueSymbol)
+		{
+		  /* newValue might point into our code array.  */
+		  Value_Assign (&newValueCopy, newValue);
+		  newValue = &newValueCopy;
+
+		  codeInit ();
+		  codeValue (&symbol->value, false);
+		  Value val1 = { .Tag = ValueIllegal };
+		  Value_Assign (&val1, exprEval (ValueAll));
+		  codeInit ();
+		  codeValue (newValue, false);
+		  Value val2 = { .Tag = ValueIllegal };
+		  Value_Assign (&val2, exprEval (ValueAll));
+		  diffValue = !valueEqual (&val1, &val2);
+		  valueFree (&val1);
+		  valueFree (&val2);
+		}
+	      else
+		diffValue = true; /* Not sure if we don't have to try harder here.  */
+	    }
+	  if (diffValue)
+	    {
+	      error (ErrorError, "Label %s can not be redefined with a different value", symbol->str);
+	      return true;
+	    }
+	}
+    }
+  symbol->type |= newSymbolType;
+  Value_Assign (&symbol->value, newValue);
+
+  if (newValue == &newValueCopy)
+    valueFree (&newValueCopy);
+  return false;
+}
+
+
+/**
  * Removes symbol from symbol table.
  */
 void
 symbolRemove (const Lex *l)
 {
-  assert (l->tag == LexId);
+  assert (l->tag == LexId && "Internal symbolRemove: non-ID");
 
   for (Symbol **isearch = &symbolTable[l->Data.Id.hash];
        *isearch != NULL;
@@ -489,9 +525,6 @@ Symbol_CreateSymbolOut (void)
       if (!(sym->type & SYMBOL_AREA))
 	sym->used = symbolIndex;
     }
-#ifdef DEBUG_SYMBOL
-  symbolPrintAll ();
-#endif
   return result;
 }
 

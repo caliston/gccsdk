@@ -23,6 +23,7 @@
 #ifndef symbol_header_included
 #define symbol_header_included
 
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "lex.h"
@@ -66,7 +67,7 @@
 #define SYMBOL_COPNUM		0x40000000
 #define SYMBOL_GETREGTYPE(x)	((x) & 0x70000000)
 
-#define SYMBOL_DECLARED		0x80000000
+#define SYMBOL_DECLARED		0x80000000 /* FIXME: do we really need this ? */
 
 #define SYMBOL_TABLESIZE 1024
 
@@ -106,10 +107,11 @@ typedef struct Symbol
 } Symbol;
 
 void Symbol_Init (void);
-Symbol *symbolAdd (const Lex *l);
 Symbol *symbolGet (const Lex *l);
 Symbol *symbolFind (const Lex *l);
 void symbolRemove (const Lex *l);
+
+bool Symbol_Define (Symbol *symbol, unsigned newSymbolType, const Value *newValue);
 
 typedef struct
 {

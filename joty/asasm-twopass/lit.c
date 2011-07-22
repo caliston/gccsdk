@@ -45,6 +45,21 @@
 #include "reloc.h"
 #include "value.h"
 
+typedef struct LITPOOL
+{
+  struct LITPOOL *next;
+  const char *file;	/** Assembler filename where this literal got requested for the first time.  */
+  int lineno;		/** Assembler file linenumber where this literal got requested for the first time.  */
+
+  int offset;		/** Area offset where the literal got assembled.  */
+  Value value;		/** Literal value.  */
+
+  Lit_eSize size;
+  bool gotAssembled;	/** This literal is assembled.  */
+} LitPool;
+
+static Symbol *Lit_GetLitOffsetAsSymbol (const LitPool *literal);
+
 /**
  * Returns a symbol which will be a ValueInt/ValueCode being the offset where the
  * given literal will be assembled.
@@ -53,8 +68,9 @@ static Symbol *
 Lit_GetLitOffsetAsSymbol (const LitPool *literal)
 {
   char intSymbol[48];
-  snprintf (intSymbol, sizeof (intSymbol), kIntLabelPrefix "Lit$%p", (void *)literal);
-  const Lex lex = lexTempLabel (intSymbol, strlen (intSymbol));
+  int bytesWritten = snprintf (intSymbol, sizeof (intSymbol), kIntLabelPrefix "Lit$%p", (void *)literal);
+  assert (bytesWritten >= 0);
+  const Lex lex = lexTempLabel (intSymbol, (size_t)bytesWritten);
   return symbolGet (&lex);
 }
 
@@ -94,31 +110,36 @@ Lit_RegisterInt (const Value *value, Lit_eSize size)
   Value truncValue = *value;
   if (value->Tag == ValueInt)
     {
+      int truncForUser;
       switch (size)
 	{
 	  case eLitIntUByte:
-	    truncValue.Data.Int.i = (uint8_t)truncValue.Data.Int.i;
+	    truncForUser = (uint8_t)truncValue.Data.Int.i;
+	    truncValue.Data.Int.i &= 0xFF;
 	    break;
 	  case eLitIntSByte:
-	    truncValue.Data.Int.i = (int8_t)truncValue.Data.Int.i;
+	    truncForUser = (int8_t)truncValue.Data.Int.i;
+	    truncValue.Data.Int.i &= 0xFF;
 	    break;
 	  case eLitIntUHalfWord:
-	    truncValue.Data.Int.i = (uint16_t)truncValue.Data.Int.i;
+	    truncForUser = (uint16_t)truncValue.Data.Int.i;
+	    truncValue.Data.Int.i &= 0xFFFF;
 	    break;
 	  case eLitIntSHalfWord:
-	    truncValue.Data.Int.i = (int16_t)truncValue.Data.Int.i;
+	    truncForUser = (int16_t)truncValue.Data.Int.i;
+	    truncValue.Data.Int.i &= 0xFFFF;
 	    break;
 	  case eLitIntWord:
-	    /* Nothing to do.  */
+	    truncForUser = truncValue.Data.Int.i;
 	    break;
 	}
       if (truncValue.Data.Int.i != value->Data.Int.i)
 	error (ErrorWarning, "Constant %d has been truncated to %d by the used mnemonic",
-	       value->Data.Int.i, truncValue.Data.Int.i);
+	       value->Data.Int.i, truncForUser);
       /* Perhaps representable as MOV/MVN:  */
-      if (help_cpuImm8s4 (truncValue.Data.Int.i) != -1
-          || help_cpuImm8s4 (~truncValue.Data.Int.i) != -1)
-	return Value_Int (truncValue.Data.Int.i);
+      if (help_cpuImm8s4 (truncForUser) != -1
+          || help_cpuImm8s4 (~truncForUser) != -1)
+	return Value_Int (truncForUser);
     }
   
   /* Check if we already have the literal assembled in an range of up to
@@ -138,22 +159,22 @@ Lit_RegisterInt (const Value *value, Lit_eSize size)
 	    {
 	      case eLitIntUByte:
 	      case eLitIntSByte:
-		if (((litPoolP->value.Data.Int.i >> 0) & 0xFF) == truncValue.Data.Int.i)
+		if ((((unsigned)litPoolP->value.Data.Int.i >> 0) & 0xFF) == (unsigned)truncValue.Data.Int.i)
 		  {
 		    offset = 0;
 		    equal = true;
 		  }
-		else if (((litPoolP->value.Data.Int.i >> 8) & 0xFF) == truncValue.Data.Int.i)
+		else if ((((unsigned)litPoolP->value.Data.Int.i >> 8) & 0xFF) == (unsigned)truncValue.Data.Int.i)
 		  {
 		    offset = 1;
 		    equal = true;
 		  }
-		else if (((litPoolP->value.Data.Int.i >> 16) & 0xFF) == truncValue.Data.Int.i)
+		else if ((((unsigned)litPoolP->value.Data.Int.i >> 16) & 0xFF) == (unsigned)truncValue.Data.Int.i)
 		  {
 		    offset = 2;
 		    equal = true;
 		  }
-		else if (((litPoolP->value.Data.Int.i >> 24) & 0xFF) == truncValue.Data.Int.i)
+		else if ((((unsigned)litPoolP->value.Data.Int.i >> 24) & 0xFF) == (unsigned)truncValue.Data.Int.i)
 		  {
 		    offset = 3;
 		    equal = true;
@@ -164,12 +185,12 @@ Lit_RegisterInt (const Value *value, Lit_eSize size)
 
 	      case eLitIntUHalfWord:
 	      case eLitIntSHalfWord:
-		if (((litPoolP->value.Data.Int.i >> 0) & 0xFFFF) == truncValue.Data.Int.i)
+		if ((((unsigned)litPoolP->value.Data.Int.i >> 0) & 0xFFFF) == (unsigned)truncValue.Data.Int.i)
 		  {
 		    offset = 0;
 		    equal = true;
 		  }
-		else if (((litPoolP->value.Data.Int.i >> 16) & 0xFFFF) == truncValue.Data.Int.i)
+		else if ((((unsigned)litPoolP->value.Data.Int.i >> 16) & 0xFFFF) == (unsigned)truncValue.Data.Int.i)
 		  {
 		    offset = 2;
 		    equal = true;
@@ -257,8 +278,13 @@ Lit_RegisterFloat (const Value *valueP, Lit_eSize size)
   assert ((size == eLitFloat || size == eLitDouble) && "Incorrect literal size for this routine");
 
   /* Convert given integer value to float.  */
-  Value value = (valueP->Tag == ValueInt) ? Value_Float ((ARMFloat)valueP->Data.Int.i) : *valueP;
+  const Value value = (valueP->Tag == ValueInt) ? Value_Float ((ARMFloat)valueP->Data.Int.i) : *valueP;
   valueP = &value;
+
+  /* Is it one of the well known FPE constants we can encode using MVF/MNF ? */
+  if (FPE_ConvertImmediate (value.Data.Float.f) != (ARMWord)-1
+      || FPE_ConvertImmediate (-value.Data.Float.f) != (ARMWord)-1)
+    return value;
   
   /* Check if we already have the literal assembled in an range of up to
      1020 bytes ago.  */
@@ -340,15 +366,14 @@ Lit_DumpPool (void)
       assert (!litP->gotAssembled);
       litP->gotAssembled = true;
 
-      codeInit ();
-      codeValue (&litP->value, true);
-
       Symbol *symP = Lit_GetLitOffsetAsSymbol (litP);
       symP->type |= SYMBOL_DEFINED | SYMBOL_DECLARED;
       symP->area.rel = areaCurrentSymbol;
 
       /* Check if it is a fixed integer/float which fits an immediate
          representation.  */
+      codeInit ();
+      codeValue (&litP->value, true);
       const Value *constValueP = codeEval (ValueInt | ValueCode | ValueSymbol | ValueFloat, NULL);
       switch (constValueP->Tag)
 	{

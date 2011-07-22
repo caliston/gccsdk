@@ -100,20 +100,18 @@ ASM_DefineLabel (const Lex *label, int offset)
   if (label->tag != LexId)
     return NULL;
 
-  Symbol *symbol = symbolAdd (label);
-  if (symbol->value.Tag != ValueIllegal)
-    return NULL; /* Label was already defined with a value (error is already given).  */
-
+  Value value;
+  unsigned symbolType;
   if (areaCurrentSymbol->area.info->type & AREA_BASED)
     {
       /* Define label as "ValueAddr AreaBaseReg, #<given area offset>".  */
-      symbol->value = Value_Addr (Area_GetBaseReg (areaCurrentSymbol->area.info), offset);
-      symbol->area.rel = areaCurrentSymbol;
+      value = Value_Addr (Area_GetBaseReg (areaCurrentSymbol->area.info), offset);
+      symbolType = SYMBOL_DEFINED;
     }
   else if (areaCurrentSymbol->area.info->type & AREA_ABS)
     {
-      symbol->value = Value_Int (areaCurrentSymbol->area.info->baseAddr + offset);
-      symbol->type |= SYMBOL_ABSOLUTE;
+      value = Value_Int (areaCurrentSymbol->area.info->baseAddr + offset);
+      symbolType = SYMBOL_DEFINED | SYMBOL_ABSOLUTE;
     }
   else
     {
@@ -127,9 +125,16 @@ ASM_DefineLabel (const Lex *label, int offset)
 	    { .Tag = CodeOperator,
 	      .Data.op = Op_add }
 	};
-      symbol->value = Value_Code (sizeof (values)/sizeof (values[0]), values);
-      symbol->area.rel = areaCurrentSymbol;
+      value = Value_Code (sizeof (values)/sizeof (values[0]), values);
+      symbolType = SYMBOL_DEFINED;
     }
+
+  Symbol *symbol = symbolGet (label);
+  if (Symbol_Define (symbol, symbolType, &value))
+    return NULL;
+
+  if (!(areaCurrentSymbol->area.info->type & AREA_ABS))
+    symbol->area.rel = areaCurrentSymbol;
 
   return symbol;
 }
