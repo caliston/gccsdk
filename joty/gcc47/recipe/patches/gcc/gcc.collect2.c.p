@@ -1,6 +1,6 @@
 Index: gcc/collect2.c
 ===================================================================
---- gcc/collect2.c	(revision 173917)
+--- gcc/collect2.c	(revision 176816)
 +++ gcc/collect2.c	(working copy)
 @@ -50,6 +50,11 @@
  #include "intl.h"
@@ -14,7 +14,7 @@ Index: gcc/collect2.c
  /* On certain systems, we have code that works by scanning the object file
     directly.  But this code uses system-specific header files and library
     functions, so turn it off in a cross-compiler.  Likewise, the names of
-@@ -200,6 +205,11 @@
+@@ -199,6 +204,11 @@
  
  static int shared_obj;			/* true if -shared */
  
@@ -26,7 +26,7 @@ Index: gcc/collect2.c
  static const char *c_file;		/* <xxx>.c for constructor/destructor list.  */
  static const char *o_file;		/* <xxx>.o for constructor/destructor list.  */
  #ifdef COLLECT_EXPORT_LIST
-@@ -214,6 +224,9 @@
+@@ -213,6 +223,9 @@
  static const char *ldd_file_name;	/* pathname of ldd (or equivalent) */
  #endif
  static const char *strip_file_name;		/* pathname of strip */
@@ -36,7 +36,7 @@ Index: gcc/collect2.c
  const char *c_file_name;		/* pathname of gcc */
  static char *initname, *fininame;	/* names of init and fini funcs */
  
-@@ -1015,6 +1028,87 @@
+@@ -1014,6 +1027,87 @@
        post_ld_pass (false);
      }
  }
@@ -124,7 +124,7 @@ Index: gcc/collect2.c
  
  /* Main program.  */
  
-@@ -1032,6 +1126,9 @@
+@@ -1031,6 +1125,9 @@
  #endif
    static const char *const strip_suffix = "strip";
    static const char *const gstrip_suffix = "gstrip";
@@ -134,7 +134,7 @@ Index: gcc/collect2.c
  
  #ifdef CROSS_DIRECTORY_STRUCTURE
    /* If we look for a program in the compiler directories, we just use
-@@ -1314,6 +1411,12 @@
+@@ -1315,6 +1412,12 @@
    if (strip_file_name == 0)
      strip_file_name = find_a_file (&path, full_strip_suffix);
  
@@ -147,7 +147,7 @@ Index: gcc/collect2.c
    /* Determine the full path name of the C compiler to use.  */
    c_file_name = getenv ("COLLECT_GCC");
    if (c_file_name == 0)
-@@ -1376,6 +1479,12 @@
+@@ -1377,6 +1480,12 @@
  	*c_ptr++ = xstrdup (q);
        if (strcmp (q, "-shared") == 0)
  	shared_obj = 1;
@@ -160,7 +160,7 @@ Index: gcc/collect2.c
        if (*q == '-' && q[1] == 'B')
  	{
  	  *c_ptr++ = xstrdup (q);
-@@ -1667,6 +1776,10 @@
+@@ -1662,6 +1771,10 @@
  #endif
        fprintf (stderr, "strip_file_name     = %s\n",
  	       (strip_file_name ? strip_file_name : "not found"));
@@ -171,7 +171,7 @@ Index: gcc/collect2.c
        fprintf (stderr, "c_file              = %s\n",
  	       (c_file ? c_file : "not found"));
        fprintf (stderr, "o_file              = %s\n",
-@@ -1726,6 +1839,11 @@
+@@ -1721,6 +1834,11 @@
  
  	maybe_unlink (c_file);
  	maybe_unlink (o_file);
@@ -183,7 +183,7 @@ Index: gcc/collect2.c
  	return 0;
        }
    }
-@@ -1798,6 +1916,11 @@
+@@ -1793,6 +1911,11 @@
  
        maybe_unlink (c_file);
        maybe_unlink (o_file);
@@ -195,7 +195,7 @@ Index: gcc/collect2.c
        return 0;
      }
  
-@@ -1898,6 +2021,10 @@
+@@ -1893,6 +2016,10 @@
    maybe_unlink (export_file);
  #endif
  
