@@ -40,6 +40,7 @@
 #include "m_fpe.h"
 #include "help_cpu.h"
 #include "lit.h"
+#include "local.h"
 #include "main.h"
 #include "reloc.h"
 #include "value.h"
@@ -52,7 +53,7 @@ static Symbol *
 Lit_GetLitOffsetAsSymbol (const LitPool *literal)
 {
   char intSymbol[48];
-  snprintf (intSymbol, sizeof (intSymbol), "$$$$$$$Lit$%p", (void *)literal);
+  snprintf (intSymbol, sizeof (intSymbol), kIntLabelPrefix "Lit$%p", (void *)literal);
   const Lex lex = lexTempLabel (intSymbol, strlen (intSymbol));
   return symbolGet (&lex);
 }
@@ -333,7 +334,7 @@ Lit_DumpPool (void)
       litP = nextLitP;
     }
   prevLitP->next = unAsmLitP;
-
+  
   for (LitPool *litP = unAsmLitP; litP != NULL; litP = litP->next)
     {
       assert (!litP->gotAssembled);
@@ -426,6 +427,10 @@ Lit_DumpPool (void)
 	    errorLine (litP->file, litP->lineno, ErrorError, "Unsupported literal case");
 	    break;
 	}
+
+      /* At this point we're sure we're going to write data in the current
+         area.  Mark it as such.  */
+      Area_MarkStartAs (eData);
       
       /* Ensure alignment.  */
       switch (litP->size)

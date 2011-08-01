@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2001-2010 GCCSDK Developers
+ * Copyright (c) 2001-2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@
 
 /* Lowest 8 bits encode the alignment of the start of the area as a power
    of 2 and has a value between 2 and 32.  */
-#define AREA_DEFAULT_ALIGNMENT	0x00000002
+#define AREA_ALIGN_MASK		0x000000FF
 #define AREA_ABS		0x00000100
 #define AREA_CODE		0x00000200
 #define AREA_COMMONDEF		0x00000400 /* Common block definition */
@@ -60,6 +60,8 @@
 
 #define AREA_IMAGE(x) (!((x)->type & AREA_UDATA))
 #define AREA_NOSPACE(x,v) ((x)->imagesize < v)
+
+#define AREA_DEFAULT_ALIGNMENT	0x00000002
 
 struct LITPOOL;
 
@@ -115,5 +117,15 @@ extern bool gArea_Preserve8Guessed;
 
 bool c_preserve8 (void);
 bool c_require8 (void);
+
+typedef enum
+{
+  eInvalid = -1,
+  eARM = 0,
+  eData = 1,
+  eThumb = 2
+} Area_eEntryType;
+void Area_MarkStartAs (Area_eEntryType type);
+bool Area_IsMappingSymbol (const char *);
 
 #endif

@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1997 Darren Salt
- * Copyright (c) 2000-2010 GCCSDK Developers
+ * Copyright (c) 2000-2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,6 +29,7 @@
 #  include <inttypes.h>
 #endif
 
+#include "area.h"
 #include "asm.h"
 #include "error.h"
 #include "filestack.h"
@@ -51,9 +52,8 @@ static routPos *routListEnd;
 int Local_ROUTLblNo[100] = {0};
 const char *Local_CurROUTId = kEmptyRoutineName "0";
 
-#define kIntLabelPrefix "$$AsAsm$$Local$$"
 /* Parameters: AREA ptr, 0 - 99 label digit, instance number, routine name.  */
-const char Local_IntLabelFormat[] = kIntLabelPrefix "%p$$%02i$$%i$$%s";
+const char Local_IntLabelFormat[] = kIntLabelPrefix "Local$$%p$$%02i$$%i$$%s";
 
 
 /**
@@ -66,7 +66,7 @@ c_rout (const Lex *label)
 
   if (label->tag == LexId)
     {
-      ASM_DefineLabel (label, 0); /* FIXME: should we really define this as a label ? */
+      ASM_DefineLabel (label, areaCurrentSymbol->value.Data.Int.i);
       if (Local_ROUTIsEmpty (label->Data.Id.str))
 	{
 	  error (ErrorError, "Illegal routine name");

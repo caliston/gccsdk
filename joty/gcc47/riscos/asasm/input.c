@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 #ifdef HAVE_STDINT_H
 #  include <stdint.h>
 #elif HAVE_INTTYPES_H
@@ -150,11 +149,12 @@ inputSkipN (int n)
  * Returns the rest of the line of the current input and consumes it.
  */
 const char *
-inputRest (void)
+Input_Rest (void)
 {
   const char * const t = input_pos;
-  while (*input_pos)
-    ++input_pos;
+  if (t)
+    while (*input_pos)
+      ++input_pos;
   return t;
 }
 
@@ -180,14 +180,6 @@ skipblanks (void)
   while (*p && isspace ((unsigned char)*p))
     p++;
   input_pos = p;
-}
-
-
-void
-skiprest (void)
-{
-  input_buff[0] = 0;
-  input_pos = input_buff;
 }
 
 /**

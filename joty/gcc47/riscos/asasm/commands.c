@@ -318,6 +318,7 @@ DefineInt (int size, bool allowUnaligned, const char *mnemonic)
 
 /**
  * Implements DCB and = (8 bit integer).
+ * "Define Constant Byte"
  */
 bool
 c_dcb (void)
@@ -327,6 +328,7 @@ c_dcb (void)
 
 /**
  * Implements DCW, DCWU (16 bit integer).
+ * "Define Constant Word"
  */
 bool
 c_dcw (void)
@@ -339,6 +341,7 @@ c_dcw (void)
 
 /**
  * Implements DCD, DCDU and & (32 bit integer).
+ * "Define Constant Double-word"
  */
 bool
 c_dcd (void)
@@ -351,10 +354,12 @@ c_dcd (void)
 
 /**
  * Implements DCI.
+ * "Define Constant Instruction"
  */
 bool
 c_dci (void)
 {
+  Area_AlignTo (areaCurrentSymbol->value.Data.Int.i, 4, "instruction");
   return DefineInt (4, false, "DCI");
 }
 
@@ -437,6 +442,7 @@ DefineReal (int size, bool allowUnaligned, const char *mnemonic)
 
 /**
  * Implements DCFS / DCFSU (IEEE Single Precision).
+ * "Define Constant Float-single precision"
  */
 bool
 c_dcfs (void)
@@ -449,6 +455,7 @@ c_dcfs (void)
 
 /**
  * Implements DCFD / DCFDU (IEEE Double Precision).
+ * "Define Constant Float-double precision"
  */
 bool
 c_dcfd (void)
@@ -466,7 +473,7 @@ bool
 c_get (void)
 {
   char *filename;
-  if ((filename = strdup (inputRest ())) == NULL)
+  if ((filename = strdup (Input_Rest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
   for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
@@ -493,7 +500,7 @@ bool
 c_lnk (void)
 {
   char *filename;
-  if ((filename = strdup (inputRest ())) == NULL)
+  if ((filename = strdup (Input_Rest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
   for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
@@ -525,9 +532,8 @@ bool
 c_idfn (void)
 {
   free ((void *)idfn_text);
-  if ((idfn_text = strdup (inputRest ())) == NULL)
+  if ((idfn_text = strdup (Input_Rest ())) == NULL)
     errorOutOfMem();
-  skiprest ();
   return false;
 }
 
@@ -538,7 +544,7 @@ bool
 c_incbin (void)
 {
   char *filename;
-  if ((filename = strdup (inputRest ())) == NULL)
+  if ((filename = strdup (Input_Rest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
   for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
@@ -648,7 +654,7 @@ c_info (void)
 bool
 c_opt (void)
 {
-  inputRest();
+  Input_Rest ();
   /* Do nothing.  This is for compatiblity with objasm.  */
   return false;
 }
@@ -659,7 +665,7 @@ c_opt (void)
 bool
 c_title (void)
 {
-  inputRest();
+  Input_Rest ();
   /* Do nothing right now.  This command is for the benefit of error reporting */
   return false;
 }

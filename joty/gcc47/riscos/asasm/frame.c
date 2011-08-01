@@ -1,7 +1,6 @@
 /*
  * AS an assembler for ARM
- * Copyright (c) 1997 Darren Salt
- * Copyright (c) 2002-2011 GCCSDK Developers
+ * Copyright (c) 2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -16,28 +15,47 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- *
- * local.h
  */
 
-#ifndef local_header_included
-#define local_header_included
+#include "config.h"
 
-#include <stdbool.h>
-#include "lex.h"
+#include "error.h"
+#include "frame.h"
+#include "input.h"
 
-/* Prefix of all internal AsAsm symbols.  */
-#define kIntLabelPrefix "$$AsAsm$$Int$$"
+/**
+ * Implements FUNCTION / PROC :
+ * label FUNCTION [{reglist1} [, {reglist2}]]
+ */
+bool
+c_function (void)
+{
+  /* FIXME: not yet supported.  */
+  error (ErrorWarning, "FUNCTION/PROC is not yet supported.");
+  Input_Rest ();
+  return false;
+}
 
-extern int Local_ROUTLblNo[100];
-extern const char *Local_CurROUTId;
+/**
+ * Implements ENDFUNC / ENDP
+ */
+bool
+c_endfunc (void)
+{
+  /* FIXME: not yet supported.  */
+  error (ErrorWarning, "ENDFUNC/ENDP is not yet supported.");
+  Input_Rest ();
+  return false;
+}
 
-extern const char Local_IntLabelFormat[];
-
-bool c_rout (const Lex *label);
-
-bool Local_ROUTIsEmpty (const char *routName);
-bool Local_IsLocalLabel (const char *);
-void Local_FindROUT (const char *rout, const char **file, int *lineno);
-
-#endif
+/**
+ * Implements FRAME
+ */
+bool
+c_frame (void)
+{
+  /* FIXME: not yet supported.  */
+  error (ErrorWarning, "FRAME is not yet supported.");
+  Input_Rest ();
+  return false;
+}

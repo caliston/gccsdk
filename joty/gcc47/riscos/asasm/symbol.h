@@ -86,20 +86,19 @@ typedef struct Symbol
   struct Symbol *areaDef; /** Area where this symbol is defined in.  When SYMBOL_AREA is set, this is NULL.  */
 
   /* For output: */
-  unsigned int offset;	/** Offset in stringtable.  For AOF output you need to add an extra 4, for ELF output you need to add an extra 1.  */
+  unsigned int offset;	/** For area symbols, at start of outputAof()/outputElf(), this indicates the area symbol's position in the symbol table.  */
   int used;		/** Has several usages:
     At start of outputAof()/outputElf():
       either -1 (no relocation needed),
       either 0 (relocation needed, see Reloc_Create()).
 
+    At end of Symbol_CreateSymbolOut():
       For area symbols:
         - AOF output : this will be the area number counted from 0
-        - ELF output : this is the section number
+        - ELF output : this is the section number (counted from 3)
       For other symbols:
-        No changes (still 0 or -1).
-
-    At symbolFix():
-       Symbol index.  */
+        When >= 0 : symbol index,
+        When -1 : symbol won't appear in the symbol table.  */
 
   /* Symbol name: */
   size_t len;		/** length of str[] without its NUL terminator.  */
@@ -112,18 +111,24 @@ Symbol *symbolGet (const Lex *l);
 Symbol *symbolFind (const Lex *l);
 void symbolRemove (const Lex *l);
 
-unsigned int symbolFix (size_t *stringSizeNeeded);
-void symbolStringOutput (FILE *outfile);
-void symbolSymbolAOFOutput (FILE *outfile);
-#ifndef NO_ELF_SUPPORT
-void symbolSymbolELFOutput (FILE *outfile);
-#endif
+typedef struct
+{
+  Symbol **allSymbolsPP; /**< Array of symbol ptrs to output.  Ordered first local then global (ELF requirement), then alphabetically (fun).  */
+  unsigned numAllSymbols;
+  unsigned numLocalSymbols;
+  unsigned stringSize;
+} SymbolOut_t;
+
+SymbolOut_t Symbol_CreateSymbolOut (void);
+void Symbol_OutputStrings (FILE *outfile, const SymbolOut_t *symOutP);
+void Symbol_OutputForAOF (FILE *outfile, const SymbolOut_t *symOutP);
+void Symbol_OutputForELF (FILE *outfile, const SymbolOut_t *symOutP);
+void Symbol_FreeSymbolOut (SymbolOut_t *symOutP);
 
 bool c_export (void);
 bool c_import (void);
 bool c_keep (void);
 bool c_strong (void);
-bool c_exportas (void);
 
 #ifdef DEBUG
 void symbolPrint (const Symbol *sym);

@@ -1,3 +1,158 @@
+Sun Jul 10 17:35:39 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c (c_area): Relax the AREA attribute test on redefinition.
+	* regression/tests_pass/area.s: Add.
+
+Sun Jul 10 16:49:00 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* local.c (c_rout): When label is supplied, it should be defined as
+	global label just like any others.
+	* regression/tests_pass/local_label.s: Enhance ROUT test.
+
+Sat Jun 25 17:57:13 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/rotator.s: Added.
+	* get.c (getRhs): Support symbol as value type for rotator value.
+	* m_cpuctrl.c (m_msr): Add fixme.
+	* symbol.h: Comment update.
+	* symbol.c (SymbolCompare): Remove comment.
+
+Tue Jun 14 02:12:06 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (NeedToOutputSymbol): When we having a global keep, don't
+	output the register symbols.
+	(symbolFix,symbolStringOutput, symbolSymbolAOFOutput,
+	symbolSymbolELFOutput): Refactored code into...
+	(SymbolCompare, Symbol_CreateSymbolOut, Symbol_OutputStrings,
+	Symbol_OutputForAOF, Symbol_OutputForELF, Symbol_FreeSymbolOut,
+	SymbolOut_t): ...this. Now outputing local symbols first and order them
+	alphabetically.
+	(symFlag): Don't give error when no symbol can be read.
+	(c_keep): Fix return value check of symFlag call.
+	(c_import): Give error when no symbol can be read.
+	* symbol.h (symbolFix,symbolStringOutput, symbolSymbolAOFOutput,
+	symbolSymbolELFOutput): Remove.
+	(SymbolCompare, Symbol_CreateSymbolOut, Symbol_OutputStrings,
+	Symbol_OutputForAOF, Symbol_OutputForELF, Symbol_FreeSymbolOut,
+	SymbolOut_t): Add.
+	* output.c (outputAof, outputElf): Use new Symbol_* code.
+	(outputElf): Add preprocessor test on ELF_EABI for EABI v5 output.
+	* elf.h: Remove non-ARM bits.  Update ARM relocation list.
+	* local.c (kIntLabelPrefix): Move to...
+	* local.h: ...here.
+	* lit.c (Lit_GetLitOffsetAsSymbol): Use kIntLabelPrefix.
+	* input.c (Input_Rest): Add test on input_pos.
+
+Mon Jun 13 15:02:52 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (symbolFix, symbolSymbolELFOutput): For ELF output, section
+	names should not even be mentioned in the string table at all.
+	* symbol.h (Symbol): Update comments.
+	* area.h (AREA_ALIGN_MASK): Define.
+	* area.c (c_area): Use AREA_ALIGN_MASK.
+	* output.c (outputElf): Properly fill in info field of the symbol
+	table section; Support non-4 AREA alignments.
+
+Mon Jun 13 01:10:34 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (symbolFix): Return the number of symbol entries to include
+	in output file (not the number of unique symbols); For ELF output,
+	use empty section names as symbols.
+	(symbolStringOutput): For ELF output, use empty section names as
+	symbols; Add offset asserts.
+	* symbol.h (Symbol): Update comments.
+	* area.c (Area_MarkStartAs): Fix Mapping Symbol string length.
+	* output.c (writeElfSH): Round offset calculation.
+	(outputElf): Don't round the string table length.
+
+Sun Jun 12 21:09:33 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/sev_wfe_wfi_yield.s,
+	regression/tests_pass/misc.s, regression/tests_pass/mul_mla_mls.s,
+	regression/tests_pass/swi.s, regression/tests_pass/ldm_stm_pop_push.s,
+	regression/tests_pass/loadstore2.s, regression/tests_pass/copro.s,
+	regression/tests_pass/dmb_dsb_isb.s,
+	regression/tests_pass/asr_lsl_lsr_ror_rrx.s,
+	regression/tests_pass/fpe_memory.s, regression/tests_pass/rfe_srs.s
+	regression/tests_pass/arithmetic1.s, regression/tests_pass/dsp.s,
+	regression/tests_pass/nop.s, regression/tests_pass/loadstore.s,
+	regression/tests_pass/branch.s, regression/tests_pass/fpe.s,
+	regression/tests_pass/cps.s, regression/tests_pass/fpe_immediate.s,
+	regression/tests_pass/clrex_ldrex_strex.s,
+	regression/tests_pass/pld_pldw_pli.s,
+	regression/tests_pass/arithmetic2.s: Use DCI instead of DCD as
+	reference for ARM instructions.
+	* commands.c (c_dci): Do align with warning like we do when
+	emitting unaligned instructions.
+	* regression/tests_pass/dcb_dcw_dcd.s: Remove ALIGN, this is now done
+	implicitely (with warning), use instructions as reference for DCI.
+	* symbol.c (symbolFix, symbolStringOutput): Map mapping symbols names
+	to their 2 character prefix.
+	(symbolStringOutput): Add stringSizeNeeded parameter for consistency
+	check.
+	(symFlag): Add error when a mapping symbol explicitely gets created.
+	* symbol.h (symbolStringOutput): Add stringSizeNeeded parameter.
+	(c_exportas): Drop unused declaration.
+	* decode.c (decode_table_t): Use bitfields & enums. Add result subfield.
+	(decode): Follow decode_table_t change; Add call to Area_MarkStartAs;
+	Add warning when code gets created in DATA area.
+	* storage.c (c_alloc): Remove unnecessary test.
+	* area.c (oArea_CurrentEntryType, Area_MarkStartAs,
+	Area_IsMappingSymbol): Add.
+	* area.h (Area_MarkStartAs, Area_IsMappingSymbol): Add.
+	* output.c (outputAof): Follow symbolStringOutput change.
+	(outputElf): Follow symbolStringOutput change; Drop prefix dot of a
+	section name when determining relocation section name.
+	* lit.c (Lit_DumpPool): Add call Area_MarkStartAs.
+
+Sun Jun  5 15:53:04 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c, input.h (Input_Rest): Renamed from inputRest.
+	* commands.c, decode.c, whileif.c, lexAcorn.c : Follow inputRest rename.
+	* input.c, input.h (skiprest): Remove.
+	* commands (c_idfn): Don't call skiprest.
+	* error.c, macros.c, frame.c, whileif.c: Call Input_Rest instead of
+	skiprest.
+	* filestack.c (FS_PushFilePObject): Don't call skiprest.
+	* output.c (outputElf): Fix writing empty sections.
+	* elf.h (EF_ARM_CURRENT): Change to EABI version 5.
+	* decode.c (oDecodeTable): Fix alphabetical order.
+
+Sun Jun  5 02:33:29 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* frame.c (c_function, c_endfunc, c_frame): Add.  Dummy implementations
+	for FUNCTION/PROC/ENDFUNC/ENDP/FRAME.
+	* frame.h: Add.
+	* decode.c (oDecodeTable): Add FUNCTION, PROC, ENDFUNC, ENDP and FRAME.
+
+Sat Jun  4 18:29:35 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpumem.c (dstreglist): Add test on LDM instructions and
+	multi-register POP instructions with writeback and base register in
+	register list.
+
+Wed May 25 20:02:48 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/macro.s: Added testcase from Christopher Martin
+	for his previous variable.c (c_lcl) fix.
+	* commands.c (c_dc*): Add comment.
+	* output.c: Always include errno.h.
+	* input.c: Remove needless include of errno.h.
+
+Wed May 25 23:48:44 CST 2011   Christopher Martin  <belles@internode.on.net>
+
+	* reloc.c (relocELFOutput): Removed an excess armword() operation that
+	would inappropriately undo the byte-sex conversion of a preceding
+	armword() operation.
+	* reloc.c (relocELFOutput): Corrected misuse of 'offset' and 'used'
+	fields in Symbol struct which was causing relocations in ELF object
+	files to have messed up symbol table entries.
+	* symbol.h: Edited comments to better reflect how 'offset' and 'used'
+	fields in Symbol struct are used for relating symbols to symbol table
+	entries.
+	* variables.c (c_lcl): Ensure that a copied (sub)string is terminated.
+	Bug found when comments in macros messed up assembly.
+
 Wed Apr 13 01:45:58 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* regression/tests_pass/misc.s: Add MSR/MRS APSR tests.
@@ -427,7 +582,7 @@ Sun Dec 26 16:47:19 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
 	* main.h (option_rma_module): Remove.
 
 Sun Dec 26 02:54:13 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
-  
+
 	* regression/tests_pass/loadstore3.s: Rename to...
 	* regression/tests_pass/ldm_stm_pop_push.s: ...this.  Add PUSH/POP
 	tests.
@@ -798,7 +953,7 @@ Mon Nov  1 15:24:53 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
 	* symbol.c (symbolAdd): Add description.
 
 Mon Nov  1 14:20:09 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
-  
+
 	* regression/tests_pass/operator_index.s: Add (commented out)
 	unsupported case.
 	* regression/tests_fail/label_space.s: Extended.  There are now only
@@ -989,7 +1144,7 @@ Thu Oct 21 22:02:28 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 	asm.c, eval.c, lit.c: Follow Value change.
 
 Thu Oct 21 02:01:34 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
-  
+
 	* regression/tests_pass/record_basic.s: Enabled the disabled sub-tests
 	as they are now supported and working.
 	* regression/tests_fail/record_basic_fail.s: Removed.
@@ -1030,7 +1185,7 @@ Thu Oct 21 02:01:34 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 	* lexAcorn.c (lexAcornUnop): Add :BASE: support.
 	* eval.c (evalBinop): Fix Op_add, Op_sub, Op_and, Op_or, Op_xor,
 	Op_land, Op_lor, Op_lnot, Op_not, Op_neg, Op_index, Op_len. Add Op_base.
-	* lex.c (OperatorAsStr): 
+	* lex.c (OperatorAsStr):
 	* value.h (ValueType): Drop and change its use in Value by ValueTag.
 	* commands.c: Follow the ValueType removal in Value.
 	* symbol.c: Likewise.
@@ -1050,7 +1205,7 @@ Thu Oct 21 02:01:34 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 	* asm.c: Likewise.
 	* eval.c: Likewise.
 	Several minor cleanups.
-  
+
 Sun Oct 17 22:35:00 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 	* symbol.c (symbolFree): Added.
@@ -1296,7 +1451,7 @@ Mon Feb 23 03:51:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
 
 Mon Feb 23 01:19:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
 
-	* m_cpumem.c: LDR|STR Rd,[Rm,#xxx] has no business expecting "xxx" 
+	* m_cpumem.c: LDR|STR Rd,[Rm,#xxx] has no business expecting "xxx"
 	to be a register-relative expression.
 
 Sun Feb 22 18:47:47 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
@@ -1415,7 +1570,7 @@ Sun Jan 11 21:35:31 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
 	(outputAof,outputElf): Follow previous change.
 	* symbol.c(symbolFix,symbolStringOutput): Implicitly imported symbol
 	warning was wrongly given for some symbols in ELF output mode.
-	
+
 Sun Jan 11 18:32:47 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
 
 	* docs/{AIF-1993,ALF-1989,ALF-1993,AOF-1989,AOF-2002,APCS,AIF-1989,
@@ -1477,7 +1632,7 @@ Sun Jan  4 21:00:58 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
 Sun Jan  4 20:04:39 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
 
 	* commands.c,symbol.c,put.c,m_cpuctrl.c,help_cop.c,m_cpumem.c,area.c,
-	area.h,expr.c,output.c,reloc.c,asm.c,lit.c,lex.c: Rename 
+	area.h,expr.c,output.c,reloc.c,asm.c,lit.c,lex.c: Rename
 	areaCurrent/areaEntry/areaHead to
 	areaCurrentSymbol/areaEntrySymbol/areaHeadSymbol.
 
@@ -1648,10 +1803,10 @@ Sun Dec 14 16:56:28 CET 2008  John Tytgat  <John.Tytgat@aaug.net>
 	RISC OS 5 source to break. This change makes it more like objasm -
 	variables in strings are replaced, and if they don't match, they're
 	left alone.
-	  
+
 	With this and previous improvements, I have been able to build a
 	working !Paint using GCC.
-	  
+
 	This change is a bit invasive, so any review is appreciated.
 
 2008-04-20 05:40  Peter Naulls  <peter@chocky.org>
@@ -1716,16 +1871,16 @@ Sun Dec 14 16:56:28 CET 2008  John Tytgat  <John.Tytgat@aaug.net>
 	mnemonics.h, option.c, regression/branch.s, regression/copro.s,
 	regression/dsp.s, regression/misc.s, reloc.c, reloc.h: Complete
 	ARMv5E support. This adds support for the following instructions:
-	  
+
 	  BKPT, BLX
 	  CDP2, CLZ
 	  LDC2, LDRD
 	  MCR2, MCRR, MRC2, MRRC
 	  QADD, QDADD, QDSUB, QSUB
 	  SMLAxy, SMLALxy, SMLAWy, STC2, STRD
-	  
+
 	Additionally:
-	  
+
 	  Fix BX detection to be case insensitive.
 	  Fix Coprocessor 1 detection for pedantic FP warning.
 	  Fix opcode1 generation for MCR/MRC.
@@ -1988,7 +2143,7 @@ Sun Dec 14 16:56:28 CET 2008  John Tytgat  <John.Tytgat@aaug.net>
 	* include.c: fix bracket placement
 
 Sun Jan 30 00:50:54 2005  John Tytgat  <John.Tytgat@aaug.net>
-	  
+
 	* Changed #define tests on __riscos__ into CROSS_COMPILE tests.
 	* Makefile: OBJS in alphabetic order.
 	* asm.{c,h}: asm_() -> assemble()
@@ -2075,7 +2230,7 @@ Sun Jan 30 00:50:54 2005  John Tytgat  <John.Tytgat@aaug.net>
 
 	* main.c: Tony van der Hoff: Increase 'as' compatibility with
 	objasm when the -objasm flag is set on the command line:
-	  
+
 	The token '@' will be treated as the current location counter, as
 	used by objasm, instead of as an introduction to a comment, which is
 	required in GCC mode.
@@ -2084,7 +2239,7 @@ Sun Jan 30 00:50:54 2005  John Tytgat  <John.Tytgat@aaug.net>
 
 	* put.c: Fix a segfault caused by the attempted output of an
 	unaligned word at the start of the AREA e.g.
-	  
+
 	  AREA |foo|, DATA
 	  ALIGN 2
 	  DCD 1
@@ -2141,22 +2296,22 @@ Sun Jan 30 00:50:54 2005  John Tytgat  <John.Tytgat@aaug.net>
 
 	* asm.c, commands.c, include.c, input.c, input.h, lex.c, main.c,
 	riscos_c.c, uname.h: as fixes from Tony van der Hoff:
-	  
+
 	Added various comments to the code, to help me understand it.
-	  
+
 	GET files were not being found via the -I path:
 	added some debuggging code in as/include.c; found that "." was
 	being used as directory separator.
 	- In as/uname.h changed switch from "#ifdef UNIX" to "#if defined
 	  CROSS_COMPILE"
-	  
+
 	Local labels with default scope were giving warning:
 	"Assumed 'a' in local label name". This is not a dodgy code
 	warning, but a warning that the range qualifiers for local labels is
 	not implemented.
 	- changed lex.c to produce more appropriate warning, and wrapped
 	warning under "pedantic".
-	  
+
 	AS barfed on variable substitution operator "$":
 	- inputUnGet() called from lexGetId() assumes that the input
 	buffer is pointed to by |input_buff|. It isn't in this case. The check
@@ -2263,7 +2418,7 @@ Sun Jan 30 00:50:54 2005  John Tytgat  <John.Tytgat@aaug.net>
 2001-03-20 14:50  Nick Burrett  <nick@sqrt.co.uk>
 
 	* decode.c, macros.c, whileif.c: Darren Salt: Fix up some |label|
-	handling. Errors are generated for unterminated |...| e.g. |...\n.  
+	handling. Errors are generated for unterminated |...| e.g. |...\n.
 	Replace some hard-coded limits with macros.
 
 2001-03-20 14:49  Nick Burrett  <nick@sqrt.co.uk>
