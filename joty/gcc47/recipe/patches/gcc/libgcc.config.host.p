@@ -1,13 +1,13 @@
 Index: libgcc/config.host
 ===================================================================
---- libgcc/config.host	(revision 176318)
+--- libgcc/config.host	(revision 177068)
 +++ libgcc/config.host	(working copy)
-@@ -271,6 +271,8 @@
+@@ -271,7 +271,7 @@
  	;;
- arm*-*-eabi* | arm*-*-symbianelf* )
+ arm*-*-ecos-elf)
  	;;
-+arm*-*-riscos)
-+	;;
+-arm*-*-eabi* | arm*-*-symbianelf* )
++arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-riscos)
+ 	tmake_file="${tmake_file} t-fixedpoint-gnu-prefix"
+ 	;;
  arm*-*-rtems*)
- 	;;
- arm*-*-elf)
