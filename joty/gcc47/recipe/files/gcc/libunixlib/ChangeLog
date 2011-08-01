@@ -1,3 +1,10 @@
+Sun May 29 18:32:56 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/sys/stat.h (S_IFBLK, S_IFLNK): Renumber.
+	(S_IFMT): Trim bits.
+	(S_ISREG, S_ISFIFO, S_ISLNK): Use S_IFMT mask so that
+	result is 0 or 1.
+
 Sun May 15 19:58:43 2011  Lee Noar <leenoar@sky.com>
 
 	* gcccompat/_eh_support.s(__ehs_unwind_stack_chunk):
@@ -60,6 +67,17 @@ Wed Jun 23 01:08:51 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 	gcc 4.6); m4_rename -> m4_rename_force
 
 // ------------------------------------ ^^^ gcc4.6trunk ^^^ port -----------------
+
+Sat Jul  2 15:14:30 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/glob.h: Copy from FreeBSD 8.0.0 with a couple of
+	UnixLib changes.  Solves bug #220.
+	* unix/glob.c: Likewise.
+
+Sun May 29 17:21:43 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* unix/dev.c (__fsopen): Return ENOENT iso EAGAIN when unexisting
+	file is opened without O_CREAT set.
 
 Wed Apr  6 03:27:25 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
