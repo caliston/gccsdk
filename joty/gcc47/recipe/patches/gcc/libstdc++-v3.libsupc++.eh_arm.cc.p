@@ -1,8 +1,8 @@
 Index: libstdc++-v3/libsupc++/eh_arm.cc
 ===================================================================
---- libstdc++-v3/libsupc++/eh_arm.cc	(revision 172858)
+--- libstdc++-v3/libsupc++/eh_arm.cc	(revision 177080)
 +++ libstdc++-v3/libsupc++/eh_arm.cc	(working copy)
-@@ -168,15 +168,35 @@
+@@ -169,15 +169,35 @@
  "	bl\t_Unwind_Resume @ Never returns\n"
  "	.popsection\n");
  #else
