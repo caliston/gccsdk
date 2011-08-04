@@ -364,12 +364,15 @@ help_copAddr (ARMWord ir, bool literal, bool stack)
 
   Put_Ins (ir);
 
-  assert ((!callRelocUpdate || (ir & P_FLAG)) && "Calling reloc for non pre-increment instructions ?");
-    
-  /* The ValueInt | ValueFLoat | ValueAddr | ValueSymbol | ValueCode tags are
-     what we support in the coprocessor instruction.  */
-  if (callRelocUpdate
-      && Reloc_QueueExprUpdate (DestMem_RelocUpdaterCoPro, offset,
-				ValueInt | ValueFloat | ValueAddr /* FIXME: | ValueSymbol */ | ValueCode, NULL, 0))
-    error (ErrorError, "Illegal expression");
+  if (gASM_Phase != ePassOne)
+    {
+      assert ((!callRelocUpdate || (ir & P_FLAG)) && "Calling reloc for non pre-increment instructions ?");
+
+      /* The ValueInt | ValueFLoat | ValueAddr | ValueSymbol | ValueCode tags are
+	 what we support in the coprocessor instruction.  */
+      if (callRelocUpdate
+	  && Reloc_QueueExprUpdate (DestMem_RelocUpdaterCoPro, offset,
+				    ValueInt | ValueFloat | ValueAddr /* FIXME: | ValueSymbol */ | ValueCode, NULL, 0))
+	error (ErrorError, "Illegal expression");
+    }
 }

@@ -39,6 +39,7 @@
 #include "commands.h"
 #include "error.h"
 #include "expr.h"
+#include "filestack.h"
 #include "get.h"
 #include "input.h"
 #include "lex.h"
@@ -57,7 +58,7 @@ static void Area_Ensure (void);
 Symbol *areaCurrentSymbol = NULL;
 static Area_eEntryType oArea_CurrentEntryType = eInvalid;
 Symbol *areaEntrySymbol = NULL;
-int areaEntryOffset;
+int areaEntryOffset = 0;
 Symbol *areaHeadSymbol = NULL;
 
 /* FIXME: gArea_Require8 & gArea_Preserve8(Guessed) needs to be written in ELF output.  */
@@ -65,8 +66,13 @@ bool gArea_Require8 = false; /* Absense of REQUIRE8 => {FALSE} */
 Preserve8_eValue gArea_Preserve8 = ePreserve8_Guess;
 bool gArea_Preserve8Guessed = true;
 
-static uint32_t oNextAreaOrg;
-static bool oNextAreaOrgIsSet;
+static struct PendingORG
+{
+  bool isValid; /** true when we have a pending ORG statement.  */
+  const char *file; /** Non-NULL for pending ORG statement and points to filename of that ORG.  */
+  int line; /** Linenumber of pending ORG.  */
+  uint32_t value; /** Pending ORG value.  */
+} oPendingORG;
 
 static Area *
 areaNew (Symbol *sym, int type)
@@ -119,13 +125,13 @@ Area_EnsureExtraSize (size_t mingrow)
   if ((unsigned)areaCurrentSymbol->value.Data.Int.i + mingrow <= areaCurrentSymbol->area.info->imagesize)
     return;
 
+  assert (gASM_Phase == ePassOne);
+  
   /* When we want to grow an implicit area, it is time to give an error as
      this is not something we want to output.  */
-  if (areaCurrentSymbol->area.info->imagesize == 0)
-    {
-      if (!strcmp (areaCurrentSymbol->str, IMPLICIT_AREA_NAME))
-	error (ErrorError, "No area defined");
-    }
+  if (areaCurrentSymbol->area.info->imagesize == 0
+      && Area_IsImplicit (areaCurrentSymbol))
+    error (ErrorError, "No area defined");
 
   size_t inc;
   if (areaCurrentSymbol->area.info->imagesize && areaCurrentSymbol->area.info->imagesize < DOUBLE_UP_TO)
@@ -140,38 +146,69 @@ Area_EnsureExtraSize (size_t mingrow)
     errorAbort ("Area_EnsureExtraSize(): out of memory, minsize = %zd", mingrow);
 }
 
-void
-areaInit (void)
-{
-  Area_Ensure ();
-}
-
 /**
- * Do an implicit LTORG at the end of all areas.
- * Ensure AREA's are linked chronologically (instead of LIFO).
+ * Area phase preparation.
  */
 void
-areaFinish (void)
+Area_PrepareForPhase (ASM_Phase_e phase)
 {
-  for (areaCurrentSymbol = areaHeadSymbol;
-       areaCurrentSymbol != NULL;
-       areaCurrentSymbol = areaCurrentSymbol->area.info->next)
-    Lit_DumpPool ();
-
-  /* Revert sort the area's so they become listed chronologically.  */
-  Symbol *aSymP = areaHeadSymbol;
-  assert (aSymP != NULL); /* There is always at least one area.  */
-  for (Symbol *nextSymP = aSymP->area.info->next; nextSymP != NULL; /* */)
+  switch (phase)
     {
-      Symbol *nextNextSymP = nextSymP->area.info->next;
+      case ePassOne:
+	Area_Ensure ();
+	break;
 
-      nextSymP->area.info->next = aSymP;
-      aSymP = nextSymP;
-      
-      nextSymP = nextNextSymP;
+      case ePassTwo:
+	{
+	  if (oPendingORG.isValid)
+	    {
+	      errorLine (oPendingORG.file, oPendingORG.line,
+			 ErrorWarning, "Unused ORG statement");
+	      oPendingORG.isValid = false;
+	    }
+
+	  /* Do an implicit LTORG at the end of all areas.
+	     At the same time, reset the area current pointer.  */
+	  for (areaCurrentSymbol = areaHeadSymbol;
+	       areaCurrentSymbol != NULL;
+	       areaCurrentSymbol = areaCurrentSymbol->area.info->next)
+	    {
+	      Lit_DumpPool ();
+	      areaCurrentSymbol->value.Data.Int.i = 0;
+	    }
+
+	  Area_Ensure ();
+	}
+	break;
+
+      case eOutput:
+	{
+	  /* Do an implicit LTORG at the end of all areas.  */
+	  for (areaCurrentSymbol = areaHeadSymbol;
+	       areaCurrentSymbol != NULL;
+	       areaCurrentSymbol = areaCurrentSymbol->area.info->next)
+	    Lit_DumpPool ();
+
+	  /* Revert sort the area's so they become listed chronologically.  */
+	  Symbol *aSymP = areaHeadSymbol;
+	  assert (aSymP != NULL); /* There is always at least one area.  */
+	  for (Symbol *nextSymP = aSymP->area.info->next; nextSymP != NULL; /* */)
+	    {
+	      Symbol *nextNextSymP = nextSymP->area.info->next;
+
+	      nextSymP->area.info->next = aSymP;
+	      aSymP = nextSymP;
+
+	      nextSymP = nextNextSymP;
+	    }
+	  areaHeadSymbol->area.info->next = NULL;
+	  areaHeadSymbol = aSymP;
+	}
+	break;
+
+      default:
+	break;
     }
-  areaHeadSymbol->area.info->next = NULL;
-  areaHeadSymbol = aSymP;
 }
 
 
@@ -181,7 +218,7 @@ areaFinish (void)
 bool
 c_entry (void)
 {
-  if (!strcmp (areaCurrentSymbol->str, IMPLICIT_AREA_NAME))
+  if (Area_IsImplicit (areaCurrentSymbol))
     error (ErrorError, "No area selected before ENTRY");
   else
     {
@@ -361,7 +398,7 @@ c_area (void)
 {
   Lex lex = lexGetId ();
   if (lex.tag != LexId)
-    return false;
+    return false; /* No need to give an error, lexGetId already did.  */
 
   Symbol *sym = symbolGet (&lex);
   int oldtype = 0;  
@@ -468,11 +505,11 @@ c_area (void)
     }
 
   /* Pending ORG to be taken into account ? */
-  if (oNextAreaOrgIsSet)
+  if (oPendingORG.isValid)
     {
       newtype |= AREA_ABS;
-      sym->area.info->baseAddr = oNextAreaOrg;
-      oNextAreaOrgIsSet = false;
+      sym->area.info->baseAddr = oPendingORG.value;
+      oPendingORG.isValid = false;
     }
 
   /* Any alignment specified ? No, take default alignment (2) */
@@ -543,10 +580,18 @@ c_org (void)
   const Value *value = exprBuildAndEval (ValueInt);
   if (value->Tag == ValueInt)
     {
-      if (!strcmp (areaCurrentSymbol->str, IMPLICIT_AREA_NAME))
+      if (Area_IsImplicit (areaCurrentSymbol))
 	{
-	  oNextAreaOrg = value->Data.Int.i;
-	  oNextAreaOrgIsSet = true;
+	  if (oPendingORG.isValid)
+	    {
+	      errorLine (oPendingORG.file, oPendingORG.line, ErrorWarning, "ORG statement without any effect, because of...");
+	      error (ErrorWarning, "...this");
+	    }
+	  else
+	    oPendingORG.isValid = true;
+	  oPendingORG.file = FS_GetCurFileName ();
+	  oPendingORG.line = FS_GetCurLineNumber ();
+	  oPendingORG.value = value->Data.Int.i;
 	}
       else
 	{
@@ -646,7 +691,9 @@ Area_MarkStartAs (Area_eEntryType type)
 			   areaCurrentSymbol->value.Data.Int.i);
       assert ((size_t)size + 1 == mappingSymbolSize);
       const Lex mapSymbolLex = lexTempLabel (mappingSymbol, mappingSymbolSize - 1);
-      ASM_DefineLabel (&mapSymbolLex, areaCurrentSymbol->value.Data.Int.i);
+      Symbol *label = ASM_DefineLabel (&mapSymbolLex, areaCurrentSymbol->value.Data.Int.i);
+      if (type == eData)
+	label->type |= SYMBOL_DATUM;
     }
 }
 

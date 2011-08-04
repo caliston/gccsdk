@@ -34,6 +34,8 @@ extern const char *Local_CurROUTId;
 
 extern const char Local_IntLabelFormat[];
 
+void Local_PrepareForPhase (ASM_Phase_e phase);
+
 bool c_rout (const Lex *label);
 
 bool Local_ROUTIsEmpty (const char *routName);

@@ -43,32 +43,35 @@
 #include "filestack.h"
 #include "input.h"
 #include "lex.h"
+#include "local.h"
 #include "main.h"
 
 #ifdef DEBUG
 //#  define DEBUG_ASM
 #endif
 
-/**
- * Parse the input file, and perform the assembly.
- * \param asmFile Filename to assemble.
- */
-void
-ASM_Assemble (const char *asmFile)
+ASM_Phase_e gASM_Phase = eStartup;
+
+static void
+ASM_DoPass (const char *asmFile)
 {
   FS_PushFilePObject (asmFile);
 
-  setjmp (asmContinue); // FIXME: this will be wrong when we're skipping if/while contents.
+  // FIXME: this will be wrong when we're skipping if/while contents.
+  while (setjmp (asmContinue) != 0)
+    /* */;
   asmContinueValid = true;
 
-  /* Process input line-by-line.  */
   while (gCurPObjP != NULL && inputNextLine ())
     {
       /* Ignore blank lines and comments.  */
       if (Input_IsEolOrCommentStart ())
 	continue;
 
-      /* Read label (if there is one).  */
+#ifdef DEBUG_ASM
+      printf("%d : 0x%x\n", FS_GetCurLineNumber (), areaCurrentSymbol->value.Data.Int.i);
+#endif
+      /* Read label (in case there is one).  */
       Lex label;
       if (!isspace ((unsigned char)inputLook ()))
 	label = Lex_GetDefiningLabel (false);
@@ -84,8 +87,30 @@ ASM_Assemble (const char *asmFile)
 
       decode (&label);
     }
-
+  
   asmContinueValid = false;
+}
+
+/**
+ * Parse the input file, and perform the assembly.
+ * \param asmFile Filename to assemble.
+ */
+void
+ASM_Assemble (const char *asmFile)
+{
+  Area_PrepareForPhase (ePassOne);
+  Local_PrepareForPhase (ePassOne);
+  gASM_Phase = ePassOne;
+  ASM_DoPass (asmFile);
+
+  /* Don't do a next pass if we already have errors now.  */
+  if (returnExitStatus () == EXIT_SUCCESS)
+    {
+      Area_PrepareForPhase (ePassTwo);
+      Local_PrepareForPhase (ePassTwo);
+      gASM_Phase = ePassTwo;
+      ASM_DoPass (asmFile);
+    }
 }
 
 

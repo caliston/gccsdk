@@ -42,8 +42,17 @@
 #include "lit.h"
 #include "local.h"
 #include "main.h"
+#include "put.h"
 #include "reloc.h"
 #include "value.h"
+
+typedef enum
+{
+  eNotYetAssembled,
+  eNoNeedToAssemble,
+  eAssembledPassOne,
+  eAssembledPassTwo
+} Status_e;
 
 typedef struct LITPOOL
 {
@@ -51,11 +60,11 @@ typedef struct LITPOOL
   const char *file;	/** Assembler filename where this literal got requested for the first time.  */
   int lineno;		/** Assembler file linenumber where this literal got requested for the first time.  */
 
-  int offset;		/** Area offset where the literal got assembled.  */
+  unsigned offset;	/** Area offset where the literal got assembled.  */
   Value value;		/** Literal value.  */
 
   Lit_eSize size;
-  bool gotAssembled;	/** This literal is assembled.  */
+  Status_e status;	/** Literal's status whether it already got assembled or not.  */
 } LitPool;
 
 static Symbol *Lit_GetLitOffsetAsSymbol (const LitPool *literal);
@@ -72,6 +81,82 @@ Lit_GetLitOffsetAsSymbol (const LitPool *literal)
   assert (bytesWritten >= 0);
   const Lex lex = lexTempLabel (intSymbol, (size_t)bytesWritten);
   return symbolGet (&lex);
+}
+
+static size_t
+Lit_GetSizeInBytes (const LitPool *litP)
+{
+  size_t result;
+  switch (litP->size)
+    {
+      case eLitIntUByte:
+      case eLitIntSByte:
+	result = 1;
+	break;
+      case eLitIntUHalfWord:
+      case eLitIntSHalfWord:
+	result = 2;
+	break;
+      case eLitIntWord:
+      case eLitFloat:
+	result = 4;
+	break;
+      case eLitDouble:
+	result = 8;
+	break;
+    }
+  return result;
+}
+
+static size_t
+Lit_GetAlignment (const LitPool *litP)
+{
+  size_t result;
+  switch (litP->size)
+    {
+      case eLitIntUByte:
+      case eLitIntSByte:
+	result = 1;
+	break;
+      case eLitIntUHalfWord:
+      case eLitIntSHalfWord:
+	result = 2;
+	break;
+      case eLitIntWord:
+      case eLitFloat:
+      case eLitDouble:
+	result = 4;
+	break;
+    }
+  return result;
+}
+
+/**
+ * Takes ownership of valueP.
+ */
+static Value
+Lit_CreateLiteralSymbol (const Value *valueP, Lit_eSize size)
+{
+  /* We need to create a new literal in our pool.  */
+  LitPool *litP;
+  if ((litP = malloc (sizeof (LitPool))) == NULL)
+    errorOutOfMem ();
+  litP->next = NULL;
+  litP->file = FS_GetCurFileName ();
+  litP->lineno = FS_GetCurLineNumber ();
+  litP->offset = 0;
+  litP->value = *valueP; /* We have ownership of valueP, so we're free to pass it on to LitPool struct.  */
+  litP->size = size;
+  litP->status = eNotYetAssembled;
+
+  /* Add new literal at the end of the literal pool.  */
+  assert (offsetof (LitPool, next) == 0);
+  LitPool *prevLitP = (LitPool *)&areaCurrentSymbol->area.info->litPool;
+  for (/* */; prevLitP->next != NULL; prevLitP = prevLitP->next)
+    /* */;
+  prevLitP->next = litP;
+  
+  return Value_Symbol (Lit_GetLitOffsetAsSymbol (litP), 1);
 }
 
 /**
@@ -107,7 +192,8 @@ Lit_RegisterInt (const Value *value, Lit_eSize size)
      in our register after loading, before we wrongly match to the untruncated
      version for a different size value.
      E.g.  LDRB Rx, =0x808 and LDR Rx, =0x808 can not share the same literal.  */
-  Value truncValue = *value;
+  Value truncValue = { .Tag = ValueIllegal };
+  Value_Assign (&truncValue, value);
   if (value->Tag == ValueInt)
     {
       int truncForUser;
@@ -132,6 +218,11 @@ Lit_RegisterInt (const Value *value, Lit_eSize size)
 	  case eLitIntWord:
 	    truncForUser = truncValue.Data.Int.i;
 	    break;
+
+	  case eLitFloat:
+	  case eLitDouble:
+	    assert (0);
+	    break;
 	}
       if (truncValue.Data.Int.i != value->Data.Int.i)
 	error (ErrorWarning, "Constant %d has been truncated to %d by the used mnemonic",
@@ -139,7 +230,10 @@ Lit_RegisterInt (const Value *value, Lit_eSize size)
       /* Perhaps representable as MOV/MVN:  */
       if (help_cpuImm8s4 (truncForUser) != -1
           || help_cpuImm8s4 (~truncForUser) != -1)
-	return Value_Int (truncForUser);
+	{
+	  valueFree (&truncValue); /* Not really needed as it is ValueInt.  */
+	  return Value_Int (truncForUser);
+	}
     }
   
   /* Check if we already have the literal assembled in an range of up to
@@ -216,13 +310,19 @@ Lit_RegisterInt (const Value *value, Lit_eSize size)
 	}
       if (equal)
 	{
+	  valueFree (&truncValue);
+
+	  assert (litPoolP->status != eNoNeedToAssemble);
+
 	  Symbol *symP = Lit_GetLitOffsetAsSymbol (litPoolP);
-	  assert (((symP->type & SYMBOL_DEFINED) != 0) ^ (!litPoolP->gotAssembled));
+	  assert (gASM_Phase != ePassTwo || (symP->type & SYMBOL_DEFINED) != 0);
+	  assert ((((symP->type & SYMBOL_DEFINED) == 0) && litPoolP->status == eNotYetAssembled)
+	          || (((symP->type & SYMBOL_DEFINED) != 0) && (litPoolP->status == eAssembledPassOne || litPoolP->status == eAssembledPassTwo)));
 	  if ((symP->type & SYMBOL_DEFINED) != 0)
 	    {
 	      assert (symP->value.Tag == ValueInt || symP->value.Tag == ValueCode);
-	      assert (areaCurrentSymbol->value.Data.Int.i >= litPoolP->offset);
-	      if (areaCurrentSymbol->value.Data.Int.i + 8 > litPoolP->offset + offset + ((isAddrMode3) ? 255 : 4095))
+	      assert (gASM_Phase == ePassTwo || (unsigned)areaCurrentSymbol->value.Data.Int.i >= litPoolP->offset);
+	      if ((unsigned)areaCurrentSymbol->value.Data.Int.i + 8 > litPoolP->offset + offset + ((isAddrMode3) ? 255 : 4095))
 		continue;
 	      /* A literal with the same value got already assembled and is in
 	         our range to refer to.  */
@@ -248,21 +348,8 @@ Lit_RegisterInt (const Value *value, Lit_eSize size)
 	}
     }
 
-  /* We need to create a new literal in our pool.  */
-  LitPool *litP;
-  if ((litP = malloc (sizeof (LitPool))) == NULL)
-    errorOutOfMem ();
-  litP->next = areaCurrentSymbol->area.info->litPool;
-  areaCurrentSymbol->area.info->litPool = litP;
-  litP->file = FS_GetCurFileName ();
-  litP->lineno = FS_GetCurLineNumber ();
-  litP->offset = 0;
-  litP->value.Tag = ValueIllegal;
-  Value_Assign (&litP->value, &truncValue);
-  litP->size = size;
-  litP->gotAssembled = false;
-
-  return Value_Symbol (Lit_GetLitOffsetAsSymbol (litP), 1);
+  assert (gASM_Phase == ePassOne);
+  return Lit_CreateLiteralSymbol (&truncValue, size);
 }
 
 /**
@@ -282,10 +369,14 @@ Lit_RegisterFloat (const Value *valueP, Lit_eSize size)
   valueP = &value;
 
   /* Is it one of the well known FPE constants we can encode using MVF/MNF ? */
-  if (FPE_ConvertImmediate (value.Data.Float.f) != (ARMWord)-1
-      || FPE_ConvertImmediate (-value.Data.Float.f) != (ARMWord)-1)
+  if (valueP->Tag == ValueFloat
+      && (FPE_ConvertImmediate (valueP->Data.Float.f) != (ARMWord)-1
+	  || FPE_ConvertImmediate (-valueP->Data.Float.f) != (ARMWord)-1))
     return value;
-  
+
+  Value truncValue = { .Tag = ValueIllegal };
+  Value_Assign (&truncValue, valueP);
+
   /* Check if we already have the literal assembled in an range of up to
      1020 bytes ago.  */
   for (const LitPool *litPoolP = areaCurrentSymbol->area.info->litPool;
@@ -294,15 +385,21 @@ Lit_RegisterFloat (const Value *valueP, Lit_eSize size)
     {
       if ((litPoolP->size == eLitFloat || litPoolP->size == eLitDouble)
           && litPoolP->size == size
- 	  && valueEqual (&litPoolP->value, valueP))
+ 	  && valueEqual (&litPoolP->value, &truncValue))
 	{
+	  valueFree (&truncValue);
+
+	  assert (litPoolP->status != eNoNeedToAssemble);
+
 	  Symbol *symP = Lit_GetLitOffsetAsSymbol (litPoolP);
-	  assert (((symP->type & SYMBOL_DEFINED) != 0) ^ (!litPoolP->gotAssembled));
+	  assert (gASM_Phase != ePassTwo || (symP->type & SYMBOL_DEFINED) != 0);
+	  assert ((((symP->type & SYMBOL_DEFINED) == 0) && litPoolP->status == eNotYetAssembled)
+	          || (((symP->type & SYMBOL_DEFINED) != 0) && (litPoolP->status == eAssembledPassOne || litPoolP->status == eAssembledPassTwo)));
 	  if ((symP->type & SYMBOL_DEFINED) != 0)
 	    {
 	      assert (symP->value.Tag == ValueFloat || symP->value.Tag == ValueCode);
-	      assert (areaCurrentSymbol->value.Data.Int.i >= litPoolP->offset);
-	      if (areaCurrentSymbol->value.Data.Int.i + 8 > litPoolP->offset + 1020)
+	      assert (gASM_Phase == ePassTwo || (unsigned)areaCurrentSymbol->value.Data.Int.i >= litPoolP->offset);
+	      if ((unsigned)areaCurrentSymbol->value.Data.Int.i + 8 > litPoolP->offset + 1020)
 		continue;
 	      /* A literal with the same value got already assembled and is in
 	         our range to refer to.  */
@@ -317,23 +414,9 @@ Lit_RegisterFloat (const Value *valueP, Lit_eSize size)
 	}
     }
 
-  /* We need to create a new literal in our pool.  */
-  LitPool *litP;
-  if ((litP = malloc (sizeof (LitPool))) == NULL)
-    errorOutOfMem ();
-  litP->next = areaCurrentSymbol->area.info->litPool;
-  areaCurrentSymbol->area.info->litPool = litP;
-  litP->file = FS_GetCurFileName ();
-  litP->lineno = FS_GetCurLineNumber ();
-  litP->offset = 0;
-  litP->value.Tag = ValueIllegal;
-  Value_Assign (&litP->value, valueP);
-  litP->size = size;
-  litP->gotAssembled = false;
-
-  return Value_Symbol (Lit_GetLitOffsetAsSymbol (litP), 1);
+  assert (gASM_Phase == ePassOne);
+  return Lit_CreateLiteralSymbol (&truncValue, size);
 }
-
 
 /**
  * Dump (assemble) the literal pool of the current area.
@@ -341,30 +424,33 @@ Lit_RegisterFloat (const Value *valueP, Lit_eSize size)
 void
 Lit_DumpPool (void)
 {
-  /* Delink unassembled literal pool elements and add them at the end
-     (in chronological order).  */
-  LitPool *unAsmLitP = NULL;
-  assert (offsetof (LitPool, next) == 0);
-  LitPool *prevLitP = (LitPool *)&areaCurrentSymbol->area.info->litPool;
-  for (LitPool *litP = prevLitP->next; litP != NULL; /* */)
+  Status_e statusToLeaveAlone = (gASM_Phase == ePassOne) ? eAssembledPassOne : eAssembledPassTwo;
+  for (LitPool *litP = areaCurrentSymbol->area.info->litPool; litP != NULL; litP = litP->next)
     {
-      LitPool * const nextLitP = litP->next;
-      if (!litP->gotAssembled)
+     if (litP->status == statusToLeaveAlone || litP->status == eNoNeedToAssemble)
+	continue;
+      assert ((gASM_Phase == ePassOne && litP->status == eNotYetAssembled) || (gASM_Phase == ePassTwo && litP->status == eAssembledPassOne));
+
+      const size_t alignValue = Lit_GetAlignment (litP);
+      if (gASM_Phase == ePassTwo && litP->offset > ((areaCurrentSymbol->value.Data.Int.i + alignValue-1) & -alignValue))
+	break;
+
+      litP->status = gASM_Phase == ePassOne ? eAssembledPassOne : eAssembledPassTwo;
+      
+      /* Re-evaluate symbol/code.  It might be resolvable by now.  */
+      if (litP->value.Tag == ValueSymbol || litP->value.Tag == ValueCode)
 	{
-	  litP->next = unAsmLitP;
-	  unAsmLitP = litP;
-	  prevLitP->next = nextLitP;
+	  codeInit ();
+	  codeValue (&litP->value, true);
+	  const Value *constValueP = codeEval (ValueInt | ValueCode | ValueSymbol | ValueFloat, NULL);
+	  if (constValueP->Tag != ValueIllegal)
+	    Value_Assign (&litP->value, constValueP);
+	  else
+	    {
+	      errorLine (litP->file, litP->lineno, ErrorError, "Unsupported literal case");
+	      continue;
+	    }
 	}
-      else
-	prevLitP = litP;
-      litP = nextLitP;
-    }
-  prevLitP->next = unAsmLitP;
-  
-  for (LitPool *litP = unAsmLitP; litP != NULL; litP = litP->next)
-    {
-      assert (!litP->gotAssembled);
-      litP->gotAssembled = true;
 
       Symbol *symP = Lit_GetLitOffsetAsSymbol (litP);
       symP->type |= SYMBOL_DEFINED | SYMBOL_DECLARED;
@@ -372,10 +458,7 @@ Lit_DumpPool (void)
 
       /* Check if it is a fixed integer/float which fits an immediate
          representation.  */
-      codeInit ();
-      codeValue (&litP->value, true);
-      const Value *constValueP = codeEval (ValueInt | ValueCode | ValueSymbol | ValueFloat, NULL);
-      switch (constValueP->Tag)
+      switch (litP->value.Tag)
 	{
 	  case ValueInt:
 	    {
@@ -384,27 +467,27 @@ Lit_DumpPool (void)
 	      switch (litP->size)
 		{
 		  case eLitIntUByte:
-		    constant = (int)(uint8_t)constValueP->Data.Int.i;
+		    constant = (int)(uint8_t)litP->value.Data.Int.i;
 		    isImmediate = true;
 		    break;
 
 		  case eLitIntSByte:
-		    constant = (int)(int8_t)constValueP->Data.Int.i;
+		    constant = (int)(int8_t)litP->value.Data.Int.i;
 		    isImmediate = true;
 		    break;
 
 		  case eLitIntUHalfWord:
-		    constant = (int)(uint16_t)constValueP->Data.Int.i;
+		    constant = (int)(uint16_t)litP->value.Data.Int.i;
 		    isImmediate = true;
 		    break;
 
 		  case eLitIntSHalfWord:
-		    constant = (int)(int16_t)constValueP->Data.Int.i;
+		    constant = (int)(int16_t)litP->value.Data.Int.i;
 		    isImmediate = true;
 		    break;
 
 		  case eLitIntWord:
-		    constant = constValueP->Data.Int.i;
+		    constant = litP->value.Data.Int.i;
 		    isImmediate = true;
 		    break;
 
@@ -412,17 +495,33 @@ Lit_DumpPool (void)
 		    isImmediate = false;
 		    break;
 		}
-	      if (constant != constValueP->Data.Int.i)
+	      if (constant != litP->value.Data.Int.i)
 		errorLine (litP->file, litP->lineno, ErrorWarning,
 			   "Constant %d has been truncated to %d by the used mnemonic",
-			   constValueP->Data.Int.i, constant);
+			   litP->value.Data.Int.i, constant);
 
 	      /* Value representable using MOV or MVN ? */
 	      if (isImmediate
 		  && (help_cpuImm8s4 (constant) != -1 || help_cpuImm8s4 (~constant) != -1))
 		{
-		  symP->value = Value_Int (constant);
-		  continue;
+		  if (gASM_Phase == ePassOne)
+		    {
+		      /* The definition of the literal happeded after its use
+			 but before LTORG so we don't have to assemble it
+			 explicitely.  */
+		      symP->value = Value_Int (constant);
+		      litP->status = eNoNeedToAssemble;
+		      continue;
+		    }
+		  else
+		    {
+		      /* We do MOV/MVN optimisation but as the literal value
+		         got defined after LTORG, we've already allocated
+		         some bytes which aren't going to be used.  */
+		      errorLine (litP->file, litP->lineno, ErrorWarning,
+			         "Literal loading optimized as MOV/MVN but because of literal value definition after LTORG this results in %zd bytes waste", Lit_GetSizeInBytes (litP));
+		      error (ErrorWarning, "note: LTORG was here");
+		    }
 		}
 	      break;
 	    }
@@ -438,16 +537,32 @@ Lit_DumpPool (void)
 	  case ValueFloat:
 	    {
 	      /* Value representable using MVF or MNF ? */
-	      ARMFloat constant = constValueP->Data.Float.f;
+	      ARMFloat constant = litP->value.Data.Float.f;
 	      if (FPE_ConvertImmediate (constant) != (ARMWord)-1
-	          || FPE_ConvertImmediate (-constant) != (ARMWord)-1)
+		  || FPE_ConvertImmediate (-constant) != (ARMWord)-1)
 		{
-		  symP->value = Value_Float (constant);
-		  continue;
+		  if (gASM_Phase == ePassOne)
+		    {
+		      /* The definition of the literal happeded after its use
+			 but before LTORG so we don't have to assemble it
+			 explicitely.  */
+		      symP->value = Value_Float (constant);
+		      litP->status = eNoNeedToAssemble;
+		      continue;
+		    }
+		  else
+		    {
+		      /* We do MVF/MNF optimisation but as the literal value
+			 got defined after LTORG, we've already allocated
+			 some bytes which aren't going to be used.  */
+		      errorLine (litP->file, litP->lineno, ErrorWarning,
+				 "Literal loading optimized as MVF/MNF but because of literal value definition after LTORG this results in %zd bytes waste", Lit_GetSizeInBytes (litP));
+		      error (ErrorWarning, "note: LTORG was here");
+		    }
 		}
 	      break;
 	    }
-
+	    
 	  default:
 	    errorLine (litP->file, litP->lineno, ErrorError, "Unsupported literal case");
 	    break;
@@ -489,6 +604,7 @@ Lit_DumpPool (void)
       const Value valCode = Value_Code (sizeof (code)/sizeof (code[0]), code);
       Value_Assign (&symP->value, &valCode);
 
+      assert ((gASM_Phase == ePassOne && litP->offset == 0) || (gASM_Phase == ePassTwo && litP->offset == (unsigned)areaCurrentSymbol->value.Data.Int.i));
       litP->offset = areaCurrentSymbol->value.Data.Int.i;
 
       switch (litP->size)
@@ -501,26 +617,20 @@ Lit_DumpPool (void)
 	    {
 	      DefineInt_PrivData_t privData =
 		{
+		  .size = (int) Lit_GetSizeInBytes (litP),
 		  .allowUnaligned = false
 		};
-	      switch (litP->size)
+	      if (gASM_Phase == ePassOne)
+		Put_AlignDataWithOffset (litP->offset, privData.size, 0, !privData.allowUnaligned);
+	      else
 		{
-		  case eLitIntUByte:
-		  case eLitIntSByte:
-		    privData.size = 1;
-		    break;
-		  case eLitIntUHalfWord:
-		  case eLitIntSHalfWord:
-		    privData.size = 2;
-		    break;
-		  case eLitIntWord:
-		    privData.size = 4;
-		    break;
+		  codeInit ();
+		  codeValue (&litP->value, true);
+		  if (Reloc_QueueExprUpdate (DefineInt_RelocUpdater, litP->offset,
+					      ValueInt | ValueString | ValueSymbol | ValueCode,
+					      &privData, sizeof (privData)))
+		    errorLine (litP->file, litP->lineno, ErrorError, "Illegal %s expression", "literal");
 		}
-	      if (Reloc_QueueExprUpdate (DefineInt_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
-					 ValueInt | ValueString | ValueSymbol | ValueCode,
-					 &privData, sizeof (privData)))
-		errorLine (litP->file, litP->lineno, ErrorError, "Illegal %s expression", "literal");
 	    }
 	    break;
 
@@ -529,20 +639,24 @@ Lit_DumpPool (void)
 	    {
 	      DefineReal_PrivData_t privData =
 		{
-		  .size = litP->size == eLitFloat ? 4 : 8,
+		  .size = (int) Lit_GetSizeInBytes (litP),
 		  .allowUnaligned = false
 		};
-	      ValueTag legal = ValueFloat | ValueSymbol | ValueCode;
-	      if (option_autocast)
-		legal |= ValueInt;
-	      if (Reloc_QueueExprUpdate (DefineReal_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
-					 legal, &privData, sizeof (privData)))
-		errorLine (litP->file, litP->lineno, ErrorError, "Illegal %s expression", "literal");
+	      if (gASM_Phase == ePassOne)
+		Put_FloatDataWithOffset (litP->offset, privData.size, 0.,
+					 !privData.allowUnaligned);
+	      else
+		{
+		  ValueTag legal = ValueFloat | ValueSymbol | ValueCode;
+		  if (option_autocast)
+		    legal |= ValueInt;
+		  codeInit ();
+		  codeValue (&litP->value, true);
+		  if (Reloc_QueueExprUpdate (DefineReal_RelocUpdater, litP->offset,
+					     legal, &privData, sizeof (privData)))
+		    errorLine (litP->file, litP->lineno, ErrorError, "Illegal %s expression", "literal");
+		}
 	    }
-	    break;
-
-	  default:
-	    assert (0);
 	    break;
 	}
     }

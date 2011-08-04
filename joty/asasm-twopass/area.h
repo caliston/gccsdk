@@ -26,6 +26,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "asm.h"
 #include "symbol.h"
 #include "reloc.h"
 #include "lit.h"
@@ -90,8 +91,8 @@ extern Symbol *areaEntrySymbol; /** Symbol of area which has been marked as ENTR
 extern int areaEntryOffset;
 extern Symbol *areaHeadSymbol; /** Start of the linked list of all area symbols seen so far.  Follow Symbol::area.info->next for next area (*not* Symbol::next !).  */
 
-void areaInit (void);
-void areaFinish (void);
+void Area_PrepareForPhase (ASM_Phase_e phase);
+
 void Area_EnsureExtraSize (size_t mingrow);
 
 bool Area_IsImplicit (const Symbol *sym);

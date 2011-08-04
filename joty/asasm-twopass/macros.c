@@ -32,6 +32,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "asm.h"
 #include "commands.h"
 #include "decode.h"
 #include "error.h"
@@ -279,6 +280,9 @@ c_macro (void)
 
   char *buf = NULL;
 
+  if (gASM_Phase == ePassTwo)
+    goto lookforMEND;
+  
   skipblanks ();
   if (!Input_IsEolOrCommentStart ())
     error (ErrorWarning, "Skipping characters following MACRO");

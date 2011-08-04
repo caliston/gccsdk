@@ -151,7 +151,8 @@ branch_shared (ARMWord cc, bool isBLX)
   codeOperator (Op_sub);
   
   Put_Ins (cc | 0x0A000000);
-  if (Reloc_QueueExprUpdate (Branch_RelocUpdater, offset, ValueInt | ValueCode | ValueSymbol, &isBLX, sizeof (isBLX)))
+  if (gASM_Phase != ePassOne
+      && Reloc_QueueExprUpdate (Branch_RelocUpdater, offset, ValueInt | ValueCode | ValueSymbol, &isBLX, sizeof (isBLX)))
     error (ErrorError, "Illegal branch expression");
   return false;
 }
@@ -450,11 +451,11 @@ ADR_RelocUpdater (const char *file, int lineno, ARMWord offset,
 	  case ValueInt:
 	    /* Absolute value : results in MOV/MVN (followed by ADD/SUB in case of
 	       ADRL).  */
-	    ADR_RelocUpdaterCore (file, lineno, offset, valP->Data.Int.i, -1, final, privDataP->userIntendedTwoInstr);
+	    ADR_RelocUpdaterCore (file, lineno, offset, valP->Data.Int.i, -1, true /* final */, privDataP->userIntendedTwoInstr);
 	    break;
 
 	  case ValueAddr:
-	    ADR_RelocUpdaterCore (file, lineno, offset, valP->Data.Addr.i, valP->Data.Addr.r, final, privDataP->userIntendedTwoInstr);
+	    ADR_RelocUpdaterCore (file, lineno, offset, valP->Data.Addr.i, valP->Data.Addr.r, true /* final */, privDataP->userIntendedTwoInstr);
 	    break;
 
 	  case ValueSymbol:
@@ -467,7 +468,7 @@ ADR_RelocUpdater (const char *file, int lineno, ARMWord offset,
 		    Put_InsWithOffset (offset + 4, 0);
 		  return true;
 		}
-	      ADR_RelocUpdaterCore (file, lineno, offset, -(offset + 8), 15, final, privDataP->userIntendedTwoInstr);
+	      ADR_RelocUpdaterCore (file, lineno, offset, -(offset + 8), 15, true /* final */, privDataP->userIntendedTwoInstr);
 	      if (Reloc_Create (HOW2_INIT | HOW2_SIZE | HOW2_RELATIVE, offset, valP) == NULL)
 		return true;
 	    }
@@ -491,6 +492,16 @@ m_adr (void)
   if (ir == optionError)
     return true;
 
+  if (gASM_Phase == ePassOne)
+    {
+      Input_Rest ();
+      Put_Ins (0);
+      /* When bit 0 is set, we'll emit ADRL (2 instructions).  */
+      if (ir & 1)
+	Put_Ins (0);
+      return false;
+    }
+  
   /* When bit 0 is set, we'll emit ADRL (2 instructions).  */
   ADR_PrivData_t privData =
     {
@@ -519,7 +530,7 @@ m_adr (void)
  * [1] Stack reg vars  0 = no, 1..6 = v1-vn
  * [2] Stack fp vars   0 = no, 1..4 = f4-f(3+n)
  */
-static signed int regs[3] = {-1, -1, -1};
+static int regs[3] = {-1, -1, -1};
 
 /**
  * Implements STACK : APCS prologue

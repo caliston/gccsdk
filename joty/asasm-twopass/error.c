@@ -34,6 +34,7 @@
 #  include <inttypes.h>
 #endif
 
+#include "asm.h"
 #include "error.h"
 #include "filestack.h"
 #include "input.h"
@@ -122,6 +123,12 @@ fixup (void)
 static void
 errorCore (ErrorTag e, const char *format, va_list ap)
 {
+  /* Ignore Info and Warning messages during Pass 1.  If there are no
+     errors, we'll emit them during Pass 2.  */
+  if (gASM_Phase == ePassOne
+      && (e == ErrorInfo || e == ErrorWarning))
+    return;
+
   const char *str;
   int t = 0;
   switch (e)
@@ -266,6 +273,12 @@ static void
 errorCoreLine (const char *file, int lineno, ErrorTag e,
 	       const char *format, va_list ap)
 {
+  /* Ignore Info and Warning messages during Pass 1.  If there are no
+     errors, we'll emit them during Pass 2.  */
+  if (gASM_Phase == ePassOne
+      && (e == ErrorInfo || e == ErrorWarning))
+    return;
+
   const char *str;
   int t = 0;
   switch (e)

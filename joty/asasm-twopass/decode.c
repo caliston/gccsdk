@@ -547,7 +547,7 @@ decode (const Lex *label)
 	      else
 		error (ErrorError, "Failed to determine label size");
 	    }
-	  assert (labelSymbol->codeSize == 0);
+	  assert ((gASM_Phase == ePassOne && labelSymbol->codeSize == 0) || (gASM_Phase == ePassTwo && labelSymbol->codeSize == codeSize));
 	  labelSymbol->codeSize = codeSize;
 	}
 

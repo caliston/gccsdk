@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "asm.h"
 #include "code.h"
 #include "error.h"
 #include "eval.h"
@@ -759,7 +760,12 @@ evalUnop (Operator op, Value *value)
 	      error (ErrorError, "Bad operand type for ? operator");
 	      return false;
 	    }
-	  if (value->Data.Symbol.symbol->type & SYMBOL_DEFINED)
+	  if (gASM_Phase == ePassOne)
+	    {
+	      value->Tag = ValueInt;
+	      value->Data.Int.i = 0;
+	    }
+	  else if (value->Data.Symbol.symbol->type & SYMBOL_DEFINED)
 	    {
 	      value->Tag = ValueInt;
 	      value->Data.Int.i = value->Data.Symbol.symbol->codeSize;

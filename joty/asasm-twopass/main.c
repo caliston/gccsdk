@@ -46,6 +46,7 @@
 #include "include.h"
 #include "input.h"
 #include "main.h"
+#include "local.h"
 #include "os.h"
 #include "output.h"
 #include "symbol.h"
@@ -501,10 +502,9 @@ main (int argc, char **argv)
       asmAbortValid = true;
       Symbol_Init ();
       outputInit (ObjFileName);
-      areaInit ();
-      /* Do the assembly.  */
+
+      /* Do the two pass assembly.  */
       ASM_Assemble (SourceFileName);
-      areaFinish ();
 
       /* Don't try to output anything when we have assemble errors.  */
       if (returnExitStatus () == EXIT_SUCCESS)
@@ -515,6 +515,9 @@ main (int argc, char **argv)
 	    {
 	      asmContinueValid = true;
 	      /* Write the ELF/AOF output.  */
+	      Area_PrepareForPhase (eOutput);
+	      Local_PrepareForPhase (eOutput);
+	      gASM_Phase = eOutput;
 #ifndef NO_ELF_SUPPORT
 	      if (!option_aof)
 		outputElf();

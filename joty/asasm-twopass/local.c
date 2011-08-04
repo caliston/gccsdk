@@ -45,16 +45,51 @@ typedef struct routPos
   int lineno;
 } routPos;
 
-static unsigned int rout_null = 0;
+static unsigned int rout_null;
 static routPos *routList;
 static routPos *routListEnd;
 
-int Local_ROUTLblNo[100] = {0};
-const char *Local_CurROUTId = kEmptyRoutineName "0";
+int Local_ROUTLblNo[100];
+const char *Local_CurROUTId = NULL;
 
 /* Parameters: AREA ptr, 0 - 99 label digit, instance number, routine name.  */
 const char Local_IntLabelFormat[] = kIntLabelPrefix "Local$$%p$$%02i$$%i$$%s";
 
+void
+Local_PrepareForPhase (ASM_Phase_e phase)
+{
+  switch (phase)
+    {
+      case ePassOne:
+	memset (Local_ROUTLblNo, 0, sizeof (Local_ROUTLblNo));
+	free ((void *)Local_CurROUTId);
+	Local_CurROUTId = strdup (kEmptyRoutineName "0");
+	break;
+
+      case ePassTwo:
+	{
+	  for (routPos *routCur = routList; routCur != NULL; /* */)
+	    {
+	      routPos *routCurNext = routCur->next;
+	      free (routCur);
+	      routCur = routCurNext;
+	    }
+	  routList = NULL;
+	  routListEnd = NULL;
+	  rout_null = 0;
+	  memset (Local_ROUTLblNo, 0, sizeof (Local_ROUTLblNo));
+	  free ((void *)Local_CurROUTId);
+	  Local_CurROUTId = strdup (kEmptyRoutineName "0");
+	}
+	break;
+
+      case eOutput:
+	memset (Local_ROUTLblNo, 0, sizeof (Local_ROUTLblNo));
+	free ((void *)Local_CurROUTId);
+	Local_CurROUTId = NULL;
+	break;
+    }
+}
 
 /**
  * Implements ROUT.

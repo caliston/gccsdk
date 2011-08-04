@@ -289,7 +289,21 @@ DefineInt (int size, bool allowUnaligned, const char *mnemonic)
   do
     {
       exprBuild ();
-      if (Reloc_QueueExprUpdate (DefineInt_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
+      if (gASM_Phase == ePassOne)
+	{
+	  const Value *result = codeEval (ValueInt | ValueString | ValueSymbol | ValueCode, NULL);
+	  if (result->Tag == ValueString)
+	    {
+	      size_t len = result->Data.String.len;
+	      const char *str = result->Data.String.s;
+	      /* Lay out a string.  */
+	      for (size_t i = 0; i != len; ++i)
+		Put_AlignDataWithOffset (areaCurrentSymbol->value.Data.Int.i, privData.size, str[i], !privData.allowUnaligned);
+	    }
+	  else
+	    Put_AlignDataWithOffset (areaCurrentSymbol->value.Data.Int.i, privData.size, 0, !privData.allowUnaligned);
+	}
+      else if (Reloc_QueueExprUpdate (DefineInt_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
 				 ValueInt | ValueString | ValueSymbol | ValueCode,
 				 &privData, sizeof (privData)))
 	error (ErrorError, "Illegal %s expression", mnemonic);
@@ -411,13 +425,19 @@ DefineReal (int size, bool allowUnaligned, const char *mnemonic)
   do
     {
       exprBuild ();
-      ValueTag legal = ValueFloat | ValueSymbol | ValueCode;
-      if (option_autocast)
-	legal |= ValueInt;
-      if (Reloc_QueueExprUpdate (DefineReal_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
-				 legal, &privData, sizeof (privData)))
-	error (ErrorError, "Illegal %s expression", mnemonic);
-
+      if (gASM_Phase == ePassOne)
+	Put_FloatDataWithOffset (areaCurrentSymbol->value.Data.Int.i,
+				 privData.size, 0., !privData.allowUnaligned);
+      else
+	{
+	  ValueTag legal = ValueFloat | ValueSymbol | ValueCode;
+	  if (option_autocast)
+	    legal |= ValueInt;
+	  if (Reloc_QueueExprUpdate (DefineReal_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
+				     legal, &privData, sizeof (privData)))
+	    error (ErrorError, "Illegal %s expression", mnemonic);
+	}
+      
       skipblanks ();
     }
   while (Input_Match (',', false));

@@ -1,3 +1,50 @@
+Thu Aug  4 01:37:50 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* asm.c (ASM_DoPass, gASM_Phase): Add.
+	(ASM_Assemble): Assemble source code twice.
+	* asm.h (gASM_Phase): Add.
+	* commands.c (DefineInt): Make it phase aware.
+	(DefineReal): Likewise.
+	* decode.c (decode): Likewise.
+	* eval.c (evalUnop): Likewise.
+	* symbol.c (Symbol_OutputForAOF): Support area mapping symbols.
+	(Symbol_OutputForELF): Likewise.
+	* m_cpuctrl.c (branch_shared): Likewise.
+	(m_adr): Likewise.
+	* help_cop.c (help_copAddr): Likewise.
+	* error.c (errorCore): Likewise.
+	(errorCoreLine): Likewise.
+	* macros.c (c_macro): Likewise.
+	* reloc.c (Reloc_QueueExprUpdate): Likewise.
+	* get.c (getRhs): Likewise.
+	* main.c (main): Likewise.
+	* area.c (Area_EnsureExtraSize): Likewise.
+	(areaInit): Remove.
+	(Area_PrepareForPhase): Add.
+	(Area_MarkStartAs): Add SYMBOL_DATUM for data area mappings.
+	* area.h (Area_PrepareForPhase): Add.
+	* lit.c (Lit_GetSizeInBytes, Lit_GetAlignment, Lit_CreateLiteralSymbol):
+	Add.
+	(Lit_RegisterInt,Lit_RegisterFloat,Lit_DumpPool): Fix memory
+	corruption.  Make it phase aware.
+	* value.c (valueEqual): Reevaluate Code and Symbol values before
+	comparision.
+	* m_cpumem.c (DestMem_RelocUpdater): Support relocation to another
+	area than current one.  Fix relocation flags.
+	(dstmem): Fix memory corruption.  Make it phase aware.
+	* local.c (Local_PrepareForPhase): Add.
+	* local.h (Local_PrepareForPhase): Add.
+	* regression/tests_pass/record_basic.s: Enable tests which work now.
+	* regression/tests_pass/operator_index.s: Likewise.
+	* regression/tests_pass/adr.s: Account for missing ADRL to ADR
+	optimisation.
+	* regression/tests_pass/register_based_map.s: Likewise.
+	* regression/tests_fail/ldr_from_expr_fail.s: Move to...
+	* regression/tests_pass/ldr.s: ...here.  Disable the relocation
+	part of the test.
+	* regression/tests_pass/load_literal3.s: Add.
+	* regression/tests_pass/load_literal.s: Update reference part.
+
 Fri Jul 22 16:00:45 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* symbol.c (Symbol_PreDefReg): Use symbolGet instead of symbolAdd.

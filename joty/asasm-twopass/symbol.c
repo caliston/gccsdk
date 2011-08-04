@@ -593,10 +593,16 @@ Symbol_OutputForAOF (FILE *outfile, const SymbolOut_t *symOutP)
 	      else
 		value = &sym->value;
 
-	      /* We can only have Int, Bool and Code here.  See NeedToOutputSymbol().  */
+	      /* We can only have Int, Bool and Code here.  See NeedToOutputSymbol().
+		 Also Addr is possible for an area mapping symbol when base
+		 register is specified.  */
 	      int v;
 	      switch (value->Tag)
 		{
+		  case ValueAddr:
+		    v = value->Data.Addr.i;
+		    break;
+
 		  case ValueInt:
 		    v = value->Data.Int.i;
 		    break;
@@ -691,10 +697,16 @@ Symbol_OutputForELF (FILE *outfile, const SymbolOut_t *symOutP)
 	      else
 		value = &sym->value;
 
-	      /* We can only have Int, Bool and Code here.  See NeedToOutputSymbol().  */
+	      /* We can only have Int, Bool and Code here.  See NeedToOutputSymbol().
+		 Also Addr is possible for an area mapping symbol when base
+		 register is specified.  */
 	      int v;
 	      switch (value->Tag)
 		{
+		  case ValueAddr:
+		    v = value->Data.Addr.i;
+		    break;
+
 		  case ValueInt:
 		    v = value->Data.Int.i;
 		    break;
