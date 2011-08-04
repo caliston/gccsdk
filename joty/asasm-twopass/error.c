@@ -233,7 +233,9 @@ error (ErrorTag e, const char *format, ...)
   errorCore (e, format, ap);
   va_end (ap);
 
-  Input_ShowLine ();
+  if (gASM_Phase != ePassOne
+      || (e != ErrorInfo && e != ErrorWarning))
+    Input_ShowLine ();
 
   if (e == ErrorAbort || no_errors > MAXERR)
     fixup ();

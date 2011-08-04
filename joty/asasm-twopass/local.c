@@ -60,6 +60,9 @@ Local_PrepareForPhase (ASM_Phase_e phase)
 {
   switch (phase)
     {
+      case eStartup:
+	break;
+
       case ePassOne:
 	memset (Local_ROUTLblNo, 0, sizeof (Local_ROUTLblNo));
 	free ((void *)Local_CurROUTId);

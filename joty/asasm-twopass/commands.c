@@ -594,19 +594,24 @@ c_end (void)
 bool
 c_assert (void)
 {
-  const Value *value = exprBuildAndEval (ValueBool);
-  switch (value->Tag)
+  if (gASM_Phase == ePassOne)
+    Input_Rest ();
+  else
     {
-      case ValueBool:
-	if (!value->Data.Bool.b)
-	  error (ErrorError, "Assertion failed");
-	break;
+      const Value *value = exprBuildAndEval (ValueBool);
+      switch (value->Tag)
+	{
+	  case ValueBool:
+	    if (!value->Data.Bool.b)
+	      error (ErrorError, "Assertion failed");
+	    break;
 
-      default:
-	error (ErrorError, "ASSERT expression must be boolean");
-	break;
+	  default:
+	    error (ErrorError, "ASSERT expression must be boolean");
+	    break;
+	}
     }
-
+  
   return false;
 }
 

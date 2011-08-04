@@ -48,7 +48,7 @@ ememcmp (const Value *lv, const Value *rv)
 
 #define STRINGIFY(OP)	#OP
 /* Core implementation for '<', '<=', '>', '>=', '==' and '!='.
-   Works for ValueFloat, ValueString, ValueInt, ValueAdd.  */
+   Works for ValueFloat, ValueString, ValueInt, ValueAddr.  */
 #define COMPARE(OP) \
   do \
     { \
@@ -434,6 +434,12 @@ evalBinop (Operator op, Value *lvalue, const Value *rvalue)
     case Op_eq: /* = == */
       if (lvalue->Tag == ValueBool && rvalue->Tag == ValueBool)
 	lvalue->Data.Bool.b = lvalue->Data.Bool.b == rvalue->Data.Bool.b;
+      else if (lvalue->Tag == ValueSymbol || lvalue->Tag == ValueCode
+               || rvalue->Tag == ValueSymbol || rvalue->Tag == ValueCode)
+	{
+	  lvalue->Data.Bool.b = valueEqual (lvalue, rvalue);
+	  lvalue->Tag = ValueBool;
+	}
       else
         COMPARE (==);
       break;

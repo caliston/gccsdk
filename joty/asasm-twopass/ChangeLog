@@ -1,3 +1,14 @@
+Thu Aug  4 22:58:58 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (c_assert): Make it phase aware.
+	* regression/tests_pass/assert.s: Added.
+	* regression/tests_pass/if_else.s: Removed bogus 2nd parameter of
+	ASSERT.
+	* error.c (error): Don't call Input_ShowLine during phase 1.
+	* local.c (Local_PrepareForPhase): Surpress compiler warning.
+	* eval.c (evalBinop): Teach Op_eq about comparing ValueCode and
+	ValueSymbol values.
+
 Thu Aug  4 01:37:50 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* asm.c (ASM_DoPass, gASM_Phase): Add.
