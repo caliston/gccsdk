@@ -1,8 +1,8 @@
 Index: gcc/ada/adaint.c
 ===================================================================
---- gcc/ada/adaint.c	(revision 176214)
+--- gcc/ada/adaint.c	(revision 177412)
 +++ gcc/ada/adaint.c	(working copy)
-@@ -88,6 +88,10 @@
+@@ -93,6 +93,10 @@
  #include "version.h"
  #endif
  
