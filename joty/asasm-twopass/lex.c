@@ -356,6 +356,8 @@ lexGetPrim (void)
 
       case ':':
 	lexAcornUnop (&result);
+	if (result.tag == LexNone)
+	  inputUnGet (':');
 	break;
 
       case '&':
@@ -684,6 +686,8 @@ lexGetBinop (void)
 
       case ':':
 	lexAcornBinop (&result); /* :XYZ: */
+	if (result.tag == LexNone)
+	  inputUnGet (':');
 	break;
 
       default:

@@ -1,3 +1,10 @@
+Sun Aug  7 18:39:49 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lexAcorn.c (lexAcornUnop, lexAcornBinop): Don't consume characters
+	which weren't expected.
+	* lex.c (lexGetPrim, lexGetBinop): Return : back to input stream if
+	tokenizing failed.
+
 Sun Aug  7 17:30:45 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* code.c (Code_EvalLowest): Don't call operator size for non-defined
