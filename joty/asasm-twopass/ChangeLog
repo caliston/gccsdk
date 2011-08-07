@@ -1,3 +1,13 @@
+Sun Aug  7 17:30:45 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* code.c (Code_EvalLowest): Don't call operator size for non-defined
+	symbols.
+	* eval.c (evalUnop): Op_size: Remove implementation for non-defined
+	symbols.
+	* regression/tests_pass/operator_questionmark.s: Add tests.
+	* asm.c (DEBUG_ASM): More debug.
+	* regression/tests_pass/load_literal4.s: Add.
+
 Thu Aug  4 22:58:58 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* commands.c (c_assert): Make it phase aware.

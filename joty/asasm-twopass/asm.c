@@ -69,7 +69,11 @@ ASM_DoPass (const char *asmFile)
 	continue;
 
 #ifdef DEBUG_ASM
-      printf("%d : 0x%x\n", FS_GetCurLineNumber (), areaCurrentSymbol->value.Data.Int.i);
+      const char *fileName = FS_GetCurFileName ();
+      size_t len = strlen (fileName);
+      if (len > 12)
+	fileName += len - 12;
+      printf("%.*s : %d : 0x%x\n", (int)len, fileName, FS_GetCurLineNumber (), areaCurrentSymbol->value.Data.Int.i);
 #endif
       /* Read label (in case there is one).  */
       Lex label;
@@ -80,7 +84,6 @@ ASM_DoPass (const char *asmFile)
       skipblanks ();
 
 #ifdef DEBUG_ASM
-      printf ("%s: %d: ", FS_GetCurFileName (), FS_GetCurLineNumber ());
       lexPrint (&label);
       printf ("\n");
 #endif

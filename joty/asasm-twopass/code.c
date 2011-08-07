@@ -475,7 +475,7 @@ Code_EvalLowest (size_t size, const Code *program, const ARMWord *instrOffsetP,
 		assert (spStart < *sp); /* At least one entry on the stack.  */
 		if (Stack[*sp - 1].Tag != CodeValue
 		    || (Stack[*sp - 1].Data.value.Tag == ValueSymbol
-		        && program[i].Data.op != Op_size
+		        && !(program[i].Data.op == Op_size && (Stack[*sp - 1].Data.value.Data.Symbol.symbol->type & SYMBOL_DEFINED) != 0)
 		        && program[i].Data.op != Op_neg))
 		  {
 		    /* We have an unresolved (or even undeclared) symbol
