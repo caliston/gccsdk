@@ -1,7 +1,7 @@
-Index: gcc/unwind-dw2.c
+Index: libgcc/unwind-dw2.c
 ===================================================================
---- gcc/unwind-dw2.c	(revision 174637)
-+++ gcc/unwind-dw2.c	(working copy)
+--- libgcc/unwind-dw2.c	(revision 174637)
++++ libgcc/unwind-dw2.c	(working copy)
 @@ -59,6 +59,12 @@
  #define DWARF_REG_TO_UNWIND_COLUMN(REGNO) (REGNO)
  #endif

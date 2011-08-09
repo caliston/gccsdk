@@ -1,8 +1,8 @@
 Index: libgcc/configure.ac
 ===================================================================
---- libgcc/configure.ac	(revision 177068)
+--- libgcc/configure.ac	(revision 177481)
 +++ libgcc/configure.ac	(working copy)
-@@ -38,6 +38,15 @@
+@@ -39,6 +39,15 @@
  AC_SUBST(libgcc_topdir)
  AC_CONFIG_AUX_DIR($libgcc_topdir)
  

@@ -1,7 +1,7 @@
-Index: gcc/config/arm/libunwind.S
+Index: libgcc/config/arm/libunwind.S
 ===================================================================
---- gcc/config/arm/libunwind.S	(revision 172858)
-+++ gcc/config/arm/libunwind.S	(working copy)
+--- libgcc/config/arm/libunwind.S	(revision 172858)
++++ libgcc/config/arm/libunwind.S	(working copy)
 @@ -343,11 +343,23 @@
  	add sp, #72
  	bx r3

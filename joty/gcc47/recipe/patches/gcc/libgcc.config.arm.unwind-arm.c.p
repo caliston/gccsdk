@@ -1,7 +1,7 @@
-Index: gcc/config/arm/unwind-arm.c
+Index: libgcc/config/arm/unwind-arm.c
 ===================================================================
---- gcc/config/arm/unwind-arm.c	(revision 177068)
-+++ gcc/config/arm/unwind-arm.c	(working copy)
+--- libgcc/config/arm/unwind-arm.c	(revision 177068)
++++ libgcc/config/arm/unwind-arm.c	(working copy)
 @@ -49,6 +49,10 @@
  __gnu_Unwind_Find_exidx (_Unwind_Ptr, int *);
  

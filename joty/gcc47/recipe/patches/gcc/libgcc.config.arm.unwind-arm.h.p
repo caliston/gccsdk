@@ -1,7 +1,7 @@
-Index: gcc/config/arm/unwind-arm.h
+Index: libgcc/config/arm/unwind-arm.h
 ===================================================================
---- gcc/config/arm/unwind-arm.h	(revision 172858)
-+++ gcc/config/arm/unwind-arm.h	(working copy)
+--- libgcc/config/arm/unwind-arm.h	(revision 172858)
++++ libgcc/config/arm/unwind-arm.h	(working copy)
 @@ -117,6 +117,9 @@
  	  _uw reserved1;
  	}
