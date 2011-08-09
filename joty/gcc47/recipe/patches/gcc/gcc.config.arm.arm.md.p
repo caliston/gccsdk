@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.md
 ===================================================================
---- gcc/config/arm/arm.md	(revision 175930)
+--- gcc/config/arm/arm.md	(revision 177604)
 +++ gcc/config/arm/arm.md	(working copy)
 @@ -32,6 +32,7 @@
  (define_constants
@@ -19,6 +19,15 @@ Index: gcc/config/arm/arm.md
  ])
  
  ;; UNSPEC_VOLATILE Usage:
+@@ -5459,7 +5462,7 @@
+ 	(mem:SI (plus:SI (match_operand:SI 1 "register_operand" "r")
+ 			 (unspec:SI [(match_operand:SI 2 "" "X")]
+ 				    UNSPEC_PIC_OFFSET))))]
+-  "TARGET_VXWORKS_RTP && TARGET_ARM && flag_pic"
++  "(TARGET_VXWORKS_RTP && TARGET_ARM && flag_pic) || flag_pic == 2"
+   "ldr%?\\t%0, [%1,%2]"
+   [(set_attr "type" "load1")]
+ )
 @@ -8014,7 +8017,7 @@
        return thumb_call_via_reg (operands[0]);
      else if (operands[1] == const0_rtx)
