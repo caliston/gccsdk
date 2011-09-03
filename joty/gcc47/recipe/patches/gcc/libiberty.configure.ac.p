@@ -1,6 +1,6 @@
 Index: libiberty/configure.ac
 ===================================================================
---- libiberty/configure.ac	(revision 168600)
+--- libiberty/configure.ac	(revision 178499)
 +++ libiberty/configure.ac	(working copy)
 @@ -176,6 +176,15 @@
    enable_shared=no
@@ -18,7 +18,7 @@ Index: libiberty/configure.ac
  frag=
  case "${host}" in
    rs6000-ibm-aix3.1 | rs6000-ibm-aix)
-@@ -483,6 +492,97 @@
+@@ -466,6 +475,97 @@
      setobjs=yes
      ;;
  

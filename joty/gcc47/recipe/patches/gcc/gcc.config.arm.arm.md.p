@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.md
 ===================================================================
---- gcc/config/arm/arm.md	(revision 177604)
+--- gcc/config/arm/arm.md	(revision 178499)
 +++ gcc/config/arm/arm.md	(working copy)
 @@ -32,6 +32,7 @@
  (define_constants
@@ -10,7 +10,7 @@ Index: gcc/config/arm/arm.md
     (IP_REGNUM	    12)		; Scratch register
     (SP_REGNUM	    13)		; Stack pointer
     (LR_REGNUM       14)		; Return address register
-@@ -103,6 +104,8 @@
+@@ -112,6 +113,8 @@
    UNSPEC_SYMBOL_OFFSET  ; The offset of the start of the symbol from
                          ; another symbolic address.
    UNSPEC_MEMORY_BARRIER ; Represent a memory barrier.
@@ -19,7 +19,7 @@ Index: gcc/config/arm/arm.md
  ])
  
  ;; UNSPEC_VOLATILE Usage:
-@@ -5459,7 +5462,7 @@
+@@ -5472,7 +5475,7 @@
  	(mem:SI (plus:SI (match_operand:SI 1 "register_operand" "r")
  			 (unspec:SI [(match_operand:SI 2 "" "X")]
  				    UNSPEC_PIC_OFFSET))))]
@@ -28,7 +28,7 @@ Index: gcc/config/arm/arm.md
    "ldr%?\\t%0, [%1,%2]"
    [(set_attr "type" "load1")]
  )
-@@ -8014,7 +8017,7 @@
+@@ -8027,7 +8030,7 @@
        return thumb_call_via_reg (operands[0]);
      else if (operands[1] == const0_rtx)
        return \"bl\\t%__interwork_call_via_%0\";
@@ -37,7 +37,7 @@ Index: gcc/config/arm/arm.md
        return \"bl\\t%__interwork_r7_call_via_%0\";
      else
        return \"bl\\t%__interwork_r11_call_via_%0\";
-@@ -8126,7 +8129,7 @@
+@@ -8139,7 +8142,7 @@
        return thumb_call_via_reg (operands[1]);
      else if (operands[2] == const0_rtx)
        return \"bl\\t%__interwork_call_via_%1\";
@@ -46,7 +46,7 @@ Index: gcc/config/arm/arm.md
        return \"bl\\t%__interwork_r7_call_via_%1\";
      else
        return \"bl\\t%__interwork_r11_call_via_%1\";
-@@ -10875,6 +10878,8 @@
+@@ -11071,6 +11074,8 @@
  (include "ldmstm.md")
  ;; Load the FPA co-processor patterns
  (include "fpa.md")
