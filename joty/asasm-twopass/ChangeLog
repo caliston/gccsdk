@@ -1,3 +1,8 @@
+Sat Sep 10 10:51:37 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c (inputEnvSub): When cross-compiled, substitute $ into _
+	when initial environment variable retrieve didn't work.
+
 Sun Aug  7 18:39:49 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* lexAcorn.c (lexAcornUnop, lexAcornBinop): Don't consume characters

@@ -34,10 +34,6 @@
 #  include <inttypes.h>
 #endif
 
-#ifdef __TARGET_UNIXLIB__
-#  include <unixlib/local.h>
-#endif
-
 #include "error.h"
 #include "filestack.h"
 #include "input.h"
@@ -366,6 +362,20 @@ inputEnvSub (const char **inPP, size_t *outOffsetP)
   memcpy (temp, *inPP, inP - *inPP);
   temp[inP - *inPP] = '\0';
   char *env = getenv (temp);
+#ifndef __riscos__
+  if (env == NULL)
+    {
+      /* Change Lib$Dir into LIB_DIR and re-evaluate.  */
+      for (char *s = temp; *s; ++s)
+	{
+	  if (*s == '$')
+	    *s = '_';
+	  else
+	    *s = toupper (*s);
+	}
+      env = getenv (temp);
+    }
+#endif
   if (env == NULL)
     {
       /* No such variable defined. Warn, though we may want to error.  */
