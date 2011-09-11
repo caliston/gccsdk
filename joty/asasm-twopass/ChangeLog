@@ -1,3 +1,11 @@
+Sun Sep 11 12:11:22 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.c (FS_PushFilePObject): Add return value.
+	* filestack.h (FS_PushFilePObject): Likewise.
+	* commands.c (c_get, c_lnk): Check return value of
+	FS_PushFilePObject.
+	(c_info): Only report during phase one.
+
 Sun Sep 11 12:04:11 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* symbol.c (Symbol_CreateSymbolOut): Update local label error.

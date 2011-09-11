@@ -80,7 +80,7 @@ typedef struct
 extern PObject gPOStack[PARSEOBJECT_STACK_SIZE];
 extern PObject *gCurPObjP; /**< Current parsable object.  */
 
-void FS_PushFilePObject (const char *fileName);
+bool FS_PushFilePObject (const char *fileName);
 void FS_PopPObject (bool noCheck);
 
 const char *FS_GetCurFileName (void);

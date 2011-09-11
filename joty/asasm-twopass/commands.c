@@ -491,8 +491,7 @@ c_get (void)
 	error (ErrorError, "Skipping extra characters '%s' after filename", cptr);
     }
 
-  FS_PushFilePObject (filename);
-  if (option_verbose)
+  if (!FS_PushFilePObject (filename) && option_verbose)
     fprintf (stderr, "Including file \"%s\" as \"%s\"\n", filename, gCurPObjP->name);
   return false;
 }
@@ -522,9 +521,8 @@ c_lnk (void)
   while (gCurPObjP->type == POType_eMacro)
     FS_PopPObject (true);
   FS_PopPObject (true);
-  
-  FS_PushFilePObject (filename);
-  if (option_verbose)
+
+  if (!FS_PushFilePObject (filename) && option_verbose)
     fprintf (stderr, "Linking to file \"%s\" as \"%s\"\n", filename, gCurPObjP->name);
   return false;
 }
@@ -650,10 +648,14 @@ c_info (void)
       return false;
     }
 
-  if (giveErr)
-    error (ErrorError, "%.*s", (int)message->Data.String.len, message->Data.String.s);
-  else
-    printf ("%.*s\n", (int)message->Data.String.len, message->Data.String.s);
+  /* Give output during pass one.  */
+  if (gASM_Phase == ePassOne)
+    {
+      if (giveErr)
+	error (ErrorError, "%.*s", (int)message->Data.String.len, message->Data.String.s);
+      else
+	printf ("%.*s\n", (int)message->Data.String.len, message->Data.String.s);
+    }
   return false;
 }
 

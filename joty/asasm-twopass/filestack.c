@@ -34,10 +34,6 @@
 #endif
 #include <string.h>
 
-#if defined(__TARGET_UNIXLIB__)
-#  include <unixlib/local.h>
-#endif
-
 #include "error.h"
 #include "filestack.h"
 #include "include.h"
@@ -87,9 +83,10 @@ StoreFileName (const char *fileNameP)
 /**
  * Opens given file for immediate parsing.  Cancel using FS_PopPObject().
  * \param fileName Filename of assembler file to parse.
+ * \return false for success, true for failure.
  * Similar to FS_PushMacroPObject().
  */
-void
+bool
 FS_PushFilePObject (const char *fileName)
 {
 #ifdef DEBUG_FILESTACK
@@ -118,7 +115,7 @@ FS_PushFilePObject (const char *fileName)
   if (newPObjP->d.file.fhandle == NULL)
     {
       error (ErrorError, "Cannot open file \"%s\"", fileName);
-      return;
+      return true;
     }
 
   newPObjP->type = POType_eFile;
@@ -128,6 +125,7 @@ FS_PushFilePObject (const char *fileName)
 
   /* Set current file stack pointer.  All is ok now.  */
   gCurPObjP = newPObjP;
+  return false;
 }
 
 
