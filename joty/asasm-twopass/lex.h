@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2002-2010 GCCSDK Developers
+ * Copyright (c) 2002-2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -124,6 +124,7 @@ typedef struct
 } Lex;
 
 Lex Lex_GetDefiningLabel (bool noCheck);
+bool Lex_SkipDefiningLabel (void);
 Lex lexGetId (void);
 Lex lexGetIdNoError (void);
 Lex lexGetPrim (void);

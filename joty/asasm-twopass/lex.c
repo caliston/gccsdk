@@ -292,6 +292,29 @@ Lex_GetDefiningLabel (bool noCheck)
   return lexGetId ();
 }
 
+
+/**
+ * Used to skip defining labels in failed IF/WHILE bodies.
+ * \return true when label got read
+ */
+bool
+Lex_SkipDefiningLabel (void)
+{
+  if (isdigit ((unsigned char)inputLook ()))
+    {
+      /* Looks like this is a local label.  */
+      (void) inputGet ();
+      if (isdigit (inputLook ()))
+	(void) inputGet ();
+
+      size_t len;
+      (void) inputSymbol (&len, '\0');
+      return true;
+    }
+
+  return lexGetId ().tag != LexNone;
+}
+
 bool
 Lex_Char2Int (size_t len, const char *str, ARMWord *result)
 {

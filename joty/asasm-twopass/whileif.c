@@ -126,19 +126,19 @@ if_skip (const char *onerror, const char *matchingToken, IfSkip_eToDo toDo)
 
       /* Check for label and skip it.
          Make special exception for '$' starting labels, i.e. macro arguments.  */
-      Lex label;
+      bool labelPresent;
       if (isspace ((unsigned char)inputLook ()))
-	label.tag = LexNone;
+	labelPresent = false;
       else if (inputLook () == '$')
 	{
 	  size_t len;
 	  (void) inputSymbol (&len, '\0');
 	  if (Input_Match ('.', false))
 	    (void) inputSymbol (&len, '\0');
-	  label.tag = LexNone;
+	  labelPresent = true;
 	}
       else
-	label = Lex_GetDefiningLabel (true);
+	labelPresent = Lex_SkipDefiningLabel ();
       skipblanks ();
 
       /* Check for 'END'.  */
@@ -171,7 +171,7 @@ if_skip (const char *onerror, const char *matchingToken, IfSkip_eToDo toDo)
 	    error (ErrorError, "Spurious characters after %s token", toktype == t_else ? "ELSE" : "ENDIF");
 	}
 
-      if (label.tag != LexNone)
+      if (labelPresent)
 	error (ErrorWarning, "Label not allowed here - ignoring");
 
       switch (toktype)
@@ -381,7 +381,7 @@ while_skip (void)
     {
       /* Skip label (if there is one).  */
       if (!isspace ((unsigned char)inputLook ()))
-	(void) Lex_GetDefiningLabel (true);
+	(void) Lex_SkipDefiningLabel ();
       skipblanks ();
 
       /* Look for WHILE and WEND.  */
