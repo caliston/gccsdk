@@ -188,14 +188,15 @@ Lex_ReadLocalLabel (bool noCheck)
   /* If a routinename is given, check if thats the one given with ROUT.  */
   size_t len;
   const char *name = inputSymbol (&len, '\0');
+  const char *curROUTId = Local_GetCurROUTId ();
   if (!noCheck
       && len
-      && !(!memcmp (Local_CurROUTId, name, len) && Local_CurROUTId[len] == '\0'))
+      && (memcmp (curROUTId, name, len) || curROUTId[len] != '\0'))
     {
-      if (Local_ROUTIsEmpty (Local_CurROUTId))
+      if (Local_ROUTIsEmpty (curROUTId))
 	error (ErrorError, "Local label can not have a routine name %.*s here", (int)len, name);
       else
-	error (ErrorError, "Local label with routine name %.*s does not match with current routine name %s", (int)len, name, Local_CurROUTId);
+	error (ErrorError, "Local label with routine name %.*s does not match with current routine name %s", (int)len, name, curROUTId);
       return -1;
     }
 
@@ -246,7 +247,7 @@ Lex_MakeLocalLabel (int dir, LocalLabel_eSearch level /* FIXME: use this */)
 	break;
     }
   char id[1024];
-  snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, i, Local_CurROUTId);
+  snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, i, Local_GetCurROUTId ());
 
   result.tag = LexId;
   result.Data.Id.str = strdup (id);
@@ -276,7 +277,7 @@ Lex_GetDefiningLabel (bool noCheck)
 	return result;
 
       char id[1024];
-      snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, Local_ROUTLblNo[label], Local_CurROUTId);
+      snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, Local_ROUTLblNo[label], Local_GetCurROUTId ());
       Local_ROUTLblNo[label]++;
 
       result.tag = LexId;
@@ -464,7 +465,7 @@ lexGetPrim (void)
 		break;
   
 	      case 'b':
-		/* Backword looking.  */
+		/* Backward looking.  */
 		inputSkip ();
 		dir = -1;
 		break;

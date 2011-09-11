@@ -50,7 +50,6 @@ static routPos *routList;
 static routPos *routListEnd;
 
 int Local_ROUTLblNo[100];
-const char *Local_CurROUTId = NULL;
 
 /* Parameters: AREA ptr, 0 - 99 label digit, instance number, routine name.  */
 const char Local_IntLabelFormat[] = kIntLabelPrefix "Local$$%p$$%02i$$%i$$%s";
@@ -65,8 +64,6 @@ Local_PrepareForPhase (ASM_Phase_e phase)
 
       case ePassOne:
 	memset (Local_ROUTLblNo, 0, sizeof (Local_ROUTLblNo));
-	free ((void *)Local_CurROUTId);
-	Local_CurROUTId = strdup (kEmptyRoutineName "0");
 	break;
 
       case ePassTwo:
@@ -74,6 +71,7 @@ Local_PrepareForPhase (ASM_Phase_e phase)
 	  for (routPos *routCur = routList; routCur != NULL; /* */)
 	    {
 	      routPos *routCurNext = routCur->next;
+	      free ((void *)routCur->id);
 	      free (routCur);
 	      routCur = routCurNext;
 	    }
@@ -81,17 +79,19 @@ Local_PrepareForPhase (ASM_Phase_e phase)
 	  routListEnd = NULL;
 	  rout_null = 0;
 	  memset (Local_ROUTLblNo, 0, sizeof (Local_ROUTLblNo));
-	  free ((void *)Local_CurROUTId);
-	  Local_CurROUTId = strdup (kEmptyRoutineName "0");
 	}
 	break;
 
       case eOutput:
 	memset (Local_ROUTLblNo, 0, sizeof (Local_ROUTLblNo));
-	free ((void *)Local_CurROUTId);
-	Local_CurROUTId = NULL;
 	break;
     }
+}
+
+const char *
+Local_GetCurROUTId (void)
+{
+  return routListEnd ? routListEnd->id : kEmptyRoutineName "0";
 }
 
 /**
@@ -102,6 +102,7 @@ c_rout (const Lex *label)
 {
   memset (Local_ROUTLblNo, 0, sizeof (Local_ROUTLblNo));
 
+  char *newROUTId;
   if (label->tag == LexId)
     {
       ASM_DefineLabel (label, areaCurrentSymbol->value.Data.Int.i);
@@ -110,19 +111,16 @@ c_rout (const Lex *label)
 	  error (ErrorError, "Illegal routine name");
 	  return false;
 	}
-      Local_CurROUTId = strndup (label->Data.Id.str, label->Data.Id.len);
+      newROUTId = strndup (label->Data.Id.str, label->Data.Id.len);
     }
   else
     {
-      char *new_rout_id = malloc (sizeof (kEmptyRoutineName)-1 + 10);
-      if (new_rout_id)
-	{
-	  sprintf (new_rout_id, kEmptyRoutineName "%i", ++rout_null);
-	  Local_CurROUTId = new_rout_id;
-	}
+      newROUTId = malloc (sizeof (kEmptyRoutineName)-1 + 10);
+      if (newROUTId != NULL)
+        sprintf (newROUTId, kEmptyRoutineName "%i", ++rout_null);
     }
   routPos *p = malloc (sizeof (routPos));
-  if (Local_CurROUTId == NULL || p == NULL)
+  if (newROUTId == NULL || p == NULL)
     errorOutOfMem ();
 
   if (routListEnd)
@@ -131,7 +129,8 @@ c_rout (const Lex *label)
   if (!routList)
     routList = p;
 
-  p->id = Local_CurROUTId;
+  p->next = NULL;
+  p->id = newROUTId;
   p->file = FS_GetCurFileName ();
   p->lineno = FS_GetCurLineNumber ();
   return false;
@@ -167,3 +166,14 @@ Local_FindROUT (const char *rout, const char **file, int *lineno)
   *file = NULL;
   *lineno = 0;
 }
+
+#ifdef DEBUG
+void
+Local_DumpAll (void)
+{
+  for (const routPos *p = routList; p != NULL; p = p->next)
+    {
+      printf ("%s : %s @ line %d\n", p->id, p->file, p->lineno);
+    }
+}
+#endif

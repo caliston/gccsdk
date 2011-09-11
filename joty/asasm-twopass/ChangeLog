@@ -1,3 +1,14 @@
+Sun Sep 11 13:33:06 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* local.h (Local_CurROUTId): Remove.
+	(Local_GetCurROUTId, Local_DumpAll): Add.
+	* local.c: Likewise.
+	(Local_PrepareForPhase): Follow Local_CurROUTId removal and use
+	Local_GetCurROUTId.
+	(c_rout): Likewise.  Initialise routPos::next.
+	* lex.c (Lex_ReadLocalLabel, Lex_MakeLocalLabel,Lex_GetDefiningLabel):
+	Follow Local_CurROUTId removal and use Local_GetCurROUTId.
+
 Sun Sep 11 12:11:22 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* filestack.c (FS_PushFilePObject): Add return value.

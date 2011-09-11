@@ -30,7 +30,6 @@
 #define kIntLabelPrefix "$$AsAsm$$Int$$"
 
 extern int Local_ROUTLblNo[100];
-extern const char *Local_CurROUTId;
 
 extern const char Local_IntLabelFormat[];
 
@@ -41,5 +40,10 @@ bool c_rout (const Lex *label);
 bool Local_ROUTIsEmpty (const char *routName);
 bool Local_IsLocalLabel (const char *);
 void Local_FindROUT (const char *rout, const char **file, int *lineno);
+const char *Local_GetCurROUTId (void);
+
+#ifdef DEBUG
+void Local_DumpAll (void);
+#endif
 
 #endif
