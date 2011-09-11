@@ -1,3 +1,8 @@
+Sun Sep 11 13:53:10 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* riscos_c.c (OSCanonicalisePath): Make it static.
+	* os.h (OSCanonicalisePath): Remove prototype.
+
 Sun Sep 11 13:50:41 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* macros.c (c_macro): Fix comment.

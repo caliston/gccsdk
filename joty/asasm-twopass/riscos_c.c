@@ -66,6 +66,10 @@ int __riscosify_control = 0;
 
 static const char *ErrorFile;
 
+static int OSCanonicalisePath (const char *path, char *buffer, int bufferSize,
+			       char *systemVar, char *defaultPath);
+
+
 /**
  * Canonicalise filename.
  * \param path1 Filename.
@@ -151,7 +155,7 @@ ThrowbackEnd (void)
   return _kernel_swi (DDEUtils_ThrowbackEnd, &regs, &regs);
 }
 
-int
+static int
 OSCanonicalisePath (const char *path, char *buffer, int buffersize,
 		    char *systemvar, char *defaultpath)
 {
