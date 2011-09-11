@@ -197,13 +197,13 @@ ReportFSStack (const char *id)
 	  case POType_eFile:
 	    printf ("  - File: line num %d (if/while %d - %d): %s\n",
 	            pObjP->lineNum, pObjP->whileIfStartDepth, pObjP->whileIfCurDepth,
-	            pObjP->name ? pObjP->name : "<NULL>");
+	            pObjP->name);
 	    break;
 
 	  case POType_eMacro:
 	    printf ("  - Macro: line num %d (if/while %d - %d): %s\n",
 	            pObjP->lineNum, pObjP->whileIfStartDepth, pObjP->whileIfCurDepth,
-	            pObjP->name ? pObjP->name : "<NULL>");
+	            pObjP->name);
 	    break;
 
 	  default:
@@ -216,19 +216,19 @@ ReportFSStack (const char *id)
 
 
 /**
- * Always return a non-NULL pointer of filename of the current parsing object.
+ * \return A non-NULL pointer of filename of the current parsing object.
  */
 const char *
 FS_GetCurFileName (void)
 {
   if (gCurPObjP == NULL)
-    return SourceFileName ? SourceFileName : "{standard input}";
-  return gCurPObjP->name ? gCurPObjP->name : "{standard input}";
+    return SourceFileName;
+  return gCurPObjP->name;
 }
 
 
 /**
- * Get current linenumber.
+ * \return Current linenumber.
  */
 int
 FS_GetCurLineNumber (void)
