@@ -1,3 +1,7 @@
+Sun Sep 11 12:04:11 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (Symbol_CreateSymbolOut): Update local label error.
+
 Sat Sep 10 10:51:37 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* input.c (inputEnvSub): When cross-compiled, substitute $ into _
