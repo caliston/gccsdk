@@ -40,17 +40,25 @@
 #include "input.h"
 #include "macros.h"
 #include "main.h"
-#include "os.h"
+#ifdef __riscos__
+#  include "os.h"
+#endif
 
 #define MAXERR (30)
 
 const char InsertCommaAfter[] = "Inserting missing comma after ";
 
-static int no_errors = 0;
-static int no_warnings = 0;
+static int oNumErrors = 0;
+static int oNumWarnings = 0;
 
 #ifdef __riscos__
-static int ThrowbackStarted;
+typedef enum
+{
+  eTB_NotStarted,
+  eTB_SuccessfullyStarted,
+  eTB_NotStartedBecauseOfError
+} TBStatus;
+static TBStatus oThrowbackStarted = eTB_NotStarted;
 #endif
 
 static char errbuf[2048];
@@ -60,7 +68,7 @@ void
 errorFinish (void)
 {
 #ifdef __riscos__
-  if (ThrowbackStarted > 0)
+  if (oThrowbackStarted == eTB_SuccessfullyStarted)
     {
       _kernel_oserror *err;
       if ((err = ThrowbackEnd ()) != NULL && option_verbose > 1)
@@ -70,38 +78,32 @@ errorFinish (void)
 }
 
 
+#ifdef __riscos__
 static void
 DoThrowback (int level, int lineno, const char *errstr, const char *file)
 {
-#ifdef __riscos__
   if (!option_throwback)
     return;
 
-  if (!ThrowbackStarted)
-    ThrowbackStarted = ThrowbackStart () ? -1 : 1;
+  if (oThrowbackStarted == eTB_NotStarted)
+    oThrowbackStarted = ThrowbackStart () ? eTB_NotStartedBecauseOfError : eTB_SuccessfullyStarted;
 
-  if (ThrowbackStarted == 1)
+  if (oThrowbackStarted == eTB_SuccessfullyStarted)
     {
       _kernel_oserror *err;
-
       if ((err = ThrowbackSendStart (file)) != NULL && option_verbose > 1)
         fprintf (stderr, "ThrowbackSendStart error: %s\n", err->errmess);
       if ((err = ThrowbackSendError (level, lineno, errstr)) != NULL && option_verbose > 1)
         fprintf (stderr, "ThrowbackSendError error: %s\n", err->errmess);
     }
-#else
-  level = level;
-  lineno = lineno;
-  errstr = errstr;
-  file = file;
-#endif
 }
+#endif
 
 
 int
 returnExitStatus (void)
 {
-  return no_errors ? EXIT_FAILURE : EXIT_SUCCESS;
+  return oNumErrors ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 
@@ -130,7 +132,9 @@ errorCore (ErrorTag e, const char *format, va_list ap)
     return;
 
   const char *str;
+#ifdef __riscos__
   int t = 0;
+#endif
   switch (e)
     {
       case ErrorInfo:
@@ -139,24 +143,27 @@ errorCore (ErrorTag e, const char *format, va_list ap)
         t = ThrowbackInfo;
 #endif
         break;
+
       case ErrorWarning:
         str = "Warning";
-        no_warnings++;
+        oNumWarnings++;
 #ifdef __riscos__
         t = ThrowbackWarning;
 #endif
         break;
+
       case ErrorError:
         str = "Error";
-        no_errors++;
+        oNumErrors++;
 #ifdef __riscos__
         t = ThrowbackError;
 #endif
         break;
+
       case ErrorAbort:
       default:
         str = "Fatal error";
-        no_errors++;
+        oNumErrors++;
 #ifdef __riscos__
         t = ThrowbackSeriousError;
 #endif
@@ -189,8 +196,9 @@ errorCore (ErrorTag e, const char *format, va_list ap)
 	    break;
 	}
 
-      if (pObjP->name)
-	DoThrowback (t, pObjP->lineNum, errbuf, pObjP->name);
+#ifdef __riscos__
+      DoThrowback (t, pObjP->lineNum, errbuf, pObjP->name);
+#endif
 
       while (pObjP != &gPOStack[0])
 	{
@@ -198,21 +206,34 @@ errorCore (ErrorTag e, const char *format, va_list ap)
 	  switch (pObjP->type)
 	    {
 	      case POType_eFile:
-		/* When lineNum is zero, we're processing the -PD options.  */
-		if (pObjP->lineNum != 0)
-		  fprintf (stderr, "  called from line %d from file %s\n",
-		           pObjP->lineNum, pObjP->name ? pObjP->name : "stdout");
-		else
-		  fputc ('\n', stderr);
-		break;
+		{
+		  /* When lineNum is zero, we're processing the -PD options.  */
+		  if (pObjP->lineNum != 0)
+		    {
+		      fprintf (stderr, "  called from line %d from file %s\n",
+			       pObjP->lineNum, pObjP->name);
+#ifdef __riscos__
+		      DoThrowback (t, pObjP->lineNum, "...was called from here", pObjP->name);
+#endif
+		    }
+		  else
+		    fputc ('\n', stderr);
+		  break;
+		}
+
 	      case POType_eMacro:
-		fprintf (stderr, "  called from macro %s at line %d in file %s\n",
-			 pObjP->d.macro.macro->name, pObjP->lineNum,
-			 pObjP->name ? pObjP->name : "stdout");
-		break;
+		{
+		  fprintf (stderr, "  called from macro %s at line %d in file %s\n",
+			   pObjP->d.macro.macro->name, pObjP->lineNum, pObjP->name);
+#ifdef __riscos__
+		  char errPath[256];
+		  snprintf (errPath, sizeof (errPath), "...was called from macro %s",
+			    pObjP->d.macro.macro->name);
+		  DoThrowback (t, pObjP->lineNum, errPath, pObjP->name);
+#endif
+		  break;
+		}
 	    }
-	  if (pObjP->name)
-	    DoThrowback (t, pObjP->lineNum, errbuf, pObjP->name);
 	}
     }
   else
@@ -237,7 +258,7 @@ error (ErrorTag e, const char *format, ...)
       || (e != ErrorInfo && e != ErrorWarning))
     Input_ShowLine ();
 
-  if (e == ErrorAbort || no_errors > MAXERR)
+  if (e == ErrorAbort || oNumErrors > MAXERR)
     fixup ();
   else if (e == ErrorError)
     Input_Rest ();
@@ -282,7 +303,9 @@ errorCoreLine (const char *file, int lineno, ErrorTag e,
     return;
 
   const char *str;
+#ifdef __riscos__
   int t = 0;
+#endif
   switch (e)
     {
       case ErrorInfo:
@@ -291,31 +314,34 @@ errorCoreLine (const char *file, int lineno, ErrorTag e,
         t = ThrowbackInfo;
 #endif
         break;
+
       case ErrorWarning:
         str = "Warning";
 #ifdef __riscos__
         t = ThrowbackWarning;
 #endif
-        no_warnings++;
+        oNumWarnings++;
         break;
+
       case ErrorError:
         str = "Error";
 #ifdef __riscos__
         t = ThrowbackError;
 #endif
-        no_errors++;
+        oNumErrors++;
         break;
+
       case ErrorAbort:
       default:
         str = "Fatal error";
 #ifdef __riscos__
         t = ThrowbackSeriousError;
 #endif
-        no_errors++;
+        oNumErrors++;
         break;
     }
 
-  vsprintf (errbuf, format, ap);
+  vsnprintf (errbuf, sizeof (errbuf), format, ap);
   /* No column support (as it probably does not make sense).  */
   if (lineno == 0)
     lineno = FS_GetCurLineNumber ();
@@ -326,7 +352,9 @@ errorCoreLine (const char *file, int lineno, ErrorTag e,
   else
     fprintf (stderr, "%s:%d: %s: %s\n", file, lineno, str, errbuf);
 
+#ifdef __riscos__
   DoThrowback (t, lineno, errbuf, file);
+#endif
 }
 
 /**
@@ -342,7 +370,7 @@ errorLine (const char *file, int lineno, ErrorTag e, const char *format, ...)
   errorCoreLine (file, lineno, e, format, ap);
   va_end (ap);
                  
-  if (e == ErrorAbort || no_errors > MAXERR)
+  if (e == ErrorAbort || oNumErrors > MAXERR)
     fixup ();
   else if (e == ErrorError)
     Input_Rest ();
