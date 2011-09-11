@@ -1,8 +1,13 @@
+Sun Sep 11 13:50:41 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* macros.c (c_macro): Fix comment.
+	* main.c (main): Unbuffered stdout for DEBUG builds.
+
 Sun Sep 11 13:39:32 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* lex.c (Lex_SkipDefiningLabel): Add.
 	* lex.h (Lex_SkipDefiningLabel): Likewise.
-	* whileif.c (if_skip, while_skip): Don't define local lables when
+	* whileif.c (if_skip, while_skip): Don't define local labels when
 	skipping if/while bodies.
 
 Sun Sep 11 13:33:06 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>

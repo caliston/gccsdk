@@ -270,7 +270,7 @@ c_mend (void)
 /**
  * Implements MACRO:
  *         MACRO
- * $<lbl> <marco name> [$<param1>[=<default value>]]*
+ * $<lbl> <marco name> [$<param>[=<default value>]]*
  */
 bool
 c_macro (void)

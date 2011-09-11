@@ -225,6 +225,10 @@ main (int argc, char **argv)
 
   setlocale (LC_ALL, "");
 
+#ifdef DEBUG
+  setvbuf(stdout, NULL, _IOLBF, 0);
+#endif
+
   argv++;
   if (argc == 1)
     {
