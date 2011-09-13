@@ -177,8 +177,9 @@ along with GCC; see the file COPYING3.  If not see
 
    Use a 32-bit pc-relative relocation to static data.  Dynamic data is
    accessed indirectly to allow for read only EH sections.  */
+#define ARM_TARGET2_DWARF_FORMAT DW_EH_PE_pcrel
 #define ASM_PREFERRED_EH_DATA_FORMAT(CODE,GLOBAL)       \
-  (((GLOBAL) ? DW_EH_PE_indirect : 0) | DW_EH_PE_pcrel | DW_EH_PE_sdata4)
+  (((GLOBAL) ? DW_EH_PE_indirect : 0) | ARM_TARGET2_DWARF_FORMAT | DW_EH_PE_sdata4)
 
 #define TARGET_OS_CPP_BUILTINS()		\
   do						\

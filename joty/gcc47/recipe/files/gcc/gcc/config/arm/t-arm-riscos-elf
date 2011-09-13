@@ -1,4 +1,4 @@
-# Copyright (C) 2005-2010 Free Software Foundation, Inc.
+# Copyright (C) 2005-2011 Free Software Foundation, Inc.
 # Contributed by Nick Burrett (nick@sqrt.co.uk>),
 # John Tytgat (John.Tytgat@aaug.net) and Lee Noar (leenoar@sky.com).
 #
@@ -27,6 +27,8 @@ LIB1ASMFUNCS += _udivsi3 _divsi3 _umodsi3 _modsi3 _dvmd_tls _bb_init_func \
 	_arm_cmpsf2 _arm_unordsf2 _arm_fixsfsi _arm_fixunssfsi \
 	_arm_floatdidf _arm_floatdisf _arm_floatundidf _arm_floatundisf \
 	_clzsi2 _clzdi2 
+
+EXTRA_HEADERS += $(srcdir)/ginclude/unwind-arm-common.h
 
 # The following multilib configurations are defined:
 #   . : unixlib, soft-float, application
