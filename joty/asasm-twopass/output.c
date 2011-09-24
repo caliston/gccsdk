@@ -23,6 +23,7 @@
 
 #include "config.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -32,6 +33,15 @@
 #elif HAVE_INTTYPES_H
 #  include <inttypes.h>
 #endif
+#ifdef __riscos__
+#  include <swis.h>
+#endif
+
+#if !defined(__riscos__) || defined(__TARGET_UNIXLIB__)
+#  include <sys/param.h>		/* for MAXPATHLEN */
+#else
+#  define MAXPATHLEN 1024
+#endif
 
 #include "aoffile.h"
 #include "area.h"
@@ -39,17 +49,11 @@
 #include "depend.h"
 #include "elf.h"
 #include "error.h"
+#include "filename.h"
 #include "output.h"
 #include "os.h"
 #include "main.h"
 #include "symbol.h"
-
-#ifdef __riscos__
-#  include <swis.h>
-#endif
-#if !defined(__TARGET_SCL__)
-#  include <ctype.h>
-#endif
 
 static FILE *objfile;
 
@@ -59,8 +63,7 @@ static FILE *objfile;
 #define GET_IDFN ((idfn_text) ? idfn_text : DEFAULT_IDFN)
 const char *idfn_text = NULL; /**< Identifier, when NULL use DEFAULT_IDFN; this is a malloced string.  */
 
-#define MAXNAME 1024
-static char outname[MAXNAME + 1];
+static char outname[MAXPATHLEN];
 
 #if defined(WORDS_BIGENDIAN)
 /* Convert to ARM byte-sex.  */
@@ -90,33 +93,36 @@ outputInit (const char *outfile)
   objfile = NULL;
   if (outfile && !(outfile[0] == '-' && outfile[1] == '\0'))
     {
-      strncpy (outname, outfile, MAXNAME);
-
-#ifdef __riscos__
-      /* Smell if we have outfile in RISC OS filename syntax.  If so,
-         convert it to Unix syntax.  */
-      char *temp = strchr (outname, '.');
-      if (temp != NULL)
+      for (unsigned pathidx = 0; /* */; ++pathidx)
 	{
-	  *temp = '\0';
-	  _kernel_osfile_block blk;
-          bool isROSyntax = _kernel_osfile (17, outname, &blk) == 2;
-	  *temp = '.';
-	  if (isROSyntax)
-	    {
-	      for (temp = outname; *temp; ++temp)
-		{
-		  if (*temp == '.')
-		    *temp = '/';
-		  else if (*temp == '/')
-		    *temp = '.';
-		}
-	    }
-	}
-#endif /* ! __riscos__ */
+	  const char *out[3];
+	  bool state[3] = { false, false, false };
 
-      if ((objfile = fopen (outname, "wb")) == NULL)
-	errorAbort (PACKAGE_NAME " can't write %s: %s", outname, strerror (errno));
+	  do
+	    {
+	      out[0] = FN_AnyToNative (outfile, pathidx, outname, sizeof (outname),
+				       &state[0], eA_Dot_B);
+	      if (out[0] && (objfile = fopen (out[0], "wb")) != NULL)
+		return;
+
+	      out[1] = FN_AnyToNative (outfile, pathidx, outname, sizeof (outname),
+				       &state[1], eB_Dot_A);
+	      if (out[1] && (objfile = fopen (out[1], "wb")) != NULL)
+		return;
+
+	      out[2] = FN_AnyToNative (outfile, pathidx, outname, sizeof (outname),
+				       &state[2], eA_Slash_B);
+	      if (out[2] && (objfile = fopen (out[2], "wb")) != NULL)
+		return;
+
+	      assert (state[0] == state[1] && state[0] == state[2]);
+	    } while (out[0] && out[1] && out[2] && state[0]);
+
+	  if (out[0] == NULL && out[1] == NULL && out[2] == NULL)
+	    break;
+	}
+
+      errorAbort (PACKAGE_NAME " can't write %s: %s", outname, strerror (errno));
     }
   else
     {
@@ -171,6 +177,9 @@ writeEntry (int ID, int type, size_t size, size_t *offset)
 void
 outputAof (void)
 {
+  if (option_verbose)
+    fprintf (stderr, "Writing %s file at %s\n", option_aof ? "AOF" : "ELF", outname);
+
   /* We must call relocFix() before anything else.  */
   int obj_area_size = 0;
   int noareas = 0;
@@ -323,6 +332,9 @@ writeElfSH (Elf32_Word nmoffset, unsigned int type, unsigned int flags,
 void
 outputElf (void)
 {
+  if (option_verbose)
+    fprintf (stderr, "Writing %s file at %s\n", option_aof ? "AOF" : "ELF", outname);
+
   /* We must call relocFix() before anything else.  */
   int noareas = 0, norels = 0;
   int areaSectionID = 3;

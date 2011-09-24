@@ -50,7 +50,7 @@
 #endif
 
 #ifdef __TARGET_UNIXLIB__
-int __riscosify_control = 0;
+int __riscosify_control = __RISCOSIFY_NO_PROCESS;
 #endif
 
 /* The DDEUtils module throwback error category codes.  */
@@ -72,20 +72,13 @@ static int OSCanonicalisePath (const char *path, char *buffer, int bufferSize,
 
 /**
  * Canonicalise filename.
- * \param path1 Filename.
+ * \param path Filename.
  * \returns When non-NULL, pointer to malloced buffer holding the canonicalised
  * filename (caller needs to free).  NULL in case of an error.
  */
 const char *
-CanonicalisePath (const char *path1)
+CanonicalisePath (const char *path)
 {
-#if __TARGET_UNIXLIB__
-  char path[1024];
-  __riscosify (path1, 0, 0, path, sizeof (path), NULL);
-#else
-  const char *path = path1;
-#endif
-  
   int size = 1 - OSCanonicalisePath (path, 0, 0, 0, 0);
   char *buffer;
   if ((buffer = malloc (size)) == NULL)
