@@ -1,3 +1,24 @@
+Sun Sep 25 00:35:56 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): Mark the output of ALIGN as data.
+	* area.c, commands.c, symbol.c, symbol.h, put.c, lit.c:	Get rid of
+	SYMBOL_DECLARED.
+	* commands.c, symbol.c, put.c, code.c, decode.c, m_cpuctrl.c,
+	help_cop.c, local.c, m_cpumem.c, area.c, expr.c, output.c, asm.c,
+	lit.c: Have absolute base address in area symbol Symbol::value,
+	current area index value at Symbol::info.area::curIdx and size of
+	area at the end of pass one at Symbol::info.area::maxIdx.
+	* area.c (c_area, c_org): Make area symbol absolute when area is
+	absolute.
+	* area.h (AREA): Remove baseAddr, add curIdx and maxIdx.
+	(Area_GetBaseAddress): Add.
+	* code.c (Code_EvalLowest): Support absolute AREA symbols.
+	(Code_ExpandCurrAreaSymbolAsOffset): Make static.
+	* code.h (Code_ExpandCurrAreaSymbolAsOffset): Remove declaration.
+	* output.c (writeElfSH): Add addr parameter.
+	* regression/tests_pass/org.s: Added.
+	* regression/tests_pass/def.s: Added.
+
 Sat Sep 24 14:02:06 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* rname.c, rname.h, rname2.h: Remove.

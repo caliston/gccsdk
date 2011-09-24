@@ -194,7 +194,7 @@ outputAof (void)
 
       ap->area.info->norelocs = relocFix (ap);
       if (AREA_IMAGE (ap->area.info))
-	obj_area_size += FIX (ap->value.Data.Int.i)
+	obj_area_size += FIX (ap->area.info->maxIdx)
 			   + ap->area.info->norelocs * sizeof (AofReloc);
     }
 
@@ -253,9 +253,9 @@ outputAof (void)
 	{
 	  .Name = armword (ap->offset + 4), /* +4 because of extra length entry */
           .Type = armword (ap->area.info->type),
-          .Size = armword (FIX (ap->value.Data.Int.i)),
+          .Size = armword (FIX (ap->area.info->maxIdx)),
           .noRelocations = armword (ap->area.info->norelocs),
-          .BaseAddr = armword (ap->area.info->baseAddr)
+          .BaseAddr = armword ((ap->area.info->type & AREA_ABS) ? Area_GetBaseAddress (ap) : 0)
 	};
       if (aof_entry.noRelocations != 0 && !AREA_IMAGE (ap->area.info))
 	errorAbortLine (NULL, 0, "Internal outputAof: relocations in uninitialised area");
@@ -291,11 +291,11 @@ outputAof (void)
       
       if (AREA_IMAGE (ap->area.info))
 	{
-	  if (fwrite (ap->area.info->image, 1, ap->value.Data.Int.i, objfile)
-	      != (size_t)ap->value.Data.Int.i)
+	  if (fwrite (ap->area.info->image, 1, ap->area.info->maxIdx, objfile)
+	      != ap->area.info->maxIdx)
 	    errorAbortLine (NULL, 0, "Internal outputAof: error when writing %s image", ap->str);
 	  /* Word align the written area.  */
-	  for (unsigned pad = EXTRA (ap->value.Data.Int.i); pad; --pad)
+	  for (unsigned pad = EXTRA (ap->area.info->maxIdx); pad; --pad)
 	    fputc (0, objfile);
 	  relocAOFOutput (objfile, ap);
 	}
@@ -307,6 +307,7 @@ outputAof (void)
 #ifndef NO_ELF_SUPPORT
 static void
 writeElfSH (Elf32_Word nmoffset, unsigned int type, unsigned int flags,
+	    unsigned int addr,
 	    unsigned int size, unsigned int link, unsigned int info,
 	    unsigned int addralign, unsigned int entsize, size_t *offset)
 {
@@ -315,7 +316,7 @@ writeElfSH (Elf32_Word nmoffset, unsigned int type, unsigned int flags,
       .sh_name = nmoffset,
       .sh_type = type,
       .sh_flags = flags,
-      .sh_addr = 0, /* This is not part of the final image.  */
+      .sh_addr = addr,
       .sh_offset = type == SHT_NULL ? 0 : *offset,
       .sh_size = size,
       .sh_link = link,
@@ -394,12 +395,13 @@ outputElf (void)
   Elf32_Word shstrsize = 0;
   
   /* Section headers - index 0 */
-  writeElfSH (shstrsize, SHT_NULL, 0, 0, SHN_UNDEF, 0, 0, 0, &offset);
+  writeElfSH (shstrsize, SHT_NULL, 0, 0, 0, SHN_UNDEF, 0, 0, 0, &offset);
   shstrsize += sizeof ("");
 
   /* Symbol table - index 1 */
   SymbolOut_t symOut = Symbol_CreateSymbolOut ();
-  writeElfSH (shstrsize, SHT_SYMTAB, 0, (symOut.numAllSymbols + 1) * sizeof (Elf32_Sym),
+  writeElfSH (shstrsize, SHT_SYMTAB, 0, 0,
+	      (symOut.numAllSymbols + 1) * sizeof (Elf32_Sym),
 	      2 /* The section header index of the associated string table.  */,
 	      symOut.numLocalSymbols + 1 /* One greater than the symbol table index of the last local symbol (binding STB_LOCAL). */,
 	      4 /* Align. */,
@@ -410,7 +412,7 @@ outputElf (void)
   size_t strsize = symOut.stringSize + 1; /* Add extra NUL terminator at start. */
 
   /* String table - index 2 */
-  writeElfSH (shstrsize, SHT_STRTAB, 0, strsize, 0, 0, 1, 0, &offset);
+  writeElfSH (shstrsize, SHT_STRTAB, 0, 0, strsize, 0, 0, 1, 0, &offset);
   shstrsize += sizeof (".strtab");
 
   /* Area headers - index 3 */
@@ -431,9 +433,11 @@ outputElf (void)
       if (ap == areaEntrySymbol)
         areaFlags |= SHF_ENTRYSECT;
       areaFlags |= SHF_ALLOC;
-      unsigned int sectionSize = FIX (ap->value.Data.Int.i);
+      unsigned int sectionSize = FIX (ap->area.info->maxIdx);
       unsigned int sectionType = AREA_IMAGE (ap->area.info) ? SHT_PROGBITS : SHT_NOBITS;
-      writeElfSH (shstrsize, sectionType, areaFlags, sectionSize,
+      writeElfSH (shstrsize, sectionType, areaFlags,
+		  ap->type & SYMBOL_ABSOLUTE ? ap->area.info->maxIdx : 0,
+		  sectionSize,
                   0,
 		  0,
 		  1 << (ap->area.info->type & AREA_ALIGN_MASK),
@@ -444,7 +448,7 @@ outputElf (void)
       if (ap->area.info->norelocs)
         {
           /* Relocations.  */
-          writeElfSH (shstrsize, SHT_REL, 0,
+          writeElfSH (shstrsize, SHT_REL, 0, 0,
 	              ap->area.info->norelocs * sizeof(Elf32_Rel),
 	              1, elfIndex, 4, sizeof(Elf32_Rel), &offset);
           shstrsize += sizeof (".rel.")-1 + (ap->str[0] == '.' ? -1 : 0) + ap->len + 1;
@@ -455,7 +459,7 @@ outputElf (void)
 
   /* Section head string table.  */
   shstrsize += sizeof (".shstrtab");
-  writeElfSH (shstrsize - sizeof (".shstrtab"), SHT_STRTAB, 0, shstrsize, 0, 0, 1, 0, &offset);
+  writeElfSH (shstrsize - sizeof (".shstrtab"), SHT_STRTAB, 0, 0, shstrsize, 0, 0, 1, 0, &offset);
 
   /* Symbol table (.symtab).  */
   Symbol_OutputForELF (objfile, &symOut);
@@ -475,14 +479,14 @@ outputElf (void)
       
       if (AREA_IMAGE (ap->area.info))
         {
-          if (fwrite (ap->area.info->image, 1, ap->value.Data.Int.i, objfile)
-	      != (unsigned)ap->value.Data.Int.i)
+          if (fwrite (ap->area.info->image, 1, ap->area.info->maxIdx, objfile)
+	      != ap->area.info->maxIdx)
             {
               errorAbortLine (NULL, 0, "Internal outputElf: error when writing %s image", ap->str);
               return;
             }
 	  /* Word align the written area.  */
-	  for (unsigned pad = EXTRA (ap->value.Data.Int.i); pad; --pad)
+	  for (unsigned pad = EXTRA (ap->area.info->curIdx); pad; --pad)
 	    fputc (0, objfile);
           if (ap->area.info->norelocs)
             relocELFOutput (objfile, ap);

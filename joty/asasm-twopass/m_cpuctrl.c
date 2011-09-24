@@ -140,7 +140,7 @@ Branch_RelocUpdater (const char *file, int lineno, ARMWord offset,
 static bool
 branch_shared (ARMWord cc, bool isBLX)
 {
-  const ARMWord offset = areaCurrentSymbol->value.Data.Int.i;
+  const ARMWord offset = areaCurrentSymbol->area.info->curIdx;
 
   exprBuild ();
   /* The branch instruction has its offset as relative, while the given label
@@ -344,7 +344,7 @@ ADR_RelocUpdaterCore (const char *file, int lineno, size_t offset, int constant,
      use PC-relative addressing as well in order to increase our options.  */
   if (baseReg < 0 && (areaCurrentSymbol->area.info->type & AREA_ABS))
     {
-      const int newConstant = constant - (areaCurrentSymbol->area.info->baseAddr + offset + 8);
+      const int newConstant = constant - (Area_GetBaseAddress (areaCurrentSymbol) + offset + 8);
       split[!bestIndex].num = Help_SplitByImm8s4 (-newConstant, split[!bestIndex].try);
       if (split[bestIndex].num >= split[!bestIndex].num)
 	{
@@ -373,7 +373,7 @@ ADR_RelocUpdaterCore (const char *file, int lineno, size_t offset, int constant,
       irop2 = M_SUB;
     }
 
-  uint32_t offsetToReport = offset + areaCurrentSymbol->area.info->baseAddr;
+  uint32_t offsetToReport = offset + areaCurrentSymbol->area.info->curIdx;
   if (split[bestIndex].num == 1 && isADRL)
     {
       if (fixedNumInstr)
@@ -517,7 +517,7 @@ m_adr (void)
      expression.  */
   exprBuild ();
   if (Reloc_QueueExprUpdate (ADR_RelocUpdater,
-			     areaCurrentSymbol->value.Data.Int.i,
+			     areaCurrentSymbol->area.info->curIdx,
 			     ValueAddr | ValueInt | ValueSymbol | ValueCode,
 			     &privData, sizeof (privData)))
     error (ErrorError, "Illegal %s expression", (privData.userIntendedTwoInstr & 1) ? "ADRL" : "ADR");

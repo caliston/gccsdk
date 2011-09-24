@@ -58,7 +58,7 @@
   a local macro variable.  */
 
 #define SYMBOL_KEEP		0x01000000
-#define SYMBOL_AREA		0x02000000 /* Symbol is actually an area name. When set, SYMBOL_DECLARED is set as well, but not SYMBOL_DEFINED.  */
+#define SYMBOL_AREA		0x02000000 /* Symbol is actually an area name.  */
 #define SYMBOL_NOTRESOLVED	0x04000000
 
 #define SYMBOL_CPUREG		0x10000000
@@ -66,8 +66,6 @@
 #define SYMBOL_COPREG		0x30000000
 #define SYMBOL_COPNUM		0x40000000
 #define SYMBOL_GETREGTYPE(x)	((x) & 0x70000000)
-
-#define SYMBOL_DECLARED		0x80000000 /* FIXME: do we really need this ? */
 
 #define SYMBOL_TABLESIZE 1024
 

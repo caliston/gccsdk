@@ -23,6 +23,7 @@
 #ifndef area_header_included
 #define area_header_included
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -71,7 +72,9 @@ typedef struct AREA
   uint32_t type;		/* See AREA_ #defines */
   size_t imagesize;
   uint8_t *image;
-  uint32_t baseAddr;
+
+  uint32_t curIdx;
+  uint32_t maxIdx;
 
   RelocQueue *relocQueue;
   int norelocs;
@@ -84,6 +87,14 @@ static inline int
 Area_GetBaseReg (const Area *area)
 {
   return (area->type & AREA_MASKBASEREG) >> 24;
+}
+
+static inline uint32_t
+Area_GetBaseAddress (const Symbol *symP)
+{
+  assert ((symP->type & SYMBOL_AREA) != 0 && (symP->area.info->type & AREA_ABS) != 0);
+  assert (symP->value.Tag == ValueInt);
+  return symP->value.Data.Int.i;
 }
 
 extern Symbol *areaCurrentSymbol; /** Symbol of the area which is currently being processed.  */

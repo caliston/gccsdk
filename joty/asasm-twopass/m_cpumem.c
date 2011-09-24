@@ -93,7 +93,7 @@ DestMem_RelocUpdater (const char *file, int lineno, ARMWord offset,
 		newIR |= M_MVN | IMM_RHS | im;
 	      else
 		{
-		  ARMWord newOffset = valP->Data.Int.i - (areaCurrentSymbol->area.info->baseAddr + offset + 8);
+		  ARMWord newOffset = valP->Data.Int.i - (areaCurrentSymbol->area.info->curIdx + offset + 8);
 		  ir |= LHS_OP (15);
 		  if (isAddrMode3)
 		    ir |= B_FLAG;
@@ -155,7 +155,7 @@ dstmem (ARMWord ir, const char *mnemonic)
 
   const bool translate = (ir & W_FLAG) != 0; /* We have "T" specified in our mnemonic.  */
   
-  const ARMWord offset = areaCurrentSymbol->value.Data.Int.i;
+  const ARMWord offset = areaCurrentSymbol->area.info->curIdx;
   bool callRelocUpdate;
   switch (inputLook ())
     {

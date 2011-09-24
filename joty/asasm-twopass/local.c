@@ -105,7 +105,7 @@ c_rout (const Lex *label)
   char *newROUTId;
   if (label->tag == LexId)
     {
-      ASM_DefineLabel (label, areaCurrentSymbol->value.Data.Int.i);
+      ASM_DefineLabel (label, areaCurrentSymbol->area.info->curIdx);
       if (Local_ROUTIsEmpty (label->Data.Id.str))
 	{
 	  error (ErrorError, "Illegal routine name");

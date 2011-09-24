@@ -321,12 +321,12 @@ Lit_RegisterInt (const Value *value, Lit_eSize size)
 	  if ((symP->type & SYMBOL_DEFINED) != 0)
 	    {
 	      assert (symP->value.Tag == ValueInt || symP->value.Tag == ValueCode);
-	      assert (gASM_Phase == ePassTwo || (unsigned)areaCurrentSymbol->value.Data.Int.i >= litPoolP->offset);
-	      if ((unsigned)areaCurrentSymbol->value.Data.Int.i + 8 > litPoolP->offset + offset + ((isAddrMode3) ? 255 : 4095))
+	      assert (gASM_Phase == ePassTwo || areaCurrentSymbol->area.info->curIdx >= litPoolP->offset);
+	      if (areaCurrentSymbol->area.info->curIdx + 8 > litPoolP->offset + offset + ((isAddrMode3) ? 255 : 4095))
 		continue;
 	      /* A literal with the same value got already assembled and is in
 	         our range to refer to.  */
-	      return Value_Addr (15, litPoolP->offset + offset - (areaCurrentSymbol->value.Data.Int.i + 8));
+	      return Value_Addr (15, litPoolP->offset + offset - (areaCurrentSymbol->area.info->curIdx + 8));
 	    }
 	  else
 	    {
@@ -398,12 +398,12 @@ Lit_RegisterFloat (const Value *valueP, Lit_eSize size)
 	  if ((symP->type & SYMBOL_DEFINED) != 0)
 	    {
 	      assert (symP->value.Tag == ValueFloat || symP->value.Tag == ValueCode);
-	      assert (gASM_Phase == ePassTwo || (unsigned)areaCurrentSymbol->value.Data.Int.i >= litPoolP->offset);
-	      if ((unsigned)areaCurrentSymbol->value.Data.Int.i + 8 > litPoolP->offset + 1020)
+	      assert (gASM_Phase == ePassTwo || areaCurrentSymbol->area.info->curIdx >= litPoolP->offset);
+	      if (areaCurrentSymbol->area.info->curIdx + 8 > litPoolP->offset + 1020)
 		continue;
 	      /* A literal with the same value got already assembled and is in
 	         our range to refer to.  */
-	      return Value_Addr (15, litPoolP->offset - (areaCurrentSymbol->value.Data.Int.i + 8));
+	      return Value_Addr (15, litPoolP->offset - (areaCurrentSymbol->area.info->curIdx + 8));
 	    }
 	  else
 	    {
@@ -432,7 +432,7 @@ Lit_DumpPool (void)
       assert ((gASM_Phase == ePassOne && litP->status == eNotYetAssembled) || (gASM_Phase == ePassTwo && litP->status == eAssembledPassOne));
 
       const size_t alignValue = Lit_GetAlignment (litP);
-      if (gASM_Phase == ePassTwo && litP->offset > ((areaCurrentSymbol->value.Data.Int.i + alignValue-1) & -alignValue))
+      if (gASM_Phase == ePassTwo && litP->offset > ((areaCurrentSymbol->area.info->curIdx + alignValue-1) & -alignValue))
 	break;
 
       litP->status = gASM_Phase == ePassOne ? eAssembledPassOne : eAssembledPassTwo;
@@ -453,7 +453,7 @@ Lit_DumpPool (void)
 	}
 
       Symbol *symP = Lit_GetLitOffsetAsSymbol (litP);
-      symP->type |= SYMBOL_DEFINED | SYMBOL_DECLARED;
+      symP->type |= SYMBOL_DEFINED;
       symP->area.rel = areaCurrentSymbol;
 
       /* Check if it is a fixed integer/float which fits an immediate
@@ -577,13 +577,13 @@ Lit_DumpPool (void)
 	{
 	  case eLitIntUHalfWord:
 	  case eLitIntSHalfWord:
-	    Area_AlignTo (areaCurrentSymbol->value.Data.Int.i, 2, NULL);
+	    Area_AlignTo (areaCurrentSymbol->area.info->curIdx, 2, NULL);
 	    break;
 
 	  case eLitIntWord:
 	  case eLitFloat:
 	  case eLitDouble:
-	    Area_AlignTo (areaCurrentSymbol->value.Data.Int.i, 4, NULL);
+	    Area_AlignTo (areaCurrentSymbol->area.info->curIdx, 4, NULL);
 	    break;
 
 	  default:
@@ -598,14 +598,14 @@ Lit_DumpPool (void)
       const Code code[] =
 	{
 	  { .Tag = CodeValue, .Data.value = { .Tag = ValueSymbol, .Data.Symbol = { .factor = 1, .symbol = areaCurrentSymbol } } },
-	  { .Tag = CodeValue, .Data.value = { .Tag = ValueInt, .Data.Int = { .i = areaCurrentSymbol->value.Data.Int.i } } },
+	  { .Tag = CodeValue, .Data.value = { .Tag = ValueInt, .Data.Int = { .i = areaCurrentSymbol->area.info->curIdx } } },
 	  { .Tag = CodeOperator, .Data.op = Op_add }
 	};
       const Value valCode = Value_Code (sizeof (code)/sizeof (code[0]), code);
       Value_Assign (&symP->value, &valCode);
 
-      assert ((gASM_Phase == ePassOne && litP->offset == 0) || (gASM_Phase == ePassTwo && litP->offset == (unsigned)areaCurrentSymbol->value.Data.Int.i));
-      litP->offset = areaCurrentSymbol->value.Data.Int.i;
+      assert ((gASM_Phase == ePassOne && litP->offset == 0) || (gASM_Phase == ePassTwo && litP->offset == areaCurrentSymbol->area.info->curIdx));
+      litP->offset = areaCurrentSymbol->area.info->curIdx;
 
       switch (litP->size)
 	{
@@ -661,7 +661,7 @@ Lit_DumpPool (void)
 	}
     }
 
-  Area_AlignTo (areaCurrentSymbol->value.Data.Int.i, 4, NULL);
+  Area_AlignTo (areaCurrentSymbol->area.info->curIdx, 4, NULL);
 }
 
 

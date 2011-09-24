@@ -73,7 +73,7 @@ ASM_DoPass (const char *asmFile)
       size_t len = strlen (fileName);
       if (len > 12)
 	fileName += len - 12;
-      printf("%.*s : %d : 0x%x\n", (int)len, fileName, FS_GetCurLineNumber (), areaCurrentSymbol->value.Data.Int.i);
+      printf("%.*s : %d : 0x%x\n", (int)len, fileName, FS_GetCurLineNumber (), areaCurrentSymbol->area.info->curIdx);
 #endif
       /* Read label (in case there is one).  */
       Lex label;
@@ -138,7 +138,7 @@ ASM_DefineLabel (const Lex *label, int offset)
     }
   else if (areaCurrentSymbol->area.info->type & AREA_ABS)
     {
-      value = Value_Int (areaCurrentSymbol->area.info->baseAddr + offset);
+      value = Value_Int (Area_GetBaseAddress (areaCurrentSymbol) + offset);
       symbolType = SYMBOL_DEFINED | SYMBOL_ABSOLUTE;
     }
   else

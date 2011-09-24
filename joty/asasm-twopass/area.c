@@ -85,7 +85,9 @@ areaNew (Symbol *sym, int type)
   res->type = type;
   res->imagesize = 0;
   res->image = NULL;
-  res->baseAddr = 0;
+
+  res->curIdx = 0;
+  res->maxIdx = 0;
 
   res->relocQueue = NULL;
   res->norelocs = 0;
@@ -122,7 +124,7 @@ areaImage (Area *area, size_t newsize)
 void
 Area_EnsureExtraSize (size_t mingrow)
 {
-  if ((unsigned)areaCurrentSymbol->value.Data.Int.i + mingrow <= areaCurrentSymbol->area.info->imagesize)
+  if (areaCurrentSymbol->area.info->curIdx + mingrow <= areaCurrentSymbol->area.info->imagesize)
     return;
 
   assert (gASM_Phase == ePassOne);
@@ -174,7 +176,8 @@ Area_PrepareForPhase (ASM_Phase_e phase)
 	       areaCurrentSymbol = areaCurrentSymbol->area.info->next)
 	    {
 	      Lit_DumpPool ();
-	      areaCurrentSymbol->value.Data.Int.i = 0;
+	      areaCurrentSymbol->area.info->maxIdx = areaCurrentSymbol->area.info->curIdx;
+	      areaCurrentSymbol->area.info->curIdx = 0;
 	    }
 
 	  Area_Ensure ();
@@ -187,7 +190,10 @@ Area_PrepareForPhase (ASM_Phase_e phase)
 	  for (areaCurrentSymbol = areaHeadSymbol;
 	       areaCurrentSymbol != NULL;
 	       areaCurrentSymbol = areaCurrentSymbol->area.info->next)
-	    Lit_DumpPool ();
+	    {
+	      Lit_DumpPool ();
+	      assert (areaCurrentSymbol->area.info->curIdx == areaCurrentSymbol->area.info->maxIdx);
+	    }
 
 	  /* Revert sort the area's so they become listed chronologically.  */
 	  Symbol *aSymP = areaHeadSymbol;
@@ -227,7 +233,7 @@ c_entry (void)
       else
 	{
 	  areaEntrySymbol = areaCurrentSymbol;
-	  areaEntryOffset = areaCurrentSymbol->value.Data.Int.i;
+	  areaEntryOffset = areaCurrentSymbol->area.info->curIdx;
 	}
     }
 
@@ -297,7 +303,7 @@ c_align (void)
     }
   /* We have to align on alignValue + offsetValue */
 
-  int unaligned = (offsetValue - areaCurrentSymbol->value.Data.Int.i) % alignValue;
+  int unaligned = (offsetValue - areaCurrentSymbol->area.info->curIdx) % alignValue;
   if (unaligned || offsetValue >= alignValue)
     {
       size_t bytesToStuff = (unaligned < 0) ? alignValue + unaligned : unaligned;
@@ -307,7 +313,7 @@ c_align (void)
       Area_EnsureExtraSize (bytesToStuff);
 
       while (bytesToStuff--)
-	areaCurrentSymbol->area.info->image[areaCurrentSymbol->value.Data.Int.i++] = 0;
+	areaCurrentSymbol->area.info->image[areaCurrentSymbol->area.info->curIdx++] = 0;
     }
   return false;
 }
@@ -324,12 +330,12 @@ Area_AlignTo (size_t offset, int align, const char *msg)
   if (msg && (offset & (align - 1)) != 0)
     error (ErrorWarning, "Unaligned %s", msg);
   size_t newOffset = (offset + align-1) & -align;
-  Area_EnsureExtraSize (newOffset - (unsigned)areaCurrentSymbol->value.Data.Int.i);
-  if ((size_t)areaCurrentSymbol->value.Data.Int.i < newOffset)
+  Area_EnsureExtraSize (newOffset - areaCurrentSymbol->area.info->curIdx);
+  if (areaCurrentSymbol->area.info->curIdx < newOffset)
     {
-      for (size_t i = areaCurrentSymbol->value.Data.Int.i; i != newOffset; ++i)
+      for (size_t i = areaCurrentSymbol->area.info->curIdx; i != newOffset; ++i)
 	areaCurrentSymbol->area.info->image[i] = 0;
-      areaCurrentSymbol->value.Data.Int.i = newOffset;
+      areaCurrentSymbol->area.info->curIdx = newOffset;
     }
   return newOffset;
 }
@@ -348,8 +354,8 @@ c_reserve (void)
 	error (ErrorWarning, "Reserve space value is considered unsigned, i.e. reserving %u bytes now\n", value->Data.Int.i);
       Area_EnsureExtraSize ((unsigned)value->Data.Int.i);
 
-      size_t i = areaCurrentSymbol->value.Data.Int.i;
-      areaCurrentSymbol->value.Data.Int.i += value->Data.Int.i;
+      size_t i = areaCurrentSymbol->area.info->curIdx;
+      areaCurrentSymbol->area.info->curIdx += value->Data.Int.i;
       memset (&areaCurrentSymbol->area.info->image[i], 0, (unsigned)value->Data.Int.i);
     }
   else
@@ -370,10 +376,13 @@ Area_Ensure (void)
   const Lex lex = lexTempLabel (IMPLICIT_AREA_NAME, sizeof (IMPLICIT_AREA_NAME)-1);
   Symbol *sym = symbolGet (&lex);
   if (sym->type & SYMBOL_DEFINED)
-    error (ErrorError, "Redefinition of label to area %s", sym->str);
-  else if (!(sym->type & SYMBOL_AREA))
     {
-      sym->type = SYMBOL_AREA | SYMBOL_DECLARED;
+      if (!(sym->type & SYMBOL_AREA))
+	error (ErrorError, "Redefinition of label to area %s", sym->str);
+    }
+  else
+    {
+      sym->type = SYMBOL_AREA | SYMBOL_LOCAL;
       sym->value = Value_Int (0);
       sym->area.info = areaNew (sym, AREA_CODE | AREA_READONLY | AREA_DEFAULT_ALIGNMENT);
     }
@@ -403,12 +412,15 @@ c_area (void)
   Symbol *sym = symbolGet (&lex);
   int oldtype = 0;  
   if (sym->type & SYMBOL_DEFINED)
-    error (ErrorError, "Redefinition of label as area %s", sym->str);
-  else if (sym->type & SYMBOL_AREA)
-    oldtype = sym->area.info->type;
+    {
+      if (sym->type & SYMBOL_AREA)
+	oldtype = sym->area.info->type;
+      else
+	error (ErrorError, "Redefinition of label as area %s", sym->str);
+    }
   else
     {
-      sym->type = SYMBOL_AREA | SYMBOL_DECLARED;
+      sym->type = SYMBOL_AREA | SYMBOL_LOCAL;
       sym->value = Value_Int (0);
       sym->area.info = areaNew (sym, 0);
     }
@@ -508,7 +520,7 @@ c_area (void)
   if (oPendingORG.isValid)
     {
       newtype |= AREA_ABS;
-      sym->area.info->baseAddr = oPendingORG.value;
+      sym->value.Data.Int.i = oPendingORG.value;
       oPendingORG.isValid = false;
     }
 
@@ -555,6 +567,10 @@ c_area (void)
   if ((newtype & AREA_CODE) && (newtype & AREA_BASED))
     error (ErrorError, "Attribute BASED may not be set for CODE area");
 
+  /* When an area is made absolute, ensure its symbol is also absolute.  */
+  if (newtype & AREA_ABS)
+    sym->type |= SYMBOL_ABSOLUTE;
+  
   /* We ignore any ABS difference as we like this to work:
 	AREA Code, CODE
 	ORG &xxx
@@ -595,12 +611,16 @@ c_org (void)
 	}
       else
 	{
-	  if (areaCurrentSymbol->value.Data.Int.i)
+	  if (areaCurrentSymbol->area.info->curIdx != 0)
 	    error (ErrorError, "Too late to set ORG of current area");
 	  else
 	    {
 	      areaCurrentSymbol->area.info->type |= AREA_ABS;
-	      areaCurrentSymbol->area.info->baseAddr = value->Data.Int.i;
+	      areaCurrentSymbol->value.Data.Int.i = value->Data.Int.i;
+
+	      /* When an area is made absolute, ensure its symbol is also
+		 absolute.  */
+	      areaCurrentSymbol->type |= SYMBOL_ABSOLUTE;
 	    }
 	}
     }
@@ -688,10 +708,10 @@ Area_MarkStartAs (Area_eEntryType type)
       int size = snprintf (mappingSymbol, mappingSymbolSize, "%s.%s.%08X",
 			   baseMappingSymbol,
 			   areaCurrentSymbol->str,
-			   areaCurrentSymbol->value.Data.Int.i);
+			   areaCurrentSymbol->area.info->curIdx);
       assert ((size_t)size + 1 == mappingSymbolSize);
       const Lex mapSymbolLex = lexTempLabel (mappingSymbol, mappingSymbolSize - 1);
-      Symbol *label = ASM_DefineLabel (&mapSymbolLex, areaCurrentSymbol->value.Data.Int.i);
+      Symbol *label = ASM_DefineLabel (&mapSymbolLex, areaCurrentSymbol->area.info->curIdx);
       if (type == eData)
 	label->type |= SYMBOL_DATUM;
     }

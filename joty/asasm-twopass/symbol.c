@@ -189,7 +189,7 @@ Symbol_PreDefReg (const char *regname, size_t namelen, int value, int type)
 {
   const Lex l = lexTempLabel (regname, namelen);
   Symbol *s = symbolGet (&l);
-  s->type |= SYMBOL_DEFINED | SYMBOL_ABSOLUTE | SYMBOL_DECLARED | type;
+  s->type |= SYMBOL_DEFINED | SYMBOL_ABSOLUTE | type;
   s->value = Value_Int (value);
 }
 
@@ -406,8 +406,8 @@ Symbol_CreateSymbolOut (void)
 	         number for all non-implicit area's, see start of outputAof()
 		 and outputElf().  */
 	      assert ((Area_IsImplicit (sym) && sym->used == -1) || (!Area_IsImplicit (sym) && sym->used >= 0));
-	      /* All AREA symbols are declared and not defined by nature.  */
-	      assert ((sym->type & (SYMBOL_DEFINED | SYMBOL_DECLARED)) == SYMBOL_DECLARED);
+	      /* All AREA symbols are local ones.  */
+	      assert (SYMBOL_KIND (sym->type) == SYMBOL_LOCAL);
 	    }
 	  else
 	    {
@@ -568,11 +568,12 @@ Symbol_OutputForAOF (FILE *outfile, const SymbolOut_t *symOutP)
 
       if (sym->type & SYMBOL_AREA)
 	{
+	  assert (((sym->type & SYMBOL_ABSOLUTE) != 0) == ((sym->area.info->type & AREA_ABS) != 0));
 	  const AofSymbol asym =
 	    {
 	      .Name = armword (sym->offset + 4), /* + 4 to skip the initial length */
-	      .Type = armword (SYMBOL_KIND(sym->type) | SYMBOL_LOCAL),
-	      .Value = armword (0),
+	      .Type = armword (SYMBOL_KIND(sym->type) | (sym->type & SYMBOL_ABSOLUTE)),
+	      .Value = armword ((sym->area.info->type & AREA_ABS) ? Area_GetBaseAddress (sym) : 0),
 	      .AreaName = armword (sym->offset + 4) /* + 4 to skip the initial length */
 	    };
 	  fwrite (&asym, sizeof (AofSymbol), 1, outfile);
@@ -675,9 +676,11 @@ Symbol_OutputForELF (FILE *outfile, const SymbolOut_t *symOutP)
 
       if (sym->type & SYMBOL_AREA)
 	{
+	  assert (((sym->type & SYMBOL_ABSOLUTE) != 0) == ((sym->area.info->type & AREA_ABS) != 0));
+	  assert (SYMBOL_KIND (sym->type) == SYMBOL_LOCAL);
 	  asym.st_info = ELF32_ST_INFO (STB_LOCAL, STT_SECTION);
 	  asym.st_name = 0;
-	  asym.st_value = 0;
+	  asym.st_value = (sym->area.info->type & AREA_ABS) ? Area_GetBaseAddress (sym) : 0;
 	  asym.st_shndx = sym->used;
 	  fwrite (&asym, sizeof (Elf32_Sym), 1, outfile);
 	}
@@ -739,12 +742,12 @@ Symbol_OutputForELF (FILE *outfile, const SymbolOut_t *symOutP)
 		    break;
 		}
 	      asym.st_value = v;
-	      asym.st_shndx = (sym->type & SYMBOL_ABSOLUTE) ? 0 : sym->areaDef->used;
+	      asym.st_shndx = (sym->type & SYMBOL_ABSOLUTE) && !Area_IsMappingSymbol (sym->str) ? SHN_ABS : sym->areaDef->used;
 	    }
 	  else
 	    {
 	      asym.st_value = 0;
-	      asym.st_shndx = 0;
+	      asym.st_shndx = SHN_UNDEF;
 	    }
 
 	  int bind;
@@ -813,7 +816,7 @@ symFlag (unsigned int flags, const char *err)
 bool
 c_export (void)
 {
-  Symbol *sym = symFlag (SYMBOL_REFERENCE | SYMBOL_DECLARED, "exported");
+  Symbol *sym = symFlag (SYMBOL_REFERENCE, "exported");
   skipblanks ();
   if (Input_Match ('[', true))
     {
@@ -871,7 +874,7 @@ c_strong (void)
 bool
 c_keep (void)
 {
-  if (symFlag (SYMBOL_KEEP | SYMBOL_DECLARED, "marked to 'keep'") == NULL)
+  if (symFlag (SYMBOL_KEEP, "marked to 'keep'") == NULL)
     oKeepAllSymbols = true;
   return false;
 }
@@ -882,7 +885,7 @@ c_keep (void)
 bool
 c_import (void)
 {
-  Symbol *sym = symFlag (SYMBOL_REFERENCE | SYMBOL_DECLARED, "imported");
+  Symbol *sym = symFlag (SYMBOL_REFERENCE, "imported");
   if (sym == NULL)
     {
       error (ErrorError, "Missing symbol for import");
@@ -994,8 +997,6 @@ symbolPrint (const Symbol *sym)
 	printf ("??? 0x%x/", SYMBOL_GETREGTYPE (sym->type));
 	break;
     }
-  if (sym->type & SYMBOL_DECLARED)
-    printf ("declared/");
   
   printf (" * offset 0x%x, used %d: ", sym->offset, sym->used);
   valuePrint (&sym->value);
