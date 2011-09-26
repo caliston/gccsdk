@@ -52,9 +52,34 @@
 
 ASM_Phase_e gASM_Phase = eStartup;
 
+/**
+ * Read one line input.
+ * \return true for success, false otherwise.
+ */
+static bool
+ASM_NextLine (void)
+{
+  const char *curFile = FS_GetCurFileName ();
+  int curLine = FS_GetCurLineNumber ();
+  while (!Input_NextLine (eVarSubst))
+    {
+      /* Failed to read a line, this might be we're EOD for the current
+         parsable object.  Go up one.  */
+      if (gCurPObjP->type == POType_eFile)
+	errorLine (curFile, curLine, ErrorWarning, "No END found");
+      FS_PopPObject (false);
+      if (gCurPObjP == NULL)
+	return false;
+      curFile = FS_GetCurFileName ();
+      curLine = FS_GetCurLineNumber ();
+    }
+  return true;
+}
+
 static void
 ASM_DoPass (const char *asmFile)
 {
+  assert (gCurPObjP == NULL);
   FS_PushFilePObject (asmFile);
 
   // FIXME: this will be wrong when we're skipping if/while contents.
@@ -62,7 +87,7 @@ ASM_DoPass (const char *asmFile)
     /* */;
   asmContinueValid = true;
 
-  while (gCurPObjP != NULL && inputNextLine ())
+  while (gCurPObjP != NULL && ASM_NextLine ())
     {
       /* Ignore blank lines and comments.  */
       if (Input_IsEolOrCommentStart ())

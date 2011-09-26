@@ -244,8 +244,7 @@ errorCore (ErrorTag e, const char *format, va_list ap)
 
 /**
  * ErrorAbort or too many ErrorError won't make this function return.
- * ErrorError will consume the rest of the line and set the current
- * input pointer to a NUL character.
+ * ErrorError will consume the rest of the line.
  */
 void
 error (ErrorTag e, const char *format, ...)

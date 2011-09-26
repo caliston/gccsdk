@@ -40,12 +40,14 @@ bool Input_MatchKeywordLower (const char *keyword);
 bool Input_MatchString (const char *str);
 bool Input_IsEndOfKeyword (void);
 
-#if DEBUG
-const char *inputGiveRestLine (void);
-#endif
+typedef enum
+{
+  eNoVarSubst,
+  eVarSubstNoWarning,
+  eVarSubst
+} Level_e;
 
-bool inputNextLine (void);
-bool inputNextLineNoSubst (void);
+bool Input_NextLine (Level_e level);
 
 void skipblanks (void);
 

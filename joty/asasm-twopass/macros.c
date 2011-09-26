@@ -288,7 +288,7 @@ c_macro (void)
     error (ErrorWarning, "Skipping characters following MACRO");
 
   /* Read optional '$' + label name.  */
-  if (!inputNextLineNoSubst ())
+  if (!Input_NextLine (eNoVarSubst))
     errorAbort ("End of file found within macro definition");
   if (Input_Match ('$', false))
     {
@@ -388,7 +388,7 @@ c_macro (void)
     errorOutOfMem ();
   do
     {
-      if (!inputNextLineNoSubst ())
+      if (!Input_NextLine (eNoVarSubst))
 	goto noMEND;
 
       const char * const inputMark = Input_GetMark ();
@@ -452,7 +452,7 @@ c_macro (void)
 lookforMEND:
   do
     {
-      if (!inputNextLineNoSubst ())
+      if (!Input_NextLine (eNoVarSubst))
 	{
 noMEND:
 	  errorAbort ("End of file found while looking for MEND");

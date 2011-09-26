@@ -286,4 +286,12 @@
 
 	]
 
+	GBLS CloseIF
+CloseIF SETS "]"
+	[ :LNOT: REFERENCE
+	[ {FALSE}
+	$CloseIF	; Should close the "[ {FALSE}" construction.
+	|
+	]
+
 	END

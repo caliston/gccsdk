@@ -28,4 +28,14 @@ cntOut			SETA	cntOut - 1
 		ALIGN
 	]
 
+	[ :LNOT: REFERENCE
+		GBLS	EndWhile
+EndWhile	SETS	"WEND"
+
+	WHILE {FALSE}
+	$EndWhile
+
+	|
+	]
+
 	END
