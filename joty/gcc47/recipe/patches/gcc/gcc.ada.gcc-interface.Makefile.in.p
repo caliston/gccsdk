@@ -1,6 +1,6 @@
 Index: gcc/ada/gcc-interface/Makefile.in
 ===================================================================
---- gcc/ada/gcc-interface/Makefile.in	(revision 178608)
+--- gcc/ada/gcc-interface/Makefile.in	(revision 179288)
 +++ gcc/ada/gcc-interface/Makefile.in	(working copy)
 @@ -278,7 +278,7 @@
  INCLUDES_FOR_SUBDIR = -iquote . -iquote .. -iquote ../.. -iquote $(fsrcdir)/ada \
@@ -11,7 +11,7 @@ Index: gcc/ada/gcc-interface/Makefile.in
    # On Windows native the tconfig.h files used by C runtime files needs to have
    # the gcc source dir in its include dir list
    INCLUDES_FOR_SUBDIR = -iquote . -iquote .. -iquote ../.. -iquote $(fsrcdir)/ada \
-@@ -1892,6 +1892,26 @@
+@@ -1863,6 +1863,26 @@
    LIBRARY_VERSION := $(LIB_VERSION)
  endif
  
