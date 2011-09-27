@@ -1,3 +1,16 @@
+Tue Sep 27 23:42:27 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* code.c (Code_ExpandCurrAreaSymbolAsOffset): Disabled.
+	* eval.c (GetInt): Added.
+	(evalBinop): Extend Op_mul, Op_div, Op_mod, Op_add, Op_sub, Op_and,
+	Op_or, Op_xor with support for one character long strings.
+	Simplified Op_asr, Op_sr, Op_sl, Op_ror, Op_rol by using GetInt.
+	Add restrict.
+	* eval.h (evalBinOp): Add restrict.
+	* regression/tests_pass/operator_multiplication.s: Enhanced.
+	* regression/tests_pass/operator_addition_logical.s: Likewise.
+	* Makefile.am (asasm_CFLAGS): Add -fstrict-aliasing -Wstrict-aliasing.
+
 Tue Sep 27 01:13:43 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* input.c (inputGiveRestLine): Remove.

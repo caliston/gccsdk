@@ -394,7 +394,7 @@ Code_ExpandCurrAreaSymbolAsAddr (Value *value, ARMWord instrOffset)
 	Code_ExpandCurrAreaSymbolAsAddr (&value->Data.Code.c[i].Data.value, instrOffset);
 }  
 
-
+#if 0
 static void
 Code_ExpandCurrAreaSymbolAsOffset (Value *value, int offset)
 {
@@ -408,6 +408,7 @@ Code_ExpandCurrAreaSymbolAsOffset (Value *value, int offset)
       if (value->Data.Code.c[i].Tag == CodeValue)
 	Code_ExpandCurrAreaSymbolAsOffset (&value->Data.Code.c[i].Data.value, offset);
 }
+#endif
 
 static bool
 Code_HasNonAddOperator (int start, int end, const Code *code)
