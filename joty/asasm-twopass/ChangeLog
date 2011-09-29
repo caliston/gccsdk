@@ -1,3 +1,18 @@
+Fri Sep 30 01:56:17 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.h (PObject::lastLineSize): Added.
+	* filestack.c (FS_GetLine): Update PObject::lastLineSize.
+	(FS_PushFilePObject): Initialise PObject::lastLineSize.
+	* macros.c (Macro_GetLine): Update PObject::lastLineSize.
+	(FS_PushMacroPObject): Initialise PObject::lastLineSize.
+	* whileif.c (if_skip, while_skip): Rename to If_Skip, While_Skip.
+	(While_Unwind): Remove.
+	(While_ReEvalAndDo): Renamed to While_Rewind.
+	(c_while, While_Rewind, c_wend, FS_PopIfWhile): Reparse WHILE input
+	line before re-evaluation.
+	* regression/tests_pass/while.s: Added test case.
+	* input.c (inputThisInstead): Rename to Input_ThisInstead.
+
 Thu Sep 29 22:01:10 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* local.c (Local_ROUTLblNo): Support up to 1000 local labels.

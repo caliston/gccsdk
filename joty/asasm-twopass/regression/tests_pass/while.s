@@ -38,4 +38,17 @@ EndWhile	SETS	"WEND"
 	|
 	]
 
+	; Variable substitution needs to be redone for each WHILE evaluation.
+	[ :LNOT: REFERENCE
+        GBLA    count
+count   SETA    8
+        WHILE   $count > 0
+	DCD $count
+count   SETA    count - 4
+        WEND
+	|
+	DCD	8
+	DCD	4
+	]
+
 	END

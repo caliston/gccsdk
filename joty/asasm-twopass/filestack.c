@@ -122,6 +122,7 @@ FS_PushFilePObject (const char *fileName)
   newPObjP->lineNum = 0;
   newPObjP->whileIfCurDepth = newPObjP->whileIfStartDepth = prevWhileIfDepth;
   newPObjP->GetLine = File_GetLine;
+  newPObjP->lastLineSize = 0;
 
   /* Set current file stack pointer.  All is ok now.  */
   gCurPObjP = newPObjP;
@@ -240,6 +241,7 @@ FS_GetCurLineNumber (void)
 static bool
 File_GetLine (char *bufP, size_t bufSize)
 {
+  gCurPObjP->lastLineSize = 0;
   while (1)
     {
       if (fgets (bufP, bufSize, gCurPObjP->d.file.fhandle) == NULL
@@ -247,6 +249,7 @@ File_GetLine (char *bufP, size_t bufSize)
 	return true;
 
       size_t lineLen = strlen (bufP);
+      gCurPObjP->lastLineSize += lineLen;
       if ((lineLen > 0 && bufP[lineLen - 1] == '\n')
           || feof (gCurPObjP->d.file.fhandle))
 	{

@@ -75,6 +75,8 @@ typedef struct
    * \return true when failure or EOD, false otherwise.
    */
   bool (*GetLine)(char *bufP, size_t bufSize);
+
+  size_t lastLineSize;
 } PObject;
 
 extern PObject gPOStack[PARSEOBJECT_STACK_SIZE];

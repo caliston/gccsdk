@@ -98,7 +98,7 @@ ASM_DoPass (const char *asmFile)
       size_t len = strlen (fileName);
       if (len > 12)
 	fileName += len - 12;
-      printf("%.*s : %d : 0x%x\n", (int)len, fileName, FS_GetCurLineNumber (), areaCurrentSymbol->area.info->curIdx);
+      printf("%.*s : %d : 0x%x : <%s>\n", (int)len, fileName, FS_GetCurLineNumber (), areaCurrentSymbol->area.info->curIdx, inputLine ());
 #endif
       /* Read label (in case there is one).  */
       Lex label;

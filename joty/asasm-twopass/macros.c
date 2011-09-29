@@ -100,6 +100,7 @@ FS_PushMacroPObject (const Macro *m, const char *args[MACRO_ARG_LIMIT])
 
   gCurPObjP[1].whileIfStartDepth = gCurPObjP[1].whileIfCurDepth = gCurPObjP[0].whileIfCurDepth;
   gCurPObjP[1].GetLine = Macro_GetLine;
+  gCurPObjP[1].lastLineSize = 0;
 
   /* Increase current file stack pointer.  All is ok now.  */
   ++gCurPObjP;
@@ -201,8 +202,12 @@ Macro_GetLine (char *bufP, size_t bufSize)
   const char *curPtr = gCurPObjP->d.macro.curPtr;
 
   if (*curPtr == '\0')
-    return true;
-  
+    {
+      gCurPObjP->lastLineSize = 0;
+      return true;
+    }
+
+  const char * const bufOrgP = bufP;
   const char * const bufEndP = bufP + bufSize - 1;
   while (*curPtr != '\0' && bufP != bufEndP)
     {
@@ -229,6 +234,7 @@ Macro_GetLine (char *bufP, size_t bufSize)
 	*bufP++ = *curPtr++;
     }
   *bufP = '\0';
+  gCurPObjP->lastLineSize = bufP - bufOrgP;
 
   gCurPObjP->d.macro.curPtr = curPtr;
 

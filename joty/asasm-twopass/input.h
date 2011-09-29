@@ -78,6 +78,6 @@ void Input_RollBackToMark (const char *mark);
 void Input_ShowLine (void);
 size_t Input_GetColumn (void);
 
-void inputThisInstead (const char *);
+void Input_ThisInstead (const char *);
 
 #endif

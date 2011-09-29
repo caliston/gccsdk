@@ -943,9 +943,8 @@ inputSymbol (size_t *ilen, char del)
   return input_pos - *ilen;
 }
 
-
 void
-inputThisInstead (const char *p)
+Input_ThisInstead (const char *p)
 {
   strcpy (input_buff, p);
   input_pos = input_buff;
