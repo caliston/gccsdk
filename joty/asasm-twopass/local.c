@@ -49,9 +49,9 @@ static unsigned int rout_null;
 static routPos *routList;
 static routPos *routListEnd;
 
-int Local_ROUTLblNo[100];
+int Local_ROUTLblNo[1000];
 
-/* Parameters: AREA ptr, 0 - 99 label digit, instance number, routine name.  */
+/* Parameters: AREA ptr, 0 - 999 label digit, instance number, routine name.  */
 const char Local_IntLabelFormat[] = kIntLabelPrefix "Local$$%p$$%02i$$%i$$%s";
 
 void

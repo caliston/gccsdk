@@ -29,7 +29,7 @@
 /* Prefix of all internal AsAsm symbols.  */
 #define kIntLabelPrefix "$$AsAsm$$Int$$"
 
-extern int Local_ROUTLblNo[100];
+extern int Local_ROUTLblNo[1000];
 
 extern const char Local_IntLabelFormat[];
 

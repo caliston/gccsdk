@@ -268,7 +268,7 @@ main (int argc, char **argv)
 	  if (arg[1] == '\0')
 	    {
 	      if (--argc)
-		var_define (*++argv);
+		Var_Define (*++argv);
 	      else
 		{
 		  fprintf (stderr, PACKAGE_NAME ": Missing argument after -%s\n", arg);
@@ -276,7 +276,7 @@ main (int argc, char **argv)
 		}
 	    }
 	  else
-	    var_define (arg + 1);
+	    Var_Define (arg + 1);
 	}
       else if (!strncasecmp (arg, "PD", sizeof ("PD")-1)
 	       || !strncasecmp (arg, "PreDefine", sizeof ("PreDefine")-1))

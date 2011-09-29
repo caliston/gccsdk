@@ -70,7 +70,7 @@ FS_PopMacroPObject (bool noCheck)
       gCurPObjP->d.macro.args[p] = NULL;
     }
 
-  var_restoreLocals (gCurPObjP->d.macro.varListP);
+  Var_RestoreLocals (gCurPObjP->d.macro.varListP);
 }
 
 

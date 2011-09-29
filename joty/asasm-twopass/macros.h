@@ -54,7 +54,7 @@ typedef struct
   const Macro *macro;
   const char *curPtr; /**< Current pointer inside macro buffer Macro::buf.  */
   const char *args[MACRO_ARG_LIMIT];
-  varPos *varListP; /**< Linked list of local variables defined in this macro.  */
+  VarPos *varListP; /**< Linked list of local variables defined in this macro.  */
 } MacroPObject;
 
 void FS_PopMacroPObject (bool noCheck);

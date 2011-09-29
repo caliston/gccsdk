@@ -79,9 +79,6 @@ Include_Add (const char *path)
   if (newPath[len] == NAT_DIR_CHR)
     newPath[len] = '\0';
   incDirPP[incDirCurSize++] = newPath;
-#ifdef DEBUG
-  fprintf (stderr, "Include_Add: added %s\n", newPath);
-#endif
 }
 
 

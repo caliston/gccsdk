@@ -1,3 +1,17 @@
+Thu Sep 29 22:01:10 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* local.c (Local_ROUTLblNo): Support up to 1000 local labels.
+	* local.h (Local_ROUTLblNo): Likewise.
+	* lex.c (Lex_ReadLocalLabel): Likewise.
+	* variables.c (varPos): Rename to VarPos.
+	(varPos::symptr): Rename to VarPos::symbolP.
+	(varPos::symbol): Rename to VarPos::symbol.
+	(var_restoreLocals): Rename to Var_RestoreLocals.
+	(var_define): Rename to Var_Define.
+	* variables.h: Likewise.
+	* macros.c, macro.h: Follow variables.c/variables.h renames.
+	* main.c: Likewise.
+
 Thu Sep 29 21:21:50 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* lexAcorn.c (lexAcornUnop, lexAcornBinop): Avoid inputUnGet error on

@@ -174,7 +174,7 @@ lexGetId (void)
 
 /**
  * \return -1 when it wasn't able to read a local label, otherwise a local
- * label value 0 - 99 (incl).
+ * label value 0 - 999 (incl).
  */
 static int
 Lex_ReadLocalLabel (bool noCheck)
@@ -183,7 +183,11 @@ Lex_ReadLocalLabel (bool noCheck)
     errorAbort ("Missing local label number");
   int label = inputGet () - '0';
   if (isdigit (inputLook ()))
-    label = 10*label + inputGet () - '0';
+    {
+      label = 10*label + inputGet () - '0';
+      if (isdigit (inputLook ()))
+	label = 10*label + inputGet () - '0';
+    }
 
   /* If a routinename is given, check if thats the one given with ROUT.  */
   size_t len;
