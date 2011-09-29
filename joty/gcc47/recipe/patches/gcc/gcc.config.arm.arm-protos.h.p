@@ -1,8 +1,8 @@
 Index: gcc/config/arm/arm-protos.h
 ===================================================================
---- gcc/config/arm/arm-protos.h	(revision 178658)
+--- gcc/config/arm/arm-protos.h	(revision 179360)
 +++ gcc/config/arm/arm-protos.h	(working copy)
-@@ -243,4 +243,13 @@
+@@ -244,4 +244,13 @@
  extern const struct tune_params *current_tune;
  #endif /* RTX_CODE */
  
