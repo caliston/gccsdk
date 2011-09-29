@@ -57,14 +57,16 @@ void
 lexAcornUnop (Lex *lex)
 {
   lex->tag = LexOperator;
-  char c = inputGet ();
-  switch (c)
+  char c1 = inputGet ();
+  switch (c1)
     {
       case 'B':
 	FINISH_STR ("ASE:", Op_base, 10); /* :BASE: */
+	break;
 
       case 'C':
 	FINISH_STR ("HR:", Op_chr, 10); /* :CHR: */
+	break;
 
       case 'D':
 	if (Input_MatchString ("EF:")) /* :DEF: */
@@ -85,50 +87,56 @@ lexAcornUnop (Lex *lex)
 	break;
 
       case 'F':
-	c = inputGet ();
-	switch (c)
-	  {
-	    case 'A':
-	      FINISH_STR ("TTR:", Op_fattr, 10); /* :FATTR: */
-	    case 'E':
-	      FINISH_STR ("XEC:", Op_fexec, 10); /* :FEXEC: */
-	    case 'L':
-	      FINISH_STR ("OAD:", Op_fload, 10); /* :FLOAD: */
-	    case 'S':
-	      FINISH_STR ("IZE:", Op_fsize, 10); /* :FSIZE: */
-	    default:
-	      inputUnGet (c);
-	      break;
-	  }
-	break;
-
+	{
+	  char c2 = inputGet ();
+	  switch (c2)
+	    {
+	      case 'A':
+		FINISH_STR ("TTR:", Op_fattr, 10); /* :FATTR: */
+		break;
+	      case 'E':
+		FINISH_STR ("XEC:", Op_fexec, 10); /* :FEXEC: */
+		break;
+	      case 'L':
+		FINISH_STR ("OAD:", Op_fload, 10); /* :FLOAD: */
+		break;
+	      case 'S':
+		FINISH_STR ("IZE:", Op_fsize, 10); /* :FSIZE: */
+		break;
+	    }
+	  inputUnGet (c2);
+	  break;
+	}
+	
       case 'I':
 	FINISH_STR ("NDEX:", Op_index, 10); /* :INDEX: */
-
-      case 'L':
-	c = inputGet ();
-	switch (c)
-	  {
-	    case 'E':
-	      FINISH_STR ("N:", Op_len, 10); /* :LEN: */
-	    case 'N':
-	      FINISH_STR ("OT:", Op_lnot, 10); /* :LNOT: */
-	    default:
-	      inputUnGet (c);
-	      break;
-	  }
 	break;
 
+      case 'L':
+	{
+	  char c2 = inputGet ();
+	  switch (c2)
+	    {
+	      case 'E':
+		FINISH_STR ("N:", Op_len, 10); /* :LEN: */
+		break;
+	      case 'N':
+		FINISH_STR ("OT:", Op_lnot, 10); /* :LNOT: */
+		break;
+	    }
+	  inputUnGet (c2);
+	  break;
+	}
+	
       case 'N':
 	FINISH_STR ("OT:", Op_not, 10); /* :NOT: */
+	break;
 
       case 'S':
 	FINISH_STR ("TR:", Op_str, 10); /* :STR: */
-
-      default:
-	inputUnGet (c);
 	break;
     }
+  inputUnGet (c1);
 
   /* Failed to tokenize.  */
   lex->tag = LexNone;
@@ -139,103 +147,114 @@ void
 lexAcornBinop (Lex *lex)
 {
   lex->tag = LexOperator;
-  char c = inputGet ();
-  switch (c)
+  char c1 = inputGet ();
+  switch (c1)
     {
       case 'A':
 	FINISH_STR ("ND:", Op_and, 8); /* :AND: */
+	break;
 
       case 'C':
 	FINISH_STR ("C:", Op_concat, 9); /* :CC: */
+	break;
 	
       case 'E':
 	FINISH_STR ("OR:", Op_xor, 6); /* :EOR: */
+	break;
 	
       case 'L':
-	c = inputGet ();
-	switch (c)
-	  {
-	    case 'A':
-	      FINISH_STR ("ND:", Op_land, 2); /* :LAND: */
-	    case 'E':
-	      c = inputGet ();
-	      switch (c)
+	{
+	  char c2 = inputGet ();
+	  switch (c2)
+	    {
+	      case 'A':
+		FINISH_STR ("ND:", Op_land, 2); /* :LAND: */
+		break;
+	      case 'E':
 		{
-		  case 'F':
-		    FINISH_STR ("T:", Op_left, 10); /* :LEFT: */
-		  case 'O':
-		    FINISH_STR ("R:", Op_ne, 1); /* :LEOR: */
-		  default:
-		    inputUnGet (c);
-		    break;
+		  char c3 = inputGet ();
+		  switch (c3)
+		    {
+		      case 'F':
+			FINISH_STR ("T:", Op_left, 10); /* :LEFT: */
+			break;
+		      case 'O':
+			FINISH_STR ("R:", Op_ne, 1); /* :LEOR: */
+			break;
+		    }
+		  inputUnGet (c3);
+		  break;
 		}
-	      break;
-	    case 'O':
-	      FINISH_STR ("R:", Op_lor, 1); /* :LOR: */
-	    default:
-	      inputUnGet (c);
-	      break;
-	  }
-	break;
-
+	      case 'O':
+		FINISH_STR ("R:", Op_lor, 1); /* :LOR: */
+		break;
+	    }
+	  inputUnGet (c2);
+	  break;
+	}
+	
       case 'M':
 	FINISH_STR ("OD:", Op_mod, 10); /* :MOD: */
+	break;
 
       case 'O':
 	FINISH_STR ("R:", Op_or, 7); /* :OR: */
+	break;
 
       case 'R':
-	c = inputGet ();
-	switch (c)
-	  {
-	    case 'I':
-	      FINISH_STR ("GHT:", Op_right, 10); /* :RIGHT: */
-	    case 'O':
-	      c = inputGet ();
-	      switch (c)
+	{
+	  char c2 = inputGet ();
+	  switch (c2)
+	    {
+	      case 'I':
+		FINISH_STR ("GHT:", Op_right, 10); /* :RIGHT: */
+		break;
+	      case 'O':
 		{
-		  case 'L':
-		    FINISH_CHR (Op_rol, 5); /* :ROL: */
-		  case 'R':
-		    FINISH_CHR (Op_ror, 5); /* :ROR: */
-		  default:
-		    inputUnGet (c);
-		    break;
+		  char c3 = inputGet ();
+		  switch (c3)
+		    {
+		      case 'L':
+			FINISH_CHR (Op_rol, 5); /* :ROL: */
+			break;
+		      case 'R':
+			FINISH_CHR (Op_ror, 5); /* :ROR: */
+			break;
+		    }
+		  inputUnGet (c3);
+		  break;
 		}
-	      break;
-	    default:
-	      inputUnGet (c);
-	      break;
-	  }
-	break;
-
+	    }
+	  inputUnGet (c2);
+	  break;
+	}
+	
       case 'S':
-	c = inputGet ();
-	switch (c)
-	  {
-	    case 'H':
-	      c = inputGet ();
-	      switch (c)
+	{
+	  char c2 = inputGet ();
+	  switch (c2)
+	    {
+	      case 'H':
 		{
-		  case 'L':
-		    FINISH_CHR (Op_sl, 5); /* :SHL: */
-		  case 'R':
-		    FINISH_CHR (Op_sr, 5); /* :SHR: */
-		  default:
-		    inputUnGet (c);
-		    break;
+		  char c3 = inputGet ();
+		  switch (c3)
+		    {
+		      case 'L':
+			FINISH_CHR (Op_sl, 5); /* :SHL: */
+			break;
+		      case 'R':
+			FINISH_CHR (Op_sr, 5); /* :SHR: */
+			break;
+		    }
+		  inputUnGet (c3);
+		  break;
 		}
-	      break;
-	    default:
-	      inputUnGet (c);
-	      break;
-	  }
-	break;
-
-      default:
-	inputUnGet (c);
-	break;
+	    }
+	  inputUnGet (c2);
+	  break;
+	}
     }
+  inputUnGet (c1);
 
   /* Failed to tokenize.  */
   lex->tag = LexNone;

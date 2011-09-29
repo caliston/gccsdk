@@ -1,3 +1,8 @@
+Thu Sep 29 21:21:50 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lexAcorn.c (lexAcornUnop, lexAcornBinop): Avoid inputUnGet error on
+	unknown operations.
+
 Tue Sep 27 23:42:27 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* code.c (Code_ExpandCurrAreaSymbolAsOffset): Disabled.
