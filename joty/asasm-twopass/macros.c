@@ -64,7 +64,7 @@ FS_PopMacroPObject (bool noCheck)
 
   FS_PopIfWhile (noCheck);
 
-  for (int p = 0; p < MACRO_ARG_LIMIT; ++p)
+  for (int p = 0; p != MACRO_ARG_LIMIT; ++p)
     {
       free ((void *) gCurPObjP->d.macro.args[p]);
       gCurPObjP->d.macro.args[p] = NULL;
@@ -211,7 +211,7 @@ Macro_GetLine (char *bufP, size_t bufSize)
   const char * const bufEndP = bufP + bufSize - 1;
   while (*curPtr != '\0' && bufP != bufEndP)
     {
-      if (MACRO_ARG0 <= *curPtr && *curPtr <= MACRO_ARG15)
+      if (MACRO_ARG0 <= *curPtr && *curPtr < MACRO_ARG0 + MACRO_ARG_LIMIT)
 	{
 	  /* Argument substitution.  */
 	  const char *argP = gCurPObjP->d.macro.args[*curPtr - MACRO_ARG0];
@@ -414,8 +414,8 @@ c_macro (void)
 		  (void) Input_Match ('.', false);
 		  int i;
 		  for (i = 0;
-		       i != m.numargs && (memcmp (ptr, m.args[i], len)
-					  || m.args[i][len] != '\0');
+		       i != m.numargs
+			 && (memcmp (ptr, m.args[i], len) || m.args[i][len] != '\0');
 		       ++i)
 		    /* */;
 		  if (i != m.numargs)
