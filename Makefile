@@ -317,7 +317,13 @@ endif
 $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION).tar.bz2:
 	-rm $(SRCORIGDIR)/binutils-$(BINUTILS_VERSION).tar.bz2
 	-mkdir -p $(SRCORIGDIR)
-	cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/binutils/binutils-$(BINUTILS_VERSION).tar.bz2
+	# The original binutils 2.21 release is no longer available as tar ball
+	# (see http://sourceware.org/ml/binutils/2011-08/msg00198.html)
+	# cd $(SRCORIGDIR) && wget -c http://ftp.gnu.org/gnu/binutils/binutils-$(BINUTILS_VERSION).tar.bz2
+	# Fetch the 2.21 release from CVS and package it up.
+	cd $(SRCORIGDIR) && cvs -z 9 -d :pserver:anoncvs@sourceware.org:/cvs/src co -r binutils-2_21 binutils
+	cd $(SRCORIGDIR) && mv src binutils-2.21
+	cd $(SRCORIGDIR) && tar cjf binutils-$(BINUTILS_VERSION).tar.bz2 binutils-2.21
 
 # Download gcc source:
 $(SRCORIGDIR)/gcc-$(GCC_VERSION).tar.bz2:
