@@ -137,6 +137,8 @@ Lit_GetAlignment (const LitPool *litP)
 static Value
 Lit_CreateLiteralSymbol (const Value *valueP, Lit_eSize size)
 {
+  assert (valueP->Tag != ValueIllegal);
+
   /* We need to create a new literal in our pool.  */
   LitPool *litP;
   if ((litP = malloc (sizeof (LitPool))) == NULL)
@@ -310,8 +312,6 @@ Lit_RegisterInt (const Value *value, Lit_eSize size)
 	}
       if (equal)
 	{
-	  valueFree (&truncValue);
-
 	  assert (litPoolP->status != eNoNeedToAssemble);
 
 	  Symbol *symP = Lit_GetLitOffsetAsSymbol (litPoolP);
@@ -324,12 +324,17 @@ Lit_RegisterInt (const Value *value, Lit_eSize size)
 	      assert (gASM_Phase == ePassTwo || areaCurrentSymbol->area.info->curIdx >= litPoolP->offset);
 	      if (areaCurrentSymbol->area.info->curIdx + 8 > litPoolP->offset + offset + ((isAddrMode3) ? 255 : 4095))
 		continue;
+
+	      valueFree (&truncValue);
+
 	      /* A literal with the same value got already assembled and is in
 	         our range to refer to.  */
 	      return Value_Addr (15, litPoolP->offset + offset - (areaCurrentSymbol->area.info->curIdx + 8));
 	    }
 	  else
 	    {
+	      valueFree (&truncValue);
+
 	      /* A literal with the same value was already needed so we can
 	         reuse its position where it is going to be assembled.  */
 	      if (offset == 0)
@@ -427,7 +432,7 @@ Lit_DumpPool (void)
   Status_e statusToLeaveAlone = (gASM_Phase == ePassOne) ? eAssembledPassOne : eAssembledPassTwo;
   for (LitPool *litP = areaCurrentSymbol->area.info->litPool; litP != NULL; litP = litP->next)
     {
-     if (litP->status == statusToLeaveAlone || litP->status == eNoNeedToAssemble)
+      if (litP->status == statusToLeaveAlone || litP->status == eNoNeedToAssemble)
 	continue;
       assert ((gASM_Phase == ePassOne && litP->status == eNotYetAssembled) || (gASM_Phase == ePassTwo && litP->status == eAssembledPassOne));
 

@@ -1,3 +1,7 @@
+Tue Oct  4 21:42:10 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lit.c (Lit_RegisterInt): Fix Value free problem.
+
 Mon Oct  3 21:45:10 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
   
 	* macros.h (MACRO_ARG_LIMIT): Increased to 18.
