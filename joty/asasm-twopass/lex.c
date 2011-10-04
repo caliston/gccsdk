@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <limits.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
@@ -173,20 +174,24 @@ lexGetId (void)
 
 
 /**
- * \return -1 when it wasn't able to read a local label, otherwise a local
- * label value 0 - 999 (incl).
+ * \return UINT_MAX when it wasn't able to read a local label, otherwise a local
+ * label value.
  */
-static int
+static unsigned
 Lex_ReadLocalLabel (bool noCheck)
 {
   if (!isdigit (inputLook ()))
     errorAbort ("Missing local label number");
-  int label = inputGet () - '0';
-  if (isdigit (inputLook ()))
+  unsigned label = inputGet () - '0';
+  while (isdigit (inputLook ()))
     {
-      label = 10*label + inputGet () - '0';
-      if (isdigit (inputLook ()))
-	label = 10*label + inputGet () - '0';
+      unsigned next_label = 10*label + inputGet () - '0';
+      if (next_label < label)
+	{
+	  error (ErrorError, "Local label overflow");
+	  return UINT_MAX;
+	}
+      label = next_label;
     }
 
   /* If a routinename is given, check if thats the one given with ROUT.  */
@@ -201,7 +206,7 @@ Lex_ReadLocalLabel (bool noCheck)
 	error (ErrorError, "Local label can not have a routine name %.*s here", (int)len, name);
       else
 	error (ErrorError, "Local label with routine name %.*s does not match with current routine name %s", (int)len, name, curROUTId);
-      return -1;
+      return UINT_MAX;
     }
 
   return label;
@@ -222,32 +227,34 @@ Lex_MakeLocalLabel (int dir, LocalLabel_eSearch level /* FIXME: use this */)
       .tag = LexNone
     };
 
-  int label = Lex_ReadLocalLabel (false);
-  if (label < 0)
+  unsigned label = Lex_ReadLocalLabel (false);
+  if (label == UINT_MAX)
     return result;
 
-  int i;
+  Local_Label_t *lblP = Local_GetLabel (label);
+  unsigned i;
   switch (dir)
     {
       case -1:
 	/* Search backward.  */
-	if ((i = Local_ROUTLblNo[label] - 1) < 0)
+	if ((i = lblP->Value) == 0)
 	  {
 	    errorAbort ("Missing local label %%b%02i", label);
 	    return result;
 	  }
+	--i;
 	break;
 
       default:
       case 0:
 	/* Search backward, when not found, search forward.  */
-	if ((i = Local_ROUTLblNo[label] - 1) < 0)
-	  i++;
+	if ((i = lblP->Value) > 0)
+	  --i;
 	break;
 
       case 1:
 	/* Search forward.  */
-	i = Local_ROUTLblNo[label];
+	i = lblP->Value;
 	break;
     }
   char id[1024];
@@ -276,13 +283,14 @@ Lex_GetDefiningLabel (bool noCheck)
 	  .tag = LexNone
 	};
 
-      int label = Lex_ReadLocalLabel (noCheck);
-      if (label < 0)
+      unsigned label = Lex_ReadLocalLabel (noCheck);
+      if (label == UINT_MAX)
 	return result;
 
+      Local_Label_t *lblP = Local_GetLabel (label);
       char id[1024];
-      snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, Local_ROUTLblNo[label], Local_GetCurROUTId ());
-      Local_ROUTLblNo[label]++;
+      snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, lblP->Value, Local_GetCurROUTId ());
+      lblP->Value++;
 
       result.tag = LexId;
       result.Data.Id.str = strdup (id);

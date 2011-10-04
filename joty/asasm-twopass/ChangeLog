@@ -1,3 +1,19 @@
+Wed Oct  5 00:46:48 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* local.h (kIntLabelPrefix): Move to...
+	* symbol.h: ...here.
+	* local.c (routPos, rout_null, routList, routListEnd): Rename to
+	RoutPos_t, oRout_Null, oRout_List, oRout_ListEnd.
+	(Local_ROUTLblNo): Remove.
+	(oLocal_LabelNum): Add.
+	(Local_ResetLabels): Add.
+	(Local_PrepareForPhase, c_rout): Make use of Local_ResetLabels.
+	(Local_GetLabel): Add.
+	* local.h (Local_Label_t, Local_GetLabel): Add.
+	(Local_ROUTLblNo): Remove.
+	* lex.c (Lex_ReadLocalLabel): Support bigger label numbers.
+	(Lex_GetDefiningLabel, Lex_MakeLocalLabel): Use Local_GetLabel.
+
 Tue Oct  4 21:42:10 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* lit.c (Lit_RegisterInt): Fix Value free problem.

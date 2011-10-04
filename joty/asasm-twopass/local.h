@@ -26,14 +26,18 @@
 #include <stdbool.h>
 #include "lex.h"
 
-/* Prefix of all internal AsAsm symbols.  */
-#define kIntLabelPrefix "$$AsAsm$$Int$$"
-
-extern int Local_ROUTLblNo[1000];
+typedef struct Local_Label_t
+{
+  struct Local_Label_t *NextP;
+  unsigned Num;
+  unsigned Value;
+} Local_Label_t;
 
 extern const char Local_IntLabelFormat[];
 
 void Local_PrepareForPhase (ASM_Phase_e phase);
+
+Local_Label_t *Local_GetLabel (unsigned num);
 
 bool c_rout (const Lex *label);
 

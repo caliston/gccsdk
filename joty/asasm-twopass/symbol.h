@@ -104,6 +104,9 @@ typedef struct Symbol
   char str[1];		/** symbol name as NUL terminated string */
 } Symbol;
 
+/* Prefix of all internal AsAsm symbols.  */
+#define kIntLabelPrefix "$$AsAsm$$Int$$"
+
 void Symbol_Init (void);
 Symbol *symbolGet (const Lex *l);
 Symbol *symbolFind (const Lex *l);
