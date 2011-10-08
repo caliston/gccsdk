@@ -499,7 +499,7 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	  break;
 	}
       
-      case Op_ne: /* <> /= != :LEOR: */
+      case Op_ne: /* <> /= != */
 	{
 	  if (lvalue->Tag == ValueBool && rvalue->Tag == ValueBool)
 	    lvalue->Data.Bool.b = lvalue->Data.Bool.b != rvalue->Data.Bool.b;
@@ -527,6 +527,17 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	      return false;
 	    }
 	  lvalue->Data.Bool.b = lvalue->Data.Bool.b || rvalue->Data.Bool.b;
+	  break;
+	}
+      
+      case Op_leor: /* :LEOR: */
+	{
+	  if (lvalue->Tag != ValueBool || rvalue->Tag != ValueBool)
+	    {
+	      error (ErrorError, "Bad operand type for %s", ":LEOR:");
+	      return false;
+	    }
+	  lvalue->Data.Bool.b = lvalue->Data.Bool.b ^ rvalue->Data.Bool.b;
 	  break;
 	}
       

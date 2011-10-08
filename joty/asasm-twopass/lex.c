@@ -43,12 +43,6 @@
 #include "os.h"
 #include "symbol.h"
 
-const char Pri[2][10] =
-{
-  {1, 2, 3, 4, 5, 6, 7, 8, 9, 10},	/* AS */
-  {1, 2, 3, 4, 10, 5, 6, 7, 8, 9}	/* ObjAsm? */
-};
-
 static Lex nextbinop;
 static bool nextbinopvalid = false;
 
@@ -357,31 +351,31 @@ lexGetPrim (void)
       case '+':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_none; /* +XYZ */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Unary;
 	break;
 
       case '-':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_neg; /* -XYZ */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Unary;
 	break;
 
       case '!':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_lnot; /* !XYZ */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Unary;
 	break;
 
       case '~':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_not; /* ~XYZ */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Unary;
 	break;
 
       case '?':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_size; /* ?<label> */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Unary;
 	break;
 
       case '(':
@@ -571,47 +565,45 @@ lexGetBinop (void)
       case '*':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_mul; /* * */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Multiplicative;
 	break;
 
       case '/':
 	result.tag = LexOperator;
-	switch (inputLook ())
+	if (Input_Match ('=', false))
 	  {
-	    case '=': /* /= */
-	      inputSkip ();
-	      result.Data.Operator.op = Op_ne;
-	      result.Data.Operator.pri = PRI (3); /* /= */
-	      break;
-	    default:
-	      result.Data.Operator.op = Op_div; /* / */
-	      result.Data.Operator.pri = PRI (10);
-	      break;
+	    result.Data.Operator.op = Op_ne; /* /= */
+	    result.Data.Operator.pri = kPrioOp_Relational;
+	  }
+	else
+	  {
+	    result.Data.Operator.op = Op_div; /* / */
+	    result.Data.Operator.pri = kPrioOp_Multiplicative;
 	  }
 	break;
 
       case '%':
 	result.tag = LexOperator;
-	result.Data.Operator.op = Op_mod; /* % */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.op = Op_mod; /* % MOD */
+	result.Data.Operator.pri = kPrioOp_Multiplicative;
 	break;
 
       case '+':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_add; /* + */
-	result.Data.Operator.pri = PRI (9);
+	result.Data.Operator.pri = kPrioOp_AddAndLogical;
 	break;
 
       case '-':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_sub; /* - */
-	result.Data.Operator.pri = PRI (9);
+	result.Data.Operator.pri = kPrioOp_AddAndLogical;
 	break;
 
       case '^':
 	result.tag = LexOperator;
-	result.Data.Operator.op = Op_xor; /* ^ */
-	result.Data.Operator.pri = PRI (6);
+	result.Data.Operator.op = Op_xor; /* ^ EOR */
+	result.Data.Operator.pri = kPrioOp_AddAndLogical;
 	break;
 
       case '>':
@@ -619,7 +611,7 @@ lexGetBinop (void)
 	switch (inputLook ())
 	  {
 	    case '>':
-	      result.Data.Operator.pri = PRI (5);
+	      result.Data.Operator.pri = kPrioOp_Shift;
 	      if (inputSkipLook () == '>')
 		{
 		  inputSkip ();
@@ -632,12 +624,12 @@ lexGetBinop (void)
 	    case '=':
 	      inputSkip ();
 	      result.Data.Operator.op = Op_ge;
-	      result.Data.Operator.pri = PRI (4); /* >= */
+	      result.Data.Operator.pri = kPrioOp_Relational; /* >= */
 	      break;
   
 	    default:
 	      result.Data.Operator.op = Op_gt;
-	      result.Data.Operator.pri = PRI (4); /* > */
+	      result.Data.Operator.pri = kPrioOp_Relational; /* > */
 	      break;
 	  }
 	break;
@@ -649,24 +641,24 @@ lexGetBinop (void)
 	    case '<':
 	      inputSkip ();
 	      result.Data.Operator.op = Op_sl; /* << */
-	      result.Data.Operator.pri = PRI (5);
+	      result.Data.Operator.pri = kPrioOp_Shift;
 	      break;
     
 	    case '=':
 	      inputSkip ();
 	      result.Data.Operator.op = Op_le; /* <= */
-	      result.Data.Operator.pri = PRI (4);
+	      result.Data.Operator.pri = kPrioOp_Relational;
 	      break;
     
 	    case '>':
 	      inputSkip ();
 	      result.Data.Operator.op = Op_ne; /* <> */
-	      result.Data.Operator.pri = PRI (3);
+	      result.Data.Operator.pri = kPrioOp_Relational;
 	      break;
     
 	    default:
 	      result.Data.Operator.op = Op_lt; /* < */
-	      result.Data.Operator.pri = PRI (4);
+	      result.Data.Operator.pri = kPrioOp_Relational;
 	      break;
 	  }
 	break;
@@ -674,7 +666,7 @@ lexGetBinop (void)
       case '=':
 	Input_Match ('=', false); /* Deals with '==' */
 	result.tag = LexOperator;
-	result.Data.Operator.pri = PRI (3);
+	result.Data.Operator.pri = kPrioOp_Relational;
 	result.Data.Operator.op = Op_eq; /* = == */
 	break;
 
@@ -682,7 +674,7 @@ lexGetBinop (void)
 	if (Input_Match ('=', false))
 	  {
 	    result.tag = LexOperator;
-	    result.Data.Operator.pri = PRI (3);
+	    result.Data.Operator.pri = kPrioOp_Relational;
 	    result.Data.Operator.op = Op_ne; /* != */
 	  }
 	else
@@ -696,12 +688,12 @@ lexGetBinop (void)
 	result.tag = LexOperator;
 	if (Input_Match ('|', false))
 	  {
-	    result.Data.Operator.pri = PRI (1);
+	    result.Data.Operator.pri = kPrioOp_Boolean;
 	    result.Data.Operator.op = Op_lor; /* || */
 	  }
 	else
 	  {
-	    result.Data.Operator.pri = PRI (7);
+	    result.Data.Operator.pri = kPrioOp_AddAndLogical;
 	    result.Data.Operator.op = Op_or; /* | */
 	  }
 	break;
@@ -710,12 +702,12 @@ lexGetBinop (void)
 	result.tag = LexOperator;
 	if (Input_Match ('&', false))
 	  {
-	    result.Data.Operator.pri = PRI (2);
+	    result.Data.Operator.pri = kPrioOp_Boolean;
 	    result.Data.Operator.op = Op_land; /* && */
 	  }
 	else
 	  {
-	    result.Data.Operator.pri = PRI (8);
+	    result.Data.Operator.pri = kPrioOp_AddAndLogical;
 	    result.Data.Operator.op = Op_and; /* & */
 	  }
 	break;
@@ -792,11 +784,8 @@ lexPrint (const Lex *lex)
       case LexDelim:
 	printf ("Delim <%d> ", lex->Data.Delim.delim);
 	break;
-      case Lex00Label:
-	printf ("Label <%d> ", lex->Data.Label.value);
-	break;
       case LexBool:
-	printf("bool <%d> ", lex->Data.Label.value);
+	printf("bool <%d> ", lex->Data.Bool.value);
 	break;
       case LexNone:
 	printf ("None ");
@@ -808,7 +797,7 @@ lexPrint (const Lex *lex)
 }
 
 const char *
-OperatorAsStr (Operator op)
+Lex_OperatorAsStr (Operator op)
 {
   static const char * const opStr[] =
     {
@@ -826,30 +815,37 @@ OperatorAsStr (Operator op)
       ":STR:",		/* Op_str */
       ":CHR:",		/* Op_chr */
       ":SIZE:",		/* Op_size */
-      ":LEFT:",		/* Op_left */
-      ":RIGHT:",	/* Op_right */
+
       ":MUL:",		/* Op_mul */
       ":DIV:",		/* Op_div */
       ":MOD:",		/* Op_mod */
-      ":ADD:",		/* Op_add */
-      ":SUB:",		/* Op_sub */
-      ":CONCAT:",	/* Op_concat */
-      ":AND:",		/* Op_and */
-      ":OR:",		/* Op_or */
-      ":XOR:",		/* Op_xor */
+
+      ":LEFT:",		/* Op_left */
+      ":RIGHT:",	/* Op_right */
+      ":CC:",		/* Op_concat */
+
       ":ASR:",		/* Op_asr */
       ":SHR:",		/* Op_sr */
       ":SHL:",		/* Op_sl */
       ":ROR:",		/* Op_ror */
       ":ROL:",		/* Op_rol */
+      
+      ":ADD:",		/* Op_add */
+      ":SUB:",		/* Op_sub */
+      ":AND:",		/* Op_and */
+      ":OR:",		/* Op_or */
+      ":XOR:",		/* Op_xor */
+
       ":LE:",		/* Op_le */
       ":GE:",		/* Op_ge */
       ":LT:",		/* Op_lt */
       ":GT:",		/* Op_gt */
       ":EQ:",		/* Op_eq */
       ":NE:",		/* Op_ne */
+
       ":LAND:",		/* Op_land */
       ":LOR:",		/* Op_lor */
+      ":LEOR:",		/* Op_leor */
     };
   return op >= sizeof (opStr) / sizeof (opStr[0]) ? ":???:" : opStr[op];
 }

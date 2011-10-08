@@ -1,3 +1,23 @@
+Sat Oct  8 02:48:28 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_precedence.s: Add.
+	* regression/tests_pass/operator_shift.s: Added :ASR: test.
+	* code.c (Code_EvalLowest,codePrint): Follow OperatorAsStr to
+	Lex_OperatorAsStr rename. Follow isUnop to IsUnop rename.
+	* expr.c (expr,exprBuild): Use kPrioOp_Min and kPrioOp_Max.
+	* lexAcorn.c: Use kPrioOp_* values.
+	(lexAcornBinop): Add support for :ASR:.
+	* eval.c (evalBinop): Add support for :LEOR: as Op_leor.
+	* lex.c (Pri): Remove.
+	Use kPrioOp_* values.
+	(OperatorAsStr): Rename to Lex_OperatorAsStr.  Follow Op_* reshuffle.
+	(lexPrint): Follow Lex00Label removal.
+	* lex.h (Operator): Reshuffle according to precedence.  Add Op_leor.
+	(kPrioOp_*): Define.
+	(isUnop): Rename to IsUnop and turns this into an inline.
+	(LexTag): Remove Lex00Label.
+	(Lex): Remove Label.
+
 Wed Oct  5 00:46:48 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* local.h (kIntLabelPrefix): Move to...

@@ -468,10 +468,8 @@ Input_VarSub (const char **inPP, size_t *outOffsetP, bool inString, bool warnOnV
       if (warnOnVarSubFail)
 	{
 	  if (!inString)
-	    {
-	      error (ErrorWarning, "Unknown variable '%.*s' for $ expansion, you want to use vertical bars ?",
-		     (int)label.Data.Id.len, label.Data.Id.str);
-	    }
+	    error (ErrorWarning, "Unknown variable '%.*s' for $ expansion, you want to use vertical bars ?",
+		   (int)label.Data.Id.len, label.Data.Id.str);
 	  else if (option_pedantic)
 	    error (ErrorWarning, "No $ expansion as variable '%.*s' is not defined, you want to use double $ ?",
 		   (int)label.Data.Id.len, label.Data.Id.str);
