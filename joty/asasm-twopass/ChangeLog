@@ -1,3 +1,8 @@
+Sat Oct  8 11:40:24 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpumem.c (DestMem_RelocUpdater): Fix load pc-rel based in ABS Area.
+	* regression/tests_pass/ldr_from_addr.s: Add ABS Area test case.
+
 Sat Oct  8 02:48:28 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* regression/tests_pass/operator_precedence.s: Add.

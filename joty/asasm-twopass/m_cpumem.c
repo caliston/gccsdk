@@ -91,14 +91,16 @@ DestMem_RelocUpdater (const char *file, int lineno, ARMWord offset,
 	      else if (valueP->Data.Code.len == 1
 		       && (im = help_cpuImm8s4 (~valP->Data.Int.i)) != (ARMWord)-1)
 		newIR |= M_MVN | IMM_RHS | im;
-	      else
+	      else if ((areaCurrentSymbol->area.info->type & AREA_ABS) != 0)
 		{
-		  ARMWord newOffset = valP->Data.Int.i - (areaCurrentSymbol->area.info->curIdx + offset + 8);
+		  ARMWord newOffset = valP->Data.Int.i - (Area_GetBaseAddress (areaCurrentSymbol) + offset + 8);
 		  ir |= LHS_OP (15);
 		  if (isAddrMode3)
 		    ir |= B_FLAG;
 		  newIR = Fix_CPUOffset (file, lineno, ir, newOffset);
 		}
+	      else
+		return true;
 	      Put_InsWithOffset (offset, newIR);
 	      break;
 	    }
