@@ -76,7 +76,7 @@ along with GCC; see the file COPYING3.  If not see
 /* libscl means hard-float only.  Module support means libscl and
    hard-float.  libscl and module support go for static libgcc
    library.  */
-#define DRIVER_SELF_SPECS						\
+#define SUBTARGET_DRIVER_SELF_SPECS					\
   "%{mlibscl:-mlibscl -mhard-float -static} %<mlibscl",			\
   "%{mmodule:-mmodule -mlibscl -mhard-float -static} %<mmodule"		\
 

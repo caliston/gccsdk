@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.h
 ===================================================================
---- gcc/config/arm/arm.h	(revision 180006)
+--- gcc/config/arm/arm.h	(revision 180169)
 +++ gcc/config/arm/arm.h	(working copy)
 @@ -221,7 +221,7 @@
  				         : TARGET_TPCS_FRAME)
@@ -158,3 +158,15 @@ Index: gcc/config/arm/arm.h
  
  #define ARM_REG_OK_FOR_INDEX_P(X)		\
    ((REGNO (X) <= LAST_ARM_REGNUM		\
+@@ -2270,6 +2302,10 @@
+ # define MCPU_MTUNE_NATIVE_SPECS ""
+ #endif
+ 
+-#define DRIVER_SELF_SPECS MCPU_MTUNE_NATIVE_SPECS
++#define DRIVER_SELF_SPECS SUBTARGET_DRIVER_SELF_SPECS			\
++   MCPU_MTUNE_NATIVE_SPECS
++#ifndef SUBTARGET_DRIVER_SELF_SPECS
++# define SUBTARGET_DRIVER_SELF_SPECS
++#endif
+ 
+ #endif /* ! GCC_ARM_H */
