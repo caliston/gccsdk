@@ -1,8 +1,8 @@
 Index: gcc/dwarf2out.c
 ===================================================================
---- gcc/dwarf2out.c	(revision 178658)
+--- gcc/dwarf2out.c	(revision 180227)
 +++ gcc/dwarf2out.c	(working copy)
-@@ -15367,12 +15367,16 @@
+@@ -15368,12 +15368,16 @@
       this, assume that while we cannot provide a proper value for
       frame_pointer_fb_offset, we won't need one either.  */
    frame_pointer_fb_offset_valid
