@@ -50,7 +50,7 @@
 #endif
 
 #ifdef __TARGET_UNIXLIB__
-int __riscosify_control = 0;
+int __riscosify_control = __RISCOSIFY_NO_PROCESS;
 #endif
 
 /* The DDEUtils module throwback error category codes.  */
@@ -66,22 +66,19 @@ int __riscosify_control = 0;
 
 static const char *ErrorFile;
 
+static int OSCanonicalisePath (const char *path, char *buffer, int bufferSize,
+			       char *systemVar, char *defaultPath);
+
+
 /**
  * Canonicalise filename.
- * \param path1 Filename.
+ * \param path Filename.
  * \returns When non-NULL, pointer to malloced buffer holding the canonicalised
  * filename (caller needs to free).  NULL in case of an error.
  */
 const char *
-CanonicalisePath (const char *path1)
+CanonicalisePath (const char *path)
 {
-#if __TARGET_UNIXLIB__
-  char path[1024];
-  __riscosify (path1, 0, 0, path, sizeof (path), NULL);
-#else
-  const char *path = path1;
-#endif
-  
   int size = 1 - OSCanonicalisePath (path, 0, 0, 0, 0);
   char *buffer;
   if ((buffer = malloc (size)) == NULL)
@@ -117,9 +114,8 @@ ThrowbackStart (void)
 _kernel_oserror *
 ThrowbackSendStart (const char *filename)
 {
-  _kernel_swi_regs regs;
-
   ErrorFile = filename;
+  _kernel_swi_regs regs;
   regs.r[0] = THROWBACK_REASON_PROCESSING;
   regs.r[2] = (int) filename;
   return _kernel_swi (DDEUtils_ThrowbackSend, &regs, &regs);
@@ -133,12 +129,11 @@ _kernel_oserror *
 ThrowbackSendError (int level, int lineno, const char *errstr)
 {
   _kernel_swi_regs regs;
-
-  regs.r[0] = THROWBACK_REASON_ERROR_DETAILS;
+  regs.r[0] = level == ThrowbackInfo ? THROWBACK_REASON_INFO_DETAILS : THROWBACK_REASON_ERROR_DETAILS;
   regs.r[1] = 0;
   regs.r[2] = (int) ErrorFile;
   regs.r[3] = lineno;
-  regs.r[4] = level;
+  regs.r[4] = level == ThrowbackInfo ? 0 : level;
   regs.r[5] = (int) errstr;
   return _kernel_swi (DDEUtils_ThrowbackSend, &regs, &regs);
 }
@@ -146,12 +141,12 @@ ThrowbackSendError (int level, int lineno, const char *errstr)
 _kernel_oserror *
 ThrowbackEnd (void)
 {
+  ErrorFile = NULL;
   _kernel_swi_regs regs;
-
   return _kernel_swi (DDEUtils_ThrowbackEnd, &regs, &regs);
 }
 
-int
+static int
 OSCanonicalisePath (const char *path, char *buffer, int buffersize,
 		    char *systemvar, char *defaultpath)
 {

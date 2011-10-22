@@ -77,7 +77,7 @@ typedef struct
   unsigned int cb_type:2; /* See kCB_* values.  */
   unsigned int part_mnemonic:1; /* When false, mnemonic should complete, i.e. followed by a white-space.
     When true, further mnemonic decoding is done by the parse_opcode callback.  */
-  unsigned int result:2; /* Kind of output.  */
+  unsigned int result:2; /* Kind of output (see eRslt_* enum).  */
   union
     {
       po_void vd; /* Callback for eCB_Void.  */
@@ -102,7 +102,7 @@ static const decode_table_t oDecodeTable[] =
   { "ADD", eCB_Void, true, eRslt_ARM, { .vd = m_add } }, /* ADD CC S */
   { "ADF", eCB_Void, true, eRslt_ARM, { .vd = m_adf } }, /* ADF CC P R */
   { "ADR", eCB_Void, true, eRslt_ARM, { .vd = m_adr } }, /* ADR CC */
-  { "ALIGN", eCB_Void, false, eRslt_None, { .vd = c_align } }, /* ALIGN */
+  { "ALIGN", eCB_Void, false, eRslt_Data, { .vd = c_align } }, /* ALIGN */
   { "AND", eCB_Void, true, eRslt_ARM, { .vd = m_and } }, /* AND CC S */
   { "AREA", eCB_Void, false, eRslt_None, { .vd = c_area } }, /* AREA */
   { "ARM", eCB_Void, false, eRslt_None, { .vd = c_code32 } }, /* ARM/CODE32 */
@@ -126,7 +126,7 @@ static const decode_table_t oDecodeTable[] =
   { "CMF", eCB_Void, true, eRslt_ARM, { .vd = m_cmf } }, /* CMF CC or CMFE CC */
   { "CMN", eCB_Void, true, eRslt_ARM, { .vd = m_cmn } }, /* CMN CC SP */
   { "CMP", eCB_Void, true, eRslt_ARM, { .vd = m_cmp } }, /* CMP CC SP */
-  { "CN", eCB_Symbol, false, eRslt_ARM, { .sym = c_cn } }, /* CN */
+  { "CN", eCB_Symbol, false, eRslt_None, { .sym = c_cn } }, /* CN */
   { "CNF", eCB_Void, true, eRslt_ARM, { .vd = m_cnf } }, /* CNF CC or CNFE CC */
   { "CODE16", eCB_Void, false, eRslt_None, { .vd = c_code16 } }, /* CODE16 */
   { "CODE32", eCB_Void, false, eRslt_None, { .vd = c_code32 } }, /* ARM/CODE32 */
@@ -160,7 +160,7 @@ static const decode_table_t oDecodeTable[] =
   { "FIX", eCB_Void, true, eRslt_ARM, { .vd = m_fix } }, /* FIX CC [P] R */
   { "FLT", eCB_Void, true, eRslt_ARM, { .vd = m_flt } }, /* FLT CC P R */
   { "FML", eCB_Void, true, eRslt_ARM, { .vd = m_fml } }, /* FML CC P R */
-  { "FN", eCB_Symbol, false, eRslt_ARM, { .sym = c_fn } }, /* FN */
+  { "FN", eCB_Symbol, false, eRslt_None, { .sym = c_fn } }, /* FN */
   { "FRAME", eCB_Void, false, eRslt_None, { .vd = c_frame } }, /* FRAME */
   { "FRD", eCB_Void, true, eRslt_ARM, { .vd = m_frd } }, /* FRD CC P R */
   { "FUNCTION", eCB_Void, false, eRslt_None, { .vd = c_function } }, /* FUNCTION / PROC */
@@ -237,6 +237,7 @@ static const decode_table_t oDecodeTable[] =
   { "RFC", eCB_Void, true, eRslt_ARM, { .vd = m_rfc } }, /* RFC CC */
   { "RFE", eCB_Void, true, eRslt_ARM, { .vd = m_rfe } }, /* RFE MODE */
   { "RFS", eCB_Void, true, eRslt_ARM, { .vd = m_rfs } }, /* RFS CC */
+  /* FIXME: RLIST */
   { "RMF", eCB_Void, true, eRslt_ARM, { .vd = m_rmf } }, /* RMF CC P R */
   { "RN", eCB_Symbol, false, eRslt_None, { .sym = c_rn } }, /* RN */
   { "RND", eCB_Void, true, eRslt_ARM, { .vd = m_rnd } }, /* RND CC P R */
@@ -363,7 +364,7 @@ decode (const Lex *label)
   /* Deal with empty line quickly.  */
   if (Input_IsEolOrCommentStart ())
     {
-      ASM_DefineLabel (label, areaCurrentSymbol->value.Data.Int.i);
+      ASM_DefineLabel (label, areaCurrentSymbol->area.info->curIdx);
       return;
     }
 
@@ -372,9 +373,8 @@ decode (const Lex *label)
   /* Locate mnemonic entry in decode table.  */
   size_t low = 0;
   size_t high = DECODE_ENTRIES - 1;
-  size_t charsMatched = 0;
   size_t indexFound = SIZE_MAX;
-  while (1)
+  for (size_t charsMatched = 0; /* */; ++charsMatched)
     {
       unsigned char c = (unsigned char)inputGet ();
       assert (c != 0);
@@ -421,30 +421,44 @@ decode (const Lex *label)
       if (oDecodeTable[low].mnemonic[charsMatched + 1] == '\0'
           && oDecodeTable[low].part_mnemonic)
 	{
-	  /* E.g. input "SUB" matching "SUB*" and "SUBT".  First try "SUBT"
-	     and then fall back on the 'wildcard'.  */
+	  /* For sure we have a match, but try to match more mnemonic
+	     characters.  E.g. input "SUBT" with charMatched 2 is matching
+	     "SUB*" and "SUBT".  First try "SUBT" and then fall back on the
+	     'wildcard' (part_mnemonic being true).  */
 	  while (memcmp (Input_GetMark (), &oDecodeTable[high].mnemonic[charsMatched + 1], strlen (&oDecodeTable[high].mnemonic[charsMatched + 1])))
 	    --high;
+	  assert (low <= high);
+	  /* charsMatched += strlen (&oDecodeTable[high].mnemonic[charsMatched + 1]); */
 	  inputSkipN (strlen (&oDecodeTable[high].mnemonic[charsMatched + 1]));
 	  indexFound = high;
 	}
       else
 	{
-          bool moreMatchingIsNeeded = oDecodeTable[high].mnemonic[charsMatched + 1] != '\0';
           bool moreMatchingIsPossible = !Input_IsEolOrCommentStart ()
 					  && !isspace ((unsigned char)inputLook ());
-          if (moreMatchingIsNeeded && moreMatchingIsPossible)
+	  if (!moreMatchingIsPossible)
 	    {
-	      ++charsMatched;
+	      if (oDecodeTable[low].mnemonic[charsMatched + 1] == '\0')
+		{
+		  /* We have a full match.  E.g. we have "END" for low -> "END"
+		     and high -> "ENDIF".  */
+		  indexFound = low;
+		}
+	      else
+		{
+		  /* No match.  E.g. we have "INC" for low -> "INCBIN" and
+		     high -> "INCLUDE".  */
+		}
+	    }
+	  else if (oDecodeTable[high].mnemonic[charsMatched + 1] != '\0')
+	    {
 	      continue;
 	    }
-	  if (moreMatchingIsNeeded && !moreMatchingIsPossible && low < high)
-	    indexFound = low;
-          if (!moreMatchingIsNeeded && !moreMatchingIsPossible)
+	  else
 	    {
-	      /* We have a full match (it must be unique).  */
+	      /* No match.  E.g. we have processed "FIX" of "FIXIT" and low
+	         and high -> "FIX".  */
 	      assert (low == high);
-	      indexFound = high;
 	    }
 	}
       break;
@@ -465,7 +479,7 @@ decode (const Lex *label)
 			  : oDecodeTable[indexFound].result == eRslt_Data ? eData
 			  : eThumb);
 
-      const int startOffset = areaCurrentSymbol ? areaCurrentSymbol->value.Data.Int.i : 0;
+      const int startOffset = areaCurrentSymbol ? areaCurrentSymbol->area.info->curIdx : 0;
       Value startStorage =
 	{
 	  .Tag = ValueIllegal
@@ -477,7 +491,7 @@ decode (const Lex *label)
 	{
 	  case eCB_Void:
 	    {
-	      int offset = areaCurrentSymbol->value.Data.Int.i;
+	      int offset = areaCurrentSymbol->area.info->curIdx;
 	      tryAsMacro = oDecodeTable[indexFound].parse_opcode.vd ();
 	      /* Define the label *after* the mnemonic implementation but
 	         with the current offset *before* processing the mnemonic.  */
@@ -501,7 +515,7 @@ decode (const Lex *label)
 
 	  case eCB_Symbol:
 	    {
-	      Symbol *symbol = label->tag == LexId ? symbolAdd (label) : NULL;
+	      Symbol *symbol = label->tag == LexId ? symbolGet (label) : NULL;
 	      tryAsMacro = oDecodeTable[indexFound].parse_opcode.sym (symbol);
 	      /* We don't want to define a label based on this symbol.  */
 	      labelSymbol = NULL;
@@ -529,12 +543,12 @@ decode (const Lex *label)
       /* Determine the code size associated with the label on this line (if any).  */
       if (labelSymbol != NULL)
         {
-          assert (labelSymbol->codeSize == 0);
+	  size_t codeSize;
           /* Either we have an increase in code/data in our current area, either
              we have an increase in storage map, either non of the previous (like
 	     with "<lbl> * <value>" input).  */
-	  if (areaCurrentSymbol->value.Data.Int.i - startOffset != 0)
-	    labelSymbol->codeSize = areaCurrentSymbol->value.Data.Int.i - startOffset;
+	  if (areaCurrentSymbol->area.info->curIdx - startOffset != 0)
+	    codeSize = areaCurrentSymbol->area.info->curIdx - startOffset;
 	  else
 	    {
 	      codeInit ();
@@ -543,11 +557,13 @@ decode (const Lex *label)
 	      codeOperator (Op_sub);
 	      const Value *value = codeEval (ValueInt, NULL);
 	      if (value->Tag == ValueInt)
-		labelSymbol->codeSize = value->Data.Int.i;
+		codeSize = value->Data.Int.i;
 	      else
 		error (ErrorError, "Failed to determine label size");
 	    }
-        }
+	  assert ((gASM_Phase == ePassOne && labelSymbol->codeSize == 0) || (gASM_Phase == ePassTwo && labelSymbol->codeSize == codeSize));
+	  labelSymbol->codeSize = codeSize;
+	}
 
       valueFree (&startStorage);
     }
