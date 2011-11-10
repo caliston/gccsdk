@@ -1,8 +1,8 @@
 Index: libgcc/unwind-dw2.c
 ===================================================================
---- libgcc/unwind-dw2.c	(revision 177604)
+--- libgcc/unwind-dw2.c	(revision 180839)
 +++ libgcc/unwind-dw2.c	(working copy)
-@@ -97,6 +97,12 @@
+@@ -98,6 +98,12 @@
  #define ASSUME_EXTENDED_UNWIND_CONTEXT 0
  #endif
  
@@ -15,7 +15,7 @@ Index: libgcc/unwind-dw2.c
  /* This is the register and unwind state for a particular frame.  This
     provides the information necessary to unwind up past a frame and return
     to its caller.  */
-@@ -1436,8 +1442,26 @@
+@@ -1437,8 +1443,26 @@
  static void
  uw_update_context (struct _Unwind_Context *context, _Unwind_FrameState *fs)
  {
@@ -42,7 +42,7 @@ Index: libgcc/unwind-dw2.c
    /* In general this unwinder doesn't make any distinction between
       undefined and same_value rule.  Call-saved registers are assumed
       to have same_value rule by default and explicit undefined
-@@ -1454,6 +1478,7 @@
+@@ -1455,6 +1479,7 @@
         can change from frame to frame.  */
      context->ra = __builtin_extract_return_addr
        (_Unwind_GetPtr (context, fs->retaddr_column));
@@ -50,7 +50,7 @@ Index: libgcc/unwind-dw2.c
  }
  
  static void
-@@ -1549,15 +1574,43 @@
+@@ -1550,15 +1575,43 @@
     macro because __builtin_eh_return must be invoked in the context of
     our caller.  */
  

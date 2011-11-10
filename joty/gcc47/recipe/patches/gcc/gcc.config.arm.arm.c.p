@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.c
 ===================================================================
---- gcc/config/arm/arm.c	(revision 180308)
+--- gcc/config/arm/arm.c	(revision 181109)
 +++ gcc/config/arm/arm.c	(working copy)
 @@ -128,6 +128,8 @@
  #if TARGET_DLLIMPORT_DECL_ATTRIBUTES
@@ -77,6 +77,15 @@ Index: gcc/config/arm/arm.c
    if (TARGET_AAPCS_BASED)
      {
        if (arm_abi == ARM_ABI_IWMMXT)
+@@ -1822,7 +1867,7 @@
+       if (arm_float_abi == ARM_FLOAT_ABI_HARD && TARGET_VFP)
+ 	sorry ("-mfloat-abi=hard and VFP");
+ 
+-      if (arm_abi == ARM_ABI_APCS)
++      if (arm_abi == ARM_ABI_APCS || arm_abi == ARM_ABI_APCS32)
+ 	arm_pcs_default = ARM_PCS_APCS;
+       else
+ 	arm_pcs_default = ARM_PCS_ATPCS;
 @@ -1875,6 +1920,12 @@
        flag_pic = 0;
      }
@@ -975,7 +984,7 @@ Index: gcc/config/arm/arm.c
      {
        emit_insn (gen_movsi (stack_pointer_rtx, hard_frame_pointer_rtx));
        amount = offsets->locals_base - offsets->saved_regs;
-@@ -23311,7 +23747,7 @@
+@@ -23313,7 +23749,7 @@
      emit_move_insn (gen_rtx_REG (Pmode, LR_REGNUM), source);
    else
      {
@@ -984,7 +993,7 @@ Index: gcc/config/arm/arm.c
  	addr = plus_constant(hard_frame_pointer_rtx, -4);
        else
  	{
-@@ -23354,7 +23790,7 @@
+@@ -23356,7 +23792,7 @@
      {
        limit = 1024;
        /* Find the saved regs.  */
@@ -993,7 +1002,7 @@ Index: gcc/config/arm/arm.c
  	{
  	  delta = offsets->soft_frame - offsets->saved_args;
  	  reg = THUMB_HARD_FRAME_POINTER_REGNUM;
-@@ -23504,7 +23940,92 @@
+@@ -23506,7 +23942,92 @@
    return mode == SImode ? 255 : 0;
  }
  
@@ -1086,7 +1095,7 @@ Index: gcc/config/arm/arm.c
  /* Map internal gcc register numbers to DWARF2 register numbers.  */
  
  unsigned int
-@@ -23518,6 +24039,9 @@
+@@ -23520,6 +24041,9 @@
    if (IS_FPA_REGNUM (regno))
      return (TARGET_AAPCS_BASED ? 96 : 16) + regno - FIRST_FPA_REGNUM;
  
@@ -1096,7 +1105,7 @@ Index: gcc/config/arm/arm.c
    if (IS_VFP_REGNUM (regno))
      {
        /* See comment in arm_dwarf_register_span.  */
-@@ -23533,7 +24057,13 @@
+@@ -23535,7 +24059,13 @@
    if (IS_IWMMXT_REGNUM (regno))
      return 112 + regno - FIRST_IWMMXT_REGNUM;
  
@@ -1111,7 +1120,7 @@ Index: gcc/config/arm/arm.c
  }
  
  /* Dwarf models VFPv3 registers as 32 64-bit registers.
-@@ -23710,6 +24240,31 @@
+@@ -23712,6 +24242,31 @@
        break;
  
      case REG:
@@ -1143,7 +1152,7 @@ Index: gcc/config/arm/arm.c
        if (REGNO (e0) == SP_REGNUM)
  	{
  	  /* A stack increment.  */
-@@ -23848,6 +24403,13 @@
+@@ -23850,6 +24405,13 @@
        arm_unwind_emit_sequence (asm_out_file, pat);
        break;
  
@@ -1157,7 +1166,7 @@ Index: gcc/config/arm/arm.c
      default:
        abort();
      }
-@@ -24249,6 +24811,10 @@
+@@ -24251,6 +24813,10 @@
  bool
  arm_frame_pointer_required (void)
  {
@@ -1168,7 +1177,7 @@ Index: gcc/config/arm/arm.c
    return (cfun->has_nonlocal_label
            || SUBTARGET_FRAME_POINTER_REQUIRED
            || (TARGET_ARM && TARGET_APCS_FRAME && ! leaf_function_p ()));
-@@ -24903,10 +25469,10 @@
+@@ -24905,10 +25471,10 @@
        fixed_regs[PIC_OFFSET_TABLE_REGNUM] = 1;
        call_used_regs[PIC_OFFSET_TABLE_REGNUM] = 1;
      }

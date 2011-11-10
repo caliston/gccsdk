@@ -1,6 +1,6 @@
 Index: gcc/gcc.c
 ===================================================================
---- gcc/gcc.c	(revision 177412)
+--- gcc/gcc.c	(revision 180839)
 +++ gcc/gcc.c	(working copy)
 @@ -249,7 +249,7 @@
  static void init_gcc_specs (struct obstack *, const char *, const char *,
@@ -38,7 +38,7 @@ Index: gcc/gcc.c
  }
  #endif
  
-@@ -3492,7 +3496,7 @@
+@@ -3482,7 +3486,7 @@
  
      case OPT_o:
        have_o = 1;
@@ -47,7 +47,7 @@ Index: gcc/gcc.c
        arg = convert_filename (arg, ! have_c, 0);
  #endif
        /* Save the output name in case -save-temps=obj was used.  */
-@@ -3792,7 +3796,7 @@
+@@ -3781,7 +3785,7 @@
            char *fname;
  	  long offset;
  	  int consumed;

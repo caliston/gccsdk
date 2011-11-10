@@ -1,8 +1,8 @@
 Index: Makefile.tpl
 ===================================================================
---- Makefile.tpl	(revision 176569)
+--- Makefile.tpl	(revision 180839)
 +++ Makefile.tpl	(working copy)
-@@ -1848,7 +1848,7 @@
+@@ -1845,7 +1845,7 @@
  @endif gcc-no-bootstrap
  
  [+ FOR target_modules +][+ IF (not (lang-dep "no_c")) +]

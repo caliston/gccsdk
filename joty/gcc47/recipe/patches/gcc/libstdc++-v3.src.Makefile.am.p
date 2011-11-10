@@ -1,6 +1,6 @@
 Index: libstdc++-v3/src/Makefile.am
 ===================================================================
---- libstdc++-v3/src/Makefile.am	(revision 177068)
+--- libstdc++-v3/src/Makefile.am	(revision 181109)
 +++ libstdc++-v3/src/Makefile.am	(working copy)
 @@ -27,6 +27,22 @@
  # Cross compiler support.
@@ -82,7 +82,7 @@ Index: libstdc++-v3/src/Makefile.am
 +
  # Sources present in the src directory, always present.
  sources = \
- 	atomic.cc \
+ 	bitmap_allocator.cc \
 @@ -239,20 +306,20 @@
  	future.cc \
  	valarray.cc \

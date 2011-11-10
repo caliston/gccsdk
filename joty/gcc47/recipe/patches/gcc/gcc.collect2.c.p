@@ -1,6 +1,6 @@
 Index: gcc/collect2.c
 ===================================================================
---- gcc/collect2.c	(revision 176816)
+--- gcc/collect2.c	(revision 180839)
 +++ gcc/collect2.c	(working copy)
 @@ -50,6 +50,11 @@
  #include "intl.h"
@@ -134,7 +134,7 @@ Index: gcc/collect2.c
  
  #ifdef CROSS_DIRECTORY_STRUCTURE
    /* If we look for a program in the compiler directories, we just use
-@@ -1315,6 +1412,12 @@
+@@ -1318,6 +1415,12 @@
    if (strip_file_name == 0)
      strip_file_name = find_a_file (&path, full_strip_suffix);
  
@@ -147,7 +147,7 @@ Index: gcc/collect2.c
    /* Determine the full path name of the C compiler to use.  */
    c_file_name = getenv ("COLLECT_GCC");
    if (c_file_name == 0)
-@@ -1377,6 +1480,12 @@
+@@ -1380,6 +1483,12 @@
  	*c_ptr++ = xstrdup (q);
        if (strcmp (q, "-shared") == 0)
  	shared_obj = 1;
@@ -160,7 +160,7 @@ Index: gcc/collect2.c
        if (*q == '-' && q[1] == 'B')
  	{
  	  *c_ptr++ = xstrdup (q);
-@@ -1662,6 +1771,10 @@
+@@ -1716,6 +1825,10 @@
  #endif
        fprintf (stderr, "strip_file_name     = %s\n",
  	       (strip_file_name ? strip_file_name : "not found"));
@@ -171,7 +171,7 @@ Index: gcc/collect2.c
        fprintf (stderr, "c_file              = %s\n",
  	       (c_file ? c_file : "not found"));
        fprintf (stderr, "o_file              = %s\n",
-@@ -1721,6 +1834,11 @@
+@@ -1775,6 +1888,11 @@
  
  	maybe_unlink (c_file);
  	maybe_unlink (o_file);
@@ -183,7 +183,7 @@ Index: gcc/collect2.c
  	return 0;
        }
    }
-@@ -1793,6 +1911,11 @@
+@@ -1847,6 +1965,11 @@
  
        maybe_unlink (c_file);
        maybe_unlink (o_file);
@@ -195,7 +195,7 @@ Index: gcc/collect2.c
        return 0;
      }
  
-@@ -1893,6 +2016,10 @@
+@@ -1947,6 +2070,10 @@
    maybe_unlink (export_file);
  #endif
  
