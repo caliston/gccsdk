@@ -113,23 +113,24 @@ Macro_Call (const Macro *m, const Lex *label)
   const char *args[MACRO_ARG_LIMIT];
 
   int marg = 0;
-  if (label->tag == LexId)
+  if (label->tag == LexId || label->tag == LexLocalLabel)
     {
       if (m->labelarg)
 	{
-	  const char *c = label->Data.Id.str;
-	  size_t len;
-	  for (len = (c[0] == '#') ? 1 : 0; isalnum (c[len]) || c[len] == '_'; ++len)
-	    /* */;
-	  if ((args[marg++] = strndup (label->Data.Id.str, len)) == NULL)
+	  const char *lblP = label->tag == LexId ? label->Data.Id.str : label->Data.LocalLabel.str;
+	  size_t lblSize = label->tag == LexId ? label->Data.Id.len : label->Data.LocalLabel.len;
+	  if ((args[marg++] = strndup (lblP, lblSize)) == NULL)
 	    errorOutOfMem();
 	}
       else
-	error (ErrorWarning, "Label argument is ignored by macro %s", m->name);
+	{
+	  error (ErrorWarning, "Label argument is ignored by macro %s", m->name);
+	  errorLine (m->file, m->startline, ErrorWarning, "note: Marco %s was defined here", m->name);
+	}
     }
   else if (m->labelarg)
     args[marg++] = NULL; /* Null label argument */
-
+    
   skipblanks ();
   bool tryEmptyParam = false;
   while (tryEmptyParam || !Input_IsEolOrCommentStart ())
@@ -259,7 +260,7 @@ Macro_Find (const char *name, size_t len)
  * is read.
  */
 static bool
-c_mend (void)
+Macro_IsMENDAtInput (void)
 {
   if (!isspace ((unsigned char)inputLook ()))
     return false;
@@ -398,7 +399,7 @@ c_macro (void)
 	goto noMEND;
 
       const char * const inputMark = Input_GetMark ();
-      if (c_mend ())
+      if (Macro_IsMENDAtInput ())
 	break;
       Input_RollBackToMark (inputMark);
 
@@ -432,16 +433,14 @@ c_macro (void)
 		errorOutOfMem ();
 	      buf = tmp;
 	    }
-	  if (c != '\0')
-	    buf[bufptr++] = c;
-	  else
+	  if (c == '\0')
 	    {
 	      buf[bufptr++] = '\n';
 	      break;
 	    }
+	  buf[bufptr++] = c;
 	}
-    }
-  while (1);
+    } while (1);
   buf[bufptr] = '\0';
   m.file = FS_GetCurFileName ();
   m.buf = buf;
@@ -465,7 +464,7 @@ noMEND:
 	  break;
 	}
     }
-  while (!c_mend ());
+  while (!Macro_IsMENDAtInput ());
 
   free (buf);
   free ((void *)m.name);
@@ -485,5 +484,16 @@ c_mexit (void)
     error (ErrorError, "MEXIT found outside a macro");
   else
     FS_PopPObject (true);
+  return false;
+}
+
+
+/**
+ * Implements MEND (but without MACRO start).
+ */
+bool
+c_mend (void)
+{
+  error (ErrorError, "MEND found outside a macro");
   return false;
 }

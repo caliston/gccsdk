@@ -500,14 +500,14 @@ Input_ArgSub (bool warnOnVarSubFail)
 	{
 	  case ';':
 	    { /* Comment follows; just copy it all.  */
-	      size_t len = strlen (inP) + 1;
+	      size_t len = strlen (inP);
 	      if (outOffset + len >= MAX_LINE)
 		len = MAX_LINE - outOffset - len;
 	      memcpy (input_buff + outOffset, inP, len);
 	      outOffset += len;
 	      inP += len;
+	      break;
 	    }
-	    break;
 
 	  case '<': /* Characters enclosed between <...>.  */
 	    ++inP;
@@ -586,7 +586,8 @@ Input_ArgSub (bool warnOnVarSubFail)
       return false;
     }
 
-  input_buff[outOffset] = 0;
+  if (outOffset < sizeof (input_buff))
+    input_buff[outOffset] = 0;
   return true;
 }
 
@@ -687,6 +688,29 @@ Input_IsEndOfKeyword (void)
 {
   unsigned char c = *input_pos;
   return c == '\0' || isspace (c) || c == ';';
+}
+
+
+/**
+ * Try to read a defining local label.
+ */
+const char *
+Input_LocalLabel (size_t *ilen)
+{
+  if (!isdigit (*input_pos))
+    {
+      *ilen = 0;
+      return NULL;
+    }
+  const char * const rslt = input_pos;
+  /* Parse one or more digits.  */
+  for (/* */; *input_pos && isdigit ((unsigned char)*input_pos); ++input_pos)
+    /* */;
+  /* Parse routine name (optional).  */
+  for (/* */; *input_pos && (isalnum ((unsigned char)*input_pos) || *input_pos == '_'); ++input_pos)
+    /* */;
+  *ilen = input_pos - rslt;
+  return rslt;
 }
 
 

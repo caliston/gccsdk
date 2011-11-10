@@ -100,10 +100,10 @@ ASM_DoPass (const char *asmFile)
 	    fileName += len - 12;
 	  printf("%.*s : %d : 0x%x : <%s>\n", (int)len, fileName, FS_GetCurLineNumber (), areaCurrentSymbol->area.info->curIdx, inputLine ());
 #endif
-	    /* Read label (in case there is one).  */
-	    Lex label;
+	  /* Read label (in case there is one).  */
+	  Lex label;
 	  if (!isspace ((unsigned char)inputLook ()))
-	    label = Lex_GetDefiningLabel (false);
+	    label = Lex_GetDefiningLabel ();
 	  else
 	    label.tag = LexNone;
 	  skipblanks ();
@@ -113,7 +113,7 @@ ASM_DoPass (const char *asmFile)
 	  printf ("\n");
 #endif
 
-	    decode (&label);
+	  decode (&label);
 	}
     }
   else
@@ -156,8 +156,20 @@ ASM_Assemble (const char *asmFile)
 Symbol *
 ASM_DefineLabel (const Lex *label, int offset)
 {
-  if (label->tag != LexId)
+  if (label->tag == LexNone)
     return NULL;
+  assert (label->tag == LexId || label->tag == LexLocalLabel);
+
+  /* Turn LexLocalLabel into LexId (assuming no errors).  */
+  Lex localLabel;
+  if (label->tag == LexLocalLabel)
+    {
+      localLabel = Lex_DefineLocalLabel (label);
+      if (localLabel.tag == LexNone)
+	return NULL;
+      assert (localLabel.tag == LexId);
+      label = &localLabel;
+    }
 
   Value value;
   unsigned symbolType;
@@ -165,27 +177,18 @@ ASM_DefineLabel (const Lex *label, int offset)
     {
       /* Define label as "ValueAddr AreaBaseReg, #<given area offset>".  */
       value = Value_Addr (Area_GetBaseReg (areaCurrentSymbol->area.info), offset);
-      symbolType = SYMBOL_DEFINED;
+      symbolType = 0;
     }
   else if (areaCurrentSymbol->area.info->type & AREA_ABS)
     {
       value = Value_Int (Area_GetBaseAddress (areaCurrentSymbol) + offset);
-      symbolType = SYMBOL_DEFINED | SYMBOL_ABSOLUTE;
+      symbolType = SYMBOL_ABSOLUTE;
     }
   else
     {
       /* Define label as "ValueSymbol(current AREA) + <given area offset>".  */
-      const Code values[] =
-	{
-	    { .Tag = CodeValue,
-	      .Data.value = { .Tag = ValueSymbol, .Data.Symbol = { .factor = 1, .symbol = areaCurrentSymbol } } },
-	    { .Tag = CodeValue,
-	      .Data.value = { .Tag = ValueInt, .Data.Int = { .i = offset } } },
-	    { .Tag = CodeOperator,
-	      .Data.op = Op_add }
-	};
-      value = Value_Code (sizeof (values)/sizeof (values[0]), values);
-      symbolType = SYMBOL_DEFINED;
+      value = Value_Symbol (areaCurrentSymbol, 1, offset);
+      symbolType = 0;
     }
 
   Symbol *symbol = symbolGet (label);

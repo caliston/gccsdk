@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "area.h"
 #include "asm.h"
 #include "code.h"
 #include "error.h"
@@ -41,42 +42,11 @@
 static int
 ememcmp (const Value *lv, const Value *rv)
 {
-  const int lvl = lv->Data.String.len;
-  const int rvl = rv->Data.String.len;
+  const size_t lvl = lv->Data.String.len;
+  const size_t rvl = rv->Data.String.len;
   int a = memcmp (lv->Data.String.s, rv->Data.String.s, lvl < rvl ? lvl : rvl);
-  return a ? a : lvl - rvl;
+  return a ? a : (int)(lvl - rvl);
 }
-
-#define STRINGIFY(OP)	#OP
-/* Core implementation for '<', '<=', '>', '>=', '==' and '!='.
-   Works for ValueFloat, ValueString, ValueInt, ValueAddr.  */
-#define COMPARE(OP) \
-  do \
-    { \
-      if (lvalue->Tag == ValueFloat && rvalue->Tag == ValueFloat) \
-        lvalue->Data.Bool.b = lvalue->Data.Float.f OP rvalue->Data.Float.f; \
-      else if (lvalue->Tag == ValueString && rvalue->Tag == ValueString) \
-        lvalue->Data.Bool.b = ememcmp (lvalue, rvalue) OP 0; \
-      else if (lvalue->Tag == ValueInt && rvalue->Tag == ValueInt) \
-        { \
-	  /* Comparing integers happens *unsigned* ! */ \
-          lvalue->Data.Bool.b = (uint32_t)lvalue->Data.Int.i OP (uint32_t)rvalue->Data.Int.i; \
-        } \
-      else if (lvalue->Tag == ValueAddr && rvalue->Tag == ValueAddr) \
-        { \
-	  /* First compare on base register, then its index.  */ \
-	  if (lvalue->Data.Addr.r != rvalue->Data.Addr.r) \
-	    lvalue->Data.Bool.b = lvalue->Data.Addr.r OP rvalue->Data.Addr.r; \
-	  else \
-	    lvalue->Data.Bool.b = lvalue->Data.Addr.i OP rvalue->Data.Addr.i; \
-        } \
-      else \
-        { \
-	  error (ErrorError, "Bad operand types for %s", STRINGIFY(OP)); \
-          return false; \
-        } \
-      lvalue->Tag = ValueBool; \
-    } while (0)
 
 /**
  * Get integer value of a ValueInt and one character ValueString object.
@@ -93,7 +63,7 @@ GetInt (const Value *val, uint32_t *i)
       case ValueString:
 	if (val->Data.String.len == 1)
 	  {
-	    *i = (uint32_t)val->Data.String.s[0];
+	    *i = (uint8_t)val->Data.String.s[0];
 	    return true;
 	  }
 	/* Fall through */
@@ -102,6 +72,39 @@ GetInt (const Value *val, uint32_t *i)
     }
   return false;
 }
+
+#define STRINGIFY(OP)	#OP
+/* Core implementation for '<', '<=', '>', '>=', '==' and '!='.
+   Works for ValueFloat, ValueString, ValueInt, ValueAddr.  */
+#define COMPARE(OP) \
+  do \
+    { \
+      uint32_t lint, rint;\
+      if (lvalue->Tag == ValueFloat && rvalue->Tag == ValueFloat) \
+        lvalue->Data.Bool.b = lvalue->Data.Float.f OP rvalue->Data.Float.f; \
+      else if (lvalue->Tag == ValueString && rvalue->Tag == ValueString) \
+        lvalue->Data.Bool.b = ememcmp (lvalue, rvalue) OP 0; \
+      else if (GetInt (lvalue, &lint) && GetInt (rvalue, &rint)) \
+        { \
+	  /* Comparing integers happens *unsigned* ! */ \
+          lvalue->Data.Bool.b = lint OP rint; \
+        } \
+      else if (lvalue->Tag == ValueAddr && rvalue->Tag == ValueAddr) \
+        { \
+	  /* First compare on base register, then its index.  */ \
+	  if (lvalue->Data.Addr.r != rvalue->Data.Addr.r) \
+	    lvalue->Data.Bool.b = lvalue->Data.Addr.r OP rvalue->Data.Addr.r; \
+	  else \
+	    lvalue->Data.Bool.b = lvalue->Data.Addr.i OP rvalue->Data.Addr.i; \
+        } \
+      else \
+        { \
+	  if (gASM_Phase != ePassOne) \
+	    error (ErrorError, "Bad operand types for %s", STRINGIFY(OP)); \
+          return false; \
+        } \
+      lvalue->Tag = ValueBool; \
+    } while (0)
 
 /**
  * Do <lvalue> = <lvalue> <op> <rvalue>
@@ -119,18 +122,25 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	  /* ValueAddr * ValueAddr does not make sense.  */
 	  uint32_t lval, rval;
 	  bool l_isint = GetInt (lvalue, &lval);
-	  bool r_isint = GetInt (rvalue, &rval);
-	  /* Support ValueInt * ValueAddr and ValueAddr * ValueInt.  */
-	  if (lvalue->Tag == ValueAddr && r_isint)
+	  bool r_isint = GetInt (rvalue, &rval);	 
+	  if ((lvalue->Tag == ValueAddr && r_isint)
+	      || (l_isint && rvalue->Tag == ValueAddr))
 	    {
-	      /* lvalue->Tag == ValueAddr; */
-	      lvalue->Data.Addr.i *= (signed)rval;
+	      /* ValueInt * ValueAddr and ValueAddr * ValueInt.  */
+	      signed val = r_isint ? (signed)rval : (signed)lval;
+	      if (!r_isint)
+		*lvalue = *rvalue;
+	      lvalue->Data.Addr.i *= val;
 	    }
-	  else if (l_isint && rvalue->Tag == ValueAddr)
+	  else if ((lvalue->Tag == ValueSymbol && r_isint)
+		   || (l_isint && rvalue->Tag == ValueSymbol))
 	    {
-	      lvalue->Tag = ValueAddr;
-	      lvalue->Data.Addr.i = (signed)lval * (signed)rvalue->Data.Addr.i;
-	      lvalue->Data.Addr.r = rvalue->Data.Addr.r;
+	      /* ValueInt * ValueSymbol and ValueSymbol * ValueInt.  */
+	      signed val = r_isint ? (signed)rval : (signed)lval;
+	      if (!r_isint)
+		*lvalue = *rvalue;
+	      lvalue->Data.Symbol.factor *= val;
+	      lvalue->Data.Symbol.offset *= val;
 	    }
 	  else if (l_isint && r_isint)
 	    {
@@ -144,7 +154,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    }
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", "multiplication");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", "multiplication");
 	      return false;
 	    }
 	  break;
@@ -158,16 +169,19 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	  if ((!divident_isint && lvalue->Tag != ValueFloat)
 	      || (!divisor_isint && rvalue->Tag != ValueFloat))
 	    {
-	      error (ErrorError, "Bad operand type for %s", "division");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", "division");
+	      return false;
+	    }
+	  double divisor_dbl = divisor_isint ? (double)(signed)divisor : rvalue->Data.Float.f;
+	  if (divisor_dbl == 0.)
+	    {
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Division by zero");
 	      return false;
 	    }
 	  if (divident_isint && divisor_isint)
 	    {
-	      if (divisor == 0)
-		{
-		  error (ErrorError, "Division by zero");
-		  return false;
-		}
 	      lvalue->Tag = ValueInt;
 	      lvalue->Data.Int.i = divident / divisor;
 	    }
@@ -175,12 +189,6 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 		   && (divisor_isint || rvalue->Tag == ValueFloat))
 	    {
 	      /* Floating point division.  */
-	      double divisor_dbl = divisor_isint ? (double)(signed)divisor : rvalue->Data.Float.f;
-	      if (divisor_dbl == 0.)
-		{
-		  error (ErrorError, "Division by zero");
-		  return false;
-		}
 	      double divident_dbl = divident_isint ? (double)(signed)divident : lvalue->Data.Float.f;
 	      lvalue->Tag = ValueFloat;
 	      lvalue->Data.Float.f = divident_dbl / divisor_dbl;
@@ -195,7 +203,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    {
 	      if (modulus == 0)
 		{
-		  error (ErrorError, "Division by zero");
+		  if (gASM_Phase != ePassOne)
+		    error (ErrorError, "Division by zero");
 		  return false;
 		}
 
@@ -204,7 +213,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    }
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", "modulo");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", "modulo");
 	      return false;
 	    }
 	  break;
@@ -213,9 +223,9 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
       case Op_add: /* + */
 	{
 	  Value rhs;
-	  /* Promotion for ValueFloat and ValueAddr.  */
-	  if ((rvalue->Tag == ValueFloat && lvalue->Tag != ValueFloat)
-	      || (rvalue->Tag == ValueAddr && lvalue->Tag != ValueAddr))
+	  /* Promotion for ValueFloat, ValueAddr and ValueSymbol.  */
+	  if (rvalue->Tag == ValueFloat || rvalue->Tag == ValueAddr
+	      || rvalue->Tag == ValueSymbol)
 	    {
 	      rhs = *lvalue;
 	      *lvalue = *rvalue;
@@ -227,20 +237,29 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	  bool l_isint = GetInt (lvalue, &lval);
 	  bool r_isint = GetInt (&rhs, &rval);
 
-	  if (lvalue->Tag == ValueAddr && rhs.Tag == ValueAddr)
+	  if (lvalue->Tag == ValueAddr && r_isint)
+	    lvalue->Data.Addr.i += rval; /* <addr> + <int> -> <addr> */
+	  else if (lvalue->Tag == ValueSymbol && rhs.Tag == ValueSymbol)
 	    {
-	      if (lvalue->Data.Addr.r != rhs.Data.Addr.r)
+	      if (lvalue->Data.Symbol.symbol != rhs.Data.Symbol.symbol)
 		{
-		  error (ErrorError, "Base registers are different in addition ([r%d, #x] + [r%d, #y])",
-		         lvalue->Data.Addr.r, rvalue->Data.Addr.r);
+		  if (gASM_Phase != ePassOne)
+		    error (ErrorError, "Two different symboles for addition %s with %s",
+			   lvalue->Data.Symbol.symbol->str, rhs.Data.Symbol.symbol->str);
 		  return false;
 		}
-	      /* <addr> + <addr> (same base reg) -> <addr> */
-	      /* FIXME: this is not consistent with Op_sub.  */
-	      lvalue->Data.Addr.i += rhs.Data.Addr.i;
+	      lvalue->Data.Symbol.factor += rhs.Data.Symbol.factor;
+	      lvalue->Data.Symbol.offset += rhs.Data.Symbol.offset;
+	      if (lvalue->Data.Symbol.factor == 0)
+		{
+		  lvalue->Tag = ValueInt;
+		  lvalue->Data.Int.i = lvalue->Data.Symbol.offset;
+		}
 	    }
-	  else if (lvalue->Tag == ValueAddr && r_isint)
-	    lvalue->Data.Addr.i += rval; /* <addr> + <int> -> <addr> */
+	  else if (lvalue->Tag == ValueSymbol && r_isint)
+	    {
+	      lvalue->Data.Symbol.offset += (signed)rval;
+	    }
 	  else if (l_isint && r_isint)
 	    {
 	      lvalue->Tag = ValueInt;
@@ -251,7 +270,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    lvalue->Data.Float.f += (r_isint ? (signed)rval : rhs.Data.Float.f); /* <float>/<signed int> + <float>/<signed/int> -> <float> */
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", "addition");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", "addition");
 	      return false;
 	    }
 	  break;
@@ -268,7 +288,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	  else if (lvalue->Tag == ValueFloat && r_isint)
 	    lvalue->Data.Float.f -= (signed)rval; /* <float> - <signed int> -> <float> */
 	  else if (l_isint && rvalue->Tag == ValueFloat)
-	    { /* <signed int> - <float> -> <float> */
+	    {
+	      /* <signed int> - <float> -> <float> */
 	      lvalue->Tag = ValueFloat;
 	      lvalue->Data.Float.f = (double)(signed)lval - rvalue->Data.Float.f;
 	    }
@@ -278,27 +299,48 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	      lvalue->Data.Int.i = lval - rval; /* <int> - <int> -> <int> */
 	    }
 	  else if (lvalue->Tag == ValueAddr && rvalue->Tag == ValueAddr)
-	    { /* <addr> - <addr> -> <int> */
+	    {
+	      /* <addr> - <addr> -> <int> */
 	      if (lvalue->Data.Addr.r != rvalue->Data.Addr.r)
 		{
-		  error (ErrorError, "Base registers are different in subtraction ([r%d, #x] - [r%d, #y])",
-			 lvalue->Data.Addr.r, rvalue->Data.Addr.r);
+		  if (gASM_Phase != ePassOne)
+		    error (ErrorError, "Base registers are different in subtraction ([r%d, #x] - [r%d, #y])",
+			   lvalue->Data.Addr.r, rvalue->Data.Addr.r);
 		  return false;
 		}
 	      lvalue->Tag = ValueInt;
 	      lvalue->Data.Int.i = lvalue->Data.Addr.i - rvalue->Data.Addr.i;
 	    }
 	  else if (lvalue->Tag == ValueAddr && r_isint)
-	    lvalue->Data.Addr.i -= (signed)rval; /* <addr> - <int> -> <addr> */
-	  else if (l_isint && rvalue->Tag == ValueAddr)
-	    { /* <int> - <addr> -> <addr> */
+	    {
+	      /* <addr> - <int> -> <addr> */
 	      lvalue->Tag = ValueAddr;
-	      lvalue->Data.Addr.i = (signed)lval - rvalue->Data.Addr.i;
-	      lvalue->Data.Addr.r = rvalue->Data.Addr.r;
+	      lvalue->Data.Addr.i -= (signed)rval;
+	    }
+	  else if ((lvalue->Tag == ValueSymbol || l_isint)
+	           && (rvalue->Tag == ValueSymbol || r_isint))
+	    {
+	      if (lvalue->Tag == ValueSymbol && rvalue->Tag == ValueSymbol
+	          && lvalue->Data.Symbol.symbol != rvalue->Data.Symbol.symbol)
+		{
+		  if (gASM_Phase != ePassOne)
+		    error (ErrorError, "Two different symboles for substraction %s with %s",
+			   lvalue->Data.Symbol.symbol->str, rvalue->Data.Symbol.symbol->str);
+		  return false;
+		}
+	      assert (!(l_isint && r_isint) && "Needs to be handled elsewhere");
+	      Symbol *symbol = (lvalue->Tag == ValueSymbol) ? lvalue->Data.Symbol.symbol : rvalue->Data.Symbol.symbol;
+	      int factor = (lvalue->Tag == ValueSymbol) ? lvalue->Data.Symbol.factor : 0;
+	      if (rvalue->Tag == ValueSymbol)
+		factor -= rvalue->Data.Symbol.factor;
+	      int offset = (lvalue->Tag == ValueSymbol) ? lvalue->Data.Symbol.offset : (signed)lval;
+	      offset -= (rvalue->Tag == ValueSymbol) ? rvalue->Data.Symbol.offset : (signed)rval;
+	      *lvalue = factor ? Value_Symbol (symbol, factor, offset) : Value_Int (offset);
 	    }
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", "subtraction");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", "subtraction");
 	      return false;
 	    }
 	  break;
@@ -308,7 +350,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	{
 	  if (lvalue->Tag != ValueString || rvalue->Tag != ValueString)
 	    {
-	      error (ErrorError, "Bad operand type for %s", "string concatenation");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", "string concatenation");
 	      return false;
 	    }
 	  char *c;
@@ -316,7 +359,7 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    errorOutOfMem();
 	  memcpy (c, lvalue->Data.String.s, lvalue->Data.String.len);
 	  memcpy (c + lvalue->Data.String.len,
-	    rvalue->Data.String.s, rvalue->Data.String.len);
+		  rvalue->Data.String.s, rvalue->Data.String.len);
 	  lvalue->Data.String.s = c;
 	  lvalue->Data.String.len += rvalue->Data.String.len;
 	  break;
@@ -336,7 +379,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    }
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", ":AND:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":AND:");
 	      return false;
 	    }
 	  break;
@@ -354,7 +398,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    }
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", ":OR:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":OR:");
 	      return false;
 	    }
 	  break;
@@ -372,7 +417,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    }
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", ":EOR:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":EOR:");
 	      return false;
 	    }
 	  break;
@@ -392,7 +438,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    }
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", ">>>");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ">>>");
 	      return false;
 	    }
 	  break;
@@ -409,7 +456,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    }
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", ">> or :SHR:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ">> or :SHR:");
 	      return false;
 	    }
 	  break;
@@ -426,7 +474,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    }
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", "<< or :SHR:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", "<< or :SHR:");
 	      return false;
 	    }
 	  break;
@@ -444,7 +493,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    }
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", ":ROR:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":ROR:");
 	      return false;
 	    }
 	  break;
@@ -462,7 +512,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	    }
 	  else
 	    {
-	      error (ErrorError, "Bad operand type for %s", ":ROL:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":ROL:");
 	      return false;
 	    }
 	  break;
@@ -518,7 +569,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	{
 	  if (lvalue->Tag != ValueBool || rvalue->Tag != ValueBool)
 	    {
-	      error (ErrorError, "Bad operand type for %s", ":LAND:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":LAND:");
 	      return false;
 	    }
 	  lvalue->Data.Bool.b = lvalue->Data.Bool.b && rvalue->Data.Bool.b;
@@ -529,7 +581,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	{
 	  if (lvalue->Tag != ValueBool || rvalue->Tag != ValueBool)
 	    {
-	      error (ErrorError, "Bad operand type for %s", ":LOR:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":LOR:");
 	      return false;
 	    }
 	  lvalue->Data.Bool.b = lvalue->Data.Bool.b || rvalue->Data.Bool.b;
@@ -540,7 +593,8 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	{
 	  if (lvalue->Tag != ValueBool || rvalue->Tag != ValueBool)
 	    {
-	      error (ErrorError, "Bad operand type for %s", ":LEOR:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":LEOR:");
 	      return false;
 	    }
 	  lvalue->Data.Bool.b = lvalue->Data.Bool.b ^ rvalue->Data.Bool.b;
@@ -551,13 +605,15 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	{
 	  if (lvalue->Tag != ValueString || rvalue->Tag != ValueInt)
 	    {
-	      error (ErrorError, "Bad operand type for %s", ":LEFT:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":LEFT:");
 	      return false;
 	    }
 	  if (rvalue->Data.Int.i < 0 || (size_t)rvalue->Data.Int.i > lvalue->Data.String.len)
 	    {
-	      error (ErrorError, "Wrong number of characters (%d) specified for :LEFT:",
-		     rvalue->Data.Int.i);
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Wrong number of characters (%d) specified for :LEFT:",
+		       rvalue->Data.Int.i);
 	      return false;
 	    }
 	  lvalue->Data.String.len = rvalue->Data.Int.i;
@@ -568,13 +624,15 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	{
 	  if (lvalue->Tag != ValueString || rvalue->Tag != ValueInt)
 	    {
-	      error (ErrorError, "Bad operand type for %s", ":RIGHT:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":RIGHT:");
 	      return false;
 	    }
 	  if (rvalue->Data.Int.i < 0 || (size_t)rvalue->Data.Int.i > lvalue->Data.String.len)
 	    {
-	      error (ErrorError, "Wrong number of characters (%d) specified for :RIGHT:",
-		     rvalue->Data.Int.i);
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Wrong number of characters (%d) specified for :RIGHT:",
+		       rvalue->Data.Int.i);
 	      return false;
 	    }
 	  char *c;
@@ -583,6 +641,7 @@ evalBinop (Operator op, Value * restrict lvalue, const Value * restrict rvalue)
 	  memcpy (c,
 		  lvalue->Data.String.s + lvalue->Data.String.len - rvalue->Data.Int.i,
 		  rvalue->Data.Int.i);
+	  /* free ((void *)lvalue->Data.String.s); FIXME: enable this ? */
 	  lvalue->Data.String.s = c;
 	  lvalue->Data.String.len = rvalue->Data.Int.i;
 	  break;
@@ -621,15 +680,19 @@ Eval_NegValue (Value *value)
 	  value->Data.Int.i = -c;
 	}
 	break;
-	
+
+#if 0
       case ValueAddr:
 	value->Data.Addr.i = -value->Data.Addr.i;
 	break;
+#endif
 
       case ValueSymbol:
 	value->Data.Symbol.factor = -value->Data.Symbol.factor;
+	value->Data.Symbol.offset = -value->Data.Symbol.offset;
 	break;
 
+#if 0
       case ValueCode:
 	for (size_t i = 0; i != value->Data.Code.len; ++i)
 	  {
@@ -642,6 +705,7 @@ Eval_NegValue (Value *value)
 	      }
 	  }
 	break;
+#endif
 
       default:
 	return false;
@@ -718,7 +782,8 @@ evalUnop (Operator op, Value *value)
       case Op_lnot: /* :LNOT: ! */
 	if (value->Tag != ValueBool)
 	  {
-	    error (ErrorError, "Bad operand type for %s", ":LNOT:");
+	    if (gASM_Phase != ePassOne)
+	      error (ErrorError, "Bad operand type for %s", ":LNOT:");
 	    return false;
 	  }
 	value->Data.Bool.b = !value->Data.Bool.b;
@@ -741,7 +806,8 @@ evalUnop (Operator op, Value *value)
 	      /* Fall through.  */
 
 	    default:
-	      error (ErrorError, "Bad operand type for %s", ":NOT:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":NOT:");
 	      return false;
 	  }
 	break;
@@ -749,7 +815,8 @@ evalUnop (Operator op, Value *value)
       case Op_neg: /* - */
 	if (!Eval_NegValue (value))
 	  {
-	    error (ErrorError, "Bad operand type for %s", "negation");
+	    if (gASM_Phase != ePassOne)
+	      error (ErrorError, "Bad operand type for %s", "negation");
 	    return false;
 	  }
 	break;
@@ -757,7 +824,8 @@ evalUnop (Operator op, Value *value)
       case Op_base: /* :BASE: */
 	if (value->Tag != ValueAddr)
 	  {
-	    error (ErrorError, "Bad operand type for %s", ":BASE:");
+	    if (gASM_Phase != ePassOne)
+	      error (ErrorError, "Bad operand type for %s", ":BASE:");
 	    return false;
 	  }
 	value->Tag = ValueInt;
@@ -767,7 +835,8 @@ evalUnop (Operator op, Value *value)
       case Op_index: /* :INDEX: */
 	if (value->Tag != ValueAddr && value->Tag != ValueInt)
 	  {
-	    error (ErrorError, "Bad operand type for %s", ":INDEX:");
+	    if (gASM_Phase != ePassOne)
+	      error (ErrorError, "Bad operand type for %s", ":INDEX:");
 	    return false;
 	  }
 	value->Tag = ValueInt; /* ValueAddr.i at same place as ValueInt.i.  */
@@ -776,7 +845,8 @@ evalUnop (Operator op, Value *value)
       case Op_len: /* :LEN: */
 	if (value->Tag != ValueString)
 	  {
-	    error (ErrorError, "Bad operand type for %s", ":LEN:");
+	    if (gASM_Phase != ePassOne)
+	      error (ErrorError, "Bad operand type for %s", ":LEN:");
 	    return false;
 	  }
 	value->Tag = ValueInt; /* ValueString.len at same place as ValueInt.i.  */
@@ -805,7 +875,8 @@ evalUnop (Operator op, Value *value)
 		  sprintf (num, "%f", value->Data.Float.f);
 		  break;
 	        default:
-	          error (ErrorError, "Bad operand type for %s", ":STR:");
+	          if (gASM_Phase != ePassOne)
+		    error (ErrorError, "Bad operand type for %s", ":STR:");
 		  return false;
 	      }
 	    size_t len = strlen (num);
@@ -823,7 +894,8 @@ evalUnop (Operator op, Value *value)
 	{
 	  if (value->Tag != ValueInt)
 	    {
-	      error (ErrorError, "Bad operand type for %s", ":CHR:");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "Bad operand type for %s", ":CHR:");
 	      return false;
 	    }
 	  if ((value->Data.Int.i < 0 || value->Data.Int.i >= 256) && option_pedantic)
@@ -851,16 +923,25 @@ evalUnop (Operator op, Value *value)
 	      value->Tag = ValueInt;
 	      value->Data.Int.i = value->Data.Symbol.symbol->codeSize;
 	    }
+	  else if (value->Data.Symbol.symbol->type & SYMBOL_AREA)
+	    {
+	      value->Tag = ValueInt;
+	      value->Data.Int.i = value->Data.Symbol.symbol->area.info->curIdx;
+	      if (gASM_Phase == ePassTwo
+		  && value->Data.Symbol.symbol->area.info->curIdx != value->Data.Symbol.symbol->area.info->maxIdx)
+		error (ErrorError, "? on area symbol which gets extended later on");
+	    }
 	  else
 	    {
-	      error (ErrorError, "? is not supported for non defined labels");
+	      if (gASM_Phase != ePassOne)
+		error (ErrorError, "? is not supported for non defined labels");
 	      return false;
 	    }
 	}
 	break;
 
       default:
-	errorAbort ("Internal evalUnop: illegal fall through");
+	error (ErrorError, "Internal evalUnop: illegal fall through");
 	return false;
     }
 
