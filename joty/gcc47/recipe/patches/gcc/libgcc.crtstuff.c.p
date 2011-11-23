@@ -1,10 +1,13 @@
 Index: libgcc/crtstuff.c
 ===================================================================
---- libgcc/crtstuff.c	(revision 180839)
+--- libgcc/crtstuff.c	(revision 181632)
 +++ libgcc/crtstuff.c	(working copy)
-@@ -203,11 +203,11 @@
+@@ -209,13 +209,13 @@
+ #elif defined(CTORS_SECTION_ASM_OP)
+ /* Hack: force cc1 to switch to .data section early, so that assembling
     __CTOR_LIST__ does not undo our behind-the-back change to .ctors.  */
- static func_ptr force_to_data[1] __attribute__ ((__used__)) = { };
+-static func_ptr force_to_data[1] __attribute__ ((__used__)) = { };
++static const func_ptr force_to_data[1] __attribute__ ((__used__)) = { };
  asm (CTORS_SECTION_ASM_OP);
 -STATIC func_ptr __CTOR_LIST__[1]
 +STATIC const func_ptr __CTOR_LIST__[1]
@@ -16,7 +19,7 @@ Index: libgcc/crtstuff.c
    __attribute__ ((__used__, section(".ctors"), aligned(sizeof(func_ptr))))
    = { (func_ptr) (-1) };
  #endif /* __CTOR_LIST__ alternatives */
-@@ -216,11 +216,11 @@
+@@ -224,11 +224,11 @@
  DTOR_LIST_BEGIN;
  #elif defined(DTORS_SECTION_ASM_OP)
  asm (DTORS_SECTION_ASM_OP);
@@ -30,7 +33,20 @@ Index: libgcc/crtstuff.c
    __attribute__((section(".dtors"), aligned(sizeof(func_ptr))))
    = { (func_ptr) (-1) };
  #endif /* __DTOR_LIST__ alternatives */
-@@ -303,11 +303,11 @@
+@@ -251,10 +251,10 @@
+ #endif /* JCR_SECTION_NAME */
+ 
+ #if USE_TM_CLONE_REGISTRY
+-STATIC func_ptr __TMC_LIST__[]
++STATIC const func_ptr __TMC_LIST__[]
+   __attribute__((unused, section(".tm_clone_table"), aligned(sizeof(void*))))
+   = { };
+-extern func_ptr __TMC_END__[] __attribute__((__visibility__ ("hidden")));
++extern const func_ptr __TMC_END__[] __attribute__((__visibility__ ("hidden")));
+ #endif /* USE_TM_CLONE_REGISTRY */
+ 
+ #if defined(INIT_SECTION_ASM_OP) || defined(INIT_ARRAY_SECTION_ASM_OP)
+@@ -318,11 +318,11 @@
  #ifdef FINI_ARRAY_SECTION_ASM_OP
    /* If we are using .fini_array then destructors will be run via that
       mechanism.  */
@@ -44,7 +60,7 @@ Index: libgcc/crtstuff.c
      static size_t dtor_idx;
      const size_t max_idx = __DTOR_END__ - __DTOR_LIST__ - 1;
      func_ptr f;
-@@ -319,8 +319,12 @@
+@@ -334,8 +334,12 @@
        }
    }
  #else /* !defined (FINI_ARRAY_SECTION_ASM_OP) */
@@ -58,7 +74,16 @@ Index: libgcc/crtstuff.c
      func_ptr f;
  
      while ((f = *p))
-@@ -454,7 +458,7 @@
+@@ -375,7 +379,7 @@
+ #ifdef FINI_SECTION_ASM_OP
+ CRT_CALL_STATIC_FUNCTION (FINI_SECTION_ASM_OP, __do_global_dtors_aux)
+ #elif defined (FINI_ARRAY_SECTION_ASM_OP)
+-static func_ptr __do_global_dtors_aux_fini_array_entry[]
++static const func_ptr __do_global_dtors_aux_fini_array_entry[]
+   __attribute__ ((__used__, section(".fini_array")))
+   = { __do_global_dtors_aux };
+ #else /* !FINI_SECTION_ASM_OP && !FINI_ARRAY_SECTION_ASM_OP */
+@@ -495,7 +499,7 @@
  void
  __do_global_dtors (void)
  {
@@ -67,7 +92,7 @@ Index: libgcc/crtstuff.c
    for (p = __DTOR_LIST__ + 1; (f = *p); p++)
      f ();
  
-@@ -511,11 +515,11 @@
+@@ -578,11 +582,11 @@
     __CTOR_LIST__ does not undo our behind-the-back change to .ctors.  */
  static func_ptr force_to_data[1] __attribute__ ((__used__)) = { };
  asm (CTORS_SECTION_ASM_OP);
@@ -81,7 +106,7 @@ Index: libgcc/crtstuff.c
    __attribute__((section(".ctors"), aligned(sizeof(func_ptr))))
    = { (func_ptr) 0 };
  #endif
-@@ -526,7 +530,7 @@
+@@ -593,7 +597,7 @@
  #ifdef DTORS_SECTION_ASM_OP
  asm (DTORS_SECTION_ASM_OP);
  #endif
@@ -90,7 +115,7 @@ Index: libgcc/crtstuff.c
    __attribute__ ((used,
  #ifndef DTORS_SECTION_ASM_OP
  		  section(".dtors"),
-@@ -535,11 +539,11 @@
+@@ -602,11 +606,11 @@
    = { (func_ptr) 0 };
  #elif defined(DTORS_SECTION_ASM_OP)
  asm (DTORS_SECTION_ASM_OP);
@@ -104,7 +129,7 @@ Index: libgcc/crtstuff.c
    __attribute__((used, section(".dtors"), aligned(sizeof(func_ptr))))
    = { (func_ptr) 0 };
  #endif
-@@ -581,7 +585,7 @@
+@@ -655,7 +659,7 @@
  static void __attribute__((used))
  __do_global_ctors_aux (void)
  {
@@ -113,12 +138,12 @@ Index: libgcc/crtstuff.c
    for (p = __CTOR_END__ - 1; *p != (func_ptr) -1; p--)
      (*p) ();
  }
-@@ -634,7 +638,7 @@
+@@ -708,7 +712,7 @@
  void
  __do_global_ctors (void)
  {
 -  func_ptr *p;
 +  const func_ptr *p;
- #if defined(USE_EH_FRAME_REGISTRY) || defined(JCR_SECTION_NAME)
-   __do_global_ctors_1();
- #endif
+ #if defined(USE_EH_FRAME_REGISTRY) \
+     || defined(JCR_SECTION_NAME) \
+     || defined(USE_TM_CLONE_REGISTRY)

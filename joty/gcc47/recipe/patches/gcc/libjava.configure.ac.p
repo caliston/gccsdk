@@ -1,6 +1,6 @@
 Index: libjava/configure.ac
 ===================================================================
---- libjava/configure.ac	(revision 175272)
+--- libjava/configure.ac	(revision 181632)
 +++ libjava/configure.ac	(working copy)
 @@ -1072,8 +1072,8 @@
  case "$THREADS" in
@@ -11,5 +11,5 @@ Index: libjava/configure.ac
 +     *-*-cygwin* | arm*-riscos*)
 +	# Don't set THREADLIBS here.  These environments do not have -lpthread.
  	;;
-      *-*-freebsd[[1234]]*)
+      *-*-freebsd[[34]].*)
  	# Before FreeBSD 5, it didn't have -lpthread (or any library which

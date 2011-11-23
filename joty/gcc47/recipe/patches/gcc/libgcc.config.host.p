@@ -1,8 +1,8 @@
 Index: libgcc/config.host
 ===================================================================
---- libgcc/config.host	(revision 181179)
+--- libgcc/config.host	(revision 181632)
 +++ libgcc/config.host	(working copy)
-@@ -378,6 +378,13 @@
+@@ -369,6 +369,13 @@
  	tmake_file="$tmake_file t-softfp-sfdf t-softfp-excl arm/t-softfp t-softfp"
  	unwind_header=config/arm/unwind-arm.h
  	;;
