@@ -1,6 +1,6 @@
 Index: libgcc/crtstuff.c
 ===================================================================
---- libgcc/crtstuff.c	(revision 181632)
+--- libgcc/crtstuff.c	(revision 181763)
 +++ libgcc/crtstuff.c	(working copy)
 @@ -209,13 +209,13 @@
  #elif defined(CTORS_SECTION_ASM_OP)
@@ -33,20 +33,21 @@ Index: libgcc/crtstuff.c
    __attribute__((section(".dtors"), aligned(sizeof(func_ptr))))
    = { (func_ptr) (-1) };
  #endif /* __DTOR_LIST__ alternatives */
-@@ -251,10 +251,10 @@
+@@ -251,11 +251,11 @@
  #endif /* JCR_SECTION_NAME */
  
  #if USE_TM_CLONE_REGISTRY
 -STATIC func_ptr __TMC_LIST__[]
 +STATIC const func_ptr __TMC_LIST__[]
-   __attribute__((unused, section(".tm_clone_table"), aligned(sizeof(void*))))
+   __attribute__((used, section(".tm_clone_table"), aligned(sizeof(void*))))
    = { };
+ # ifdef HAVE_GAS_HIDDEN
 -extern func_ptr __TMC_END__[] __attribute__((__visibility__ ("hidden")));
 +extern const func_ptr __TMC_END__[] __attribute__((__visibility__ ("hidden")));
- #endif /* USE_TM_CLONE_REGISTRY */
+ # endif
  
- #if defined(INIT_SECTION_ASM_OP) || defined(INIT_ARRAY_SECTION_ASM_OP)
-@@ -318,11 +318,11 @@
+ static inline void
+@@ -360,11 +360,11 @@
  #ifdef FINI_ARRAY_SECTION_ASM_OP
    /* If we are using .fini_array then destructors will be run via that
       mechanism.  */
@@ -60,7 +61,7 @@ Index: libgcc/crtstuff.c
      static size_t dtor_idx;
      const size_t max_idx = __DTOR_END__ - __DTOR_LIST__ - 1;
      func_ptr f;
-@@ -334,8 +334,12 @@
+@@ -376,8 +376,12 @@
        }
    }
  #else /* !defined (FINI_ARRAY_SECTION_ASM_OP) */
@@ -74,16 +75,7 @@ Index: libgcc/crtstuff.c
      func_ptr f;
  
      while ((f = *p))
-@@ -375,7 +379,7 @@
- #ifdef FINI_SECTION_ASM_OP
- CRT_CALL_STATIC_FUNCTION (FINI_SECTION_ASM_OP, __do_global_dtors_aux)
- #elif defined (FINI_ARRAY_SECTION_ASM_OP)
--static func_ptr __do_global_dtors_aux_fini_array_entry[]
-+static const func_ptr __do_global_dtors_aux_fini_array_entry[]
-   __attribute__ ((__used__, section(".fini_array")))
-   = { __do_global_dtors_aux };
- #else /* !FINI_SECTION_ASM_OP && !FINI_ARRAY_SECTION_ASM_OP */
-@@ -495,7 +499,7 @@
+@@ -522,7 +526,7 @@
  void
  __do_global_dtors (void)
  {
@@ -92,7 +84,7 @@ Index: libgcc/crtstuff.c
    for (p = __DTOR_LIST__ + 1; (f = *p); p++)
      f ();
  
-@@ -578,11 +582,11 @@
+@@ -590,11 +594,11 @@
     __CTOR_LIST__ does not undo our behind-the-back change to .ctors.  */
  static func_ptr force_to_data[1] __attribute__ ((__used__)) = { };
  asm (CTORS_SECTION_ASM_OP);
@@ -106,7 +98,7 @@ Index: libgcc/crtstuff.c
    __attribute__((section(".ctors"), aligned(sizeof(func_ptr))))
    = { (func_ptr) 0 };
  #endif
-@@ -593,7 +597,7 @@
+@@ -605,7 +609,7 @@
  #ifdef DTORS_SECTION_ASM_OP
  asm (DTORS_SECTION_ASM_OP);
  #endif
@@ -115,7 +107,7 @@ Index: libgcc/crtstuff.c
    __attribute__ ((used,
  #ifndef DTORS_SECTION_ASM_OP
  		  section(".dtors"),
-@@ -602,11 +606,11 @@
+@@ -614,11 +618,11 @@
    = { (func_ptr) 0 };
  #elif defined(DTORS_SECTION_ASM_OP)
  asm (DTORS_SECTION_ASM_OP);
@@ -129,7 +121,7 @@ Index: libgcc/crtstuff.c
    __attribute__((used, section(".dtors"), aligned(sizeof(func_ptr))))
    = { (func_ptr) 0 };
  #endif
-@@ -655,7 +659,7 @@
+@@ -673,7 +677,7 @@
  static void __attribute__((used))
  __do_global_ctors_aux (void)
  {
@@ -138,7 +130,7 @@ Index: libgcc/crtstuff.c
    for (p = __CTOR_END__ - 1; *p != (func_ptr) -1; p--)
      (*p) ();
  }
-@@ -708,7 +712,7 @@
+@@ -726,7 +730,7 @@
  void
  __do_global_ctors (void)
  {
