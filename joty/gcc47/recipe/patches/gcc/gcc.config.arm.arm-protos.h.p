@@ -1,9 +1,9 @@
 Index: gcc/config/arm/arm-protos.h
 ===================================================================
---- gcc/config/arm/arm-protos.h	(revision 181970)
+--- gcc/config/arm/arm-protos.h	(revision 182024)
 +++ gcc/config/arm/arm-protos.h	(working copy)
-@@ -243,4 +243,13 @@
- extern const struct tune_params *current_tune;
+@@ -244,4 +244,13 @@
+ extern int vfp3_const_double_for_fract_bits (rtx);
  #endif /* RTX_CODE */
  
 +extern bool arm_apcs_frame_needed (void);
