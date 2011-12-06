@@ -1,8 +1,8 @@
 Index: gcc/ada/gcc-interface/Makefile.in
 ===================================================================
---- gcc/ada/gcc-interface/Makefile.in	(revision 181950)
+--- gcc/ada/gcc-interface/Makefile.in	(revision 182065)
 +++ gcc/ada/gcc-interface/Makefile.in	(working copy)
-@@ -1851,6 +1851,26 @@
+@@ -1865,6 +1865,26 @@
    LIBRARY_VERSION := $(LIB_VERSION)
  endif
  
