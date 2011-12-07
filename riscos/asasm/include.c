@@ -2,7 +2,7 @@
  * AS an assembler for ARM
  * Copyright (c) Andy Duplain, August 1992.
  * Converted to RISC OS by Niklas Röjemo
- * Copyright (c) 2002-2008 GCCSDK Developers
+ * Copyright (c) 2002-2011 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,48 +21,47 @@
  * include.c
  */
 
+#include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #if !defined(__riscos__) || defined(__TARGET_UNIXLIB__)
 #  include <sys/param.h>		/* for MAXPATHLEN */
 #else
-#  define MAXPATHLEN 256
-#endif
-
-#ifdef __TARGET_UNIXLIB__
-#  include <unixlib/local.h>
+#  define MAXPATHLEN 1024
 #endif
 
 #include "error.h"
+#include "filename.h"
 #include "include.h"
 #include "os.h"
-#include "rname.h"
 #include "main.h"
 
-#define DIR '/'
+#ifdef __riscos__
+#  define NAT_DIR_STR "."
+#  define NAT_DIR_CHR '.'
+#else
+#  define NAT_DIR_STR "/"
+#  define NAT_DIR_CHR '/'
+#endif
 
 static const char **incDirPP;
-static int incDirCurSize;
-static int incDirMaxSize;
+static unsigned incDirCurSize;
+static unsigned incDirMaxSize;
 
-int
-addInclude (const char *path)
+void
+Include_Add (const char *path)
 {
-  int i;
-  size_t len;
-  char *newPath;
-
-  for (i = 0; i < incDirCurSize; i++)
+  for (unsigned i = 0; i != incDirCurSize; i++)
     if (strcmp (incDirPP[i], path) == 0)
-      return 0; /* already in list */
+      return; /* already in list */
 
   /* Need to add to the list */
   if (incDirCurSize == incDirMaxSize)
     {
-      int newDirMaxSize = 2*incDirMaxSize + 3;
+      size_t newDirMaxSize = 2*incDirMaxSize + 3;
       incDirPP = (const char **)realloc (incDirPP, newDirMaxSize * sizeof (const char *));
       if (incDirPP == NULL)
         {
@@ -72,124 +71,129 @@ addInclude (const char *path)
       incDirMaxSize = newDirMaxSize;
     }
 
-  newPath = strdup (path);
+  char *newPath = strdup (path);
   if (newPath == NULL)
-    {
-      errorOutOfMem ();
-      return -1;
-    }
-  /* Strip trailing DIR separator */
-  len = strlen (newPath);
-  if (newPath[len] == DIR)
+    errorOutOfMem ();
+  /* Strip trailing dir separator */
+  size_t len = strlen (newPath);
+  if (newPath[len] == NAT_DIR_CHR)
     newPath[len] = '\0';
   incDirPP[incDirCurSize++] = newPath;
-#ifdef DEBUG
-  fprintf (stderr, "addInclude: added %s\n", newPath);
-#endif
-
-  return 0;
 }
 
 
 /**
- * Opens file with given filename, or suffix swapped (when using UnixLib)
- * and optionally returns a possibly better qualified filename.
+ * Returns ASFile structure of given filename (possibly via suffix swapping).
  * \param filename Filename of file which needs to be opened.
- * \param strdupFilename When non-NULL, is a pointer of a value containing
- * on return a malloc block holding the possibly better qualified filename.
- * \return When non-NULL, a std C file stream pointer.
+ * \param asFileP ASFile object to be filled in for given filename.
+ * \return false for success, true otherwise (like unexisting file).
  */
-static FILE *
-openInclude (const char *filename, const char **strdupFilename)
+bool
+Include_Find (const char *filename, ASFile *asFileP, bool inc)
 {
-  FILE *fp;
-  if ((fp = fopen (filename, "r")) == NULL)
+  char outBuf[MAXPATHLEN];
+  for (unsigned pathidx = 0; /* */; ++pathidx)
     {
-#if defined(__TARGET_UNIXLIB__)
-      /* Try again but this time with(out) suffix swapping.  */
-      __riscosify_control ^= __RISCOSIFY_NO_SUFFIX;
-      fp = fopen (filename, "r");
-      __riscosify_control ^= __RISCOSIFY_NO_SUFFIX;
-#endif
+      bool state[3] = { false, false, false };
+      const char *out[3];
+
+      do
+	{
+	  out[0] = FN_AnyToNative (filename, pathidx, outBuf, sizeof (outBuf),
+				   &state[0], eA_Dot_B);
+	  if (out[0] && !ASFile_Create (out[0], asFileP))
+	    return false;
+
+	  out[1] = FN_AnyToNative (filename, pathidx, outBuf, sizeof (outBuf),
+				   &state[1], eB_DirSep_A);
+	  if (out[1] && !ASFile_Create (out[1], asFileP))
+	    return false;
+
+	  out[2] = FN_AnyToNative (filename, pathidx, outBuf, sizeof (outBuf),
+				   &state[2], eA_Slash_B);
+	  if (out[2] && !ASFile_Create (out[2], asFileP))
+	    return false;
+
+	  assert (state[0] == state[1] && state[0] == state[2]);
+	} while (out[0] && out[1] && out[2] && state[0]);
+
+      if (out[0] == NULL && out[1] == NULL && out[2] == NULL)
+	break;
     }
 
-  if (strdupFilename != NULL)
+  /* We're done when we can't use user supplied include paths or when in
+     given filename there is a path (like "Hdr:APCS.Common.").  */
+  if (!inc || strchr (filename, ':'))
+    return true;
+
+  /* Try to find the file via the user supplied include paths.  */
+  for (unsigned i = 0; i != incDirCurSize; i++)
     {
-      if (fp == NULL)
-	*strdupFilename = NULL;
-      else
+      char incpath[MAXPATHLEN];
+      bool state[3] = { false, false, false };
+      const char *out[3];
+
+      do
 	{
-	  if ((*strdupFilename = CanonicalisePath (filename)) == NULL)
+	  out[0] = FN_AnyToNative (filename, 0, outBuf, sizeof (outBuf),
+				   &state[0], eA_Dot_B);
+	  if (out[0])
 	    {
-	      fclose (fp);
-	      fp = NULL;
+	      snprintf (incpath, sizeof (incpath), "%s" NAT_DIR_STR "%s", incDirPP[i], out[0]);
+	      incpath[sizeof (incpath) - 1] = '\0';
+	      if (!ASFile_Create (incpath, asFileP))
+		return false;
 	    }
-	}
+
+	  out[1] = FN_AnyToNative (filename, 0, outBuf, sizeof (outBuf),
+				   &state[1], eB_DirSep_A);
+	  if (out[1])
+	    {
+	      snprintf (incpath, sizeof (incpath), "%s" NAT_DIR_STR "%s", incDirPP[i], out[1]);
+	      incpath[sizeof (incpath) - 1] = '\0';
+	      if (!ASFile_Create (incpath, asFileP))
+		return false;
+	    }
+
+	  out[2] = FN_AnyToNative (filename, 0, outBuf, sizeof (outBuf),
+				   &state[2], eA_Slash_B);
+	  if (out[2])
+	    {
+	      snprintf (incpath, sizeof (incpath), "%s" NAT_DIR_STR "%s", incDirPP[i], out[2]);
+	      incpath[sizeof (incpath) - 1] = '\0';
+	      if (!ASFile_Create (incpath, asFileP))
+		return false;
+	    }
+
+	  assert (state[0] == state[1] && state[0] == state[2]);
+        } while (out[0] && out[1] && out[2] && state[0]);
+
+      if (out[0] == NULL && out[1] == NULL && out[2] == NULL)
+	break;
     }
-  
-  return fp;
+
+  return true;
 }
 
-
 /**
- * Opens file with given filename, or suffix swapped (when using UnixLib)
+ * Opens file with given filename (possibly via suffix swapping tricks)
  * and optionally returns a possibly better qualified filename.
  * \param filename Filename of file which needs to be opened.
  * \param strdupFilename When non-NULL, is a pointer of a value containing
  * on return a malloc block holding the possibly better qualified filename.
+ * \param inc When true, consider user support include paths.
  * \return When non-NULL, a std C file stream pointer.
  */
 FILE *
-getInclude (const char *file, const char **strdupFilename)
+Include_Get (const char *file, ASFile *asFileP, bool inc)
 {
-  if (strdupFilename)
-    *strdupFilename = NULL;
+  if (Include_Find (file, asFileP, inc))
+    return NULL;
 
-#ifdef __riscos__
-  const char *filename = file;
-#else
-  char *filename = rname (file);
-#endif
-  FILE *fp;
-  if ((fp = openInclude (filename, strdupFilename)) != NULL)
-    return fp;
-
-  /* Try to find the file via the user supplied include paths.  */
-#ifndef __riscos__
-  if (filename[0] == '.' && filename[1] == '/')
-    filename += 2; /* Skip ./ */
-  else if (strchr(file, ':'))
-    {
-      /* Try presuming everything is a directory.  
-         This is for the benefit of paths like Hdr:APCS.Common.  */
-      char *dot;
-      for (dot = filename; *dot; ++dot)
-	{
-	  if (*dot == '.')
-	    *dot = '/';
-	}
-      
-      return openInclude (filename, strdupFilename);
-    }
-#else
-  if (filename[0] == '@' && filename[1] == '.')
-    filename += 2; /* Skip @. */
-#endif
-
-  int i;
-  for (i = 0; i < incDirCurSize; i++)
-    {
-      char incpath[MAXPATHLEN];
-      snprintf (incpath, sizeof (incpath), "%s%c%s", incDirPP[i], DIR, filename);
-      incpath[sizeof (incpath) - 1] = '\0';
-
-#ifdef DEBUG
-      fprintf (stderr, "getInclude: Searching for %s\n", incpath);
-#endif
-
-      if ((fp = openInclude (incpath, strdupFilename)) != NULL)
-        return fp;
-    }
-
-  return NULL;
+  if (option_verbose > 1)
+    fprintf (stderr, "Open '%s' as '%s' for read: ", file, asFileP->canonName);
+  FILE *fp = fopen (asFileP->canonName, "r");
+  if (option_verbose > 1)
+    fprintf (stderr, fp ? "ok\n" : "not ok\n");
+  return fp;
 }

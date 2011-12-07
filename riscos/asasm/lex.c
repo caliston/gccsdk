@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2010 GCCSDK Developers
+ * Copyright (c) 2000-2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <limits.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
@@ -33,20 +34,14 @@
 #endif
 
 #include "area.h"
+#include "common.h"
 #include "error.h"
 #include "input.h"
 #include "lex.h"
 #include "lexAcorn.h"
 #include "local.h"
 #include "main.h"
-#include "os.h"
 #include "symbol.h"
-
-const char Pri[2][10] =
-{
-  {1, 2, 3, 4, 5, 6, 7, 8, 9, 10},	/* AS */
-  {1, 2, 3, 4, 10, 5, 6, 7, 8, 9}	/* ObjAsm? */
-};
 
 static Lex nextbinop;
 static bool nextbinopvalid = false;
@@ -173,30 +168,80 @@ lexGetId (void)
 
 
 /**
- * \return -1 when it wasn't able to read a local label, otherwise a local
- * label value 0 - 99 (incl).
+ * Very similar to Lex_ReadLocalLabel.
  */
-static int
-Lex_ReadLocalLabel (bool noCheck)
+static unsigned
+Lex_ReadLocalLabelFromLex (const Lex *lexP)
 {
-  if (!isdigit (inputLook ()))
-    errorAbort ("Missing local label number");
-  int label = inputGet () - '0';
-  if (isdigit (inputLook ()))
-    label = 10*label + inputGet () - '0';
+  assert (lexP->tag == LexLocalLabel);
+  const char *in = lexP->Data.LocalLabel.str;
+  assert (isdigit ((unsigned char)*in));
+  unsigned label = (unsigned char)*in++ - '0';
+  for (/* */; isdigit ((unsigned char)*in); ++in)
+    {
+      unsigned next_label = 10*label + (unsigned char)*in - '0';
+      if (next_label < label)
+	{
+	  error (ErrorError, "Local label overflow");
+	  return UINT_MAX;
+	}
+      label = next_label;
+    }
+
+  /* If a routinename is given, check if thats the one given with ROUT.  */
+  size_t len = lexP->Data.LocalLabel.len - (in - lexP->Data.LocalLabel.str);
+  const char *curROUTId = Local_GetCurROUTId ();
+  if (len
+      && (memcmp (curROUTId, in, len) || curROUTId[len] != '\0'))
+    {
+      if (Local_ROUTIsEmpty (curROUTId))
+	error (ErrorError, "Local label can not have a routine name %.*s here", (int)len, in);
+      else
+	error (ErrorError, "Local label with routine name %.*s does not match with current routine name %s", (int)len, in, curROUTId);
+      return UINT_MAX;
+    }
+
+  return label;
+}
+
+
+/**
+ * \return UINT_MAX when it wasn't able to read a local label, otherwise a local
+ * label value.
+ * Very similar to Lex_ReadLocalLabelFromLex.
+ */
+static unsigned
+Lex_ReadLocalLabel (void)
+{
+  if (!isdigit ((unsigned char)inputLook ()))
+    {
+      error (ErrorError, "Missing local label number");
+      return UINT_MAX;
+    }
+  unsigned label = (unsigned char)inputGet () - '0';
+  while (isdigit ((unsigned char)inputLook ()))
+    {
+      unsigned next_label = 10*label + (unsigned char)inputGet () - '0';
+      if (next_label < label)
+	{
+	  error (ErrorError, "Local label overflow");
+	  return UINT_MAX;
+	}
+      label = next_label;
+    }
 
   /* If a routinename is given, check if thats the one given with ROUT.  */
   size_t len;
   const char *name = inputSymbol (&len, '\0');
-  if (!noCheck
-      && len
-      && !(!memcmp (Local_CurROUTId, name, len) && Local_CurROUTId[len] == '\0'))
+  const char *curROUTId = Local_GetCurROUTId ();
+  if (len
+      && (memcmp (curROUTId, name, len) || curROUTId[len] != '\0'))
     {
-      if (Local_ROUTIsEmpty (Local_CurROUTId))
+      if (Local_ROUTIsEmpty (curROUTId))
 	error (ErrorError, "Local label can not have a routine name %.*s here", (int)len, name);
       else
-	error (ErrorError, "Local label with routine name %.*s does not match with current routine name %s", (int)len, name, Local_CurROUTId);
-      return -1;
+	error (ErrorError, "Local label with routine name %.*s does not match with current routine name %s", (int)len, name, curROUTId);
+      return UINT_MAX;
     }
 
   return label;
@@ -210,43 +255,46 @@ typedef enum
 } LocalLabel_eSearch;
 
 static Lex
-Lex_MakeLocalLabel (int dir, LocalLabel_eSearch level /* FIXME: use this */)
+Lex_MakeLocalLabel (int dir,
+                    LocalLabel_eSearch level /* FIXME: use this */ UNUSED)
 {
   Lex result =
     {
       .tag = LexNone
     };
 
-  int label = Lex_ReadLocalLabel (false);
-  if (label < 0)
+  unsigned label = Lex_ReadLocalLabel ();
+  if (label == UINT_MAX)
     return result;
 
-  int i;
+  Local_Label_t *lblP = Local_GetLabel (label);
+  unsigned i;
   switch (dir)
     {
       case -1:
 	/* Search backward.  */
-	if ((i = Local_ROUTLblNo[label] - 1) < 0)
+	if ((i = lblP->Value) == 0)
 	  {
 	    errorAbort ("Missing local label %%b%02i", label);
 	    return result;
 	  }
+	--i;
 	break;
 
       default:
       case 0:
 	/* Search backward, when not found, search forward.  */
-	if ((i = Local_ROUTLblNo[label] - 1) < 0)
-	  i++;
+	if ((i = lblP->Value) > 0)
+	  --i;
 	break;
 
       case 1:
 	/* Search forward.  */
-	i = Local_ROUTLblNo[label];
+	i = lblP->Value;
 	break;
     }
   char id[1024];
-  snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, i, Local_CurROUTId);
+  snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, i, Local_GetCurROUTId ());
 
   result.tag = LexId;
   result.Data.Id.str = strdup (id);
@@ -259,7 +307,7 @@ Lex_MakeLocalLabel (int dir, LocalLabel_eSearch level /* FIXME: use this */)
 
 
 Lex
-Lex_GetDefiningLabel (bool noCheck)
+Lex_GetDefiningLabel (void)
 {
   nextbinopvalid = false; /* FIXME: why would this be necessary ? */
 
@@ -271,27 +319,80 @@ Lex_GetDefiningLabel (bool noCheck)
 	  .tag = LexNone
 	};
 
-      int label = Lex_ReadLocalLabel (noCheck);
-      if (label < 0)
-	return result;
-
-      char id[1024];
-      snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, Local_ROUTLblNo[label], Local_CurROUTId);
-      Local_ROUTLblNo[label]++;
-
-      result.tag = LexId;
-      result.Data.Id.str = strdup (id);
-      if (!result.Data.Id.str)
+      size_t localLabelSize;
+      const char *localLabel = Input_LocalLabel (&localLabelSize);
+      if (localLabel == NULL)
+        return result;
+      result.tag = LexLocalLabel;
+      result.Data.LocalLabel.str = strdup (localLabel);
+      if (!result.Data.LocalLabel.str)
 	errorOutOfMem ();
-      result.Data.Id.len = strlen (id);
-      result.Data.Id.hash = lexHashStr (result.Data.Id.str, result.Data.Id.len);
+      result.Data.LocalLabel.len = localLabelSize;
       return result;
     }
 
   return lexGetId ();
 }
 
+
+/**
+ * Tries to turn a LexLocalLabel object into a local label symbol.
+ * \return LexId which can be used to create a label symbol.  Can also
+ * be LexNone in case of an error (like malformed local label, or wrong
+ * routine name).
+ */
+Lex
+Lex_DefineLocalLabel (const Lex *lexP)
+{
+  assert (lexP->tag == LexLocalLabel);
+
+  unsigned label = Lex_ReadLocalLabelFromLex (lexP);
+  if (label == UINT_MAX)
+    {
+      Lex noLex = { .tag = LexNone };
+      return noLex;
+    }
+
+  Local_Label_t *lblP = Local_GetLabel (label);
+  char id[1024];
+  snprintf (id, sizeof (id), Local_IntLabelFormat, areaCurrentSymbol, label, lblP->Value, Local_GetCurROUTId ());
+  lblP->Value++;
+
+  Lex result;
+  result.tag = LexId;
+  result.Data.Id.str = strdup (id);
+  if (!result.Data.Id.str)
+    errorOutOfMem ();
+  result.Data.Id.len = strlen (id);
+  result.Data.Id.hash = lexHashStr (result.Data.Id.str, result.Data.Id.len);
+  return result;
+}
+
+
+/**
+ * Used to skip defining labels in failed IF/WHILE bodies.
+ * \return true when label got read
+ */
 bool
+Lex_SkipDefiningLabel (void)
+{
+  if (isdigit ((unsigned char)inputLook ()))
+    {
+      /* Looks like this is a local label.  */
+      do
+	{
+	  (void) inputGet ();
+	} while (isdigit ((unsigned char)inputLook ()));
+
+      size_t len;
+      (void) inputSymbol (&len, '\0');
+      return true;
+    }
+
+  return lexGetId ().tag != LexNone;
+}
+
+static bool
 Lex_Char2Int (size_t len, const char *str, ARMWord *result)
 {
   *result = 0;
@@ -321,31 +422,31 @@ lexGetPrim (void)
       case '+':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_none; /* +XYZ */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Unary;
 	break;
 
       case '-':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_neg; /* -XYZ */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Unary;
 	break;
 
       case '!':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_lnot; /* !XYZ */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Unary;
 	break;
 
       case '~':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_not; /* ~XYZ */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Unary;
 	break;
 
       case '?':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_size; /* ?<label> */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Unary;
 	break;
 
       case '(':
@@ -356,6 +457,8 @@ lexGetPrim (void)
 
       case ':':
 	lexAcornUnop (&result);
+	if (result.tag == LexNone)
+	  inputUnGet (':');
 	break;
 
       case '&':
@@ -462,7 +565,7 @@ lexGetPrim (void)
 		break;
   
 	      case 'b':
-		/* Backword looking.  */
+		/* Backward looking.  */
 		inputSkip ();
 		dir = -1;
 		break;
@@ -533,47 +636,45 @@ lexGetBinop (void)
       case '*':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_mul; /* * */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.pri = kPrioOp_Multiplicative;
 	break;
 
       case '/':
 	result.tag = LexOperator;
-	switch (inputLook ())
+	if (Input_Match ('=', false))
 	  {
-	    case '=': /* /= */
-	      inputSkip ();
-	      result.Data.Operator.op = Op_ne;
-	      result.Data.Operator.pri = PRI (3); /* /= */
-	      break;
-	    default:
-	      result.Data.Operator.op = Op_div; /* / */
-	      result.Data.Operator.pri = PRI (10);
-	      break;
+	    result.Data.Operator.op = Op_ne; /* /= */
+	    result.Data.Operator.pri = kPrioOp_Relational;
+	  }
+	else
+	  {
+	    result.Data.Operator.op = Op_div; /* / */
+	    result.Data.Operator.pri = kPrioOp_Multiplicative;
 	  }
 	break;
 
       case '%':
 	result.tag = LexOperator;
-	result.Data.Operator.op = Op_mod; /* % */
-	result.Data.Operator.pri = PRI (10);
+	result.Data.Operator.op = Op_mod; /* % MOD */
+	result.Data.Operator.pri = kPrioOp_Multiplicative;
 	break;
 
       case '+':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_add; /* + */
-	result.Data.Operator.pri = PRI (9);
+	result.Data.Operator.pri = kPrioOp_AddAndLogical;
 	break;
 
       case '-':
 	result.tag = LexOperator;
 	result.Data.Operator.op = Op_sub; /* - */
-	result.Data.Operator.pri = PRI (9);
+	result.Data.Operator.pri = kPrioOp_AddAndLogical;
 	break;
 
       case '^':
 	result.tag = LexOperator;
-	result.Data.Operator.op = Op_xor; /* ^ */
-	result.Data.Operator.pri = PRI (6);
+	result.Data.Operator.op = Op_xor; /* ^ EOR */
+	result.Data.Operator.pri = kPrioOp_AddAndLogical;
 	break;
 
       case '>':
@@ -581,7 +682,7 @@ lexGetBinop (void)
 	switch (inputLook ())
 	  {
 	    case '>':
-	      result.Data.Operator.pri = PRI (5);
+	      result.Data.Operator.pri = kPrioOp_Shift;
 	      if (inputSkipLook () == '>')
 		{
 		  inputSkip ();
@@ -594,12 +695,12 @@ lexGetBinop (void)
 	    case '=':
 	      inputSkip ();
 	      result.Data.Operator.op = Op_ge;
-	      result.Data.Operator.pri = PRI (4); /* >= */
+	      result.Data.Operator.pri = kPrioOp_Relational; /* >= */
 	      break;
   
 	    default:
 	      result.Data.Operator.op = Op_gt;
-	      result.Data.Operator.pri = PRI (4); /* > */
+	      result.Data.Operator.pri = kPrioOp_Relational; /* > */
 	      break;
 	  }
 	break;
@@ -611,24 +712,24 @@ lexGetBinop (void)
 	    case '<':
 	      inputSkip ();
 	      result.Data.Operator.op = Op_sl; /* << */
-	      result.Data.Operator.pri = PRI (5);
+	      result.Data.Operator.pri = kPrioOp_Shift;
 	      break;
     
 	    case '=':
 	      inputSkip ();
 	      result.Data.Operator.op = Op_le; /* <= */
-	      result.Data.Operator.pri = PRI (4);
+	      result.Data.Operator.pri = kPrioOp_Relational;
 	      break;
     
 	    case '>':
 	      inputSkip ();
 	      result.Data.Operator.op = Op_ne; /* <> */
-	      result.Data.Operator.pri = PRI (3);
+	      result.Data.Operator.pri = kPrioOp_Relational;
 	      break;
     
 	    default:
 	      result.Data.Operator.op = Op_lt; /* < */
-	      result.Data.Operator.pri = PRI (4);
+	      result.Data.Operator.pri = kPrioOp_Relational;
 	      break;
 	  }
 	break;
@@ -636,7 +737,7 @@ lexGetBinop (void)
       case '=':
 	Input_Match ('=', false); /* Deals with '==' */
 	result.tag = LexOperator;
-	result.Data.Operator.pri = PRI (3);
+	result.Data.Operator.pri = kPrioOp_Relational;
 	result.Data.Operator.op = Op_eq; /* = == */
 	break;
 
@@ -644,7 +745,7 @@ lexGetBinop (void)
 	if (Input_Match ('=', false))
 	  {
 	    result.tag = LexOperator;
-	    result.Data.Operator.pri = PRI (3);
+	    result.Data.Operator.pri = kPrioOp_Relational;
 	    result.Data.Operator.op = Op_ne; /* != */
 	  }
 	else
@@ -658,12 +759,12 @@ lexGetBinop (void)
 	result.tag = LexOperator;
 	if (Input_Match ('|', false))
 	  {
-	    result.Data.Operator.pri = PRI (1);
+	    result.Data.Operator.pri = kPrioOp_Boolean;
 	    result.Data.Operator.op = Op_lor; /* || */
 	  }
 	else
 	  {
-	    result.Data.Operator.pri = PRI (7);
+	    result.Data.Operator.pri = kPrioOp_AddAndLogical;
 	    result.Data.Operator.op = Op_or; /* | */
 	  }
 	break;
@@ -672,18 +773,20 @@ lexGetBinop (void)
 	result.tag = LexOperator;
 	if (Input_Match ('&', false))
 	  {
-	    result.Data.Operator.pri = PRI (2);
+	    result.Data.Operator.pri = kPrioOp_Boolean;
 	    result.Data.Operator.op = Op_land; /* && */
 	  }
 	else
 	  {
-	    result.Data.Operator.pri = PRI (8);
+	    result.Data.Operator.pri = kPrioOp_AddAndLogical;
 	    result.Data.Operator.op = Op_and; /* & */
 	  }
 	break;
 
       case ':':
 	lexAcornBinop (&result); /* :XYZ: */
+	if (result.tag == LexNone)
+	  inputUnGet (':');
 	break;
 
       default:
@@ -731,6 +834,9 @@ lexPrint (const Lex *lex)
       case LexId:
 	printf ("Id <%.*s> ", (int)lex->Data.Id.len, lex->Data.Id.str);
 	break;
+      case LexLocalLabel:
+	printf ("Id <%.*s> ", (int)lex->Data.LocalLabel.len, lex->Data.LocalLabel.str);
+	break;
       case LexString:
 	printf ("Str <%.*s> ", (int)lex->Data.String.len, lex->Data.String.str);
 	break;
@@ -752,11 +858,8 @@ lexPrint (const Lex *lex)
       case LexDelim:
 	printf ("Delim <%d> ", lex->Data.Delim.delim);
 	break;
-      case Lex00Label:
-	printf ("Label <%d> ", lex->Data.Label.value);
-	break;
       case LexBool:
-	printf("bool <%d> ", lex->Data.Label.value);
+	printf("bool <%d> ", lex->Data.Bool.value);
 	break;
       case LexNone:
 	printf ("None ");
@@ -768,7 +871,7 @@ lexPrint (const Lex *lex)
 }
 
 const char *
-OperatorAsStr (Operator op)
+Lex_OperatorAsStr (Operator op)
 {
   static const char * const opStr[] =
     {
@@ -786,30 +889,37 @@ OperatorAsStr (Operator op)
       ":STR:",		/* Op_str */
       ":CHR:",		/* Op_chr */
       ":SIZE:",		/* Op_size */
-      ":LEFT:",		/* Op_left */
-      ":RIGHT:",	/* Op_right */
+
       ":MUL:",		/* Op_mul */
       ":DIV:",		/* Op_div */
       ":MOD:",		/* Op_mod */
-      ":ADD:",		/* Op_add */
-      ":SUB:",		/* Op_sub */
-      ":CONCAT:",	/* Op_concat */
-      ":AND:",		/* Op_and */
-      ":OR:",		/* Op_or */
-      ":XOR:",		/* Op_xor */
+
+      ":LEFT:",		/* Op_left */
+      ":RIGHT:",	/* Op_right */
+      ":CC:",		/* Op_concat */
+
       ":ASR:",		/* Op_asr */
       ":SHR:",		/* Op_sr */
       ":SHL:",		/* Op_sl */
       ":ROR:",		/* Op_ror */
       ":ROL:",		/* Op_rol */
+      
+      ":ADD:",		/* Op_add */
+      ":SUB:",		/* Op_sub */
+      ":AND:",		/* Op_and */
+      ":OR:",		/* Op_or */
+      ":XOR:",		/* Op_xor */
+
       ":LE:",		/* Op_le */
       ":GE:",		/* Op_ge */
       ":LT:",		/* Op_lt */
       ":GT:",		/* Op_gt */
       ":EQ:",		/* Op_eq */
       ":NE:",		/* Op_ne */
+
       ":LAND:",		/* Op_land */
       ":LOR:",		/* Op_lor */
+      ":LEOR:",		/* Op_leor */
     };
   return op >= sizeof (opStr) / sizeof (opStr[0]) ? ":???:" : opStr[op];
 }

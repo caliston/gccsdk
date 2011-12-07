@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2010 GCCSDK Developers
+ * Copyright (c) 2000-2011 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,7 +33,7 @@
 
 #include "code.h"
 #include "error.h"
-#include "os.h"
+#include "expr.h"
 #include "main.h"
 #include "value.h"
 
@@ -121,51 +121,96 @@ Value_Code (size_t len, const Code *code)
 bool
 valueEqual (const Value *a, const Value *b)
 {
+  Value aCp, bCp;
+
+  if (a->Tag == ValueCode || a->Tag == ValueSymbol
+      || b->Tag == ValueCode || b->Tag == ValueSymbol)
+    {
+      if (a->Tag == ValueCode && b->Tag == ValueCode
+	  && a->Data.Code.len == b->Data.Code.len
+	  && codeEqual (a->Data.Code.len, a->Data.Code.c, b->Data.Code.c))
+	return true;
+
+      if (a->Tag == ValueSymbol && b->Tag == ValueSymbol
+	  && a->Data.Symbol.factor == b->Data.Symbol.factor
+	  && a->Data.Symbol.symbol == b->Data.Symbol.symbol
+          && a->Data.Symbol.offset == b->Data.Symbol.offset)
+	return true;
+
+      aCp.Tag = ValueIllegal;
+      Value_Assign (&aCp, a);
+      bCp.Tag = ValueIllegal;
+      Value_Assign (&bCp, b);
+
+      codeInit ();
+      codeValue (&aCp, true);
+      Value_Assign (&aCp, exprEval (ValueAll));
+
+      codeInit ();
+      codeValue (&bCp, true);
+      Value_Assign (&bCp, exprEval (ValueAll));
+
+      a = &aCp;
+      b = &bCp;
+    }
+
+  bool result;
   switch (a->Tag)
     {
       case ValueIllegal:
-	return b->Tag == ValueIllegal;
+	result = b->Tag == ValueIllegal;
+	break;
 
       case ValueInt:
-	return (b->Tag == ValueInt && a->Data.Int.i == b->Data.Int.i)
-	         || (option_autocast && b->Tag == ValueFloat && (ARMFloat)a->Data.Int.i == b->Data.Float.f);
+	result = (b->Tag == ValueInt && a->Data.Int.i == b->Data.Int.i)
+		   || (b->Tag == ValueFloat && (ARMFloat)a->Data.Int.i == b->Data.Float.f);
+	break;
 
       case ValueFloat:
-	return (b->Tag == ValueFloat && a->Data.Float.f == b->Data.Float.f)
-	         || (option_autocast && b->Tag == ValueInt && a->Data.Float.f == (ARMFloat)b->Data.Int.i);
+	result = (b->Tag == ValueFloat && a->Data.Float.f == b->Data.Float.f)
+		   || (b->Tag == ValueInt && a->Data.Float.f == (ARMFloat)b->Data.Int.i);
+	break;
 
       case ValueString:
-	return b->Tag == ValueString
-		 && a->Data.String.len == b->Data.String.len
-		 && !memcmp (a->Data.String.s, b->Data.String.s, a->Data.String.len);
+	result = b->Tag == ValueString
+		   && a->Data.String.len == b->Data.String.len
+		   && !memcmp (a->Data.String.s, b->Data.String.s, a->Data.String.len);
+	break;
 
       case ValueBool:
-	return b->Tag == ValueBool && a->Data.Bool.b == b->Data.Bool.b;
+	result = b->Tag == ValueBool && a->Data.Bool.b == b->Data.Bool.b;
+	break;
 
       case ValueAddr:
-	return b->Tag == ValueAddr
-		 && a->Data.Addr.i == b->Data.Addr.i
-		 && a->Data.Addr.r == b->Data.Addr.r;
+	result = b->Tag == ValueAddr
+		   && a->Data.Addr.i == b->Data.Addr.i
+		   && a->Data.Addr.r == b->Data.Addr.r;
+	break;
 
       case ValueSymbol:
-	return b->Tag == ValueSymbol
-		 && a->Data.Symbol.factor == b->Data.Symbol.factor
-		 && a->Data.Symbol.symbol == b->Data.Symbol.symbol;
+	result = b->Tag == ValueSymbol
+		   && a->Data.Symbol.factor == b->Data.Symbol.factor
+		   && a->Data.Symbol.symbol == b->Data.Symbol.symbol
+		   && a->Data.Symbol.offset == b->Data.Symbol.offset;
+	break;
 
       case ValueCode:
-	  // FIXME: code pieces can differ in their components but still end up
-	  // with the same semantics.  We should normalize before really binary
-	  // comparing them.
-	  return b->Tag == ValueCode
+	result = b->Tag == ValueCode
 		   && a->Data.Code.len == b->Data.Code.len
 		   && codeEqual (a->Data.Code.len, a->Data.Code.c, b->Data.Code.c);
+	break;
 
       default:
 	errorAbort ("Internal valueEqual: illegal value");
 	break;
     }
 
-  return false;
+  if (a == &aCp)
+    valueFree (&aCp);
+  if (b == &bCp)
+    valueFree (&bCp);
+  
+  return result;
 }
 
 
@@ -220,7 +265,7 @@ valuePrint (const Value *v)
 	printf ("<illegal>");
 	break;
       case ValueInt:
-	printf ("Int <%d>", v->Data.Int.i);
+	printf ("Int <%d = 0x%x>", v->Data.Int.i, v->Data.Int.i);
 	break;
       case ValueFloat:
 	printf ("Float <%g>", v->Data.Float.f);
@@ -236,10 +281,10 @@ valuePrint (const Value *v)
 	codePrint (v->Data.Code.len, v->Data.Code.c);
 	break;
       case ValueAddr:
-	printf ("AddrOffset 0x%x, reg %d", v->Data.Addr.i, v->Data.Addr.r);
+	printf ("AddrOffset reg %d + #0x%x", v->Data.Addr.r, v->Data.Addr.i);
 	break;
       case ValueSymbol:
-	printf ("Symbol %d x '%s'", v->Data.Symbol.factor, v->Data.Symbol.symbol->str);
+	printf ("Symbol %d x '%s' + #0x%x", v->Data.Symbol.factor, v->Data.Symbol.symbol->str, v->Data.Symbol.offset);
 	break;
       default:
 	printf ("tag 0x%x ???", v->Tag);

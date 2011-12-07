@@ -85,30 +85,27 @@ bool
 Reloc_QueueExprUpdate (RelocUpdater callback, ARMWord offset, ValueTag legal,
 		       void *privData, size_t sizePrivData)
 {
+  assert (gASM_Phase == ePassTwo);
+
   Value value; /* We have ownership of this.  */
-  if (Code_HasUndefinedSymbols ())
-    value = Code_TakeSnapShot ();
+  /* Evaluate expression.  */
+  const Value *result = codeEval (legal, legal & ValueAddr ? &offset : NULL);
+  if (result->Tag == ValueIllegal)
+    return true; /* This is bad, we even didn't get a ValueCode.  */
+  if (result->Tag == ValueCode)
+    {
+      value.Tag = ValueIllegal;
+      Value_Assign (&value, result);
+    }
   else
     {
-      /* Evaluate expression.  */
-      const Value *result = codeEval (legal, legal & ValueAddr ? &offset : NULL);
-      if (result->Tag == ValueIllegal)
-	return true; /* This is bad, we even didn't get a ValueCode.  */
-      if (result->Tag == ValueCode)
+      /* Make ValueCode from it.  */
+      const Code code =
 	{
-	  value.Tag = ValueIllegal;
-	  Value_Assign (&value, result);
-	}
-      else
-	{
-	  /* Make ValueCode from it.  */
-	  const Code code =
-	    {
-	      .Tag = CodeValue,
-	      .Data.value = *result
-	    };
-	  value = Value_Code (1, &code);
-	}
+	  .Tag = CodeValue,
+	  .Data.value = *result
+	};
+      value = Value_Code (1, &code);
     }
   assert (value.Tag == ValueCode);
   if (!callback (FS_GetCurFileName (), FS_GetCurLineNumber (), offset, &value,
@@ -183,7 +180,14 @@ relocFix (const Symbol *area)
       const Value *value = codeEval (relQueue->legal | ValueCode,
 				     relQueue->legal & ValueAddr ? &relQueue->offset : NULL);
       if (value->Tag == ValueIllegal)
-	errorLine (relQueue->file, relQueue->lineno, ErrorError, "Unable to express relocation");
+	{
+	  errorLine (relQueue->file, relQueue->lineno, ErrorError, "Unable to express relocation");
+#ifdef DEBUG
+	  printf ("Relocation value is: ");
+	  valuePrint (&relQueue->expr);
+	  printf ("\n");
+#endif
+	}
       else
 	{
 	  Code code =
@@ -200,7 +204,14 @@ relocFix (const Symbol *area)
 	    value = &codeAsValue;
 	  if (relQueue->callback (relQueue->file, relQueue->lineno,
 				  relQueue->offset, value, relQueue->privData, true))
-	    errorLine (relQueue->file, relQueue->lineno, ErrorError, "Unable to express relocation");
+	    {
+	      errorLine (relQueue->file, relQueue->lineno, ErrorError, "Unable to express relocation");
+#ifdef DEBUG
+	      printf ("Relocation value is: ");
+	      valuePrint (value);
+	      printf ("\n");
+#endif
+	    }
 	}
     }
   areaCurrentSymbol = NULL;
@@ -305,7 +316,7 @@ relocELFOutput (FILE *outfile, const Symbol *area)
 	                    : value->Data.Symbol.symbol->used);
 	  int type;
 	  if (relocs->reloc.How & HOW3_RELATIVE)
-	    type = R_ARM_PC24;
+	    type = R_ARM_PC24; /* FIXME: for EABI, this should be R_ARM_CALL or R_ARM_JUMP24.  */
 	  else
 	    type = R_ARM_ABS32;
 	  areloc.r_info = armword (ELF32_R_INFO (symbol, type));
@@ -330,7 +341,7 @@ relocELFOutput (FILE *outfile, const Symbol *area)
 		  int symbol = value->Data.Symbol.symbol->offset + 1;
 		  int type;
 		  if (relocs->reloc.How & HOW3_RELATIVE)
-		    type = R_ARM_PC24;
+		    type = R_ARM_PC24; /* FIXME: for EABI, this should be R_ARM_CALL or R_ARM_JUMP24.  */
 		  else
 		    type = R_ARM_ABS32;
 		  areloc.r_info = armword (ELF32_R_INFO (symbol, type));

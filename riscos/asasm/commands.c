@@ -39,6 +39,7 @@
 #include "area.h"
 #include "code.h"
 #include "commands.h"
+#include "common.h"
 #include "error.h"
 #include "expr.h"
 #include "filestack.h"
@@ -48,7 +49,6 @@
 #include "lex.h"
 #include "local.h"
 #include "main.h"
-#include "os.h"
 #include "output.h"
 #include "put.h"
 #include "symbol.h"
@@ -59,7 +59,7 @@
  * symbol is already defined with a value different than parsed.
  */
 static bool
-c_define (const char *msg, Symbol *sym, ValueTag legal)
+Define (const char *msg, Symbol *sym, unsigned symType, ValueTag legal)
 {
   bool fail;
   if (sym == NULL)
@@ -76,19 +76,7 @@ c_define (const char *msg, Symbol *sym, ValueTag legal)
 	  fail = true;
 	}
       else
-	{
-	  if (sym->value.Tag != ValueIllegal && !valueEqual (&sym->value, value))
-	    {
-	      error (ErrorError, "Symbol %s is already defined", sym->str);
-	      fail = true;
-	    }
-	  else
-	    {
-	      Value_Assign (&sym->value, value);
-	      sym->type |= SYMBOL_DEFINED | SYMBOL_DECLARED | SYMBOL_ABSOLUTE;
-	      fail = false;
-	    }
-	}
+	fail = Symbol_Define (sym, SYMBOL_ABSOLUTE | symType, value);
     }
   return fail;
 }
@@ -99,7 +87,7 @@ c_define (const char *msg, Symbol *sym, ValueTag legal)
 bool
 c_equ (Symbol *symbol)
 {
-  c_define ("* or EQU", symbol, ValueAll);
+  Define ("* or EQU", symbol, 0, ValueAll);
   return false;
 }
 
@@ -109,9 +97,8 @@ c_equ (Symbol *symbol)
 bool
 c_fn (Symbol *symbol)
 {
-  if (!c_define ("float register", symbol, ValueInt))
+  if (!Define ("float register", symbol, SYMBOL_FPUREG, ValueInt))
     {
-      symbol->type |= SYMBOL_FPUREG;
       int no = symbol->value.Data.Int.i;
       if (no < 0 || no > 7)
 	{
@@ -128,9 +115,8 @@ c_fn (Symbol *symbol)
 bool
 c_rn (Symbol *symbol)
 {
-  if (!c_define ("register", symbol, ValueInt))
+  if (!Define ("register", symbol, SYMBOL_CPUREG, ValueInt))
     {
-      symbol->type |= SYMBOL_CPUREG;
       int no = symbol->value.Data.Int.i;
       if (no < 0 || no > 15)
 	{
@@ -147,9 +133,8 @@ c_rn (Symbol *symbol)
 bool
 c_cn (Symbol *symbol)
 {
-  if (!c_define ("coprocessor register", symbol, ValueInt))
+  if (!Define ("coprocessor register", symbol, SYMBOL_COPREG, ValueInt))
     {
-      symbol->type |= SYMBOL_COPREG;
       int no = symbol->value.Data.Int.i;
       if (no < 0 || no > 15)
 	{
@@ -166,9 +151,8 @@ c_cn (Symbol *symbol)
 bool
 c_cp (Symbol *symbol)
 {
-  if (!c_define ("coprocessor number", symbol, ValueInt))
+  if (!Define ("coprocessor number", symbol, SYMBOL_COPNUM, ValueInt))
     {
-      symbol->type |= SYMBOL_COPNUM;
       int no = symbol->value.Data.Int.i;
       if (no < 0 || no > 15)
 	{
@@ -180,36 +164,13 @@ c_cp (Symbol *symbol)
 }
 
 /**
- * Implements "HEAD" : APCS function name signature.
- * ObjAsm extension.
+ * Implements DATA (as nop).
  */
 bool
-c_head (void)
+c_data (void)
 {
-  const int startAreaOffset = areaCurrentSymbol->value.Data.Int.i;
-  const Value *value = exprBuildAndEval (ValueString);
-  switch (value->Tag)
-    {
-      case ValueString:
-	{
-	  size_t len = value->Data.String.len;
-	  const char *str = value->Data.String.s;
-	  for (size_t i = 0; i < len; ++i)
-	    Put_Data (1, str[i]);
-	  Put_Data (1, '\0');
-	}
-        break;
-
-      default:
-        error (ErrorError, "Illegal %s expression", "string");
-        break;
-    }
-
-  Area_AlignTo (areaCurrentSymbol->value.Data.Int.i, 4, NULL);
-  Put_Data (4, 0xFF000000 + areaCurrentSymbol->value.Data.Int.i - startAreaOffset);
   return false;
 }
-
 
 /**
  * Reloc updater for DefineInt().
@@ -305,7 +266,21 @@ DefineInt (int size, bool allowUnaligned, const char *mnemonic)
   do
     {
       exprBuild ();
-      if (Reloc_QueueExprUpdate (DefineInt_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
+      if (gASM_Phase == ePassOne)
+	{
+	  const Value *result = codeEval (ValueInt | ValueString | ValueSymbol | ValueCode, NULL);
+	  if (result->Tag == ValueString)
+	    {
+	      size_t len = result->Data.String.len;
+	      const char *str = result->Data.String.s;
+	      /* Lay out a string.  */
+	      for (size_t i = 0; i != len; ++i)
+		Put_AlignDataWithOffset (areaCurrentSymbol->area.info->curIdx, privData.size, str[i], !privData.allowUnaligned);
+	    }
+	  else
+	    Put_AlignDataWithOffset (areaCurrentSymbol->area.info->curIdx, privData.size, 0, !privData.allowUnaligned);
+	}
+      else if (Reloc_QueueExprUpdate (DefineInt_RelocUpdater, areaCurrentSymbol->area.info->curIdx,
 				 ValueInt | ValueString | ValueSymbol | ValueCode,
 				 &privData, sizeof (privData)))
 	error (ErrorError, "Illegal %s expression", mnemonic);
@@ -331,23 +306,33 @@ c_dcb (void)
  * "Define Constant Word"
  */
 bool
-c_dcw (void)
+c_dcw (bool doLowerCase)
 {
-  bool allowUnaligned = Input_Match ('U', false);
-  if (inputLook () && !isspace ((unsigned char)inputLook ()))
+  bool allowUnaligned = Input_Match (doLowerCase ? 'u' : 'U', false);
+  if (!Input_IsEndOfKeyword ())
     return true;
   return DefineInt (2, allowUnaligned, allowUnaligned ? "DCWU" : "DCW");
 }
 
 /**
- * Implements DCD, DCDU and & (32 bit integer).
+ * Implements & (32 bit integer).
  * "Define Constant Double-word"
  */
 bool
-c_dcd (void)
+c_ampersand (void)
 {
-  bool allowUnaligned = Input_Match ('U', false);
-  if (inputLook () && !isspace ((unsigned char)inputLook ()))
+  return DefineInt (4, false, "&");
+}
+
+/**
+ * Implements DCD and DCDU (32 bit integer).
+ * "Define Constant Double-word"
+ */
+bool
+c_dcd (bool doLowerCase)
+{
+  bool allowUnaligned = Input_Match (doLowerCase ? 'u' : 'U', false);
+  if (!Input_IsEndOfKeyword ())
     return true;
   return DefineInt (4, allowUnaligned, allowUnaligned ? "DCDU" : "DCD");
 }
@@ -359,6 +344,7 @@ c_dcd (void)
 bool
 c_dci (void)
 {
+  Area_AlignTo (areaCurrentSymbol->area.info->curIdx, 4, "instruction");
   return DefineInt (4, false, "DCI");
 }
 
@@ -426,13 +412,16 @@ DefineReal (int size, bool allowUnaligned, const char *mnemonic)
   do
     {
       exprBuild ();
-      ValueTag legal = ValueFloat | ValueSymbol | ValueCode;
-      if (option_autocast)
-	legal |= ValueInt;
-      if (Reloc_QueueExprUpdate (DefineReal_RelocUpdater, areaCurrentSymbol->value.Data.Int.i,
-				 legal, &privData, sizeof (privData)))
-	error (ErrorError, "Illegal %s expression", mnemonic);
-
+      if (gASM_Phase == ePassOne)
+	Put_FloatDataWithOffset (areaCurrentSymbol->area.info->curIdx,
+				 privData.size, 0., !privData.allowUnaligned);
+      else
+	{
+	  if (Reloc_QueueExprUpdate (DefineReal_RelocUpdater, areaCurrentSymbol->area.info->curIdx,
+				     ValueFloat | ValueSymbol | ValueCode, &privData, sizeof (privData)))
+	    error (ErrorError, "Illegal %s expression", mnemonic);
+	}
+      
       skipblanks ();
     }
   while (Input_Match (',', false));
@@ -444,10 +433,10 @@ DefineReal (int size, bool allowUnaligned, const char *mnemonic)
  * "Define Constant Float-single precision"
  */
 bool
-c_dcfs (void)
+c_dcfs (bool doLowerCase)
 {
-  bool allowUnaligned = Input_Match ('U', false);
-  if (inputLook () && !isspace ((unsigned char)inputLook ()))
+  bool allowUnaligned = Input_Match (doLowerCase ? 'u' : 'U', false);
+  if (!Input_IsEndOfKeyword ())
     return true;
   return DefineReal (4, allowUnaligned, allowUnaligned ? "DCFSU" : "DCFS");
 }
@@ -457,10 +446,10 @@ c_dcfs (void)
  * "Define Constant Float-double precision"
  */
 bool
-c_dcfd (void)
+c_dcfd (bool doLowerCase)
 {
-  bool allowUnaligned = Input_Match ('U', false);
-  if (inputLook () && !isspace ((unsigned char)inputLook ()))
+  bool allowUnaligned = Input_Match (doLowerCase ? 'u' : 'U', false);
+  if (!Input_IsEndOfKeyword ())
     return true;
   return DefineReal (8, allowUnaligned, allowUnaligned ? "DCFDU" : "DCFD");
 }
@@ -472,7 +461,7 @@ bool
 c_get (void)
 {
   char *filename;
-  if ((filename = strdup (inputRest ())) == NULL)
+  if ((filename = strdup (Input_Rest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
   for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
@@ -486,8 +475,7 @@ c_get (void)
 	error (ErrorError, "Skipping extra characters '%s' after filename", cptr);
     }
 
-  FS_PushFilePObject (filename);
-  if (option_verbose)
+  if (!FS_PushFilePObject (filename) && option_verbose)
     fprintf (stderr, "Including file \"%s\" as \"%s\"\n", filename, gCurPObjP->name);
   return false;
 }
@@ -499,7 +487,7 @@ bool
 c_lnk (void)
 {
   char *filename;
-  if ((filename = strdup (inputRest ())) == NULL)
+  if ((filename = strdup (Input_Rest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
   for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
@@ -517,9 +505,11 @@ c_lnk (void)
   while (gCurPObjP->type == POType_eMacro)
     FS_PopPObject (true);
   FS_PopPObject (true);
-  
-  FS_PushFilePObject (filename);
-  if (option_verbose)
+
+  /* Dump literal pool.  */
+  Lit_DumpPool ();
+
+  if (!FS_PushFilePObject (filename) && option_verbose)
     fprintf (stderr, "Linking to file \"%s\" as \"%s\"\n", filename, gCurPObjP->name);
   return false;
 }
@@ -531,9 +521,8 @@ bool
 c_idfn (void)
 {
   free ((void *)idfn_text);
-  if ((idfn_text = strdup (inputRest ())) == NULL)
+  if ((idfn_text = strdup (Input_Rest ())) == NULL)
     errorOutOfMem();
-  skiprest ();
   return false;
 }
 
@@ -544,30 +533,31 @@ bool
 c_incbin (void)
 {
   char *filename;
-  if ((filename = strdup (inputRest ())) == NULL)
+  if ((filename = strdup (Input_Rest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
   for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
     /* */;
   *cptr = '\0';
 
-  const char *newFilename;
-  FILE *binfp = getInclude (filename, &newFilename);
+  ASFile asFile;
+  FILE *binfp = Include_Get (filename, &asFile, true);
   if (!binfp)
+    error (ErrorError, "Cannot open file \"%s\"", filename);
+  else
     {
-      error (ErrorError, "Cannot open file \"%s\"", filename);
-      free (filename);
-      free ((void *)newFilename);
-      return false;
+      if (option_verbose)
+	fprintf (stderr, "Including binary file \"%s\" as \"%s\"\n", filename, asFile.canonName);
+
+      /* Include binary file.  */
+      int c;
+      while ((c = getc (binfp)) != EOF)
+	Put_Data (1, c);
+      fclose (binfp);
     }
-  if (option_verbose)
-    fprintf (stderr, "Including binary file \"%s\" as \"%s\"\n", filename, newFilename);
-  free ((void *)newFilename);
-  /* Include binary file.  */
-  int c;
-  while ((c = getc (binfp)) != EOF)
-    Put_Data (1, c);
-  fclose (binfp);
+
+  free (filename);
+  ASFile_Free (&asFile);
   return false;
 }
 
@@ -590,19 +580,24 @@ c_end (void)
 bool
 c_assert (void)
 {
-  const Value *value = exprBuildAndEval (ValueBool);
-  switch (value->Tag)
+  if (gASM_Phase == ePassOne)
+    Input_Rest ();
+  else
     {
-      case ValueBool:
-	if (!value->Data.Bool.b)
-	  error (ErrorError, "Assertion failed");
-	break;
+      const Value *value = exprBuildAndEval (ValueBool);
+      switch (value->Tag)
+	{
+	  case ValueBool:
+	    if (!value->Data.Bool.b)
+	      error (ErrorError, "Assertion failed");
+	    break;
 
-      default:
-	error (ErrorError, "ASSERT expression must be boolean");
-	break;
+	  default:
+	    error (ErrorError, "ASSERT expression must be boolean");
+	    break;
+	}
     }
-
+  
   return false;
 }
 
@@ -641,10 +636,14 @@ c_info (void)
       return false;
     }
 
-  if (giveErr)
-    error (ErrorError, "%.*s", (int)message->Data.String.len, message->Data.String.s);
-  else
-    printf ("%.*s\n", (int)message->Data.String.len, message->Data.String.s);
+  /* Give output during pass one.  */
+  if (gASM_Phase == ePassOne)
+    {
+      if (giveErr)
+	error (ErrorError, "%.*s", (int)message->Data.String.len, message->Data.String.s);
+      else
+	printf ("%.*s\n", (int)message->Data.String.len, message->Data.String.s);
+    }
   return false;
 }
 
@@ -654,7 +653,7 @@ c_info (void)
 bool
 c_opt (void)
 {
-  inputRest();
+  Input_Rest ();
   /* Do nothing.  This is for compatiblity with objasm.  */
   return false;
 }
@@ -665,7 +664,7 @@ c_opt (void)
 bool
 c_title (void)
 {
-  inputRest();
+  Input_Rest ();
   /* Do nothing right now.  This command is for the benefit of error reporting */
   return false;
 }

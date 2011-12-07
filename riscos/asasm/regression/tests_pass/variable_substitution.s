@@ -188,4 +188,45 @@ Green	SETS	""
 	=	"xy"
 	]
 
+	; Do only substituion for GBLL, GBLS and GBLA.
+	AREA	Data, DATA
+	ORG	&8000
+	[ :LNOT: REFERENCE
+Var1	RN	0
+Var2	*	42
+	GBLL	Var3
+Var3	SETL	{TRUE}
+	GBLA	Var4
+Var4	SETA	3322
+	GBLS	Var5
+Var5	SETS	"foo"
+
+	DCB	"1: $Var1\n"
+	DCB	"2: $Var2\n"
+	DCB	"3: $Var3\n"
+	DCB	"4: $Var4\n"
+	DCB	"5: $Var5\n"
+	DCB	"6: $Data\n"
+Label
+	DCB	"7: $Label\n"
+	|
+	DCB	"1: $Var1\n"
+	DCB	"2: $Var2\n"
+	DCB	"3: T\n"
+	DCB	"4: 00000CFA\n"
+	DCB	"5: foo\n"
+	DCB	"6: $Data\n"
+	DCB	"7: $Label\n"
+	]
+
+	; Check vertical bar don't prevent variable substitution.
+	AREA	Test10, DATA
+	[ :LNOT: REFERENCE
+	GBLA	Test10Var1
+Test10Var1	SETA	1
+|Test10Lbl1|	%	&$Test10Var1*4
+	|
+	DCD	0
+	]
+
 	END

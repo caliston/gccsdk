@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2004-2010 GCCSDK Developers
+ * Copyright (c) 2004-2011 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,7 +23,6 @@
 #ifndef variables_header_included
 #define variables_header_included
 
-#include <stdbool.h>
 #include "lex.h"
 #include "symbol.h"
 
@@ -31,19 +30,19 @@
  * Created for each local variable encountered in a macro as we need to restore
  * it.
  */
-typedef struct varPos
+typedef struct VarPos
 {
-  struct varPos *next;
-  Symbol *symptr; /**< Non-NULL when macro caller has this variable already defined.  */
-  Symbol symbol; /**< When symptr is non-NULL, the previous symbol object.  */
+  struct VarPos *next;
+  Symbol *symbolP; /**< Non-NULL when macro caller has this variable already defined.  */
+  Symbol symbol; /**< When symbolP is non-NULL, the previous symbol object.  */
   char name[]; /**< NUL terminated symbol name.  */
-} varPos;
+} VarPos;
 
 bool c_gbl (void);
 bool c_lcl (void);
-bool c_set (const Lex *);
+bool c_set (const Lex *label);
 
-void var_restoreLocals (const varPos *);	/* called on macro exit */
-void var_define (const char *);
+void Var_RestoreLocals (const VarPos *);	/* called on macro exit */
+void Var_Define (const char *);
 
 #endif

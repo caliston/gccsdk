@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2004-2010 GCCSDK Developers
+ * Copyright (c) 2004-2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -50,7 +50,7 @@ typedef struct Code
 void codeInit (void);
 
 void codeOperator (Operator op);
-void codeSymbol (Symbol *symbol);
+void codeSymbol (Symbol *symbol, int offset);
 void codeInt (int value);
 void codePosition (Symbol *area, int offset);
 void codeStorage (void);
@@ -60,16 +60,12 @@ void codeBool (bool value);
 void codeAddr (int reg, int offset);
 void codeValue (const Value *value, bool expCode);
 
-const Value *codeEvalLow (ValueTag legal, size_t size, Code *program, const ARMWord *instrOffsetP);
+const Value *codeEvalLow (ValueTag legal, size_t size, const Code *program, const ARMWord *instrOffsetP);
 const Value *codeEval (ValueTag legal, const ARMWord *instrOffsetP);
 
 bool Code_HasUndefinedSymbols (void);
 Value Code_TakeSnapShot (void);
-void Code_ExpandCurrAreaSymbolAsOffset (Value *value, int offset);
 
-#if 0
-void Code_Assign (Code *dst, const Code *src);
-#endif
 void Code_Free (Code *code, size_t len);
 Code *codeCopy (size_t len, const Code *code);
 bool codeEqual (size_t len, const Code *a, const Code *b);

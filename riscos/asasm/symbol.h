@@ -23,6 +23,7 @@
 #ifndef symbol_header_included
 #define symbol_header_included
 
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "lex.h"
@@ -32,7 +33,7 @@
 #define SYMBOL_REFERENCE 0x0002 /* E.g. IMPORT symbol, or unused EXPORT symbol.  */
 #define SYMBOL_GLOBAL    0x0003	/* Defined with global scope.  E.g. used EXPORT symbol.  */
 
-#define SYMBOL_KIND(x)   ((x) & 0x0003) /* Returns: 0 (area symbol, symbols which are only marked as imported or exported), SYMBOL_LOCAL, SYMBOL_REFERENCE or SYMBOL_GLOBAL.  */
+#define SYMBOL_KIND(x)   ((x) & 0x0003) /* Returns: 0 (area symbol (SYMBOL_AREA is set) or symbols which are not marked as imported nor exported), SYMBOL_LOCAL, SYMBOL_REFERENCE or SYMBOL_GLOBAL.  */
 
 #define SYMBOL_DEFINED   0x0001 /* This is a mask.  */
 #define SYMBOL_EXPORT    0x0002 /* This is a mask.  */
@@ -55,18 +56,16 @@
 
 #define SYMBOL_MACRO_LOCAL	0x00010000 /** Set when symbol is only known as
   a local macro variable.  */
+#define SYMBOL_RW		0x00020000 /** GBLL, GBLA, GBLS, LBLL, LBLA or LBLS, i.e. a read-write symbol.  */
 
 #define SYMBOL_KEEP		0x01000000
-#define SYMBOL_AREA		0x02000000 /* Symbol is actually an area name. When set, SYMBOL_DECLARED is set as well, but not SYMBOL_DEFINED.  */
-#define SYMBOL_NOTRESOLVED	0x04000000
+#define SYMBOL_AREA		0x02000000 /* Symbol is an area name.  */
 
 #define SYMBOL_CPUREG		0x10000000
 #define SYMBOL_FPUREG		0x20000000
 #define SYMBOL_COPREG		0x30000000
 #define SYMBOL_COPNUM		0x40000000
 #define SYMBOL_GETREGTYPE(x)	((x) & 0x70000000)
-
-#define SYMBOL_DECLARED		0x80000000
 
 #define SYMBOL_TABLESIZE 1024
 
@@ -92,38 +91,47 @@ typedef struct Symbol
       either -1 (no relocation needed),
       either 0 (relocation needed, see Reloc_Create()).
 
+    At end of Symbol_CreateSymbolOut():
       For area symbols:
         - AOF output : this will be the area number counted from 0
-        - ELF output : this is the section number
+        - ELF output : this is the section number (counted from 3)
       For other symbols:
-        Indicates this symbol's position in the symbol table.
-
-    At symbolFix():
-       Symbol index.  */
+        When >= 0 : symbol index,
+        When -1 : symbol won't appear in the symbol table.  */
 
   /* Symbol name: */
   size_t len;		/** length of str[] without its NUL terminator.  */
   char str[1];		/** symbol name as NUL terminated string */
 } Symbol;
 
+/* Prefix of all internal AsAsm symbols.  */
+#define kIntLabelPrefix "$$AsAsm$$Int$$"
+
 void Symbol_Init (void);
-Symbol *symbolAdd (const Lex *l);
 Symbol *symbolGet (const Lex *l);
 Symbol *symbolFind (const Lex *l);
 void symbolRemove (const Lex *l);
 
-unsigned int symbolFix (size_t *stringSizeNeeded);
-void symbolStringOutput (FILE *outfile);
-void symbolSymbolAOFOutput (FILE *outfile);
-#ifndef NO_ELF_SUPPORT
-void symbolSymbolELFOutput (FILE *outfile);
-#endif
+bool Symbol_Define (Symbol *symbol, unsigned newSymbolType, const Value *newValue);
+
+typedef struct
+{
+  Symbol **allSymbolsPP; /**< Array of symbol ptrs to output.  Ordered first local then global (ELF requirement), then alphabetically (fun).  */
+  unsigned numAllSymbols;
+  unsigned numLocalSymbols;
+  unsigned stringSize;
+} SymbolOut_t;
+
+SymbolOut_t Symbol_CreateSymbolOut (void);
+void Symbol_OutputStrings (FILE *outfile, const SymbolOut_t *symOutP);
+void Symbol_OutputForAOF (FILE *outfile, const SymbolOut_t *symOutP);
+void Symbol_OutputForELF (FILE *outfile, const SymbolOut_t *symOutP);
+void Symbol_FreeSymbolOut (SymbolOut_t *symOutP);
 
 bool c_export (void);
 bool c_import (void);
 bool c_keep (void);
 bool c_strong (void);
-bool c_exportas (void);
 
 #ifdef DEBUG
 void symbolPrint (const Symbol *sym);

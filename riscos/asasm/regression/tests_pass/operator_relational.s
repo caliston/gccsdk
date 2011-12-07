@@ -13,6 +13,8 @@ EXTENSION SETL	{FALSE}
 	= :STR:(5=3)
 	= :STR:(-1=1)
 	= :STR:(-1=&FFFFFFFF)
+	= :STR:(:CHR:235=5)
+	= :STR:(:CHR:235=235)
 	= :STR:("ABC"="DEF")
 	= :STR:("ABC"="ABC")
 	= :STR:("ABC"="ABCD")
@@ -21,6 +23,9 @@ EXTENSION SETL	{FALSE}
 	= :STR:({FALSE}={TRUE})
 	= :STR:({TRUE}={FALSE})
 	= :STR:({TRUE}={TRUE})
+LblEq
+	= :STR:(.=LblEq)
+	= :STR:(.=LblEq)
 
 	; ==
 	[ EXTENSION
@@ -29,6 +34,8 @@ EXTENSION SETL	{FALSE}
 	= :STR:(5==3)
 	= :STR:(-1==1)
 	= :STR:(-1==&FFFFFFFF)
+	= :STR:(:CHR:235==5)
+	= :STR:(:CHR:235==235)
 	= :STR:("ABC"=="DEF")
 	= :STR:("ABC"=="ABC")
 	= :STR:("ABC"=="ABCD")
@@ -37,6 +44,9 @@ EXTENSION SETL	{FALSE}
 	= :STR:({FALSE}=={TRUE})
 	= :STR:({TRUE}=={FALSE})
 	= :STR:({TRUE}=={TRUE})
+LblEqEq
+	= :STR:(.=LblEqEq)
+	= :STR:(.=LblEqEq)
 	]
 
 	; <>
@@ -45,6 +55,8 @@ EXTENSION SETL	{FALSE}
 	= :STR:(5<>3)
 	= :STR:(-1<>1)
 	= :STR:(-1<>&FFFFFFFF)
+	= :STR:(:CHR:235<>5)
+	= :STR:(:CHR:235<>235)
 	= :STR:("ABC"<>"DEF")
 	= :STR:("ABC"<>"ABC")
 	= :STR:("ABC"<>"ABCD")
@@ -53,6 +65,9 @@ EXTENSION SETL	{FALSE}
 	= :STR:({FALSE}<>{TRUE})
 	= :STR:({TRUE}<>{FALSE})
 	= :STR:({TRUE}<>{TRUE})
+LblNEq1
+	= :STR:(.<>LblNEq1)
+	= :STR:(.<>LblNEq1)
 
 	; !=
 	[ EXTENSION
@@ -61,6 +76,8 @@ EXTENSION SETL	{FALSE}
 	= :STR:(5!=3)
 	= :STR:(-1!=1)
 	= :STR:(-1!=&FFFFFFFF)
+	= :STR:(:CHR:235!=5)
+	= :STR:(:CHR:235!=235)
 	= :STR:("ABC"!="DEF")
 	= :STR:("ABC"!="ABC")
 	= :STR:("ABC"!="ABCD")
@@ -69,6 +86,9 @@ EXTENSION SETL	{FALSE}
 	= :STR:({FALSE}!={TRUE})
 	= :STR:({TRUE}!={FALSE})
 	= :STR:({TRUE}!={TRUE})
+LblNEq2
+	= :STR:(.<>LblNEq2)
+	= :STR:(.<>LblNEq2)
 	]
 
 	; /=
@@ -77,6 +97,8 @@ EXTENSION SETL	{FALSE}
 	= :STR:(5/=3)
 	= :STR:(-1/=1)
 	= :STR:(-1/=&FFFFFFFF)
+	= :STR:(:CHR:235/=5)
+	= :STR:(:CHR:235/=235)
 	= :STR:("ABC"/="DEF")
 	= :STR:("ABC"/="ABC")
 	= :STR:("ABC"/="ABCD")
@@ -85,6 +107,9 @@ EXTENSION SETL	{FALSE}
 	= :STR:({FALSE}/={TRUE})
 	= :STR:({TRUE}/={FALSE})
 	= :STR:({TRUE}/={TRUE})
+LblNEq3
+	= :STR:(.<>LblNEq3)
+	= :STR:(.<>LblNEq3)
 
 	; :LEOR:
 	= "|"
@@ -99,6 +124,8 @@ EXTENSION SETL	{FALSE}
 	= :STR:(5>3)
 	= :STR:(-1>1)
 	= :STR:(-1>&FFFFFFFF)
+	= :STR:(:CHR:235>5)
+	= :STR:(:CHR:235>235)
 	= :STR:("ABC">"DEF")
 	= :STR:("ABC">"ABC")
 	= :STR:("ABC">"ABCD")
@@ -110,6 +137,8 @@ EXTENSION SETL	{FALSE}
 	= :STR:(5>=3)
 	= :STR:(-1>=1)
 	= :STR:(-1>=&FFFFFFFF)
+	= :STR:(:CHR:235>=5)
+	= :STR:(:CHR:235>=235)
 	= :STR:("ABC">="DEF")
 	= :STR:("ABC">="ABC")
 	= :STR:("ABC">="ABCD")
@@ -121,6 +150,8 @@ EXTENSION SETL	{FALSE}
 	= :STR:(5<3)
 	= :STR:(-1<1)
 	= :STR:(-1<&FFFFFFFF)
+	= :STR:(:CHR:235<5)
+	= :STR:(:CHR:235<235)
 	= :STR:("ABC"<"DEF")
 	= :STR:("ABC"<"ABC")
 	= :STR:("ABC"<"ABCD")
@@ -132,6 +163,8 @@ EXTENSION SETL	{FALSE}
 	= :STR:(5<=3)
 	= :STR:(-1<=1)
 	= :STR:(-1<=&FFFFFFFF)
+	= :STR:(:CHR:235<=5)
+	= :STR:(:CHR:235<=235)
 	= :STR:("ABC"<="DEF")
 	= :STR:("ABC"<="ABC")
 	= :STR:("ABC"<="ABCD")
@@ -139,21 +172,37 @@ EXTENSION SETL	{FALSE}
 
 	|
 
-	= "|FFFTFTFFTFFT"	; =
+	= "|FFFTFTFTFFTFFTTF"	; =
 	[ EXTENSION
-	= "|FFFTFTFFTFFT"	; ==
+	= "|FFFTFTFTFFTFFTTF"	; ==
 	]
-	= "|TTTFTFTTFTTF"	; <>
+	= "|TTTFTFTFTTFTTFFT"	; <>
 	[ EXTENSION
-	= "|TTTFTFTTFTTF"	; !=
+	= "|TTTFTFTFTTFTTFFT"	; !=
 	]
-	= "|TTTFTFTTFTTF"	; /=
+	= "|TTTFTFTFTTFTTFFT"	; /=
 	= "|FTTF"		; :LEOR:
-	= "|FTTFFFFT"		; >
-	= "|FTTTFTFT"		; >=
-	= "|TFFFTFTF"		; <
-	= "|TFFTTTTF"		; <=
+	= "|FTTFTFFFFT"		; >
+	= "|FTTTTTFTFT"		; >=
+	= "|TFFFFFTFTF"		; <
+	= "|TFFTFTTTTF"		; <=
 
+	]
+
+	AREA	Data2, DATA, READONLY
+	[ :LNOT: REFERENCE
+Lbl2	; Needs to be at start of area.
+	= :STR:(.=Lbl2)
+	|
+	= "T"
+	]
+
+	AREA	Data3, DATA, READONLY
+	[ :LNOT: REFERENCE
+Lbl3	; Needs to be at start of area.
+	= :STR:(.<>Lbl3)
+	|
+	= "F"
 	]
 
 	END

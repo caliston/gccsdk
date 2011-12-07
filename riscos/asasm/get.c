@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2010 GCCSDK Developers
+ * Copyright (c) 2000-2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,6 +28,8 @@
 #  include <inttypes.h>
 #endif
 
+#include "asm.h"
+#include "code.h"
 #include "error.h"
 #include "expr.h"
 #include "fix.h"
@@ -35,7 +37,6 @@
 #include "help_cpu.h"
 #include "input.h"
 #include "lex.h"
-#include "os.h"
 #include "reloc.h"
 #include "symbol.h"
 
@@ -55,7 +56,7 @@ getTypeInternal (bool genError, unsigned int type, const char *typeStr)
 	}
       else if (genError)
 	error (ErrorError, "Undefined %s %.*s", typeStr,
-	  (int)lexSym.Data.Id.len, lexSym.Data.Id.str);
+	       (int)lexSym.Data.Id.len, lexSym.Data.Id.str);
     }
 
   return genError ? 0 : INVALID_REG;
@@ -244,26 +245,57 @@ getRhs (bool regshift, bool shift, ARMWord ir)
 {
   if (Input_Match ('#', false))
     {
+      if (gASM_Phase == ePassOne)
+	{
+	  Input_Rest ();
+	  return ir;
+	}
       ir |= IMM_RHS;
       const Value *im = exprBuildAndEval (ValueInt | ValueAddr | ValueString); /* FIXME: *** NEED ValueSymbol & ValueCode */
       switch (im->Tag)
 	{
 	  case ValueInt:
-	    if (Input_Match (',', false))
-	      {
-		if (im->Data.Int.i < 0 || im->Data.Int.i >= 256)
-		  error (ErrorError, "Immediate value out of range: 0x%x", im->Data.Int.i);
+	    {
+	      const int imBase = im->Data.Int.i;
+	      if (Input_Match (',', false))
+		{
+		  if (im->Data.Int.i < 0 || im->Data.Int.i >= 256)
+		    error (ErrorError, "Immediate value out of range: 0x%x", im->Data.Int.i);
 
-	        Lex rotator = lexGetPrim ();
-	        if (rotator.tag != LexInt
-	            || rotator.Data.Int.value < 0
-	            || rotator.Data.Int.value > 30
-	            || (rotator.Data.Int.value % 2) == 1)
-		  error (ErrorError, "Bad rotator %d", rotator.Data.Int.value);
+		  /* FIXME: why not call exprBuildAndEval instead ? vvv */
+		  Lex rotator = lexGetPrim ();
+		  int rotatorValue;
+		  switch (rotator.tag)
+		    {
+		      case LexId:
+			codeInit ();
+			codeSymbol (symbolGet (&rotator), 0);
+			const Value *rotatorResult = exprEval (ValueInt);
+			if (rotatorResult->Tag != ValueInt)
+			  {
+			    error (ErrorError, "Illegal immediate expression");
+			    rotatorValue = 0;
+			  }
+			else
+			  rotatorValue = rotatorResult->Data.Int.i;
+			break;
+		      case LexInt:
+			rotatorValue = rotator.Data.Int.value;
+			break;
+		      default:
+			error (ErrorError, "Rotator is not an integer");
+			rotatorValue = 0;
+			break;
+		    }
+		  if (rotatorValue < 0 || rotatorValue > 30
+		      || (rotatorValue % 2) == 1)
+		    error (ErrorError, "Bad rotator %d", rotatorValue);
 
-		ir |= (rotator.Data.Int.value >> 1) << 8;
-	      }
-	    /* Fall through.  */
+		  ir |= (rotatorValue >> 1) << 8;
+	        }
+	      ir = fixImm8s4 (0, ir, imBase);
+	      break;
+	    }
 
 	  case ValueAddr: /* This is for "MOV Rx, #@" support.  */
 	    ir = fixImm8s4 (0, ir, im->Data.Addr.i);
@@ -274,7 +306,7 @@ getRhs (bool regshift, bool shift, ARMWord ir)
 	    if (im->Data.String.len != 1)
 	      error (ErrorError, "String too long to be an immediate expression");
 	    else
-	      ir = fixImm8s4 (0, ir, im->Data.String.s[0]);
+	      ir = fixImm8s4 (0, ir, (uint8_t)im->Data.String.s[0]);
 	    break;
 
 	  default:

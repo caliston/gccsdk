@@ -1,7 +1,7 @@
 /* 
  * AS an assembler for ARM
  * Copyright (c) 1998 Nick Burrett
- * Copyright (c) 2001-2010 GCCSDK Developers
+ * Copyright (c) 2001-2011 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,28 +25,28 @@
 #define os_header_included
 
 #include "config.h"
-#include <error.h>
-#include <string.h>
 
-#ifndef __riscos__
-/* UNIX specific information.  */
-static inline const char *
-CanonicalisePath (const char *path)
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdint.h>
+
+typedef struct
 {
-  const char *rsltP;
-  if ((rsltP = strdup (path)) == NULL)
-    errorOutOfMem ();
-  return rsltP;
-}
-#else
+  const char *canonName; /* Canonical filename.  */
+  off_t size; /* File size.  */
+  uint8_t attribs; /* RISC OS file attributes.  */
+  uint32_t execAddress; /* RISC OS exec address.  */
+  uint32_t loadAddress; /* RISC OS load address.  */
+} ASFile;
+
+bool ASFile_Create (const char *filename, ASFile *asFileP);
+void ASFile_Free (ASFile *asFileP);
+
+#ifdef __riscos__
 
 #include <kernel.h>
 
 int switonum (const char *swi);
-
-int OSCanonicalisePath (const char *path,
-			char *buffer, int bufferSize,
-			char *systemVar, char *defaultPath);
 
 _kernel_oserror *ThrowbackStart (void);
 _kernel_oserror *ThrowbackSendStart (const char *filename);
@@ -62,20 +62,6 @@ _kernel_oserror *ThrowbackEnd (void);
 #define ThrowbackError			1
 #define ThrowbackSeriousError		2
 
-const char *CanonicalisePath (const char *path);
-
 #endif /* !__riscos__ */
-
-#ifndef HAVE_STRNDUP
-char *strndup (const char *str, size_t len);
-#endif
-
-#ifndef HAVE_STRDUP
-char *strdup (const char *str);
-#endif
-
-#ifndef HAVE_STRNCASECMP
-int strncasecmp(const char *str1, const char *str2, size_t n);
-#endif
 
 #endif

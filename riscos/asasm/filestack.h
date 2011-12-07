@@ -75,12 +75,16 @@ typedef struct
    * \return true when failure or EOD, false otherwise.
    */
   bool (*GetLine)(char *bufP, size_t bufSize);
+
+  size_t lastLineSize; /**< Size of the last line read by (*GetLine) *before*
+    any variable substitution is done. So this is *not* equal to what the
+    parsable input is after Input_NextLine().  */
 } PObject;
 
 extern PObject gPOStack[PARSEOBJECT_STACK_SIZE];
 extern PObject *gCurPObjP; /**< Current parsable object.  */
 
-void FS_PushFilePObject (const char *fileName);
+bool FS_PushFilePObject (const char *fileName);
 void FS_PopPObject (bool noCheck);
 
 const char *FS_GetCurFileName (void);

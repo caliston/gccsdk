@@ -31,6 +31,7 @@
 
 #include "area.h"
 #include "code.h"
+#include "common.h"
 #include "error.h"
 #include "expr.h"
 #include "expr.h"
@@ -55,7 +56,7 @@
 static bool
 DestMem_RelocUpdater (const char *file, int lineno, ARMWord offset,
 		      const Value *valueP,
-		      void *privData __attribute__ ((unused)), bool final)
+		      void *privData UNUSED, bool final)
 {
   ARMWord ir = GetWord (offset);
   bool isAddrMode3 = (ir & 0x04000090) == 0x90;
@@ -78,21 +79,22 @@ DestMem_RelocUpdater (const char *file, int lineno, ARMWord offset,
 	{
 	  case ValueInt:
 	    {
-	      /* This can only happen when "LDR Rx, =<constant>" can be turned into
+	      /* This can happen when "LDR Rx, =<constant>" can be turned into
 		 MOV/MVN Rx, #<constant>.
-	         Or when the current area is absolute.  */
-	      if (valueP->Data.Code.len != 1)
-		return true;
+	         Or when the current area is absolute.
+	         Or when LDR Rx, =<label> with label defined in another AREA.  */
 	      ARMWord newIR = ir & NV;
 	      newIR |= DST_OP (GET_DST_OP (ir));
 	      ARMWord im;
-	      if ((im = help_cpuImm8s4 (valP->Data.Int.i)) != (ARMWord)-1)
+	      if (valueP->Data.Code.len == 1
+	          && (im = help_cpuImm8s4 (valP->Data.Int.i)) != (ARMWord)-1)
 		newIR |= M_MOV | IMM_RHS | im;
-	      else if ((im = help_cpuImm8s4 (~valP->Data.Int.i)) != (ARMWord)-1)
+	      else if (valueP->Data.Code.len == 1
+		       && (im = help_cpuImm8s4 (~valP->Data.Int.i)) != (ARMWord)-1)
 		newIR |= M_MVN | IMM_RHS | im;
-	      else if (areaCurrentSymbol->area.info->type & AREA_ABS)
+	      else if ((areaCurrentSymbol->area.info->type & AREA_ABS) != 0)
 		{
-		  ARMWord newOffset = valP->Data.Int.i - (areaCurrentSymbol->area.info->baseAddr + offset + 8);
+		  ARMWord newOffset = valP->Data.Int.i - (Area_GetBaseAddress (areaCurrentSymbol) + offset + 8);
 		  ir |= LHS_OP (15);
 		  if (isAddrMode3)
 		    ir |= B_FLAG;
@@ -117,7 +119,7 @@ DestMem_RelocUpdater (const char *file, int lineno, ARMWord offset,
 	  case ValueSymbol:
 	    if (!final)
 	      return true;
-	    if (Reloc_Create (HOW2_INIT | HOW2_WORD, offset, valP) == NULL)
+	    if (Reloc_Create (HOW2_INIT | HOW2_SIZE | HOW2_RELATIVE, offset, valP) == NULL)
 	      return true;
 	    break;
 
@@ -156,7 +158,7 @@ dstmem (ARMWord ir, const char *mnemonic)
 
   const bool translate = (ir & W_FLAG) != 0; /* We have "T" specified in our mnemonic.  */
   
-  const ARMWord offset = areaCurrentSymbol->value.Data.Int.i;
+  const ARMWord offset = areaCurrentSymbol->area.info->curIdx;
   bool callRelocUpdate;
   switch (inputLook ())
     {
@@ -187,18 +189,19 @@ dstmem (ARMWord ir, const char *mnemonic)
 		      case ValueCode:
 			/* We need to end up with ValueAddr but *valueP is
 			   going to be ValueInt (or Reloc Imm8s4).  */
-			symValue = *valueP;
+			Value_Assign (&symValue, valueP);
 			codeInit ();
 			codeAddr (baseReg, 0);
 			codeValue (&symValue, false);
 			codeOperator (Op_add);
-			symValue = *codeEval (ValueAddr | ValueSymbol | ValueCode, &offset);
+			Value_Assign (&symValue, codeEval (ValueAddr | ValueSymbol | ValueCode, &offset));
 			if (symValue.Tag != ValueIllegal)
 			  break;
 			/* Fall through.  */
 
 		      default:
-			error (ErrorError, "Illegal offset expression");
+			if (gASM_Phase != ePassOne)
+			  error (ErrorError, "Illegal offset expression");
 			symValue = Value_Addr (baseReg, 0);
 			break;
 		    }
@@ -346,15 +349,18 @@ dstmem (ARMWord ir, const char *mnemonic)
 
   Put_Ins (ir);
 
-  assert ((!callRelocUpdate || (ir & P_FLAG)) && "Calling reloc for non pre-increment instructions ?");
+  if (gASM_Phase != ePassOne)
+    {
+      assert ((!callRelocUpdate || (ir & P_FLAG)) && "Calling reloc for non pre-increment instructions ?");
     
-  /* The ValueInt | ValueAddr | ValueSymbol | ValueCode tags are what we
-     support in the LDR/STR/... instruction.  When we have ValueInt it is
-     guaranteed to be a valid immediate.  */
-  if (callRelocUpdate
-      && Reloc_QueueExprUpdate (DestMem_RelocUpdater, offset,
-				ValueInt | ValueAddr | ValueSymbol | ValueCode, NULL, 0))
-    error (ErrorError, "Illegal %s expression", mnemonic);
+      /* The ValueInt | ValueAddr | ValueSymbol | ValueCode tags are what we
+	 support in the LDR/STR/... instruction.  When we have ValueInt it is
+	 guaranteed to be a valid immediate.  */
+      if (callRelocUpdate
+	  && Reloc_QueueExprUpdate (DestMem_RelocUpdater, offset,
+				    ValueInt | ValueAddr | ValueSymbol | ValueCode, NULL, 0))
+	error (ErrorError, "Illegal %s expression", mnemonic);
+    }
 
   return false;
 }
@@ -372,46 +378,39 @@ dstmem (ARMWord ir, const char *mnemonic)
  *   LDR[<cond>]SH <Rd>, <address mode 3> | <pc relative label>
  */
 bool
-m_ldr (void)
+m_ldr (bool doLowerCase)
 {
-  ARMWord cc = optionCondBT (false);
+  ARMWord cc = optionCondBT (false, doLowerCase);
   if (cc == optionError)
     return true;
   return dstmem (cc, "LDR");
 }
 
 static bool
-LdrStrEx (bool isLoad)
+LdrStrEx (bool isLoad, bool doLowerCase)
 {
   enum { wtype = 0x18<<20, dtype = 0x1A<<20, btype = 0x1C<<20, htype = 0x1E<<20 } type;
-  switch (inputLook ())
+  if (Input_Match (doLowerCase ? 'b' : 'B', false))
+    type = btype;
+  else if (Input_Match (doLowerCase ? 'd' : 'D', false))
+    type = dtype;
+  else if (inputLook () == (doLowerCase ? 'h' : 'H'))
     {
-      case 'B':
-	inputSkip ();
-	type = btype;
-        break;
-
-      case 'D':
-	inputSkip ();
-	type = dtype;
-	break;
-
-      case 'H':
-	/* Small hack needed : 'H' can also be the first condition character
-	   of 'HS' or 'HI'.  */
-	if (inputLookN (1) != 'I' && inputLookN (1) != 'S')
-	  {
-	    inputSkip ();
-	    type = htype;
-	    break;
-	  }
-	/* Fall through.  */
-
-      default:
+      /* Small hack needed : 'H' can also be the first condition character
+       of 'HS' or 'HI'.  */
+      if (inputLookN (1) != (doLowerCase ? 'i' : 'I')
+          && inputLookN (1) != (doLowerCase ? 's' : 'S'))
+	{
+	  inputSkip ();
+	  type = htype;
+	}
+      else
 	type = wtype;
-	break;
     }
-  ARMWord cc = optionCond ();
+  else
+    type = wtype;
+
+  ARMWord cc = optionCond (doLowerCase);
   if (cc == optionError)
     return true;
 
@@ -494,9 +493,9 @@ LdrStrEx (bool isLoad)
  *   LDREXD[<cond>] <Rd>, <Rd2>, [<Rn>]
  */
 bool
-m_ldrex (void)
+m_ldrex (bool doLowerCase)
 {
-  return LdrStrEx (true);
+  return LdrStrEx (true, doLowerCase);
 }
 
 /**
@@ -511,9 +510,9 @@ m_ldrex (void)
  *   STR[<cond>]SH <Rd>, <address mode 3> | <pc relative label>
  */
 bool
-m_str (void)
+m_str (bool doLowerCase)
 {
-  ARMWord cc = optionCondBT (true);
+  ARMWord cc = optionCondBT (true, doLowerCase);
   if (cc == optionError)
     return true;
   return dstmem (cc, "STR");
@@ -527,9 +526,9 @@ m_str (void)
  *   STREXD[<cond>] <Rd>, <Rd2>, [<Rn>]
  */
 bool
-m_strex (void)
+m_strex (bool doLowerCase)
 {
-  return LdrStrEx (false);
+  return LdrStrEx (false, doLowerCase);
 }
 
 
@@ -557,17 +556,17 @@ m_clrex (void)
  */
 /* FIXME: support PLDW & PLI  */
 bool
-m_pl (void)
+m_pl (bool doLowerCase)
 {
   enum { isPLD, isPLDW, isPLI } type;
-  if (Input_Match ('D', false))
+  if (Input_Match (doLowerCase ? 'd' : 'D', false))
     {
-      if (Input_Match ('W', false))
+      if (Input_Match (doLowerCase ? 'w' : 'W', false))
 	type = isPLDW;
       else
 	type = isPLD;
     }
-  else if (Input_Match ('I', false))
+  else if (Input_Match (doLowerCase ? 'i' : 'I', false))
     type = isPLI;
   else
     return true;
@@ -713,6 +712,25 @@ dstreglist (ARMWord ir, bool isPushPop)
 	    gArea_Preserve8Guessed = false;
 	}
     }
+  if ((ir & W_FLAG) /* Write-back is specified.  */
+      && (ir & (1<<20)) /* Is LDM/POP.  */
+      && (op & (1 << GET_BASE_MULTI (ir))) /* Base reg. in reg. list.  */
+      && (!isPushPop || (op ^ (1 << GET_BASE_MULTI (ir))) != 0) /* Is either LDM/STM, either multi-reg. POP/PUSH.  */)
+    {
+      /* LDM instructions and multi-register POP instructions that specify base
+         register writeback and load their base register are permitted but
+         deprecated before ARMv7.
+         Use of such instructions is obsolete in ARMv7.  */
+      const char *what = isPushPop ? "multi-register POP" : "LDM";
+      if (Target_GetArch () < ARCH_ARMv7)
+	error (ErrorWarning,
+	       "Deprecated before ARMv7 : %s with writeback and base register in register list",
+	       what);
+      else
+	error (ErrorWarning,
+	       "Obsoleted from ARMv7 onwards : %s with writeback and base register in register list",
+	       what);
+    }
   if (!Input_Match ('}', false))
     error (ErrorError, "Inserting missing '}' after reglist");
   ir |= op;
@@ -731,9 +749,9 @@ dstreglist (ARMWord ir, bool isPushPop)
  * Implements LDM.
  */
 bool
-m_ldm (void)
+m_ldm (bool doLowerCase)
 {
-  ARMWord cc = optionCondLdmStm (true);
+  ARMWord cc = optionCondLdmStm (true, doLowerCase);
   if (cc == optionError)
     return true;
   dstreglist (cc | 0x08100000, false);
@@ -746,9 +764,9 @@ m_ldm (void)
  * (= LDM<cond>IA sp!, {...})
  */
 bool
-m_pop (void)
+m_pop (bool doLowerCase)
 {
-  ARMWord cc = optionCond ();
+  ARMWord cc = optionCond (doLowerCase);
   if (cc == optionError)
     return true;
   dstreglist (cc | STACKMODE_IA | 0x08100000, true);
@@ -760,9 +778,9 @@ m_pop (void)
  * Implements STM.
  */
 bool
-m_stm (void)
+m_stm (bool doLowerCase)
 {
-  ARMWord cc = optionCondLdmStm (false);
+  ARMWord cc = optionCondLdmStm (false, doLowerCase);
   if (cc == optionError)
     return true;
   dstreglist (cc | 0x08000000, false);
@@ -775,9 +793,9 @@ m_stm (void)
  * (= STM<cond>DB sp!, {...})
  */
 bool
-m_push (void)
+m_push (bool doLowerCase)
 {
-  ARMWord cc = optionCond ();
+  ARMWord cc = optionCond (doLowerCase);
   if (cc == optionError)
     return true;
   dstreglist (cc | STACKMODE_DB | 0x08000000, true);
@@ -789,9 +807,9 @@ m_push (void)
  * Implements SWP.
  */
 bool
-m_swp (void)
+m_swp (bool doLowerCase)
 {
-  ARMWord cc = optionCondB ();
+  ARMWord cc = optionCondB (doLowerCase);
   if (cc == optionError)
     return true;
 
@@ -940,9 +958,9 @@ m_isb (void)
  *   RFE{<amode>} <Rn>{!}
  */
 bool
-m_rfe (void)
+m_rfe (bool doLowerCase)
 {
-  ARMWord option = Option_CondRfeSrs (true);
+  ARMWord option = Option_CondRfeSrs (true, doLowerCase);
   if (option == optionError)
     return true;
 
@@ -970,9 +988,9 @@ m_rfe (void)
  *   SRS{<amode>} #<mode>{!}     : pre-UAL syntax
  */
 bool
-m_srs (void)
+m_srs (bool doLowerCase)
 {
-  ARMWord option = Option_CondRfeSrs (false);
+  ARMWord option = Option_CondRfeSrs (false, doLowerCase);
   if (option == optionError)
     return true;
 

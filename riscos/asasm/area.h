@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2001-2010 GCCSDK Developers
+ * Copyright (c) 2001-2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,16 +23,18 @@
 #ifndef area_header_included
 #define area_header_included
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "asm.h"
 #include "symbol.h"
 #include "reloc.h"
 #include "lit.h"
 
 /* Lowest 8 bits encode the alignment of the start of the area as a power
    of 2 and has a value between 2 and 32.  */
-#define AREA_DEFAULT_ALIGNMENT	0x00000002
+#define AREA_ALIGN_MASK		0x000000FF
 #define AREA_ABS		0x00000100
 #define AREA_CODE		0x00000200
 #define AREA_COMMONDEF		0x00000400 /* Common block definition */
@@ -59,7 +61,8 @@
 #define AREA_SOFTFLOAT		0x80000000 /* Avoids FP instructions (GCCSDK extension) Normally reserved bit. */
 
 #define AREA_IMAGE(x) (!((x)->type & AREA_UDATA))
-#define AREA_NOSPACE(x,v) ((x)->imagesize < v)
+
+#define AREA_DEFAULT_ALIGNMENT	0x00000002
 
 struct LITPOOL;
 
@@ -69,7 +72,9 @@ typedef struct AREA
   uint32_t type;		/* See AREA_ #defines */
   size_t imagesize;
   uint8_t *image;
-  uint32_t baseAddr;
+
+  uint32_t curIdx;
+  uint32_t maxIdx;
 
   RelocQueue *relocQueue;
   int norelocs;
@@ -84,14 +89,22 @@ Area_GetBaseReg (const Area *area)
   return (area->type & AREA_MASKBASEREG) >> 24;
 }
 
+static inline uint32_t
+Area_GetBaseAddress (const Symbol *symP)
+{
+  assert ((symP->type & SYMBOL_AREA) != 0 && (symP->area.info->type & AREA_ABS) != 0);
+  assert (symP->value.Tag == ValueInt);
+  return symP->value.Data.Int.i;
+}
+
 extern Symbol *areaCurrentSymbol; /** Symbol of the area which is currently being processed.  */
 extern Symbol *areaEntrySymbol; /** Symbol of area which has been marked as ENTRY point.  */
 extern int areaEntryOffset;
 extern Symbol *areaHeadSymbol; /** Start of the linked list of all area symbols seen so far.  Follow Symbol::area.info->next for next area (*not* Symbol::next !).  */
 
-void areaInit (void);
-void areaFinish (void);
-void areaGrow (Area *area, size_t mingrow);
+void Area_PrepareForPhase (ASM_Phase_e phase);
+
+void Area_EnsureExtraSize (size_t mingrow);
 
 bool Area_IsImplicit (const Symbol *sym);
 size_t Area_AlignTo (size_t offset, int align, const char *msg);
@@ -115,5 +128,15 @@ extern bool gArea_Preserve8Guessed;
 
 bool c_preserve8 (void);
 bool c_require8 (void);
+
+typedef enum
+{
+  eInvalid = -1,
+  eARM = 0,
+  eData = 1,
+  eThumb = 2
+} Area_eEntryType;
+void Area_MarkStartAs (Area_eEntryType type);
+bool Area_IsMappingSymbol (const char *);
 
 #endif

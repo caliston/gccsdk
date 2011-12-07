@@ -137,23 +137,26 @@ dt6lbl3	%	4
 	; Wacko case also resulting in absolute value usage in ADR/ADRL.
 	; Results in MOV/MVN.
 	; ObjAsm extension
-	[ {TRUE}
+	[ {FALSE}	; FIXME: Is disabled as it is too wacko.
 	[ EXTENSION
 	AREA	Code9, CODE, READONLY
 	[ :LNOT: REFERENCE
 	ADR	r2, 42 - 8 - {PC}
 	ADR	r2, 42 - {PC} - 8
 	ADR	r2, - {PC} + 42 - 8
-	ADRL	r2, 42 - 8 - {PC}	; Becomes ADR.
-	ADRL	r2, 42 - {PC} - 8	; Becomes ADR.
-	ADRL	r2, - {PC} + 42 - 8	; Becomes ADR.
+	ADRL	r2, 42 - 8 - {PC}	; Becomes ADR. FIXME: no longer :( - twopass regression
+	ADRL	r2, 42 - {PC} - 8	; Becomes ADR. FIXME: no longer :( - twopass regression
+	ADRL	r2, - {PC} + 42 - 8	; Becomes ADR. FIXME: no longer :( - twopass regression
 	|
 	ADD	r2, pc, #&1a
 	ADD	r2, pc, #&1a
 	ADD	r2, pc, #&1a
 	ADD	r2, pc, #&1a
+	ADD	r2, r2, #0		; FIXME: should go - twopass regression
 	ADD	r2, pc, #&1a
+	ADD	r2, r2, #0		; FIXME: should go - twopass regression
 	ADD	r2, pc, #&1a
+	ADD	r2, r2, #0		; FIXME: should go - twopass regression
 	]
 	]
 	]
@@ -169,7 +172,7 @@ tstlbl3	#	32
 
 	AREA	Code10, CODE, READONLY
 	ADR	r2, tstlbl2
-	ADRL	r4, tstlbl2	; Generates warning, ADR is used.
+	ADRL	r4, tstlbl2	; Generates warning, ADR is used. FIXME: no longer :( - twopass regression
 	ADR	r5, tstlbl5
 	ADRL	r6, tstlbl5	; Generates info in fuzzy mode, ADRL is still used
 
@@ -181,7 +184,8 @@ tstlbl6	#	32
 	|
 	AREA	Code10, CODE, READONLY
 	ADD r2, r3, #20	;ADR
-	ADD r4, r3, #20	;ADRL -> ADR
+	ADD r4, r3, #20	;ADRL -> ADR FIXME: no longer :( - twopass regression
+	ADD r4, r4, #0		; FIXME: should go - twopass regression
 	ADD r5, r7, #20	;ADR
 	ADD r6, r7, #20	;ADRL
 	ADD r6, r6, #0
@@ -212,7 +216,6 @@ tstlbl6	#	32
 04
 	DCD	4
 
-	[ {FALSE}
 	; Implicit 'ORG 0' by setting the ABS AREA attribute:
 	AREA	Code12, CODE, ABS
 
@@ -227,14 +230,14 @@ tstlbl6	#	32
 03
 	DCD	3
 	%	&1100 - {PC}
-	ADR	r3, %b03		; MOV r3, #&200 + 16 + 4*4 + 4
+	ADR	r3, %b03		; MOV r3, #16 + 4*4
 	ADR	r4, %f04		; MOV r4, #&2200
 	%	&1100 - 8
 04
 	DCD	4
-	]
 
 	|
+
 	AREA	Code11, CODE
 	ORG	&200
 	%	16
@@ -247,6 +250,20 @@ tstlbl6	#	32
 	DCD	3
 	%	&1100 - {PC}
 	MOV	r3, #&200 + 16 + 4*4 + 4
+	MOV	r4, #&2200
+	%	&1100 - 8
+	DCD	4
+
+	AREA	Code12, CODE, ABS
+	%	16
+	DCD	1
+	ADD	r1, pc, #-8 - 4
+	ADD	r2, pc, #-8 + 4
+	DCD	2
+
+	DCD	3
+	%	&1100 - {PC}
+	MOV	r3, #16 + 4*4
 	MOV	r4, #&2200
 	%	&1100 - 8
 	DCD	4

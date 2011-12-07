@@ -72,7 +72,7 @@ Foo	; Nothing here.
 	DCD	?Foo
 Bar	DCD	?Bar
 	[ EXTENSION
-FltLbl	DCFS	?FltLbl - 0.		; Not supported by objasm
+FltLbl	DCFS	?FltLbl - 0.	; Not supported by objasm
 DblLbl	DCFD	?DblLbl	- 0.	; Not supported by objasm
 	]
 
@@ -121,6 +121,47 @@ AlgnLbl	ALIGN
 	DCD	3
 	]
 
+	]
+
+	; Test 3
+	AREA	CodeTest3, CODE
+	[ :LNOT: REFERENCE
+	^ 0
+Val1	# 5
+Val2	# &110 - @
+	LDR	r3, =?Val2
+	|
+	LDR	r3, =&110 - 5
+	]
+
+	; Test 4 : late label
+	AREA	CodeTest4, CODE
+	[ :LNOT: REFERENCE
+	DCD	?latelbl
+latelbl	%	8
+	|
+	DCD	8
+	DCD	0
+	DCD	0
+	]
+
+	; Test 5 : area symbol
+	AREA	CodeTest5, CODE, READONLY
+	MOV	r0, #0
+	MOV	r1, #1
+	MOV	r2, #2
+
+	AREA	DataTest5a, DATA, READONLY
+	DCD	42
+
+	AREA	CodeTest5, CODE, READONLY
+	MOV	r3, #3
+
+	AREA	DataTest5b, DATA
+	[ :LNOT: REFERENCE
+	DCD	?CodeTest5
+	|
+	DCD	16
 	]
 
 	END

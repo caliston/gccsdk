@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2001-2010 GCCSDK Developers
+ * Copyright (c) 2001-2011 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,23 +34,22 @@
 extern const char *predefines[MAX_PREDEFINES];
 extern int num_predefines;
 
-void inputInit (const char *infile);
-
 bool Input_Match (char c, bool spacesToo);
 bool Input_MatchKeyword (const char *keyword);
 bool Input_MatchKeywordLower (const char *keyword);
 bool Input_MatchString (const char *str);
 bool Input_IsEndOfKeyword (void);
 
-#if DEBUG
-const char *inputGiveRestLine (void);
-#endif
+typedef enum
+{
+  eNoVarSubst,
+  eVarSubstNoWarning,
+  eVarSubst
+} Level_e;
 
-bool inputNextLine (void);
-bool inputNextLineNoSubst (void);
+bool Input_NextLine (Level_e level);
 
 void skipblanks (void);
-void skiprest (void);
 
 bool Input_IsEolOrCommentStart (void);
 char inputLook (void);
@@ -61,7 +60,7 @@ char inputGet (void);
 char inputGetLower (void);
 void inputUnGet (char c);
 char inputSkipLook (void);
-const char *inputRest (void);
+const char *Input_Rest (void);
 #if DEBUG
 const char *inputLine (void);
 #endif
@@ -70,6 +69,7 @@ void inputSkipN (int n);
 
 char *Input_GetString (size_t *len);
 
+const char *Input_LocalLabel (size_t *ilen);
 const char *Input_Symbol (size_t *ilen);
 const char *inputSymbol (size_t *ilen, char del);
 
@@ -79,6 +79,6 @@ void Input_RollBackToMark (const char *mark);
 void Input_ShowLine (void);
 size_t Input_GetColumn (void);
 
-void inputThisInstead (const char *);
+void Input_ThisInstead (const char *);
 
 #endif

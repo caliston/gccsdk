@@ -47,7 +47,6 @@
 #include "macros.h"
 #include "main.h"
 #include "output.h"
-#include "os.h"
 #include "put.h"
 #include "symbol.h"
 #include "value.h"
@@ -87,7 +86,7 @@ assign_var (Symbol *sym, ValueTag type)
 
 /**
  * (Re)define local or global variable.
- * When variable exists we'll give a warning when its type is the same,
+ * When variable exists we'll give a pedantic warning when its type is the same,
  * when type is different an error is given instead.
  * \param localMacro Is true when variable is a local macro variable. Used to
  * implement :DEF:.
@@ -99,21 +98,45 @@ declare_var (const char *ptr, size_t len, ValueTag type, bool localMacro)
   Symbol *sym = symbolFind (&var);
   if (sym != NULL)
     {
-      if (sym->value.Tag != type)
+      if (sym->type & SYMBOL_AREA)
 	{
-	  error (ErrorError, "'%.*s' is already declared as a %s",
-	         (int)len, ptr, valueTagAsString (sym->value.Tag));
+	  error (ErrorError, "'%.*s' is already defined as an area",
+		 (int)len, ptr);
+	  return NULL;
+	}
+      /* A local variable can have a different type than a similar named
+	 global variable.  */
+      /* FIXME: this is not 100% bullet proof: a local variable with same
+	 name as global one will not get SYMBOL_MACRO_LOCAL bit so remains
+	 local.  So we won't detect two different type local variables (with
+	 same name) when we have a global variable also with same name).  */
+      if (sym->value.Tag != type
+          && (!localMacro || (sym->type & SYMBOL_MACRO_LOCAL) != 0))
+	{
+	  if (sym->value.Tag == ValueIllegal)
+	    error (ErrorError, "'%.*s' is already %s",
+		   (int)len, ptr,
+		   sym->type & SYMBOL_DEFINED ? "defined" : "declared");
+	  else
+	    error (ErrorError, "'%.*s' is already %s as a %s",
+		   (int)len, ptr,
+		   sym->type & SYMBOL_DEFINED ? "defined" : "declared",
+		   valueTagAsString (sym->value.Tag));
 	  return NULL;
 	}
       if (option_pedantic)
-        error (ErrorWarning, "Redeclaration of %s variable '%.*s'",
+	error (ErrorWarning, "Redeclaration of %s variable '%.*s'",
 	       valueTagAsString (sym->value.Tag),
 	       (int)var.Data.Id.len, var.Data.Id.str);
+
+      /* When symbol is already known as global, it remains a global variable
+	 (and :DEF: returns {TRUE} for it).  */
+      localMacro = false;
     }
   else
-    sym = symbolAdd (&var);
+    sym = symbolGet (&var);
 
-  sym->type |= SYMBOL_ABSOLUTE;
+  sym->type |= SYMBOL_DEFINED | SYMBOL_ABSOLUTE | SYMBOL_RW;
   if (localMacro)
     sym->type |= SYMBOL_MACRO_LOCAL;
   assign_var (sym, type);
@@ -129,23 +152,15 @@ bool
 c_gbl (void)
 {
   ValueTag type;
-  switch (inputLook ())
-    {
-      case 'L':
-	type = ValueBool;
-        break;
-
-      case 'A':
-	type = ValueInt;
-	break;
-
-      case 'S':
-	type = ValueString;
-	break;
-
-      default:
-	return true;
-    }
+  const char c  = inputLook ();
+  if (c == 'L')
+    type = ValueBool;
+  else if (c == 'A')
+    type = ValueInt;
+  else if (c == 'S')
+    type = ValueString;
+  else
+    return true;
   inputSkip ();
   if (!Input_IsEndOfKeyword ())
     return true;
@@ -169,23 +184,15 @@ bool
 c_lcl (void)
 {
   ValueTag type;
-  switch (inputLook ())
-    {
-      case 'L':
-	type = ValueBool;
-        break;
-
-      case 'A':
-	type = ValueInt;
-	break;
-
-      case 'S':
-	type = ValueString;
-	break;
-
-      default:
-	return true;
-    }
+  const char c  = inputLook ();
+  if (c == 'L')
+    type = ValueBool;
+  else if (c == 'A')
+    type = ValueInt;
+  else if (c == 'S')
+    type = ValueString;
+  else
+    return true;
   inputSkip ();
   if (!Input_IsEndOfKeyword ())
     return true;
@@ -208,15 +215,15 @@ c_lcl (void)
   /* Link our local variable into the current macro so we can restore this
      at the end of macro invocation.  */
   const Lex l = lexTempLabel (ptr, len);
-  Symbol *sym = symbolFind (&l);
+  Symbol *symbolP = symbolFind (&l);
 
   bool doRestore;
-  if (sym != NULL)
+  if (symbolP != NULL)
     {
       /* Perhaps already made local ? */
-      varPos *varPosP;
+      VarPos *varPosP;
       for (varPosP = gCurPObjP->d.macro.varListP;
-	   varPosP != NULL && varPosP->symptr != sym;
+	   varPosP != NULL && varPosP->symbolP != symbolP;
 	   varPosP = varPosP->next)
 	/* */;
       doRestore = varPosP == NULL;
@@ -226,19 +233,22 @@ c_lcl (void)
 
   if (doRestore)
     {
-      varPos *p;
-      if ((p = malloc (sizeof (varPos) + len + 1)) == NULL)
+      VarPos *p;
+      if ((p = malloc (sizeof (VarPos) + len + 1)) == NULL)
 	errorOutOfMem ();
       memcpy (p->name, ptr, len); p->name[len] = '\0';
       p->next = gCurPObjP->d.macro.varListP;
-      if ((p->symptr = sym) != NULL)
-	p->symbol = *sym;
+      if ((p->symbolP = symbolP) != NULL)
+	{
+	  p->symbol = *symbolP;
+	  /* Reset Symbol parts which won't get touched by declare_var().  */
+	  symbolP->codeSize = 0;
+	  symbolP->areaDef = areaCurrentSymbol;
+	}
       gCurPObjP->d.macro.varListP = p;
     }
   
-  /* When symbol is already known, it remains a global variable (and :DEF:
-     returns {TRUE} for it).  */
-  declare_var (ptr, len, type, sym == NULL || (sym->type & SYMBOL_MACRO_LOCAL));
+  declare_var (ptr, len, type, true);
   return false;
 }
 
@@ -251,23 +261,15 @@ bool
 c_set (const Lex *label)
 {
   ValueTag type;
-  switch (inputLook ())
-    {
-      case 'L':
-	type = ValueBool;
-        break;
-
-      case 'A':
-	type = ValueInt;
-	break;
-
-      case 'S':
-	type = ValueString;
-	break;
-
-      default:
-	return true;
-    }
+  const char c  = inputLook ();
+  if (c == 'L')
+    type = ValueBool;
+  else if (c == 'A')
+    type = ValueInt;
+  else if (c == 'S')
+    type = ValueString;
+  else
+    return true;
   inputSkip ();
   if (!Input_IsEndOfKeyword ())
     return true;
@@ -279,7 +281,6 @@ c_set (const Lex *label)
 	     (int)label->Data.Id.len, label->Data.Id.str);
       return false;
     }
-  assert (sym->value.Tag != ValueIllegal);
   if (type != sym->value.Tag)
     {
       error (ErrorError, "Wrong type for symbol '%.*s'",
@@ -308,17 +309,16 @@ c_set (const Lex *label)
  * variables.
  */
 void
-var_restoreLocals (const varPos *p)
+Var_RestoreLocals (const VarPos *p)
 {
   while (p != NULL)
     {
-      if (p->symptr)
+      if (p->symbolP)
 	{
 	  /* Variable existed before we (temporarily) overruled it, so
 	     restore it to its original value.  */
-	  valueFree (&p->symptr->value);
-	  assert (p->symptr->next == p->symbol.next);
-	  *p->symptr = p->symbol;
+	  valueFree (&p->symbolP->value);
+	  *p->symbolP = p->symbol;
 	}
       else
 	{
@@ -326,7 +326,7 @@ var_restoreLocals (const varPos *p)
 	  symbolRemove (&l);
 	}
 
-      const varPos *q = p->next;
+      const VarPos *q = p->next;
       free ((void *)p);
       p = q;
     }
@@ -334,7 +334,7 @@ var_restoreLocals (const varPos *p)
 
 
 void
-var_define (const char *def)
+Var_Define (const char *def)
 {
   const char *i = strchr (def, '=');
   size_t len = i != NULL ? (size_t)(i - def) : strlen (def);

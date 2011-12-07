@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1997 Darren Salt
- * Copyright (c) 2002-2010 GCCSDK Developers
+ * Copyright (c) 2002-2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,15 +26,28 @@
 #include <stdbool.h>
 #include "lex.h"
 
-extern int Local_ROUTLblNo[100];
-extern const char *Local_CurROUTId;
+typedef struct Local_Label_t
+{
+  struct Local_Label_t *NextP;
+  unsigned Num;
+  unsigned Value;
+} Local_Label_t;
 
 extern const char Local_IntLabelFormat[];
+
+void Local_PrepareForPhase (ASM_Phase_e phase);
+
+Local_Label_t *Local_GetLabel (unsigned num);
 
 bool c_rout (const Lex *label);
 
 bool Local_ROUTIsEmpty (const char *routName);
 bool Local_IsLocalLabel (const char *);
 void Local_FindROUT (const char *rout, const char **file, int *lineno);
+const char *Local_GetCurROUTId (void);
+
+#ifdef DEBUG
+void Local_DumpAll (void);
+#endif
 
 #endif

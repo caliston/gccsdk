@@ -41,12 +41,13 @@
 
 #include "area.h"
 #include "asm.h"
+#include "common.h"
 #include "error.h"
 #include "filestack.h"
 #include "include.h"
 #include "input.h"
 #include "main.h"
-#include "os.h"
+#include "local.h"
 #include "output.h"
 #include "symbol.h"
 #include "targetcpu.h"
@@ -64,7 +65,6 @@ int option_verbose = 0;
 int option_pedantic = 0;
 int option_fussy = 0;
 int option_throwback = 0;
-int option_autocast = 0;
 int option_apcs_softfloat = -1; /* -1 = option not specified.  */
 int option_aof = -1; /* -1 = option not specified.  */
 
@@ -168,7 +168,6 @@ asasm_help (void)
 #ifdef __riscos__
 	   "-ThrowBack                 Throwback errors to a text editor.\n"
 #endif
-	   "-AutoCast                  Enable casting from integer to float.\n"
 	   "-CPU <target-cpu>          Select ARM CPU to target. Use \"list\" to get a full list.\n"
 	   "-Depend <file>             Write 'make' source file dependency information to 'file'.\n"
 	   "-Help                      Display this help.\n"
@@ -224,6 +223,10 @@ main (int argc, char **argv)
 
   setlocale (LC_ALL, "");
 
+#ifdef DEBUG
+  setvbuf(stdout, NULL, _IOLBF, 0);
+#endif
+
   argv++;
   if (argc == 1)
     {
@@ -263,7 +266,7 @@ main (int argc, char **argv)
 	  if (arg[1] == '\0')
 	    {
 	      if (--argc)
-		var_define (*++argv);
+		Var_Define (*++argv);
 	      else
 		{
 		  fprintf (stderr, PACKAGE_NAME ": Missing argument after -%s\n", arg);
@@ -271,7 +274,7 @@ main (int argc, char **argv)
 		}
 	    }
 	  else
-	    var_define (arg + 1);
+	    Var_Define (arg + 1);
 	}
       else if (!strncasecmp (arg, "PD", sizeof ("PD")-1)
 	       || !strncasecmp (arg, "PreDefine", sizeof ("PreDefine")-1))
@@ -317,8 +320,6 @@ main (int argc, char **argv)
       else if (!strcasecmp (arg, "throwback") || !strcasecmp (arg, "tb"))
 	option_throwback++;
 #endif
-      else if (!strcasecmp (arg, "autocast") || !strcasecmp (arg, "ac"))
-	option_autocast++;
       else if (!strcasecmp (arg, "pedantic") || !strcasecmp (arg, "p"))
 	option_pedantic++;
       else if (!strncasecmp (arg, "CPU", sizeof ("CPU")-1)
@@ -381,14 +382,13 @@ main (int argc, char **argv)
 	        }
 	      inclDir = *++argv;
 	    }
-	  if (addInclude (inclDir) < 0)
-	    return EXIT_FAILURE;
+	  Include_Add (inclDir);
 	}
       else if (!strcasecmp (arg, "version") || !strcasecmp (arg, "ver"))
 	{
 	  fprintf (stderr,
 		   DEFAULT_IDFN "\n"
-		   "Copyright (c) 1992-2011 Niklas Rojemo, Darren Salt and GCCSDK Developers\n"
+		   "Copyright (c) 1992-2011 Niklas Röjemo, Darren Salt and GCCSDK Developers\n"
 		   "This is free software; see the source for copying conditions.  There is NO\n"
 		   "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
 	  return EXIT_SUCCESS;
@@ -502,10 +502,9 @@ main (int argc, char **argv)
       asmAbortValid = true;
       Symbol_Init ();
       outputInit (ObjFileName);
-      areaInit ();
-      /* Do the assembly.  */
+
+      /* Do the two pass assembly.  */
       ASM_Assemble (SourceFileName);
-      areaFinish ();
 
       /* Don't try to output anything when we have assemble errors.  */
       if (returnExitStatus () == EXIT_SUCCESS)
@@ -516,6 +515,9 @@ main (int argc, char **argv)
 	    {
 	      asmContinueValid = true;
 	      /* Write the ELF/AOF output.  */
+	      Area_PrepareForPhase (eOutput);
+	      Local_PrepareForPhase (eOutput);
+	      gASM_Phase = eOutput;
 #ifndef NO_ELF_SUPPORT
 	      if (!option_aof)
 		outputElf();

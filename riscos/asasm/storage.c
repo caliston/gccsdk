@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2010 GCCSDK Developers
+ * Copyright (c) 2000-2011 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -48,7 +48,7 @@ static Value storageV =
 const Value *
 storageValue (void)
 {
-  assert (storageV.Tag == ValueInt || storageV.Tag == ValueAddr || storageV.Tag == ValueCode);
+  assert (storageV.Tag == ValueInt || storageV.Tag == ValueAddr || storageV.Tag == ValueSymbol || storageV.Tag == ValueCode);
   return &storageV;
 }
 
@@ -58,7 +58,7 @@ storageValue (void)
 bool
 c_record (void)
 {
-  const Value *value = exprBuildAndEval (ValueInt | ValueAddr | ValueCode);
+  const Value *value = exprBuildAndEval (ValueInt | ValueAddr | ValueSymbol | ValueCode);
   switch (value->Tag)
     {
       case ValueInt:
@@ -80,6 +80,7 @@ c_record (void)
 	break;
 
       case ValueAddr:
+      case ValueSymbol:
       case ValueCode:
 	Value_Assign (&storageV, value);
 	break;
@@ -108,13 +109,8 @@ c_alloc (const Lex *lex)
 {
   if (lex->tag == LexId)
     {
-      Symbol *sym = symbolAdd (lex);
-      if (sym != NULL && sym->value.Tag == ValueIllegal)
-	{
-	  assert (sym->type & SYMBOL_DEFINED);
-	  sym->type |= SYMBOL_ABSOLUTE;
-	  Value_Assign (&sym->value, storageValue ());
-	}
+      if (Symbol_Define (symbolGet (lex), SYMBOL_ABSOLUTE, storageValue ()))
+	return false;
     }
   
   /* Determine how much we should allocate.  */
@@ -126,7 +122,7 @@ c_alloc (const Lex *lex)
 	codeValue (storageValue (), true);
 	codeValue (value, true);
 	codeOperator (Op_add);
-        value = codeEval (ValueInt | ValueAddr | ValueCode, NULL);
+        value = codeEval (ValueInt | ValueAddr | ValueSymbol | ValueCode, NULL);
 	if (value->Tag != ValueIllegal)
 	  {
 	    Value_Assign (&storageV, value);
@@ -135,7 +131,7 @@ c_alloc (const Lex *lex)
 	/* Fall through.  */
 	
       default:
-        error (ErrorError, "Illegal expression after #");
+        error (ErrorError, "Illegal expression after # or FIELD");
         break;
     }
 
