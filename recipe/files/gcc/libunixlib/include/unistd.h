@@ -1,6 +1,6 @@
 /*
  * POSIX Standard 2.10: Symbolic Constants <unistd.h>.
- * Copyright (c) 2000-2010 UnixLib Developers
+ * Copyright (c) 2000-2011 UnixLib Developers
  */
 
 #ifndef __UNISTD_H
@@ -86,8 +86,16 @@ typedef __uid_t uid_t;
 #endif
 
 #ifndef __off_t_defined
+# ifndef __USE_FILE_OFFSET64
 typedef __off_t off_t;
+# else
+typedef __off64_t off_t;
+# endif
 #define __off_t_defined
+#endif
+#if defined __USE_LARGEFILE64 && !defined __off64_t_defined
+typedef __off64_t off64_t;
+# define __off64_t_defined
 #endif
 
 #ifndef __useconds_t_defined
@@ -402,10 +410,12 @@ extern char *ttyname (int __fd) __THROW;
    open on in buf.  Return 0 on success, otherwise an error number.  */
 extern int ttyname_r (int __fd, char *__buf, size_t __buflen)
      __THROW __nonnull ((2)) __wur;
+#endif /* __TARGET_SCL__ */
 
 /* Return 1 if fd is a valid descriptor associated with a terminal.  */
 extern int isatty (int __fd) __THROW __wur;
 
+#ifndef __TARGET_SCL__
 /* Return 1 if fd is a valid descriptor associated with a pipe.  */
 extern int ispipe (int __fd) __THROW __wur;
 
@@ -420,10 +430,12 @@ extern int symlink (const char *__from, const char *__to)
 /* Read vaue of a symbolic link.  */
 extern int readlink (const char *__restrict __path, char *__restrict __buf,
 		     size_t __butsiz) __THROW __nonnull ((1, 2)) __wur;
+#endif /* __TARGET_SCL__ */
 
 /* Remove the line name.  */
 extern int unlink (const char *__name) __THROW __nonnull ((1));
 
+#ifndef __TARGET_SCL__
 /* Remove the directory path.  */
 extern int rmdir (const char *__path) __THROW __nonnull ((1));
 
@@ -492,6 +504,20 @@ extern int lockf64 (int __fd, int __cmd, __off64_t __len);
 # endif
 #endif /* Use misc and F_LOCK not already defined.  */
 #endif /* __TARGET_SCL__ */
+
+
+#ifdef __USE_GNU
+
+/* Evaluate EXPRESSION, and repeat as long as it returns -1 with `errno'
+   set to EINTR.  */
+
+# define TEMP_FAILURE_RETRY(expression) \
+  (__extension__							      \
+    ({ long int __result;						      \
+       do __result = (long int) (expression);				      \
+       while (__result == -1L && errno == EINTR);			      \
+       __result; }))
+#endif
 
 
 #if defined __USE_BSD || defined __USE_UNIX98
@@ -642,12 +668,14 @@ extern char *crypt (const char *__key, const char *__salt)
    block in place.  */
 extern void encrypt (char *__block, int __edflag) __THROW __nonnull ((1));
 
+#ifndef __TARGET_SCL__
 /* Swab pairs bytes in the first N bytes of the area pointed to by
    FROM and copy the result to TO.  The value of TO must not be in the
    range [FROM - N + 1, FROM - 1].  If N is odd the first byte in FROM
    is without partner.  */
 extern void swab (const void *__restrict  __from, void *__restrict  __to,
 		  ssize_t __n) __THROW __nonnull ((1, 2));
+#endif
 #endif
 
 #if defined __USE_MISC || defined __USE_XOPEN

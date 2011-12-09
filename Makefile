@@ -40,6 +40,7 @@ GCC_CONFIG_ARGS := \
 	--enable-multilib \
 	--enable-shared=libunixlib,libgcc,libstdc++ \
 	--disable-c-mbchar \
+	--disable-wchar_t \
 	--disable-libstdcxx-pch \
 	--disable-tls \
 	--with-cross-host

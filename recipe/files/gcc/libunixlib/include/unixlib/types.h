@@ -5,7 +5,6 @@
  *  - Added definitions for __tcflag_t, __cc_t, __speed_t, __sig_atomic_t
  *    __sigset_t
  *  - Changed "bits/types.h" of last line into unixlib/types.h.
- *  - Added __off_t definition for SCL.
  */
 
 /* Copyright (C) 1991,1992,94-1999,2000,2001 Free Software Foundation, Inc.
@@ -83,14 +82,8 @@ typedef unsigned int __ino_t;	/* Type of file serial numbers.  */
 typedef __quad_t __ino64_t;	/* Type of file serial numbers (LFS).  */
 typedef unsigned int __mode_t;	/* Type of file attribute bitmasks.  */
 typedef unsigned short int __nlink_t; /* Type of file link counts.  */
-#ifdef __TARGET_SCL__
-typedef unsigned long __off_t;
-#else
-__extension__ 
-typedef long long __off_t;	/* Type of file sizes and offsets.  */
-#endif
-typedef __quad_t __loff_t;	/* Type of file sizes and offsets.  */
-typedef __loff_t __off64_t;	/* Type of file sizes and offsets (LFS).  */
+typedef long int __off_t;	/* Type of file sizes and offsets.  */
+typedef __quad_t __off64_t;	/* Type of file sizes and offsets (LFS).  */
 typedef int __pid_t;		/* Type of process identifications.  */
 typedef int __ssize_t;		/* Type of a byte count, or error.  */
 typedef __u_quad_t __fsid_t;	/* Type of file system IDs.  */
@@ -131,6 +124,14 @@ typedef unsigned long __sigset_t;
 
 /* Number of descriptors that can fit in an `fd_set'.  */
 #define	__FD_SETSIZE	256
+/* Socket fd values are shifted for SCL in order to have them separated
+   from the file fd values.  */
+#ifdef __TARGET_SCL__
+/* You can't change this number just like that, this is SCL's _SYS_OPEN.  */
+#  define __FD_SOCKET_OFFSET	16
+#else
+#  define __FD_SOCKET_OFFSET	0
+#endif
 
 
 /* XXX Used in `struct shmid_ds'.  */

@@ -1,3 +1,137 @@
+Wed Dec  7 00:40:14 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* stdio/scl_fdopen.c (fdopen): Use __FD_SOCKET_OFFSET instead of
+	_SYS_OPEN.
+	* stdio/scl_fileno.c (fileno): Simplify implementation.
+	* unix/ul_readv.c (readv): Count being 0 is not an error.  Check
+	for ssize_t overflow.
+	* unix/ul_writev.c (writev): Likewise.
+	* unix/scl_readv.c (readv): Support file based fd (based on
+	unix/ul_readv.c).
+	* unix/scl_writev.c (writev): Support file based fd (based on
+	unix/ul_writev.c).
+	* unix/scl_write.c (write): Support file based fd.
+	* unix/scl_read.c (read): Likewise.
+	* unix/open.c: Renamed to...
+	* unix/ul_open.c: ...this.
+	* unix/isatty.c: Renamed to...
+	* unix/ul_isatty.c: ...this.
+	* unix/scl_open.c: Add (migrated from libscl's riscos/riscos.c).
+	Reworked implementation.
+	* unix/scl_isatty.c: Likewise.
+	* unix/scl_lseek.c (lseek, lseek64): Add support for file based fd.
+	* unix/scl_close.c (close): Likewise.
+	* unix/scl_ioctl.c (ioctl): Likewise.
+	* doc/SCL/COPYING: Add (migrated from libscl's COPYING).
+	* COPYING: Moved to...
+	* doc/UnixLib/COPYING: ...here.
+	* COPYING: Add (refering to doc/SCL/COPYING and
+	doc/UnixLib/COPYING).
+	* include/unixlib/types.h (__FD_SOCKET_OFFSET): Add.
+	* include/sys/select.h (FD_SETSIZE): Define as __FD_SETSIZE.
+	(__FDELT, __FDMASK): Take __FD_SOCKET_OFFSET into account.
+	* netlib/setsockopt.c (setsockopt): Add check on non-socket fd
+	values.  Take __FD_SOCKET_OFFSET into account.
+	* include/stdio.h (FOPEN_MAX): Change from 8 to _SYS_OPEN.
+	(_SYS_OPEN): Define as __FD_SOCKET_OFFSET.
+	* include/unistd.h (isatty, unlink): Define for SCL.
+	* netlib/accept.c (accept): Likewise.
+	* netlib/sendmsg.c (sendmsg): Likewise.
+	* netlib/recvmsg.c (recvmsg): Likewise.
+	* netlib/getpeernam.c (getpeername): Likewise.
+	* netlib/send.c (send): Likewise.
+	* netlib/listen.c (listen): Likewise.
+	* netlib/recv.c (recv): Likewise.
+	* netlib/shutdown.c (shutdown): Likewise.
+	* netlib/bind.c (bind): Likewise.
+	* netlib/getsockopt.c (getsockopt): Likewise.
+	* netlib/recvfrom.c (recvfrom): Likewise.
+	* netlib/connect.c (connect): Likewise.
+	* netlib/getsocknam.c (getsockname): Likewise.
+	* netlib/sendto.c (sendto): Likewise.
+	* netlib/socket.c (socket): Add __FD_SOCKET_OFFSET.
+	* scl/chunkid02.s (unlink): Add as alias to remove.
+	* Makefile.am: Follow rename unix/isatty.c to unix/ul_isatty.c,
+	unix/open.c to unix/ul_open.c.
+	(unix/scl_isatty, unix/scl_open): Add.
+	* incl-local/internal/os.h (SWI_OS_File_ReadCatInfo): Add.
+	(SWI_OS_Args_GetFileHandleStatus): Add.
+
+Sun Dec  4 16:21:58 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* contrib/Help: Moved to...
+	* doc/UnixLib/Help: ...here.
+	* README: Moved to...
+	* doc/UnixLib/README: ...here.
+	* doc/SCL/README: Add.  Updated libscl's README.
+
+Tue Nov 22 02:15:11 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* stdio/freopen.c (freopen64): Add dummy implementation.
+	* stdio/tmpfile.c (tmpfile64): Likewise.
+	* stdio/ul_fopen.c (fopen64): Likewise.
+	* stdio/fpos.c (fgetpos64, fsetpos64, fseeko64, ftello64): Likewise.
+	* unix/creat.c (creat64): Likewise.
+	* unix/open.c (open64): Likewise.
+	* unistd/lockf.c (lockf64): Likewise.
+	* include/fcntl.h (open64, creat64, lockf64): Add prototypes.
+
+Sat Nov 12 00:19:57 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/fenv.h (feenableexcept, fedisableexcept, fegetexcept):
+	Add.
+	* include/time.h, include/time.h, include/sys/select.h,
+	include/getopt.h, include/string.h, include/wchar.h,
+	include/search.h, include/unistd.h: Disable function prototypes for
+	non-supported functions in SCL build.
+
+Thu Nov  3 11:04:12 GMT 2011  Lee Noar  <leenoar@sky.com>
+
+	* unix/getcwd.c (getcwd): Fix potential buffer overflow.
+	getcwd() should set errno to ERANGE and return NULL if the size
+	of the buffer supplied is too small for the path. It would
+	appear that it relies on unixify() to do this, however, unixify()
+	only checks for buffer overflow when the path does not require
+	any processing. As RISC OS itself is supplying the path, then by
+	default it will always require processing to unix format, so buffer
+	overflow is never detected. Fix by adding an explicit check before
+	calling unixify().
+
+Tue Nov  1 21:42:53 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* unix/ul_lseek.c (lseek): Change off_t into __off_t.
+	(lseek64): Change off_t into __off64_t.  Add check on __off64_t
+	into __off_t overflow.
+	* scl/chunkid05.s: Remove wrong entry after scalbln.  Add entries
+	from isblank to tmpfile64.
+	* include/unixlib/buildoptions.h (__UNIXLIB_LFS64_SUPPORT): Add.
+	* include/unixlib/types.h (__off_t): Fix for UnixLib case.
+	(__off64_t): Define as __quad_t, not __loff_t.
+	* include/sys/types.h (__loff_t): Remove.
+	* include/sys/stat.h (off_t): Support __USE_FILE_OFFSET64 and
+	__USE_LARGEFILE64.
+	* include/stdio.h (off_t, fpos_t): Support __USE_FILE_OFFSET64 and
+	__USE_LARGEFILE64.
+	(fopen, freopen): Likewise.
+	(fgetpos, fsetpos): Likewise.
+	(ftell, fseek): Likewise.
+	(tmpfile): Likewise.
+	(TEMP_FAILURE_RETRY): Move to unistd.h.
+	(fopen64, freopen64, fgetpos64, fsetpos64, ftello, fseeko,
+	ftello64, fseeko64, tmpfile64): Add.
+	* include/unistd.h (off_t): Support __USE_FILE_OFFSET64 and
+	__USE_LARGEFILE64.
+	(TEMP_FAILURE_RETRY): Add (changed version from stdio.h).
+
+Sun Oct 30 20:34:23 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/errno.h (EILSEQ, EOVERFLOW, EFBIG): Reassigned values for
+	SCL configuration to match recent ROOL CLib changes.
+	(EPERM, ENOENT, ESRCH, EINTR, EIO, ENXIO): Reassigned values for
+	SCL configuration to avoid aliasing other error values.
+	* sys/errlist.c: Follow errno.h changes.
+	* Makefile.am (time/adjtime): Removed from SCL build.
+
 Fri Oct 28 04:04:12 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* Makefile.am: Workaround for automake conditionals limitation.
@@ -15,10 +149,6 @@ Thu Oct 27 01:36:00 BST 2011  John-Mark Bell  <jmb@netsurf-browser.org>
 	is now above the signal handler stack.
 	* test/sys/stackextension.c: Test for above issue.
 
-Wed Oct 26 00:59:24 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
-
-	* gen-auto.pl: Remove.
-
 Mon Sep 26 00:41:39 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* time/stdtime.c (SWI_Territory_ConvertDateAndTime): Add missing
@@ -27,7 +157,7 @@ Mon Sep 26 00:41:39 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 Thu Sep  8 00:10:25 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* unix/unix.c (find_terminator): Remove.
-	(check_io_redir): Support for double quoated redirection filenames.
+	(check_io_redir): Support for double quoted redirection filenames.
 	(get_io_redir): Simplify calls to check_io_redir.
 	Bug #221.
 
@@ -47,10 +177,22 @@ Sat Jul  2 15:14:30 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 	UnixLib changes.  Solves bug #220.
 	* unix/glob.c: Likewise.
 
+Sun May 29 18:32:56 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/sys/stat.h (S_IFBLK, S_IFLNK): Renumber.
+	(S_IFMT): Trim bits.
+	(S_ISREG, S_ISFIFO, S_ISLNK): Use S_IFMT mask so that
+	result is 0 or 1.
+
 Sun May 29 17:21:43 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* unix/dev.c (__fsopen): Return ENOENT iso EAGAIN when unexisting
 	file is opened without O_CREAT set.
+
+Sun Apr 24 13:16:13 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* string/strdup.c (strdup): Don't check on NULL parameter.
+	It's nowhere documented we should.
 
 Wed Apr  6 03:27:25 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
