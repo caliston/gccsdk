@@ -1,3 +1,8 @@
+Fri Dec  9 20:01:02 GMT 2011  Lee Noar  <leenoar@sky.com>
+
+	* pthread/_context.s (__pthread_callback): After a jump to
+	skip_contextswitch, ip is the PIC register, not v4.
+
 Wed Dec  7 00:40:14 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 	* stdio/scl_fdopen.c (fdopen): Use __FD_SOCKET_OFFSET instead of

@@ -448,7 +448,7 @@ skip_contextswitch:
 	@ Exiting from the CallBack handler requires us to reload all
 	@ registers from the register save area.
 	LDR	r14, .L2+8		@=__cbreg
- PICEQ "LDR	r14, [v4, r14]"
+ PICEQ "LDR	r14, [ip, r14]"
 	LDR	a1, [r14, #16*4]	@ Get user PSR
 	MSR	SPSR_cxsf, a1		@ Put it into SPSR_SVC/IRQ (NOP on ARM2/3, shouldn't have any effect in 26bit mode)
 	LDMIA	r14, {r0-r14}^		@ Load USR mode regs
