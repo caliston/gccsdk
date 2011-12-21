@@ -1,8 +1,8 @@
 Index: libgcc/unwind-arm-common.inc
 ===================================================================
---- libgcc/unwind-arm-common.inc	(revision 178826)
+--- libgcc/unwind-arm-common.inc	(revision 182584)
 +++ libgcc/unwind-arm-common.inc	(working copy)
-@@ -94,8 +94,9 @@
+@@ -101,8 +101,9 @@
  extern int __data_start;
  
  /* The exception index table location.  */
@@ -14,7 +14,7 @@ Index: libgcc/unwind-arm-common.inc
  
  /* Core unwinding functions.  */
  
-@@ -239,6 +240,14 @@
+@@ -284,6 +285,14 @@
  
    do
      {
@@ -29,18 +29,18 @@ Index: libgcc/unwind-arm-common.inc
        /* Find the entry for this routine.  */
        if (get_eit_entry (ucbp, VRS_PC(vrs)) != _URC_OK)
  	abort ();
-@@ -254,6 +263,10 @@
+@@ -299,6 +308,10 @@
    if (pr_result != _URC_INSTALL_CONTEXT)
      abort();
-   
+ 
 +#ifdef __riscos__
 +  fixup_stack (&vrs->core);
 +#endif
 +
-   restore_core_regs (&vrs->core);
+   uw_restore_core_regs (vrs, &vrs->core);
  }
  
-@@ -283,6 +296,14 @@
+@@ -328,6 +341,14 @@
        _Unwind_Reason_Code entry_code;
        _Unwind_Reason_Code stop_code;
  
@@ -55,7 +55,7 @@ Index: libgcc/unwind-arm-common.inc
        /* Find the entry for this routine.  */
        entry_code = get_eit_entry (ucbp, VRS_PC (&saved_vrs));
  
-@@ -339,6 +360,10 @@
+@@ -384,6 +405,10 @@
        return _URC_FAILURE;
      }
  
@@ -63,10 +63,10 @@ Index: libgcc/unwind-arm-common.inc
 +  fixup_stack (&saved_vrs.core);
 +#endif
 +
-   restore_core_regs (&saved_vrs.core);
+   uw_restore_core_regs (&saved_vrs, &saved_vrs.core);
  }
  
-@@ -368,6 +393,10 @@
+@@ -413,6 +438,10 @@
    phase1_vrs saved_vrs;
    _Unwind_Reason_Code pr_result;
  
@@ -77,7 +77,7 @@ Index: libgcc/unwind-arm-common.inc
    /* Set the pc to the call site.  */
    VRS_PC (entry_vrs) = VRS_RETURN(entry_vrs);
  
-@@ -379,6 +408,14 @@
+@@ -424,6 +453,14 @@
    /* Unwind until we reach a propagation barrier.  */
    do
      {
@@ -92,7 +92,7 @@ Index: libgcc/unwind-arm-common.inc
        /* Find the entry for this routine.  */
        if (get_eit_entry (ucbp, VRS_PC (&saved_vrs)) != _URC_OK)
  	return _URC_FAILURE;
-@@ -442,6 +479,10 @@
+@@ -487,6 +524,10 @@
        abort ();
      }
  
@@ -103,7 +103,7 @@ Index: libgcc/unwind-arm-common.inc
    /* Call the cached PR.  */
    pr_result = ((personality_routine) UCB_PR_ADDR (ucbp))
  	(_US_UNWIND_FRAME_RESUME, ucbp, (_Unwind_Context *) entry_vrs);
-@@ -449,6 +490,9 @@
+@@ -494,6 +535,9 @@
    switch (pr_result)
      {
      case _URC_INSTALL_CONTEXT:
@@ -111,9 +111,9 @@ Index: libgcc/unwind-arm-common.inc
 +      fixup_stack (&entry_vrs->core);
 +#endif
        /* Upload the registers to enter the landing pad.  */
-       restore_core_regs (&entry_vrs->core);
+       uw_restore_core_regs (entry_vrs, &entry_vrs->core);
  
-@@ -471,6 +515,10 @@
+@@ -516,6 +560,10 @@
    if (!UCB_FORCED_STOP_FN (ucbp))
      return __gnu_Unwind_RaiseException (ucbp, entry_vrs);
  
@@ -124,7 +124,7 @@ Index: libgcc/unwind-arm-common.inc
    /* Set the pc to the call site.  */
    VRS_PC (entry_vrs) = VRS_RETURN (entry_vrs);
    /* Continue unwinding the next frame.  */
-@@ -518,6 +566,14 @@
+@@ -563,6 +611,14 @@
    
    do
      {
