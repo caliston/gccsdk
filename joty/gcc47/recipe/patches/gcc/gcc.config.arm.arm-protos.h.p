@@ -1,10 +1,10 @@
 Index: gcc/config/arm/arm-protos.h
 ===================================================================
---- gcc/config/arm/arm-protos.h	(revision 182024)
+--- gcc/config/arm/arm-protos.h	(revision 183074)
 +++ gcc/config/arm/arm-protos.h	(working copy)
-@@ -244,4 +244,13 @@
- extern int vfp3_const_double_for_fract_bits (rtx);
- #endif /* RTX_CODE */
+@@ -247,4 +247,13 @@
+ extern void arm_expand_vec_perm (rtx target, rtx op0, rtx op1, rtx sel);
+ extern bool arm_expand_vec_perm_const (rtx target, rtx op0, rtx op1, rtx sel);
  
 +extern bool arm_apcs_frame_needed (void);
 +extern void arm_expand_save_stack_block (rtx, rtx);
