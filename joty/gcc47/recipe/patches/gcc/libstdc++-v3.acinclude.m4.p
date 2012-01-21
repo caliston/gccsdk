@@ -1,6 +1,6 @@
 Index: libstdc++-v3/acinclude.m4
 ===================================================================
---- libstdc++-v3/acinclude.m4	(revision 181109)
+--- libstdc++-v3/acinclude.m4	(revision 183356)
 +++ libstdc++-v3/acinclude.m4	(working copy)
 @@ -49,7 +49,7 @@
    # Keep these sync'd with the list in Makefile.am.  The first provides an
@@ -11,7 +11,7 @@ Index: libstdc++-v3/acinclude.m4
    SUBDIRS='glibcxx_SUBDIRS'
  
    # These need to be absolute paths, yet at the same time need to
-@@ -1803,7 +1803,7 @@
+@@ -1815,7 +1815,7 @@
  
  m4_pushdef([n_syserr], [1])dnl
  m4_foreach([syserr], [EOWNERDEAD, ENOTRECOVERABLE, ENOLINK, EPROTO, ENODATA,

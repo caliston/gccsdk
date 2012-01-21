@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.md
 ===================================================================
---- gcc/config/arm/arm.md	(revision 183074)
+--- gcc/config/arm/arm.md	(revision 183356)
 +++ gcc/config/arm/arm.md	(working copy)
 @@ -32,6 +32,7 @@
  (define_constants
@@ -10,16 +10,16 @@ Index: gcc/config/arm/arm.md
     (IP_REGNUM	    12)		; Scratch register
     (SP_REGNUM	    13)		; Stack pointer
     (LR_REGNUM       14)		; Return address register
-@@ -116,6 +117,8 @@
- 			; unaligned locations, on architectures which support
+@@ -117,6 +118,8 @@
  			; that.
    UNSPEC_UNALIGNED_STORE ; Same for str/strh.
+   UNSPEC_PIC_UNIFIED    ; Create a common pic addressing form.
 +  UNSPEC_STK            ; RISC OS port.
 +  UNSPEC_CALL           ; RISC OS port.
  ])
  
  ;; UNSPEC_VOLATILE Usage:
-@@ -5709,7 +5712,7 @@
+@@ -5734,7 +5737,7 @@
  	(mem:SI (plus:SI (match_operand:SI 1 "register_operand" "r")
  			 (unspec:SI [(match_operand:SI 2 "" "X")]
  				    UNSPEC_PIC_OFFSET))))]
@@ -28,7 +28,7 @@ Index: gcc/config/arm/arm.md
    "ldr%?\\t%0, [%1,%2]"
    [(set_attr "type" "load1")]
  )
-@@ -8266,7 +8269,7 @@
+@@ -8291,7 +8294,7 @@
        return thumb_call_via_reg (operands[0]);
      else if (operands[1] == const0_rtx)
        return \"bl\\t%__interwork_call_via_%0\";
@@ -37,7 +37,7 @@ Index: gcc/config/arm/arm.md
        return \"bl\\t%__interwork_r7_call_via_%0\";
      else
        return \"bl\\t%__interwork_r11_call_via_%0\";
-@@ -8378,7 +8381,7 @@
+@@ -8403,7 +8406,7 @@
        return thumb_call_via_reg (operands[1]);
      else if (operands[2] == const0_rtx)
        return \"bl\\t%__interwork_call_via_%1\";
@@ -46,7 +46,7 @@ Index: gcc/config/arm/arm.md
        return \"bl\\t%__interwork_r7_call_via_%1\";
      else
        return \"bl\\t%__interwork_r11_call_via_%1\";
-@@ -11312,6 +11315,8 @@
+@@ -11337,6 +11340,8 @@
  (include "ldmstm.md")
  ;; Load the FPA co-processor patterns
  (include "fpa.md")
