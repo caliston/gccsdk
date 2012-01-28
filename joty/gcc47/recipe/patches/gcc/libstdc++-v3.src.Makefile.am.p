@@ -1,6 +1,6 @@
 Index: libstdc++-v3/src/Makefile.am
 ===================================================================
---- libstdc++-v3/src/Makefile.am	(revision 183457)
+--- libstdc++-v3/src/Makefile.am	(revision 183662)
 +++ libstdc++-v3/src/Makefile.am	(working copy)
 @@ -36,13 +36,11 @@
  
@@ -39,10 +39,10 @@ Index: libstdc++-v3/src/Makefile.am
  # Symbol versioning for shared libraries.
  if ENABLE_SYMVERS
  libstdc++-symbols.ver:  ${glibcxx_srcdir}/$(SYMVER_FILE) \
-@@ -215,3 +229,43 @@
- install_debug:
- 	(cd ${debugdir} && $(MAKE) \
- 	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install)
+@@ -242,3 +256,43 @@
+ install-debug: build-debug
+ 	(cd ${debugdir} && $(MAKE) CXXFLAGS='$(DEBUG_FLAGS)' \
+ 	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install) ;
 +
 +# Install notes
 +# We have to have rules modified from the default to counteract SUN make
