@@ -1,3 +1,12 @@
+Tue Jan 10 23:24:55 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/stdlib.h (realloc): Drop malloc attribute.
+
+Mon Dec 26 16:04:12 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/stdio.h (struct __iobuf): Change type of __offset from
+	fpos_t to __off_t.
+
 Fri Dec  9 20:01:02 GMT 2011  Lee Noar  <leenoar@sky.com>
 
 	* pthread/_context.s (__pthread_callback): After a jump to
