@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1997 Darren Salt
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,19 +32,27 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "asm.h"
 #include "commands.h"
+#include "common.h"
 #include "decode.h"
 #include "error.h"
 #include "filestack.h"
 #include "input.h"
 #include "macros.h"
-#include "os.h"
+#include "opt.h"
+#include "phase.h"
 #include "variables.h"
 
 #ifdef DEBUG
 //#  define DEBUG_MACRO
 #endif
+
+typedef enum
+{
+  eMKeyword_MACRO,
+  eMKeyword_MEND,
+  eMKeyword_AnythingElse
+} MKeyword_e;
 
 static Macro *macroList;
 
@@ -71,6 +79,7 @@ FS_PopMacroPObject (bool noCheck)
     }
 
   Var_RestoreLocals (gCurPObjP->d.macro.varListP);
+  gOpt_DirectiveValue = gCurPObjP->d.macro.optDirective;
 }
 
 
@@ -94,9 +103,10 @@ FS_PushMacroPObject (const Macro *m, const char *args[MACRO_ARG_LIMIT])
   gCurPObjP[1].d.macro.curPtr = m->buf;
   memcpy (gCurPObjP[1].d.macro.args, args, sizeof (args)*MACRO_ARG_LIMIT);
   gCurPObjP[1].d.macro.varListP = NULL;
+  gCurPObjP[1].d.macro.optDirective = gOpt_DirectiveValue;
 
-  gCurPObjP[1].name = m->file;
-  gCurPObjP[1].lineNum = m->startline;
+  gCurPObjP[1].fileName = m->fileName;
+  gCurPObjP[1].lineNum = m->startLineNum;
 
   gCurPObjP[1].whileIfStartDepth = gCurPObjP[1].whileIfCurDepth = gCurPObjP[0].whileIfCurDepth;
   gCurPObjP[1].GetLine = Macro_GetLine;
@@ -115,7 +125,7 @@ Macro_Call (const Macro *m, const Lex *label)
   int marg = 0;
   if (label->tag == LexId || label->tag == LexLocalLabel)
     {
-      if (m->labelarg)
+      if (m->labelArg)
 	{
 	  const char *lblP = label->tag == LexId ? label->Data.Id.str : label->Data.LocalLabel.str;
 	  size_t lblSize = label->tag == LexId ? label->Data.Id.len : label->Data.LocalLabel.len;
@@ -125,17 +135,17 @@ Macro_Call (const Macro *m, const Lex *label)
       else
 	{
 	  error (ErrorWarning, "Label argument is ignored by macro %s", m->name);
-	  errorLine (m->file, m->startline, ErrorWarning, "note: Marco %s was defined here", m->name);
+	  errorLine (m->fileName, m->startLineNum, ErrorWarning, "note: Marco %s was defined here", m->name);
 	}
     }
-  else if (m->labelarg)
+  else if (m->labelArg)
     args[marg++] = NULL; /* Null label argument */
     
   skipblanks ();
   bool tryEmptyParam = false;
   while (tryEmptyParam || !Input_IsEolOrCommentStart ())
     {
-      if (marg == m->numargs)
+      if (marg == m->numArgs)
 	{
 	  error (ErrorError, "Too many arguments");
 	  Input_Rest ();
@@ -179,12 +189,12 @@ Macro_Call (const Macro *m, const Lex *label)
       tryEmptyParam = true;
     }
 
-  for (/* */; marg < MACRO_ARG_LIMIT; ++marg)
+  for (/* */; marg != MACRO_ARG_LIMIT; ++marg)
     args[marg] = NULL;
 
 #ifdef DEBUG_MACRO
   printf ("Macro call = %s\n", inputLine ());
-  for (int i = 0; i < MACRO_ARG_LIMIT; ++i)
+  for (int i = 0; i != MACRO_ARG_LIMIT; ++i)
     printf ("  Arg %i = <%s>\n", i, args[i] ? args[i] : "NULL");
 #endif
 
@@ -208,7 +218,6 @@ Macro_GetLine (char *bufP, size_t bufSize)
       return true;
     }
 
-  const char * const bufOrgP = bufP;
   const char * const bufEndP = bufP + bufSize - 1;
   while (*curPtr != '\0' && bufP != bufEndP)
     {
@@ -235,7 +244,9 @@ Macro_GetLine (char *bufP, size_t bufSize)
 	*bufP++ = *curPtr++;
     }
   *bufP = '\0';
-  gCurPObjP->lastLineSize = bufP - bufOrgP;
+  /* lastLineSize is the difference of our input curPtr when reading one
+     macro line, *not* the difference of our output bufP.  */
+  gCurPObjP->lastLineSize = curPtr - gCurPObjP->d.macro.curPtr;
 
   gCurPObjP->d.macro.curPtr = curPtr;
 
@@ -243,6 +254,13 @@ Macro_GetLine (char *bufP, size_t bufSize)
 }
 
 
+/**
+ * Find macro with given name.
+ * \param name Macro name to look for, not NUL terminated.
+ * \param len Macro name length.
+ * \return When macro is known, return pointer to corresponding Macro
+ * object.  NULL when macro is not known.
+ */
 const Macro *
 Macro_Find (const char *name, size_t len)
 {
@@ -256,21 +274,26 @@ Macro_Find (const char *name, size_t len)
 
 
 /**
- * \return true when one or more white space characters followed by "MEND"
- * is read.
+ * \return Keyword indication ("MACRO", "MEND" or anything else/no keyword).
+ * When MACRO or MEND keyword are parsed, those are consumed.  Any leading
+ * white space characters are always consumed.
  */
-static bool
-Macro_IsMENDAtInput (void)
+static MKeyword_e
+Macro_GetKeyword (void)
 {
   if (!isspace ((unsigned char)inputLook ()))
-    return false;
+    return eMKeyword_AnythingElse;
 
   skipblanks ();
   /* We only need to check for "MEND" and the end of keyword (i.e. a space,
      start comment character (';') or EOL).  Upon return from Macro_Call()
      in decode(), decode_finalcheck() will deal with the rest of the line
      after "MEND".  */
-  return Input_MatchKeyword ("MEND");
+  if (Input_MatchKeyword ("MEND"))
+    return eMKeyword_MEND;
+  if (Input_MatchKeyword ("MACRO"))
+    return eMKeyword_MACRO;
+  return eMKeyword_AnythingElse;
 }
 
 
@@ -287,13 +310,15 @@ c_macro (void)
 
   char *buf = NULL;
 
-  if (gASM_Phase == ePassTwo)
+  if (gPhase == ePassTwo)
     goto lookforMEND;
   
   skipblanks ();
   if (!Input_IsEolOrCommentStart ())
     error (ErrorWarning, "Skipping characters following MACRO");
 
+  /* Process macro prototype statement (= optional label, macro name,
+     zero or more macro parameters).  */
   /* Read optional '$' + label name.  */
   if (!Input_NextLine (eNoVarSubst))
     errorAbort ("End of file found within macro definition");
@@ -303,7 +328,8 @@ c_macro (void)
       const char *ptr = inputSymbol (&len, '\0');
       if (len)
 	{
-	  m.labelarg = m.numargs = 1;
+	  m.labelArg = true;
+	  m.numArgs = 1;
 	  if ((m.args[0] = strndup (ptr, len)) == NULL)
 	    errorOutOfMem ();
 	}
@@ -324,7 +350,7 @@ c_macro (void)
   if (prevDefMacro != NULL)
     {
       error (ErrorError, "Macro '%.*s' is already defined", (int)len, ptr);
-      errorLine (prevDefMacro->file, prevDefMacro->startline, ErrorError,
+      errorLine (prevDefMacro->fileName, prevDefMacro->startLineNum, ErrorError,
 		 "note: Previous definition of macro '%.*s' was here", (int)len, ptr);
       goto lookforMEND;
     }
@@ -335,7 +361,7 @@ c_macro (void)
   /* Read zero or more macro parameters.  */
   while (!Input_IsEolOrCommentStart ())
     {
-      if (m.numargs == MACRO_ARG_LIMIT)
+      if (m.numArgs == MACRO_ARG_LIMIT)
 	{
 	  error (ErrorError, "Too many arguments in macro definition");
 	  Input_Rest ();
@@ -354,7 +380,7 @@ c_macro (void)
 	  Input_Rest ();
 	  break;
 	}
-      if ((m.args[m.numargs] = strndup (ptr, len)) == NULL)
+      if ((m.args[m.numArgs] = strndup (ptr, len)) == NULL)
 	errorOutOfMem ();
       skipblanks ();
       if (Input_Match ('=', false))
@@ -378,18 +404,18 @@ c_macro (void)
 	      if ((defarg = strndup (defarg, defarglen)) == NULL)
 		errorOutOfMem ();
 	    }
-	  m.defArgs[m.numargs] = defarg;
+	  m.defArgs[m.numArgs] = defarg;
 	}
       else
-	m.defArgs[m.numargs] = NULL;
-      ++m.numargs;
+	m.defArgs[m.numArgs] = NULL;
+      ++m.numArgs;
       if (!Input_Match (',', true))
 	break;
     }
   decode_finalcheck ();
 
   /* Process the macro body.  */
-  m.startline = FS_GetCurLineNumber ();
+  m.startLineNum = FS_GetCurLineNumber ();
   size_t bufptr = 0, buflen = 128;
   if ((buf = malloc (buflen)) == NULL)
     errorOutOfMem ();
@@ -399,9 +425,24 @@ c_macro (void)
 	goto noMEND;
 
       const char * const inputMark = Input_GetMark ();
-      if (Macro_IsMENDAtInput ())
+      bool isMacroEnd = false;
+      switch (Macro_GetKeyword ())
+	{
+	  case eMKeyword_MEND:
+	    isMacroEnd = true;
+	    break;
+
+	  case eMKeyword_MACRO:
+	    /* Nested MACRO construction, that's not allowed.  */
+	    error (ErrorError, "Macro definitions cannot be nested");
+	    /* Fall through.  */
+
+	  case eMKeyword_AnythingElse:
+	    Input_RollBackToMark (inputMark);
+	    break;
+	}
+      if (isMacroEnd)
 	break;
-      Input_RollBackToMark (inputMark);
 
       while (1)
 	{
@@ -410,16 +451,20 @@ c_macro (void)
 	  if (c == '$')
 	    {
 	      if (!Input_Match ('$', false))
-		{ /* Token ? Check list and substitute.  */
+		{
+		  /* Token ? Check list and substitute.  */
+		  bool vbar = Input_Match ('|', false);
 		  ptr = inputSymbol (&len, '\0');
+		  if (vbar && !Input_Match ('|', false))
+		    error (ErrorError, "Missing vertical bar");
 		  (void) Input_Match ('.', false);
 		  int i;
 		  for (i = 0;
-		       i != m.numargs
+		       i != m.numArgs
 			 && (memcmp (ptr, m.args[i], len) || m.args[i][len] != '\0');
 		       ++i)
 		    /* */;
-		  if (i != m.numargs)
+		  if (i != m.numArgs)
 		    c = MACRO_ARG0 + i;
 		  else
 		    Input_RollBackToMark (inputMark2);
@@ -442,7 +487,7 @@ c_macro (void)
 	}
     } while (1);
   buf[bufptr] = '\0';
-  m.file = FS_GetCurFileName ();
+  m.fileName = FS_GetCurFileName ();
   m.buf = buf;
 
   Macro *p;
@@ -464,11 +509,11 @@ noMEND:
 	  break;
 	}
     }
-  while (!Macro_IsMENDAtInput ());
+  while (Macro_GetKeyword () != eMKeyword_MEND);
 
   free (buf);
   free ((void *)m.name);
-  for (int i = 0; i < MACRO_ARG_LIMIT; ++i)
+  for (int i = 0; i != MACRO_ARG_LIMIT; ++i)
     free ((void *) m.args[i]);
   return false;
 }

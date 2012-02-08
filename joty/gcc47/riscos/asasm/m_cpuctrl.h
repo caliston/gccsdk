@@ -24,26 +24,23 @@
 
 #include <stdbool.h>
 
-bool m_adr (void);
+bool m_adr (bool doLowerCase);
 bool m_bkpt (void);
-bool m_blx (void);
-bool m_branch (void);
-bool m_bx (void);
-bool m_bxj (void);
-bool m_mrs (void);
-bool m_msr (void);
-bool m_ret (void);
-bool m_stack (void);
-bool m_swi (void);
-bool m_tail (void);
+bool m_blx (bool doLowerCase);
+bool m_branch (bool doLowerCase);
+bool m_bx (bool doLowerCase);
+bool m_bxj (bool doLowerCase);
+bool m_mrs (bool doLowerCase);
+bool m_msr (bool doLowerCase);
+bool m_swi (bool doLowerCase);
 
-bool m_sev (void);
-bool m_wfe (void);
-bool m_wfi (void);
-bool m_yield (void);
+bool m_sev (bool doLowerCase);
+bool m_wfe (bool doLowerCase);
+bool m_wfi (bool doLowerCase);
+bool m_yield (bool doLowerCase);
 
-bool m_cps (void);
-bool m_dbg (void);
-bool m_smc (void);
+bool m_cps (bool doLowerCase);
+bool m_dbg (bool doLowerCase);
+bool m_smc (bool doLowerCase);
 
 #endif

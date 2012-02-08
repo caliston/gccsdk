@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,12 +34,12 @@
 #  include <inttypes.h>
 #endif
 
+#include "common.h"
 #include "error.h"
 #include "filestack.h"
 #include "input.h"
 #include "macros.h"
 #include "main.h"
-#include "os.h"
 
 #define MAX_LINE (4096)
 
@@ -101,17 +101,16 @@ inputGetLower (void)
 }
 
 
-/* return char |c| to |input_buff| at position pointed to by |input_pos| */
+/**
+ * Undo the last character got from input buffer.
+ */
 void
 inputUnGet (char c)
 {
   if (input_pos > input_buff && input_pos[-1] == c)
     input_pos--;
   else if (*input_pos || c)
-    {
-      /* printf("char = '%c' \"%s\" \"%s\"\n", c, input_pos, input_buff); */
-      errorAbort ("Internal inputUnGet: illegal character");
-    }
+    errorAbort ("Internal inputUnGet: illegal character");
 }
 
 
@@ -220,8 +219,15 @@ Input_NextLineCore (void)
       if (!toggle)
 	{
 	  const char *type = strstr (predefine, " SET");
-	  if (type && (type[4] == 'L' || type[4] == 'S' || type[4] == 'A')) 
-	    sprintf (workBuff, "\tGBL%c %.*s", type[4], (int)(type - predefine), predefine);
+	  if (type && (type[4] == 'L' || type[4] == 'S' || type[4] == 'A'))
+	    {
+	      int len = snprintf (workBuff, sizeof (workBuff), "\tGBL%c %.*s", type[4], (int)(type - predefine), predefine);
+	      if ((size_t)len >= sizeof (workBuff))
+		{
+		  error (ErrorError, "Failed to set predefine '%s'", predefine);
+		  *workBuff = '\0';
+		}
+	    }
 	  else
 	    {
 	      error (ErrorError, "Invalid predefine '%s'", predefine);
@@ -515,16 +521,18 @@ Input_ArgSub (bool warnOnVarSubFail)
 	    break;
 
 	  case '|': /* Copy "|xxx|" as is.  */
-	    if (outOffset < sizeof (input_buff))
-	      input_buff[outOffset++] = *inP++;
-	    while (outOffset < sizeof (input_buff) && *inP)
-	      {
+	    {
+	      if (outOffset < sizeof (input_buff))
 		input_buff[outOffset++] = *inP++;
-		if (*inP == c)
-		  break;
-	      }
-	    /* We don't check on unmatched |.  */
-	    break;
+	      while (outOffset < sizeof (input_buff) && *inP)
+		{
+		  input_buff[outOffset++] = *inP++;
+		  if (inP[-1] == '|')
+		    break;
+		}
+	      /* We don't check on unmatched |.  */
+	      break;
+	    }
 
 	  case '\'':
 	  case '\"':
@@ -680,6 +688,22 @@ Input_MatchString (const char *str)
 }
 
 
+bool
+Input_MatchStringLower (const char *str)
+{
+  int matched = 0;
+  while (input_pos[matched]
+         && tolower ((unsigned)input_pos[matched]) == str[matched])
+    ++matched;
+  if (str[matched] == '\0')
+    {
+      input_pos += matched;
+      return true;
+    }
+  return false;
+}
+
+
 /**
  * Checks if the end of the current keyword has been reached.
  */
@@ -688,29 +712,6 @@ Input_IsEndOfKeyword (void)
 {
   unsigned char c = *input_pos;
   return c == '\0' || isspace (c) || c == ';';
-}
-
-
-/**
- * Try to read a defining local label.
- */
-const char *
-Input_LocalLabel (size_t *ilen)
-{
-  if (!isdigit (*input_pos))
-    {
-      *ilen = 0;
-      return NULL;
-    }
-  const char * const rslt = input_pos;
-  /* Parse one or more digits.  */
-  for (/* */; *input_pos && isdigit ((unsigned char)*input_pos); ++input_pos)
-    /* */;
-  /* Parse routine name (optional).  */
-  for (/* */; *input_pos && (isalnum ((unsigned char)*input_pos) || *input_pos == '_'); ++input_pos)
-    /* */;
-  *ilen = input_pos - rslt;
-  return rslt;
 }
 
 

@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2010 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,7 +34,6 @@
 #include "code.h"
 #include "error.h"
 #include "expr.h"
-#include "os.h"
 #include "main.h"
 #include "value.h"
 
@@ -119,6 +118,58 @@ Value_Code (size_t len, const Code *code)
   return value;
 }
 
+
+/**
+ * Resolve the defined value behind a ValueSymbol object.
+ * \return true When resolving failed.
+ */
+bool
+Value_ResolveSymbol (Value *valueP)
+{
+  /* Resolve all defined symbols and absolute area symbols.  */
+  /* FIXME: this can probably loop forever: label1 -> label2 -> label1 */
+  while (valueP->Tag == ValueSymbol /* Only replace symbols... */
+         && ((valueP->Data.Symbol.symbol->type & SYMBOL_DEFINED) != 0
+             || ((valueP->Data.Symbol.symbol->type & SYMBOL_AREA) != 0
+		 && (valueP->Data.Symbol.symbol->type & SYMBOL_ABSOLUTE) != 0)))
+    {
+      int offset = valueP->Data.Symbol.offset;
+      int factor = valueP->Data.Symbol.factor;
+      const Value *newValueP = &valueP->Data.Symbol.symbol->value;
+      switch (newValueP->Tag)
+	{
+	  case ValueBool:
+	  case ValueString:
+	    {
+	      if (factor != 1 || offset != 0)
+		return true;
+	      *valueP = *newValueP;
+	      break;
+	    }
+	  case ValueInt:
+	    *valueP = Value_Int (factor * newValueP->Data.Int.i + offset);
+	    break;
+	  case ValueFloat:
+	    *valueP = Value_Float (factor * newValueP->Data.Float.f + offset);
+	    break;
+	  case ValueAddr:
+	    {
+	      if (factor != 1)
+		return true;
+	      *valueP = Value_Addr (newValueP->Data.Addr.r, newValueP->Data.Addr.i + offset);
+	      break;
+	    }
+	  case ValueSymbol:
+	    *valueP = Value_Symbol (newValueP->Data.Symbol.symbol, factor * newValueP->Data.Symbol.factor, factor * newValueP->Data.Symbol.offset + offset);
+	    break;
+	  default:
+	    return true;
+	}
+    }
+  return false;
+}
+
+
 bool
 valueEqual (const Value *a, const Value *b)
 {
@@ -164,12 +215,12 @@ valueEqual (const Value *a, const Value *b)
 
       case ValueInt:
 	result = (b->Tag == ValueInt && a->Data.Int.i == b->Data.Int.i)
-		   || (option_autocast && b->Tag == ValueFloat && (ARMFloat)a->Data.Int.i == b->Data.Float.f);
+		   || (b->Tag == ValueFloat && (ARMFloat)a->Data.Int.i == b->Data.Float.f);
 	break;
 
       case ValueFloat:
 	result = (b->Tag == ValueFloat && a->Data.Float.f == b->Data.Float.f)
-		   || (option_autocast && b->Tag == ValueInt && a->Data.Float.f == (ARMFloat)b->Data.Int.i);
+		   || (b->Tag == ValueInt && a->Data.Float.f == (ARMFloat)b->Data.Int.i);
 	break;
 
       case ValueString:

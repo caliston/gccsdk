@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1997 Darren Salt
- * Copyright (c) 2002-2011 GCCSDK Developers
+ * Copyright (c) 2002-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,27 +24,50 @@
 #define local_header_included
 
 #include <stdbool.h>
+#include <stddef.h>
+
 #include "lex.h"
+#include "phase.h"
+
+typedef enum
+{
+  eThisLevelOnly,	/* 't' */
+  eAllLevels,		/* 'a' */
+  eThisLevelAndHigher	/* '' */
+} LocalLabel_eLevel;
+
+typedef enum
+{
+  eBackward,		/* 'b' */
+  eBackwardThenForward,	/* '' */
+  eForward		/* 'f' */
+} LocalLabel_eDir;
 
 typedef struct Local_Label_t
 {
-  struct Local_Label_t *NextP;
-  unsigned Num;
-  unsigned Value;
+  struct Local_Label_t *nextP; /* Must be first.  */
+
+  unsigned num; /**< Label number.  */
+  unsigned instance; /**< Instance of label number.  */
 } Local_Label_t;
 
-extern const char Local_IntLabelFormat[];
+void Local_PrepareForPhase (Phase_e phase);
 
-void Local_PrepareForPhase (ASM_Phase_e phase);
+Local_Label_t *Local_DefineLabel (unsigned num);
+void Local_CreateSymbolForOutstandingFwdLabelRef (char *buf, size_t bufSize,
+						  LocalLabel_eLevel level,
+						  LocalLabel_eDir dir,
+						  unsigned label);
+Local_Label_t *Local_GetLabel (unsigned depth, unsigned num);
 
-Local_Label_t *Local_GetLabel (unsigned num);
+void Local_CreateSymbol (Local_Label_t *lblP, unsigned macroDepth, bool next, char *buf, size_t bufSize);
+
+void Local_FinishMacro (bool noCheck);
 
 bool c_rout (const Lex *label);
 
-bool Local_ROUTIsEmpty (const char *routName);
 bool Local_IsLocalLabel (const char *);
-void Local_FindROUT (const char *rout, const char **file, int *lineno);
-const char *Local_GetCurROUTId (void);
+const char *Local_GetCurROUTId (const char **fileNamePP, unsigned *lineNumP);
 
 #ifdef DEBUG
 void Local_DumpAll (void);

@@ -865,29 +865,38 @@ stdio_src = \
 	stdio/feof.c \
 	stdio/ferror.c \
 	stdio/fflush.c \
+	stdio/fgetpos.c \
 	stdio/fgets.c \
 	stdio/filbuf.c \
 	stdio/ul_fileno.c \
 	stdio/flsbuf.c \
 	stdio/ul_fopen.c \
-	stdio/fpos.c \
 	stdio/fpurge.c \
 	stdio/fputs.c \
 	stdio/fread.c \
 	stdio/freopen.c \
+	stdio/fseek.c \
+	stdio/fseeko.c \
+	stdio/fsetpos.c \
+	stdio/ftell.c \
+	stdio/ftello.c \
 	stdio/fwrite.c \
 	stdio/getc.c \
+	stdio/getchar.c \
 	stdio/gets.c \
 	stdio/getw.c \
+	stdio/lockfile.c \
 	stdio/newstream.c \
 	stdio/perror.c \
 	stdio/popen.c \
 	stdio/printf.c \
 	stdio/putc.c \
+	stdio/putchar.c \
 	stdio/puts.c \
 	stdio/putw.c \
 	stdio/remove.c \
 	stdio/rename.c \
+	stdio/rewind.c \
 	stdio/scanf.c \
 	stdio/setbuf.c \
 	stdio/stdio.c \
@@ -1100,7 +1109,9 @@ if UNIXLIB_BUILDING_SCL
 unix_src = \
 	unix/scl_close.c \
 	unix/scl_ioctl.c \
+	unix/scl_isatty.c \
 	unix/scl_lseek.c \
+	unix/scl_open.c \
 	unix/scl_putenv.c \
 	unix/scl_read.c \
 	unix/scl_readv.c \
@@ -1137,13 +1148,13 @@ unix_src = \
 	unix/getwd.c \
 	unix/glob.c \
 	unix/ul_ioctl.c \
-	unix/isatty.c \
+	unix/ul_isatty.c \
 	unix/ispipe.c \
 	unix/ul_lseek.c \
 	unix/lstat.c \
 	unix/mkdir.c \
 	unix/nice.c \
-	unix/open.c \
+	unix/ul_open.c \
 	unix/pathconf.c \
 	unix/pipe.c \
 	unix/poll.c \

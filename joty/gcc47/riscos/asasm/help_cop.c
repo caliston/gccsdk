@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,6 +32,7 @@
 
 #include "area.h"
 #include "code.h"
+#include "common.h"
 #include "error.h"
 #include "expr.h"
 #include "fix.h"
@@ -42,6 +43,7 @@
 #include "main.h"
 #include "m_fpe.h"
 #include "option.h"
+#include "phase.h"
 #include "put.h"
 #include "reloc.h"
 #include "value.h"
@@ -53,10 +55,10 @@
  * Similar to DestMem_RelocUpdater() @ m_cpumem.c.
  */
 static bool
-DestMem_RelocUpdaterCoPro (const char *file, int lineno, ARMWord offset,
+DestMem_RelocUpdaterCoPro (const char *fileName, unsigned lineNum, ARMWord offset,
 			   const Value *valueP,
-			   void *privData __attribute__ ((unused)),
-                           bool final __attribute__ ((unused)))
+			   void *privData UNUSED,
+			   bool final UNUSED)
 {
   ARMWord ir = GetWord (offset);
 
@@ -86,7 +88,7 @@ DestMem_RelocUpdaterCoPro (const char *file, int lineno, ARMWord offset,
 		return true;
 	      ARMWord newOffset = valP->Data.Int.i - (Area_GetBaseAddress (areaCurrentSymbol) + offset + 8);
 	      ir |= LHS_OP (15);
-	      ir = Fix_CopOffset (file, lineno, ir, newOffset);
+	      ir = Fix_CopOffset (fileName, lineNum, ir, newOffset);
 	      Put_InsWithOffset (offset, ir);
 	      break;
 	    }
@@ -129,7 +131,7 @@ DestMem_RelocUpdaterCoPro (const char *file, int lineno, ARMWord offset,
 	  case ValueAddr:
 	    {
 	      ir |= LHS_OP (valP->Data.Addr.r);
-	      ir = Fix_CopOffset (file, lineno, ir, valP->Data.Addr.i);
+	      ir = Fix_CopOffset (fileName, lineNum, ir, valP->Data.Addr.i);
 	      Put_InsWithOffset (offset, ir);
 	      break;
 	    }
@@ -303,13 +305,7 @@ help_copAddr (ARMWord ir, bool literal, bool stack)
 		assert (0);
 		break;
 	    }	  
-	  /* The ValueInt | ValueFloat | ValueSymbol | ValueCode tags are what
-	     we support as constants from user point of view.
-	     ValueInt only when the autocast option has been specified.  */
-	  ValueTag valueTag = ValueFloat | ValueSymbol | ValueCode;
-	  if (option_autocast)
-	    valueTag |= ValueInt;
-	  const Value *literalP = exprBuildAndEval (valueTag);
+	  const Value *literalP = exprBuildAndEval (ValueFloat | ValueSymbol | ValueCode);
 	  if (literalP->Tag == ValueIllegal)
 	    {
 	      error (ErrorError, "Wrong literal type");
@@ -365,7 +361,7 @@ help_copAddr (ARMWord ir, bool literal, bool stack)
 
   Put_Ins (ir);
 
-  if (gASM_Phase != ePassOne)
+  if (gPhase != ePassOne)
     {
       assert ((!callRelocUpdate || (ir & P_FLAG)) && "Calling reloc for non pre-increment instructions ?");
 

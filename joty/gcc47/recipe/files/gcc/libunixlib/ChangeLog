@@ -1,3 +1,237 @@
+Sat Feb  4 12:04:02 GMT 2012  Lee Noar  <leenoar@sky.com>
+
+	* include/sys/mman.h: Define MADV_FREE (even though we
+	don't support madvise).
+	* pthread/sem.c (sem_timedwait): Dummy function to prevent
+	linker errors in programs that reference it.
+
+Thu Feb  2 22:54:49 GMT 2012  Lee Noar  <leenoar@sky.com>
+
+	* unix/dev.c (__fslseek): File pointer should be set based
+	on the old value of lpos not being 0.
+
+Thu Feb  2 20:39:37 GMT 2012  Lee Noar  <leenoar@sky.com>
+
+	* unix/dev.c (__fslseek): For SEEK_CUR, return the current
+	file pointer even if lpos is 0.
+
+Sat Jan 21 17:39:02 GMT 2012  Lee Noar  <leenoar@sky.com>
+
+	* include/dlfcn.h: Define RTLD_LOCAL.
+
+Tue Jan 10 23:24:55 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/stdlib.h (realloc): Drop malloc attribute.
+
+Fri Dec 30 02:25:34 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile.am (stdio/fpos.c): Remove.
+	(stdio/fgetpos.c): Add.
+	(stdio/fseek.c): Likewise.
+	(stdio/fseeko.c): Likewise.
+	(stdio/fsetpos.c): Likewise.
+	(stdio/ftell.c): Likewise.
+	(stdio/ftello.c): Likewise.
+	(stdio/rewind.c): Likewise.
+	(stdio/lockfile): Likewise.
+	(stdio/getchar.c): Likewise.
+	* stdio/fpos.c (fgetpos, fgetpos64, fsetpos, fsetpos64, fseek,
+	fseeko, fseeko64, ftell, ftello, ftello64, rewind): Split into
+	stdio/fgetpos.c (fgetpos, fgetpos64), stdio/fseek.c (fseek),
+	stdio/fseeko.c (fseeko, fseeko64), stdio/fsetpos.c (fsetpos,
+	fsetpos64), stdio/ftell.c (ftell), stdio/ftello.c (ftello,
+	ftello64), stdio/rewind.c (rewind).
+	* stdio/fgetpos.c (fgetpos): Reimplement based on previous ftell
+	implementation.
+	* stdio/ftell.c (ftell): Reimplement using fgetpos.
+	* stdio/ftello.c (ftello): Reimplement using fgetpos.
+	* stdio/fsetpos.c (fsetpos): Reimplement based on previous fseek
+	implementation.
+	(fsetpos64): Fix offset sanity check.
+	* stdio/fseek.c (fseek): Reimplement using fsetpos.
+	* stdio/fseeko.c (fseeko): Reimplement using fsetpos.
+	(fseeko64): Fix offset sanity check.  Use fseeko iso fseek.
+	* stdio/rewind.c (rewind): Previous implementation from
+	stdio/fpos.c.
+	* stdio/putc (fputc): Don't check on writabel streams (is now done
+	at __flsbuf). Trim value to be written to 8 bits.
+	(putchar): Move to...
+	* stdio/putchar.c: ...here (new file).
+	(putchar_unlocked): Add.
+	* stdio/getc.c (fgetc): Don't check on readable streams (is now
+	done at checkstream).
+	(fgetc_unlocked): Add.
+	(getchar):  Move to...
+	* stdio/getchar.c: ...here (new file).
+	(getchar_unlocked): Add.
+	* stdio/ul_fileno (fileno_unlocked): Add.
+	* stdio/fwrite.c (fwrite): Writing to non-writeable streams should
+	result in stream error.  Minor cleanup.
+	(fwrite_unlocked): Add.
+	* stdio/fread.c (fread): Reading from non-readable streams should
+	result in stream error.  Minor cleanup.  String based stream
+	should never result in calling read.  Avoid division when all
+	data can be read.
+	(fread_unlocked): Add.
+	* stdio/fflush.c (fflush_unlocked): Add.
+	* stdio/lockfile.c (flockfile, ftrylockfile, funlockfile): Add
+	dummy implementation.
+	* include/stdio.h (feof_unlocked, ferror_unlocked): Add.
+	(fflush_unlocked): Add.
+	(fread_unlocked, fwrite_unlocked): Add.
+	(putchar_unlocked): Add.
+	(fgetc_unlocked): Add.
+	(fileno_unlocked): Add.
+	(fread, popen): Add __wur.
+	(getc_unlocked): Removed for SCL.
+	(fputc_unlocked, putc_unlocked, fgets_unlocked): Was wrongly
+	defined for SCL iso UnixLib.
+	(flockfile, ftrylockfile, funlockfile): Add.
+
+Thu Dec 29 22:01:36 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* debug/dvsprintf.c (UNIXLIB_STDERR): Remove support (causes more
+	trouble than it is able to pinpoint).
+
+Thu Dec 29 21:50:41 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* stdio/printf.c: Minor cleanup.
+	* stdio/newstream.c: Likewise.
+	* string/mempcpy.c: White space change.
+	* string/strdup.c: Likewise.
+	* wchar/wmempcpy.c
+	* stdio/fgets.c (fgets): Remove test on input parameters.
+	Simplify (remove test on ferror).
+	* stdio/gets.c (gets): Likewise.
+	* stdio/flsbuf.c (__flslbbuf): Minor cleanup.
+	(__flsbuf): Add check on writable streams. Use size_t instead of
+	int as type for number of bytes to write. Fix return value check
+	of write.
+	* stdio/filbuf.c (check_stream): A non-readable stream should
+	set stream in error state.  Move EOF check to...
+	(__filbuf): ...here. Use ssize_t instead of int.
+	(fill_buffer): Minor cleanup.  Use ssize_t instead of int.
+	(__peek_char): Add check on EOF.  Use ssize_t instead of int.
+	* unix/scl_lseek.c (lseek): Fix fseeko return value check.
+	* unix/dev.c (__fsopen): Minor cleanup.
+	* locale/localeconv.c (xfree): Remove.
+	(localeconv): Use free directly.
+
+Mon Dec 26 16:06:13 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* stdio/fpurge.c (__fpurge): Define as strong alias of fpurge.
+	(fpurge): Drop unused variable.
+
+Mon Dec 26 16:04:12 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/stdio.h (struct __iobuf): Change type of __offset from
+	fpos_t to __off_t.
+
+Wed Dec  7 00:40:14 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* stdio/scl_fdopen.c (fdopen): Use __FD_SOCKET_OFFSET instead of
+	_SYS_OPEN.
+	* stdio/scl_fileno.c (fileno): Simplify implementation.
+	* unix/ul_readv.c (readv): Count being 0 is not an error.  Check
+	for ssize_t overflow.
+	* unix/ul_writev.c (writev): Likewise.
+	* unix/scl_readv.c (readv): Support file based fd (based on
+	unix/ul_readv.c).
+	* unix/scl_writev.c (writev): Support file based fd (based on
+	unix/ul_writev.c).
+	* unix/scl_write.c (write): Support file based fd.
+	* unix/scl_read.c (read): Likewise.
+	* unix/open.c: Renamed to...
+	* unix/ul_open.c: ...this.
+	* unix/isatty.c: Renamed to...
+	* unix/ul_isatty.c: ...this.
+	* unix/scl_open.c: Add (migrated from libscl's riscos/riscos.c).
+	Reworked implementation.
+	* unix/scl_isatty.c: Likewise.
+	* unix/scl_lseek.c (lseek, lseek64): Add support for file based fd.
+	* unix/scl_close.c (close): Likewise.
+	* unix/scl_ioctl.c (ioctl): Likewise.
+	* doc/SCL/COPYING: Add (migrated from libscl's COPYING).
+	* COPYING: Moved to...
+	* doc/UnixLib/COPYING: ...here.
+	* COPYING: Add (refering to doc/SCL/COPYING and
+	doc/UnixLib/COPYING).
+	* include/unixlib/types.h (__FD_SOCKET_OFFSET): Add.
+	* include/sys/select.h (FD_SETSIZE): Define as __FD_SETSIZE.
+	(__FDELT, __FDMASK): Take __FD_SOCKET_OFFSET into account.
+	* netlib/setsockopt.c (setsockopt): Add check on non-socket fd
+	values.  Take __FD_SOCKET_OFFSET into account.
+	* include/stdio.h (FOPEN_MAX): Change from 8 to _SYS_OPEN.
+	(_SYS_OPEN): Define as __FD_SOCKET_OFFSET.
+	* include/unistd.h (isatty, unlink): Define for SCL.
+	* netlib/accept.c (accept): Likewise.
+	* netlib/sendmsg.c (sendmsg): Likewise.
+	* netlib/recvmsg.c (recvmsg): Likewise.
+	* netlib/getpeernam.c (getpeername): Likewise.
+	* netlib/send.c (send): Likewise.
+	* netlib/listen.c (listen): Likewise.
+	* netlib/recv.c (recv): Likewise.
+	* netlib/shutdown.c (shutdown): Likewise.
+	* netlib/bind.c (bind): Likewise.
+	* netlib/getsockopt.c (getsockopt): Likewise.
+	* netlib/recvfrom.c (recvfrom): Likewise.
+	* netlib/connect.c (connect): Likewise.
+	* netlib/getsocknam.c (getsockname): Likewise.
+	* netlib/sendto.c (sendto): Likewise.
+	* netlib/socket.c (socket): Add __FD_SOCKET_OFFSET.
+	* scl/chunkid02.s (unlink): Add as alias to remove.
+	* Makefile.am: Follow rename unix/isatty.c to unix/ul_isatty.c,
+	unix/open.c to unix/ul_open.c.
+	(unix/scl_isatty, unix/scl_open): Add.
+	* incl-local/internal/os.h (SWI_OS_File_ReadCatInfo): Add.
+	(SWI_OS_Args_GetFileHandleStatus): Add.
+
+Sun Dec  4 16:21:58 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* contrib/Help: Moved to...
+	* doc/UnixLib/Help: ...here.
+	* README: Moved to...
+	* doc/UnixLib/README: ...here.
+	* doc/SCL/README: Add.  Updated libscl's README.
+
+Tue Nov 29 16:34:27 GMT 2011  Lee Noar  <leenoar@sky.com>
+
+	* pthread/_context.s(__pthread_callback): Be more consistent with
+	which register is used for PIC. This is to fix a bug whereby after
+	a jump to skip_contextswitch was made, the wrong register was used
+	to address the GOT.
+	* pthread/pthinit.c(__get_GOT_ptr): Small piece of assembler code
+	to retrieve the GOT pointer. Used by __pthread_prog_init because
+	we don't know which register GCC has used for PIC.
+	* signal/_signal.s(__setup_signalhandler_stack): Load PIC register
+	rather than depend on caller for it.
+
+Sun Nov 27 16:04:02 GMT 2011  Lee Noar  <leenoar@sky.com>
+
+	* pthread/_exit.s(__pthread_exit:): As GCC can now use any register
+	for the PIC register, we have to load it ourselves rather than assume
+	the caller has done it for us.
+
+Tue Nov 22 02:15:11 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* stdio/freopen.c (freopen64): Add dummy implementation.
+	* stdio/tmpfile.c (tmpfile64): Likewise.
+	* stdio/ul_fopen.c (fopen64): Likewise.
+	* stdio/fpos.c (fgetpos64, fsetpos64, fseeko64, ftello64): Likewise.
+	* unix/creat.c (creat64): Likewise.
+	* unix/open.c (open64): Likewise.
+	* unistd/lockf.c (lockf64): Likewise.
+	* include/fcntl.h (open64, creat64, lockf64): Add prototypes.
+
+Sat Nov 12 00:19:57 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/fenv.h (feenableexcept, fedisableexcept, fegetexcept):
+	Add.
+	* include/time.h, include/time.h, include/sys/select.h,
+	include/getopt.h, include/string.h, include/wchar.h,
+	include/search.h, include/unistd.h: Disable function prototypes for
+	non-supported functions in SCL build.
+
 Thu Nov  3 11:04:12 GMT 2011  Lee Noar  <leenoar@sky.com>
 
 	* unix/getcwd.c (getcwd): Fix potential buffer overflow.

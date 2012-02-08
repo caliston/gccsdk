@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2004-2011 GCCSDK Developers
+ * Copyright (c) 2004-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,25 +26,28 @@
 #include <stdbool.h>
 #include "symbol.h"
 
+bool c_aof (void);
+bool c_aout (void);
+
+bool c_ampersand (void);
 bool c_assert (void);
 bool c_cn (Symbol *symbol);
 bool c_cp (Symbol *symbol);
+bool c_data (void);
 bool c_dcb (void);
-bool c_dcw (void);
-bool c_dcd (void);
+bool c_dcw (bool doLowerCase);
+bool c_dcd (bool doLowerCase);
 bool c_dci (void);
-bool c_dcfd (void);
-bool c_dcfs (void);
+bool c_dcfd (bool doLowerCase);
+bool c_dcfs (bool doLowerCase);
 bool c_end (void);
 bool c_equ (Symbol *symbol);
 bool c_fn (Symbol *symbol);
 bool c_get (void);
-bool c_head (void);
 bool c_idfn (void);
 bool c_incbin (void);
 bool c_info (void);
 bool c_lnk (void);
-bool c_opt (void);
 bool c_rn (Symbol *symbol);
 bool c_title (void);
 
@@ -60,9 +63,9 @@ typedef struct
   bool allowUnaligned; /**< Allow unaligned data storage.  */
 } DefineReal_PrivData_t;
 
-bool DefineInt_RelocUpdater (const char *file, int lineno, ARMWord offset,
+bool DefineInt_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 			     const Value *valueP, void *privData, bool final);
-bool DefineReal_RelocUpdater (const char *file, int lineno, ARMWord offset,
+bool DefineReal_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 			      const Value *valueP, void *privData, bool final);
 
 #endif

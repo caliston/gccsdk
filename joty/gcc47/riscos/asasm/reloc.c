@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -48,6 +48,7 @@
 #include "main.h"
 #include "option.h"
 #include "output.h"
+#include "phase.h"
 #include "reloc.h"
 #include "symbol.h"
 
@@ -60,7 +61,7 @@ Reloc_CreateQueueObj (void)
 
   rel->next = areaCurrentSymbol->area.info->relocQueue;
   rel->file = FS_GetCurFileName ();
-  rel->lineno = FS_GetCurLineNumber ();
+  rel->lineNum = FS_GetCurLineNumber ();
   /* rel->privData = */
   /* rel->offset = */
   rel->expr.Tag = ValueIllegal;
@@ -85,32 +86,27 @@ bool
 Reloc_QueueExprUpdate (RelocUpdater callback, ARMWord offset, ValueTag legal,
 		       void *privData, size_t sizePrivData)
 {
-  assert (gASM_Phase == ePassTwo);
+  assert (gPhase == ePassTwo);
 
   Value value; /* We have ownership of this.  */
-  if (Code_HasUndefinedSymbols ())
-    value = Code_TakeSnapShot ();
+  /* Evaluate expression.  */
+  const Value *result = codeEval (legal, legal & ValueAddr ? &offset : NULL);
+  if (result->Tag == ValueIllegal)
+    return true; /* This is bad, we even didn't get a ValueCode.  */
+  if (result->Tag == ValueCode)
+    {
+      value.Tag = ValueIllegal;
+      Value_Assign (&value, result);
+    }
   else
     {
-      /* Evaluate expression.  */
-      const Value *result = codeEval (legal, legal & ValueAddr ? &offset : NULL);
-      if (result->Tag == ValueIllegal)
-	return true; /* This is bad, we even didn't get a ValueCode.  */
-      if (result->Tag == ValueCode)
+      /* Make ValueCode from it.  */
+      const Code code =
 	{
-	  value.Tag = ValueIllegal;
-	  Value_Assign (&value, result);
-	}
-      else
-	{
-	  /* Make ValueCode from it.  */
-	  const Code code =
-	    {
-	      .Tag = CodeValue,
-	      .Data.value = *result
-	    };
-	  value = Value_Code (1, &code);
-	}
+	  .Tag = CodeValue,
+	  .Data.value = *result
+	};
+      value = Value_Code (1, &code);
     }
   assert (value.Tag == ValueCode);
   if (!callback (FS_GetCurFileName (), FS_GetCurLineNumber (), offset, &value,
@@ -186,7 +182,7 @@ relocFix (const Symbol *area)
 				     relQueue->legal & ValueAddr ? &relQueue->offset : NULL);
       if (value->Tag == ValueIllegal)
 	{
-	  errorLine (relQueue->file, relQueue->lineno, ErrorError, "Unable to express relocation");
+	  errorLine (relQueue->file, relQueue->lineNum, ErrorError, "Unable to express relocation");
 #ifdef DEBUG
 	  printf ("Relocation value is: ");
 	  valuePrint (&relQueue->expr);
@@ -207,10 +203,10 @@ relocFix (const Symbol *area)
 	    };
 	  if (value->Tag != ValueCode)
 	    value = &codeAsValue;
-	  if (relQueue->callback (relQueue->file, relQueue->lineno,
+	  if (relQueue->callback (relQueue->file, relQueue->lineNum,
 				  relQueue->offset, value, relQueue->privData, true))
 	    {
-	      errorLine (relQueue->file, relQueue->lineno, ErrorError, "Unable to express relocation");
+	      errorLine (relQueue->file, relQueue->lineNum, ErrorError, "Unable to express relocation");
 #ifdef DEBUG
 	      printf ("Relocation value is: ");
 	      valuePrint (value);
@@ -316,12 +312,10 @@ relocELFOutput (FILE *outfile, const Symbol *area)
 	  const Value *value = &relocs->value;
 
 	  assert (value->Data.Symbol.symbol->used >= 0);
-	  int symbol = 1 + ((value->Data.Symbol.symbol->type & SYMBOL_AREA)
-	                    ? value->Data.Symbol.symbol->offset
-	                    : value->Data.Symbol.symbol->used);
+	  int symbol = value->Data.Symbol.symbol->used;
 	  int type;
 	  if (relocs->reloc.How & HOW3_RELATIVE)
-	    type = R_ARM_PC24; /* FIXME: for EABI, this should be R_ARM_CALL or R_ARM_JUMP24.  */
+	    type = R_ARM_PC24; /* FIXME: for EABI (when ELF_EABI defined), this should be R_ARM_CALL or R_ARM_JUMP24.  */
 	  else
 	    type = R_ARM_ABS32;
 	  areloc.r_info = armword (ELF32_R_INFO (symbol, type));
@@ -343,10 +337,10 @@ relocELFOutput (FILE *outfile, const Symbol *area)
 		  const Value *value = &code->Data.value;
 
 		  assert (value->Data.Symbol.symbol->used >= 0);
-		  int symbol = value->Data.Symbol.symbol->offset + 1;
+		  int symbol = value->Data.Symbol.symbol->used;
 		  int type;
 		  if (relocs->reloc.How & HOW3_RELATIVE)
-		    type = R_ARM_PC24; /* FIXME: for EABI, this should be R_ARM_CALL or R_ARM_JUMP24.  */
+		    type = R_ARM_PC24; /* FIXME: for EABI (when ELF_EABI defined), this should be R_ARM_CALL or R_ARM_JUMP24.  */
 		  else
 		    type = R_ARM_ABS32;
 		  areloc.r_info = armword (ELF32_R_INFO (symbol, type));

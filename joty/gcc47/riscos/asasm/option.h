@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2004-2011 GCCSDK Developers
+ * Copyright (c) 2004-2012 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,23 +27,23 @@
 
 #include "global.h"
 
-ARMWord optionCond (void);
-ARMWord optionCondS (void);
-ARMWord Option_SCond (void);
-ARMWord optionCondSP (void);
-ARMWord optionCondB (void);
-ARMWord optionCondBT (bool isStore);
-ARMWord Option_CondRfeSrs (bool isLoad);
-ARMWord optionCondLdmStm (bool isLDM);
-ARMWord optionCondLfmSfm (void);
-ARMWord optionCondPrecRound (void);
-ARMWord optionCondPrec_P (void);
-ARMWord optionCondL (void);
+ARMWord optionCond (bool doLowerCase);
+ARMWord optionCondS (bool doLowerCase);
+ARMWord Option_SCond (bool doLowerCase);
+ARMWord Option_CondSP (bool doLowerCase);
+ARMWord optionCondB (bool doLowerCase);
+ARMWord Option_LdrStrCondAndType (bool isStore, bool doLowerCase);
+ARMWord Option_CondRfeSrs (bool isLoad, bool doLowerCase);
+ARMWord optionCondLdmStm (bool isLDM, bool doLowerCase);
+ARMWord optionCondLfmSfm (bool doLowerCase);
+ARMWord optionCondPrecRound (bool doLowerCase);
+ARMWord optionCondPrec_P (bool doLowerCase);
+ARMWord optionCondL (bool doLowerCase);
 
-ARMWord optionCondOptRound (void);
-ARMWord optionLinkCond (void);
-ARMWord optionExceptionCond (void);
-ARMWord optionAdrL (void);
+ARMWord optionCondOptRound (bool doLowerCase);
+ARMWord optionLinkCond (bool doLowerCase);
+ARMWord optionExceptionCond (bool doLowerCase);
+ARMWord optionAdrL (bool doLowerCase);
 
 #define optionError ((ARMWord) -1)
 
@@ -63,9 +63,6 @@ ARMWord optionAdrL (void);
 #define LE ((ARMWord)13<<28)
 #define AL ((ARMWord)14<<28)
 #define NV ((ARMWord)15<<28)
-
-#define HS CS
-#define LO CC
 
 /* Address mode flags (LDR* and STR*): */
 
@@ -97,7 +94,7 @@ ARMWord optionAdrL (void);
 #define N_FLAG		((ARMWord)1<<22)
 
 #define LINK_BIT	((ARMWord)1<<24)
-#define EXEPTION_BIT	((ARMWord)0x00400000)
+#define EXCEPTION_BIT	((ARMWord)0x00400000)
 
 #define STACKMODE_IB (P_FLAG | U_FLAG)
 #define STACKMODE_IA (         U_FLAG)

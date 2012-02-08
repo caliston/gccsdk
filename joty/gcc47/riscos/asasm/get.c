@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,6 @@
 #  include <inttypes.h>
 #endif
 
-#include "asm.h"
 #include "code.h"
 #include "error.h"
 #include "expr.h"
@@ -37,7 +36,7 @@
 #include "help_cpu.h"
 #include "input.h"
 #include "lex.h"
-#include "os.h"
+#include "phase.h"
 #include "reloc.h"
 #include "symbol.h"
 
@@ -246,11 +245,6 @@ getRhs (bool regshift, bool shift, ARMWord ir)
 {
   if (Input_Match ('#', false))
     {
-      if (gASM_Phase == ePassOne)
-	{
-	  Input_Rest ();
-	  return ir;
-	}
       ir |= IMM_RHS;
       const Value *im = exprBuildAndEval (ValueInt | ValueAddr | ValueString); /* FIXME: *** NEED ValueSymbol & ValueCode */
       switch (im->Tag)
@@ -311,7 +305,10 @@ getRhs (bool regshift, bool shift, ARMWord ir)
 	    break;
 
 	  default:
-	    error (ErrorError, "Illegal immediate expression");
+	    /* During pass one, we discard any errors of the evaluation as it
+	       might contain unresolved symbols.  Wait until during pass two.  */
+	    if (gPhase != ePassOne)
+	      error (ErrorError, "Illegal immediate expression");
 	    break;
 	}
     }

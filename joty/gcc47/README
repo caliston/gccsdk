@@ -2,7 +2,7 @@ The RISC OS Software Development Kit [GCCSDK GCC 4.7.0 - Development]
 ====================================
 
 This is a lightweight build environment which currently combines GCC 4.7.0
-release, binutils 2.21.1 release, UnixLib 5.0 into one directory which can be
+release, binutils 2.22 release, UnixLib 5.0 into one directory which can be
 used to build a RISC OS cross-compiler and native RISC OS compiler with
 target 'arm-unknown-riscos' (APCS-32 compliant).
 
@@ -178,6 +178,18 @@ restart that step where it left off:
        For one of the gcc components, use:
 
          $ PATH=<path-to-builddir>/installed-buildtools-for-gcc/bin:$PATH make install
+
+     - When you want to debug the built compiler, it is very useful to disable
+       optimisations and enable debug information.  You can do this by having
+       in the top Makefile (this could be commented out):
+
+          GCC_BUILD_FLAGS := CFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g"
+
+       If you restart the build in a subdirectory (and using one of the many
+       gcc/bintuils Makefiles instead of top Makefile), you then need to add
+       CFLAGS and LIBCXXFLAGS explicitely to debug:
+
+          $ make CFLAGS='-O0 -g' LIBCXXFLAGS='-O0 -g' install
 
 Other useful make targets:
 

@@ -3,7 +3,7 @@
 #
 # Build requirements:
 #   - apt-get install flex bison libgmp3-dev libmpfr-dev texinfo build-essential
-#   - binutils 2.21.1 and gcc 4.7 needs automake 1.11.1 and autoconf 2.64.
+#   - binutils 2.22 and gcc 4.7 needs automake 1.11.1 and autoconf 2.64.
 #     Note the required automake/autoconf sources will be fetched & built automatically.
 #   - gcc 4.7 needs at least GMP 4.3.2, MPFR 2.4.2 and MPC 0.8.1 (MPFR needs GMP, MPC needs GMP & MPFR)
 #     For MPFR/GMP/MPC version numbers, a good set can be found mentioned at gcc/contrib/download_prerequisites.
@@ -57,6 +57,7 @@ GCC_CONFIG_ARGS := \
 	--enable-c99 \
 	--enable-cmath \
 	--disable-c-mbchar \
+	--disable-wchar_t \
 	--disable-libstdcxx-pch \
 	--disable-tls
 # FIXME: for Java support: --without-x --enable-libgcj
@@ -503,6 +504,9 @@ src-gmp-copied: $(SRCORIGDIR)/gmp-$(GMP_VERSION).tar.gz
 	cd $(SRCORIGDIR) && tar xfz $(SRCORIGDIR)/gmp-$(GMP_VERSION).tar.gz
 	-mkdir -p $(SRCDIR)/gmp
 	cp -T -p -r $(SRCORIGDIR)/gmp-$(GMP_VERSION) $(SRCDIR)/gmp
+ifeq ($(TARGET),arm-unknown-riscos)
+	cd $(SRCDIR)/gmp && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
+endif
 	touch $(BUILDSTEPSDIR)/src-gmp-copied
 
 # Unpack mpc source:

@@ -23,7 +23,6 @@
 #ifndef variables_header_included
 #define variables_header_included
 
-#include <stdbool.h>
 #include "lex.h"
 #include "symbol.h"
 
@@ -41,7 +40,7 @@ typedef struct VarPos
 
 bool c_gbl (void);
 bool c_lcl (void);
-bool c_set (const Lex *);
+bool c_set (const Lex *label);
 
 void Var_RestoreLocals (const VarPos *);	/* called on macro exit */
 void Var_Define (const char *);

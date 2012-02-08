@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -50,8 +50,6 @@
 //#  define DEBUG_ASM
 #endif
 
-ASM_Phase_e gASM_Phase = eStartup;
-
 /**
  * Read one line input.
  * \return true for success, false otherwise.
@@ -59,21 +57,21 @@ ASM_Phase_e gASM_Phase = eStartup;
 static bool
 ASM_NextLine (void)
 {
-  const char *curFile = FS_GetCurFileName ();
-  int curLine = FS_GetCurLineNumber ();
-  while (!Input_NextLine (eVarSubst))
+  while (gCurPObjP != NULL)
     {
+      const char *curFileName = FS_GetCurFileName ();
+      unsigned curLineNum = FS_GetCurLineNumber ();
+
+      if (Input_NextLine (eVarSubst))
+	return true;
+
       /* Failed to read a line, this might be we're EOD for the current
          parsable object.  Go up one.  */
       if (gCurPObjP->type == POType_eFile)
-	errorLine (curFile, curLine, ErrorWarning, "No END found");
+	errorLine (curFileName, curLineNum, ErrorWarning, "No END found");
       FS_PopPObject (false);
-      if (gCurPObjP == NULL)
-	return false;
-      curFile = FS_GetCurFileName ();
-      curLine = FS_GetCurLineNumber ();
     }
-  return true;
+  return false;
 }
 
 static void
@@ -87,7 +85,7 @@ ASM_DoPass (const char *asmFile)
     {
       asmContinueValid = true;
 
-      while (gCurPObjP != NULL && ASM_NextLine ())
+      while (ASM_NextLine ())
 	{
 	  /* Ignore blank lines and comments.  */
 	  if (Input_IsEolOrCommentStart ())
@@ -98,7 +96,7 @@ ASM_DoPass (const char *asmFile)
 	  size_t len = strlen (fileName);
 	  if (len > 12)
 	    fileName += len - 12;
-	  printf("%.*s : %d : 0x%x : <%s>\n", (int)len, fileName, FS_GetCurLineNumber (), areaCurrentSymbol->area.info->curIdx, inputLine ());
+	  printf("%.*s : %u : 0x%x : <%s>\n", (int)len, fileName, FS_GetCurLineNumber (), areaCurrentSymbol->area.info->curIdx, inputLine ());
 #endif
 	  /* Read label (in case there is one).  */
 	  Lex label;
@@ -132,17 +130,13 @@ ASM_DoPass (const char *asmFile)
 void
 ASM_Assemble (const char *asmFile)
 {
-  Area_PrepareForPhase (ePassOne);
-  Local_PrepareForPhase (ePassOne);
-  gASM_Phase = ePassOne;
+  Phase_PrepareFor (ePassOne);
   ASM_DoPass (asmFile);
 
   /* Don't do a next pass if we already have errors now.  */
   if (returnExitStatus () == EXIT_SUCCESS)
     {
-      Area_PrepareForPhase (ePassTwo);
-      Local_PrepareForPhase (ePassTwo);
-      gASM_Phase = ePassTwo;
+      Phase_PrepareFor (ePassTwo);
       ASM_DoPass (asmFile);
     }
 }
@@ -154,7 +148,7 @@ ASM_Assemble (const char *asmFile)
  * as label before.
  */
 Symbol *
-ASM_DefineLabel (const Lex *label, int offset)
+ASM_DefineLabel (const Lex *label, uint32_t offset)
 {
   if (label->tag == LexNone)
     return NULL;

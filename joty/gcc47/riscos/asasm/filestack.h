@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) Andy Duplain, August 1992.
- * Copyright (c) 2004-2011 GCCSDK Developers
+ * Copyright (c) 2004-2012 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -61,9 +61,10 @@ typedef struct
       MacroPObject macro;
     } d;
 
-  const char *name; /**< Current file name, or file name of current macro).
+  const char *fileName; /**< Current file name, or file name of current macro
+    definition we're executing.
     Can be NULL. Prefer FS_GetCurFileName() to read. */
-  int lineNum; /**< Current line number. Prefer FS_GetCurLineNumber() to read. */
+  unsigned lineNum; /**< Current line number. Prefer FS_GetCurLineNumber() to read. */
 
   unsigned int whileIfCurDepth; /**< The current index in the while/if array for this object.  */
   unsigned int whileIfStartDepth; /**< The start index in the while/if array for this object.  */
@@ -76,17 +77,26 @@ typedef struct
    */
   bool (*GetLine)(char *bufP, size_t bufSize);
 
-  size_t lastLineSize;
+  size_t lastLineSize; /**< Size of the last line read by (*GetLine) *before*
+    any variable substitution is done. So this is *not* equal to what the
+    parsable input is after Input_NextLine().  */
 } PObject;
 
 extern PObject gPOStack[PARSEOBJECT_STACK_SIZE];
 extern PObject *gCurPObjP; /**< Current parsable object.  */
 
+unsigned FS_GetMacroDepth (void);
+
 bool FS_PushFilePObject (const char *fileName);
 void FS_PopPObject (bool noCheck);
 
 const char *FS_GetCurFileName (void);
-int FS_GetCurLineNumber (void);
+unsigned FS_GetCurLineNumber (void);
+
+/* For {LINENUM}, {LINENUMUP} and {LINENUMUPPER} support.  */
+unsigned FS_GetBuiltinVarLineNum (void);
+unsigned FS_GetBuiltinVarLineNumUp (void);
+unsigned FS_GetBuiltinVarLineNumUpper (void);
 
 #ifdef DEBUG_FILESTACK
 void ReportFSStack (const char *id);

@@ -47,7 +47,6 @@
 #include "macros.h"
 #include "main.h"
 #include "output.h"
-#include "os.h"
 #include "put.h"
 #include "symbol.h"
 #include "value.h"
@@ -109,15 +108,20 @@ declare_var (const char *ptr, size_t len, ValueTag type, bool localMacro)
 	 global variable.  */
       /* FIXME: this is not 100% bullet proof: a local variable with same
 	 name as global one will not get SYMBOL_MACRO_LOCAL bit so remains
-	 local.  So we won't detect two differnt type local variables (with
+	 local.  So we won't detect two different type local variables (with
 	 same name) when we have a global variable also with same name).  */
       if (sym->value.Tag != type
           && (!localMacro || (sym->type & SYMBOL_MACRO_LOCAL) != 0))
 	{
-	  error (ErrorError, "'%.*s' is already %s as a %s",
-		 (int)len, ptr,
-		 sym->type & SYMBOL_DEFINED ? "defined" : "declared",
-		 valueTagAsString (sym->value.Tag));
+	  if (sym->value.Tag == ValueIllegal)
+	    error (ErrorError, "'%.*s' is already %s",
+		   (int)len, ptr,
+		   sym->type & SYMBOL_DEFINED ? "defined" : "declared");
+	  else
+	    error (ErrorError, "'%.*s' is already %s as a %s",
+		   (int)len, ptr,
+		   sym->type & SYMBOL_DEFINED ? "defined" : "declared",
+		   valueTagAsString (sym->value.Tag));
 	  return NULL;
 	}
       if (option_pedantic)
@@ -148,23 +152,15 @@ bool
 c_gbl (void)
 {
   ValueTag type;
-  switch (inputLook ())
-    {
-      case 'L':
-	type = ValueBool;
-        break;
-
-      case 'A':
-	type = ValueInt;
-	break;
-
-      case 'S':
-	type = ValueString;
-	break;
-
-      default:
-	return true;
-    }
+  const char c  = inputLook ();
+  if (c == 'L')
+    type = ValueBool;
+  else if (c == 'A')
+    type = ValueInt;
+  else if (c == 'S')
+    type = ValueString;
+  else
+    return true;
   inputSkip ();
   if (!Input_IsEndOfKeyword ())
     return true;
@@ -188,23 +184,15 @@ bool
 c_lcl (void)
 {
   ValueTag type;
-  switch (inputLook ())
-    {
-      case 'L':
-	type = ValueBool;
-        break;
-
-      case 'A':
-	type = ValueInt;
-	break;
-
-      case 'S':
-	type = ValueString;
-	break;
-
-      default:
-	return true;
-    }
+  const char c  = inputLook ();
+  if (c == 'L')
+    type = ValueBool;
+  else if (c == 'A')
+    type = ValueInt;
+  else if (c == 'S')
+    type = ValueString;
+  else
+    return true;
   inputSkip ();
   if (!Input_IsEndOfKeyword ())
     return true;
@@ -251,7 +239,12 @@ c_lcl (void)
       memcpy (p->name, ptr, len); p->name[len] = '\0';
       p->next = gCurPObjP->d.macro.varListP;
       if ((p->symbolP = symbolP) != NULL)
-	p->symbol = *symbolP;
+	{
+	  p->symbol = *symbolP;
+	  /* Reset Symbol parts which won't get touched by declare_var().  */
+	  symbolP->codeSize = 0;
+	  symbolP->areaDef = areaCurrentSymbol;
+	}
       gCurPObjP->d.macro.varListP = p;
     }
   
@@ -268,23 +261,15 @@ bool
 c_set (const Lex *label)
 {
   ValueTag type;
-  switch (inputLook ())
-    {
-      case 'L':
-	type = ValueBool;
-        break;
-
-      case 'A':
-	type = ValueInt;
-	break;
-
-      case 'S':
-	type = ValueString;
-	break;
-
-      default:
-	return true;
-    }
+  const char c  = inputLook ();
+  if (c == 'L')
+    type = ValueBool;
+  else if (c == 'A')
+    type = ValueInt;
+  else if (c == 'S')
+    type = ValueString;
+  else
+    return true;
   inputSkip ();
   if (!Input_IsEndOfKeyword ())
     return true;
@@ -296,7 +281,6 @@ c_set (const Lex *label)
 	     (int)label->Data.Id.len, label->Data.Id.str);
       return false;
     }
-  assert (sym->value.Tag != ValueIllegal);
   if (type != sym->value.Tag)
     {
       error (ErrorError, "Wrong type for symbol '%.*s'",
