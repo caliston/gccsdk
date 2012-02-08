@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2001-2011 GCCSDK Developers
+ * Copyright (c) 2001-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "asm.h"
 #include "symbol.h"
 #include "reloc.h"
 #include "lit.h"
+#include "phase.h"
 
 /* Lowest 8 bits encode the alignment of the start of the area as a power
    of 2 and has a value between 2 and 32.  */
@@ -60,8 +60,6 @@
 #define AREA_RESERVED30		0x40000000
 #define AREA_SOFTFLOAT		0x80000000 /* Avoids FP instructions (GCCSDK extension) Normally reserved bit. */
 
-#define AREA_IMAGE(x) (!((x)->type & AREA_UDATA))
-
 #define AREA_DEFAULT_ALIGNMENT	0x00000002
 
 struct LITPOOL;
@@ -77,11 +75,20 @@ typedef struct AREA
   uint32_t maxIdx;
 
   RelocQueue *relocQueue;
-  int norelocs;
   Reloc *relocs;
 
   struct LITPOOL *litPool;	/** The current literal pool waiting to be assembled. */
+
+  /* For output: */
+  uint32_t number; /** AOF: area number (from 0 onwards).  ELF: section ID (from 3 onwards).  Determined start of Output_AOF()/Output_ELF().  */
+  uint32_t numRelocs;
 } Area;
+
+static inline bool
+Area_IsNoInit (const Area *area)
+{
+  return (area->type & AREA_UDATA) != 0;
+}
 
 static inline int
 Area_GetBaseReg (const Area *area)
@@ -102,12 +109,14 @@ extern Symbol *areaEntrySymbol; /** Symbol of area which has been marked as ENTR
 extern int areaEntryOffset;
 extern Symbol *areaHeadSymbol; /** Start of the linked list of all area symbols seen so far.  Follow Symbol::area.info->next for next area (*not* Symbol::next !).  */
 
-void Area_PrepareForPhase (ASM_Phase_e phase);
+void Area_PrepareForPhase (Phase_e phase);
 
-void Area_EnsureExtraSize (size_t mingrow);
+void Area_EnsureExtraSize (Symbol *areaSym, size_t mingrow);
 
 bool Area_IsImplicit (const Symbol *sym);
-size_t Area_AlignTo (size_t offset, int align, const char *msg);
+uint32_t Area_AlignOffset (Symbol *areaSym, uint32_t offset, unsigned alignValue, const char *msg);
+uint32_t Area_AlignTo (uint32_t offset, unsigned alignValue, const char *msg);
+uint32_t Area_AlignArea (Symbol *areaSym, unsigned alignValue, const char *msg);
 
 bool c_align (void);
 bool c_area (void);
@@ -136,7 +145,7 @@ typedef enum
   eData = 1,
   eThumb = 2
 } Area_eEntryType;
-void Area_MarkStartAs (Area_eEntryType type);
-bool Area_IsMappingSymbol (const char *);
+void Area_MarkStartAs (const Symbol *areaSymbol, uint32_t offset, Area_eEntryType type);
+bool Area_IsMappingSymbol (const char *symStr);
 
 #endif

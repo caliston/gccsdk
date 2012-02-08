@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -51,100 +51,6 @@
 #  define DEBUG_SYMBOL
 #endif
 
-typedef struct
-{
-  const char *name;
-  size_t len;
-  int value;
-  int type; /* SYMBOL_CPUREG, etc.  */
-} Symbol_PreDef_t;
-
-/* These symbol registers are always defined.  */
-static const Symbol_PreDef_t oSymRegs[] =
-{
-  { "r0", sizeof ("r0")-1, 0, SYMBOL_CPUREG }, { "R0", sizeof ("R0")-1, 0, SYMBOL_CPUREG },
-  { "r1", sizeof ("r1")-1, 1, SYMBOL_CPUREG }, { "R1", sizeof ("R1")-1, 1, SYMBOL_CPUREG },
-  { "r2", sizeof ("r2")-1, 2, SYMBOL_CPUREG }, { "R2", sizeof ("R2")-1, 2, SYMBOL_CPUREG },
-  { "r3", sizeof ("r3")-1, 3, SYMBOL_CPUREG }, { "R3", sizeof ("R3")-1, 3, SYMBOL_CPUREG },
-  { "r4", sizeof ("r4")-1, 4, SYMBOL_CPUREG }, { "R4", sizeof ("R4")-1, 4, SYMBOL_CPUREG },
-  { "r5", sizeof ("r5")-1, 5, SYMBOL_CPUREG }, { "R5", sizeof ("R5")-1, 5, SYMBOL_CPUREG },
-  { "r6", sizeof ("r6")-1, 6, SYMBOL_CPUREG }, { "R6", sizeof ("R6")-1, 6, SYMBOL_CPUREG },
-  { "r7", sizeof ("r7")-1, 7, SYMBOL_CPUREG }, { "R7", sizeof ("R7")-1, 7, SYMBOL_CPUREG },
-  { "r8", sizeof ("r8")-1, 8, SYMBOL_CPUREG }, { "R8", sizeof ("R8")-1, 8, SYMBOL_CPUREG },
-  { "r9", sizeof ("r9")-1, 9, SYMBOL_CPUREG }, { "R9", sizeof ("R9")-1, 9, SYMBOL_CPUREG },
-  { "r10", sizeof ("r10")-1, 10, SYMBOL_CPUREG }, { "R10", sizeof ("R10")-1, 10, SYMBOL_CPUREG },
-  { "r11", sizeof ("r11")-1, 11, SYMBOL_CPUREG }, { "R11", sizeof ("R11")-1, 11, SYMBOL_CPUREG },
-  { "r12", sizeof ("r12")-1, 12, SYMBOL_CPUREG }, { "R12", sizeof ("R12")-1, 12, SYMBOL_CPUREG },
-  { "r13", sizeof ("r13")-1, 13, SYMBOL_CPUREG }, { "R13", sizeof ("R13")-1, 13, SYMBOL_CPUREG },
-  { "r14", sizeof ("r14")-1, 14, SYMBOL_CPUREG }, { "R14", sizeof ("R14")-1, 14, SYMBOL_CPUREG },
-  { "r15", sizeof ("r15")-1, 15, SYMBOL_CPUREG }, { "R15", sizeof ("R15")-1, 15, SYMBOL_CPUREG },
-  { "lr", sizeof ("lr")-1, 14, SYMBOL_CPUREG }, { "LR", sizeof ("LR")-1, 14, SYMBOL_CPUREG },
-  { "pc", sizeof ("pc")-1, 15, SYMBOL_CPUREG }, { "PC", sizeof ("PC")-1, 15, SYMBOL_CPUREG },
-  /* Coprocessor numbers */
-  { "p0", sizeof ("p0")-1, 0, SYMBOL_COPNUM },
-  { "p1", sizeof ("p1")-1, 1, SYMBOL_COPNUM },
-  { "p2", sizeof ("p2")-1, 2, SYMBOL_COPNUM },
-  { "p3", sizeof ("p3")-1, 3, SYMBOL_COPNUM },
-  { "p4", sizeof ("p4")-1, 4, SYMBOL_COPNUM },
-  { "p5", sizeof ("p5")-1, 5, SYMBOL_COPNUM },
-  { "p6", sizeof ("p6")-1, 6, SYMBOL_COPNUM },
-  { "p7", sizeof ("p7")-1, 7, SYMBOL_COPNUM },
-  { "p8", sizeof ("p8")-1, 8, SYMBOL_COPNUM },
-  { "p9", sizeof ("p9")-1, 9, SYMBOL_COPNUM },
-  { "p10", sizeof ("p10")-1, 10, SYMBOL_COPNUM },
-  { "p11", sizeof ("p11")-1, 11, SYMBOL_COPNUM },
-  { "p12", sizeof ("p12")-1, 12, SYMBOL_COPNUM },
-  { "p13", sizeof ("p13")-1, 13, SYMBOL_COPNUM },
-  { "p14", sizeof ("p14")-1, 14, SYMBOL_COPNUM },
-  { "p15", sizeof ("p15")-1, 15, SYMBOL_COPNUM },
-  /* Coprocessor registers */
-  { "c0", sizeof ("c0")-1, 0, SYMBOL_COPREG },
-  { "c1", sizeof ("c1")-1, 1, SYMBOL_COPREG },
-  { "c2", sizeof ("c2")-1, 2, SYMBOL_COPREG },
-  { "c3", sizeof ("c3")-1, 3, SYMBOL_COPREG },
-  { "c4", sizeof ("c4")-1, 4, SYMBOL_COPREG },
-  { "c5", sizeof ("c5")-1, 5, SYMBOL_COPREG },
-  { "c6", sizeof ("c6")-1, 6, SYMBOL_COPREG },
-  { "c7", sizeof ("c7")-1, 7, SYMBOL_COPREG },
-  { "c8", sizeof ("c8")-1, 8, SYMBOL_COPREG },
-  { "c9", sizeof ("c9")-1, 9, SYMBOL_COPREG },
-  { "c10", sizeof ("c10")-1, 10, SYMBOL_COPREG },
-  { "c11", sizeof ("c11")-1, 11, SYMBOL_COPREG },
-  { "c12", sizeof ("c12")-1, 12, SYMBOL_COPREG },
-  { "c13", sizeof ("c13")-1, 13, SYMBOL_COPREG },
-  { "c14", sizeof ("c14")-1, 14, SYMBOL_COPREG },
-  { "c15", sizeof ("c15")-1, 15, SYMBOL_COPREG }
-};
-
-/* These symbol registers are always defined when APCS is selected.  */
-static const Symbol_PreDef_t oSymRegsAPCS[] =
-{
-  { "a1", sizeof ("a1")-1, 0, SYMBOL_CPUREG },
-  { "a2", sizeof ("a2")-1, 1, SYMBOL_CPUREG },
-  { "a3", sizeof ("a3")-1, 2, SYMBOL_CPUREG },
-  { "a4", sizeof ("a4")-1, 3, SYMBOL_CPUREG },
-  { "v1", sizeof ("v1")-1, 4, SYMBOL_CPUREG },
-  { "v2", sizeof ("v2")-1, 5, SYMBOL_CPUREG },
-  { "v3", sizeof ("v3")-1, 6, SYMBOL_CPUREG },
-  { "v4", sizeof ("v4")-1, 7, SYMBOL_CPUREG },
-  { "v5", sizeof ("v5")-1, 8, SYMBOL_CPUREG },
-  { "ip", sizeof ("ip")-1, 12, SYMBOL_CPUREG },
-  { "sp", sizeof ("sp")-1, 13, SYMBOL_CPUREG },
-};
-
-/* These symbol registers are defined whe FPA is selected.  */
-static const Symbol_PreDef_t oSymRegsFPA[] =
-{
-  { "f0", sizeof ("f0")-1, 0, SYMBOL_FPUREG }, { "F0", sizeof ("F0")-1, 0, SYMBOL_FPUREG },
-  { "f1", sizeof ("f1")-1, 1, SYMBOL_FPUREG }, { "F1", sizeof ("F1")-1, 1, SYMBOL_FPUREG },
-  { "f2", sizeof ("f2")-1, 2, SYMBOL_FPUREG }, { "F2", sizeof ("F2")-1, 2, SYMBOL_FPUREG },
-  { "f3", sizeof ("f3")-1, 3, SYMBOL_FPUREG }, { "F3", sizeof ("F3")-1, 3, SYMBOL_FPUREG },
-  { "f4", sizeof ("f4")-1, 4, SYMBOL_FPUREG }, { "F4", sizeof ("F4")-1, 4, SYMBOL_FPUREG },
-  { "f5", sizeof ("f5")-1, 5, SYMBOL_FPUREG }, { "F5", sizeof ("F5")-1, 5, SYMBOL_FPUREG },
-  { "f6", sizeof ("f6")-1, 6, SYMBOL_FPUREG }, { "F6", sizeof ("F6")-1, 6, SYMBOL_FPUREG },
-  { "f7", sizeof ("f7")-1, 7, SYMBOL_FPUREG }, { "F7", sizeof ("F7")-1, 7, SYMBOL_FPUREG },
-};
-
 static Symbol *symbolTable[SYMBOL_TABLESIZE];
 static bool oKeepAllSymbols;
 static bool oAllExportSymbolsAreWeak; /* FIXME: support this.  */
@@ -169,10 +75,15 @@ symbolNew (const char *str, size_t len)
 }
 
 static void
-symbolFree (Symbol *symP)
+symbolFree (Symbol **symPP)
 {
-  valueFree (&symP->value);
-  free (symP);
+  register Symbol *symP = *symPP;
+  if (symP)
+    {
+      *symPP = symP->next;
+      valueFree (&symP->value);
+      free (symP);
+    }
 }
 
 static bool
@@ -181,42 +92,6 @@ EqSymLex (const Symbol *str, const Lex *lx)
   if (str->len != lx->Data.Id.len)
     return false;
   return !memcmp (str->str, lx->Data.Id.str, str->len);
-}
-
-static void
-Symbol_PreDefReg (const char *regname, size_t namelen, int value, int type)
-{
-  const Lex l = lexTempLabel (regname, namelen);
-  Symbol *s = symbolGet (&l);
-  s->type |= SYMBOL_DEFINED | SYMBOL_ABSOLUTE | type;
-  s->value = Value_Int (value);
-}
-
-void
-Symbol_Init (void)
-{
-  for (size_t i = 0; i != sizeof (oSymRegs)/sizeof (oSymRegs[0]); ++i)
-    Symbol_PreDefReg (oSymRegs[i].name, oSymRegs[i].len, oSymRegs[i].value, oSymRegs[i].type);
-
-  if (gIsAPCS)
-    {
-      for (size_t i = 0; i != sizeof (oSymRegsAPCS)/sizeof (oSymRegsAPCS[0]); ++i)
-	Symbol_PreDefReg (oSymRegsAPCS[i].name, oSymRegsAPCS[i].len, oSymRegsAPCS[i].value, oSymRegsAPCS[i].type);
-      Symbol_PreDefReg ((gOptionAPCS & APCS_OPT_REENTRANT) ? "sb" : "v6",
-                        sizeof ("sb")-1, 9, SYMBOL_CPUREG);
-      Symbol_PreDefReg ((gOptionAPCS & APCS_OPT_SWSTACKCHECK) ? "sl" : "v7",
-                        sizeof ("sl")-1, 10, SYMBOL_CPUREG);
-      Symbol_PreDefReg ((gOptionAPCS & APCS_OPT_FRAMEPTR) ? "fp" : "v8",
-                        sizeof ("fp")-1, 11, SYMBOL_CPUREG);
-    }
-
-  if (1 /* FIXME: only when FPA is selected.  */)
-    {
-      for (size_t i = 0; i != sizeof (oSymRegsFPA)/sizeof (oSymRegsFPA[0]); ++i)
-	Symbol_PreDefReg (oSymRegsFPA[i].name, oSymRegsFPA[i].len, oSymRegsFPA[i].value, oSymRegsFPA[i].type);
-    }
-
-  /* FIXME: define single/double precision VFP registers */
 }
 
 
@@ -279,9 +154,16 @@ Symbol_Define (Symbol *symbol, unsigned newSymbolType, const Value *newValue)
     {
       if (SYMBOL_GETREGTYPE(symbol->type) != SYMBOL_GETREGTYPE(newSymbolType))
 	{
-	  error (ErrorError, "Label %s is already defined as a different register type", symbol->str);
+	  error (ErrorError, "%s is already defined as a different register type", symbol->str);
 	  return true;
 	}
+      if (SYMBOL_GETREGTYPE(symbol->type) == 0
+          && symbol->areaDef
+          && symbol->areaDef != areaCurrentSymbol)
+        {
+          error (ErrorError, "Label %s is already defined in area %s", symbol->str, symbol->areaDef->str);
+          return true;
+        }
       if (symbol->value.Tag != ValueIllegal)
 	{
 	  bool diffValue;
@@ -337,6 +219,7 @@ Symbol_Define (Symbol *symbol, unsigned newSymbolType, const Value *newValue)
 	}
     }
   symbol->type |= newSymbolType | SYMBOL_DEFINED;
+  symbol->areaDef = areaCurrentSymbol;
   Value_Assign (&symbol->value, newValue);
 
   if (newValue == &newValueCopy)
@@ -359,9 +242,7 @@ symbolRemove (const Lex *l)
     {
       if (EqSymLex (*isearch, l))
 	{
-	  Symbol *toFreeP = *isearch;
-	  *isearch = toFreeP->next;
-	  symbolFree (toFreeP);
+          symbolFree (isearch);
 	  return;
 	}
     }
@@ -377,10 +258,16 @@ NeedToOutputSymbol (const Symbol *sym)
   if (sym->type & SYMBOL_AREA)
     return !Area_IsImplicit (sym);
 
+  /* All mapping symbols are exported as well.  */
+  if (Area_IsMappingSymbol (sym->str))
+    return true;
+
   bool doOutput = (((oKeepAllSymbols || (sym->type & SYMBOL_KEEP)) && (sym->value.Tag == ValueBool || sym->value.Tag == ValueInt))
-                    || ((sym->type & SYMBOL_EXPORT) && sym->used >= 0))
-		    && !SYMBOL_GETREGTYPE (sym->type)
-		    && !Local_IsLocalLabel (sym->str);
+		   || SYMBOL_KIND(sym->type) == SYMBOL_GLOBAL
+                   || (SYMBOL_KIND(sym->type) == SYMBOL_REFERENCE && sym->used >= 0)
+		  )
+		  && !SYMBOL_GETREGTYPE (sym->type)
+		  && !Local_IsLocalLabel (sym->str);
   return doOutput;
 }
 
@@ -390,7 +277,64 @@ SymbolCompare (const void *symPP1, const void *symPP2)
 {
   const Symbol *symP1 = *(const Symbol **)symPP1;
   const Symbol *symP2 = *(const Symbol **)symPP2;
-  return strcasecmp (symP1->str, symP2->str);
+
+  /* Not sure how the mapping symbols for AOF output needs to be sorted.  */
+  bool isMappingSym1 = Area_IsMappingSymbol (symP1->str);
+  bool isMappingSym2 = Area_IsMappingSymbol (symP2->str);
+  if (!option_aof || (!isMappingSym1 && !isMappingSym2)) 
+    return strcasecmp (symP1->str, symP2->str);
+
+  /* AOF: mapping symbols at the end of symbol table.  */
+  if (isMappingSym1 != isMappingSym2)
+    return isMappingSym1 ? 1 : -1;
+  
+  /* AOF: mapping symbols first sorted according to their area name.  */
+  if (symP1->areaDef != symP2->areaDef)
+    return strcasecmp (symP1->areaDef->str, symP2->areaDef->str);
+
+  /* AOF: then sort according to their area offset value (don't sort based
+     on mapping symbol type).  */
+  int v1;
+  switch (symP1->value.Tag)
+    {
+      case ValueAddr:
+	v1 = symP1->value.Data.Addr.i;
+	break;
+
+      case ValueInt:
+	v1 = symP1->value.Data.Int.i;
+	break;
+
+      case ValueSymbol:
+	v1 = symP1->value.Data.Symbol.offset;
+	break;
+
+      default:
+	v1 = 0;
+	assert (0);
+	break;
+    }
+  int v2;
+  switch (symP2->value.Tag)
+    {
+      case ValueAddr:
+	v2 = symP2->value.Data.Addr.i;
+	break;
+
+      case ValueInt:
+	v2 = symP2->value.Data.Int.i;
+	break;
+
+      case ValueSymbol:
+	v2 = symP2->value.Data.Symbol.offset;
+	break;
+
+      default:
+	v2 = 0;
+	assert (0);
+	break;
+    }
+  return v1 - v2;
 }
 
 
@@ -410,58 +354,42 @@ Symbol_CreateSymbolOut (void)
     {
       for (Symbol *sym = symbolTable[i]; sym; sym = sym->next)
 	{
+	  /* At this point sym->used is -1 when it is not needed for
+	     relocation, either is 0 when used for relocation.  */
+	  assert (sym->used == -1 || sym->used == 0);
 	  if (sym->type & SYMBOL_AREA)
 	    {
-	      /* At this point sym->used is the area (AOF) or section (ELF)
-	         number for all non-implicit area's, see start of outputAof()
-		 and outputElf().  */
-	      assert ((Area_IsImplicit (sym) && sym->used == -1) || (!Area_IsImplicit (sym) && sym->used >= 0));
 	      /* All AREA symbols are local ones.  */
 	      assert (SYMBOL_KIND (sym->type) == 0);
 	    }
 	  else
 	    {
-	      /* At this point sym->used is -1 when it is not needed for
-	         relocation, either is 0 when used for relocation.  */
-	      assert (sym->used == -1 || sym->used == 0);
-	      if (SYMBOL_KIND (sym->type) == 0)
+	      if (sym->used == -1)
+		{
+		  /* Check for undefined exported and unused imported symbols.  */
+		  if (SYMBOL_KIND (sym->type) == SYMBOL_REFERENCE)
+		    {
+		      if (Area_IsImplicit (sym->areaDef))
+			errorLine (NULL, 0, ErrorWarning, "Symbol %s is imported but not used, or exported but not defined", sym->str);
+		      else
+			errorLine (NULL, 0, ErrorWarning, "In area %s, symbol %s is imported but not used, or exported but not defined", sym->areaDef->str, sym->str);
+		    }
+		}
+	      else if (SYMBOL_KIND (sym->type) == 0)
 		{
 		  /* Make it a reference symbol.  */
 		  sym->type |= SYMBOL_REFERENCE;
-
-		  if (Local_IsLocalLabel (sym->str))
-		    {
-		      Symbol *area;
-		      int label = -1;
-		      int ii;
-		      char routine[1024];
-		      *routine = 0;
-		      if (sscanf (sym->str, Local_IntLabelFormat, &area, &label, &ii, &routine) > 2)
-			{
-			  const char *file;
-			  int lineno;
-			  Local_FindROUT (routine, &file, &lineno);
-			  if (!Local_ROUTIsEmpty (routine) && file != NULL)
-			    errorLine (file, lineno, ErrorAbort, "In area %s routine %s has missing local label %%F%02i%s",
-				       area->str, routine, label, routine);
-			  else
-			    errorLine (NULL, 0, ErrorAbort, "In area %s there is a missing local label %%F%02i%s",
-				       area->str, label, Local_ROUTIsEmpty (routine) ? "" : routine);
-			}
-		    }
-		  else
-		    errorLine (NULL, 0, ErrorWarning, "Symbol %s is implicitly imported", sym->str);
+		  errorLine (NULL, 0, ErrorWarning, "Symbol %s is implicitly imported", sym->str);
 		}
 	    }
-	  if (Area_IsMappingSymbol (sym->str) || NeedToOutputSymbol (sym))
+	  if (NeedToOutputSymbol (sym))
 	    {
 	      ++result.numAllSymbols;
 	      if ((sym->type & SYMBOL_AREA) || SYMBOL_KIND (sym->type) == SYMBOL_LOCAL)
 		++result.numLocalSymbols;
-	      if (!(sym->type & SYMBOL_AREA))
-		sym->used = 0;
+	      sym->used = 0;
 	    }
-	  else if (!(sym->type & SYMBOL_AREA))
+          else
 	    sym->used = -1;
 	}
     }
@@ -472,8 +400,10 @@ Symbol_CreateSymbolOut (void)
 
   /* Run over symbols again, and start assigning them in our symbol output
      array.  */
-  unsigned localSymbolIndex = 0;
-  unsigned globalSymbolIndex = result.numLocalSymbols;
+  const unsigned localSymbolIndexStart = (option_aof) ? result.numAllSymbols - result.numLocalSymbols : 0;
+  const unsigned globalSymbolIndexStart = (option_aof) ? 0 : result.numLocalSymbols;
+  unsigned localSymbolIndex = localSymbolIndexStart;
+  unsigned globalSymbolIndex = globalSymbolIndexStart;
   for (unsigned i = 0; i != SYMBOL_TABLESIZE; ++i)
     {
       for (Symbol *sym = symbolTable[i]; sym; sym = sym->next)
@@ -486,11 +416,12 @@ Symbol_CreateSymbolOut (void)
 	    result.allSymbolsPP[globalSymbolIndex++] = sym;
 	}
     }
-  assert (localSymbolIndex == result.numLocalSymbols && globalSymbolIndex == result.numAllSymbols);
+  assert ((option_aof && localSymbolIndex == result.numAllSymbols && globalSymbolIndex == localSymbolIndexStart)
+          ^ (!option_aof && localSymbolIndex == globalSymbolIndexStart && globalSymbolIndex == result.numAllSymbols));
 
   /* Sort local and global symbols individually.  */
-  qsort (&result.allSymbolsPP[0], result.numLocalSymbols, sizeof (Symbol *), SymbolCompare);
-  qsort (&result.allSymbolsPP[result.numLocalSymbols], result.numAllSymbols - result.numLocalSymbols, sizeof (Symbol *), SymbolCompare);
+  qsort (&result.allSymbolsPP[localSymbolIndexStart], result.numLocalSymbols, sizeof (Symbol *), SymbolCompare);
+  qsort (&result.allSymbolsPP[globalSymbolIndexStart], result.numAllSymbols - result.numLocalSymbols, sizeof (Symbol *), SymbolCompare);
 
   /* Assign Symbol::offset.
      We want to limit output the strings of mapping symbol to the first two
@@ -516,14 +447,15 @@ Symbol_CreateSymbolOut (void)
 	    {
 	      /* First time we see this particular mapping symbol.  */
 	      mapSymbols[mappingSymbolindex].offset = sym->offset = result.stringSize;
-	      result.stringSize += 3;
+	      result.stringSize += sizeof ("$d"); /* $d, $a, $t */
 	    }
 	  else
 	    sym->offset = mapSymbols[mappingSymbolindex].offset;
 	}
       else
 	{
-	  /* For ELF, section names are not used in the string table.  */
+	  /* For ELF, section names are not mentioned in the string table
+	     but part of the section header.  */
 	  if ((sym->type & SYMBOL_AREA) && !option_aof)
 	    sym->offset = 0;
 	  else
@@ -532,8 +464,17 @@ Symbol_CreateSymbolOut (void)
 	      result.stringSize += sym->len + 1;
 	    }
 	}
-      if (!(sym->type & SYMBOL_AREA))
-	sym->used = symbolIndex;
+      /* Symbol::used now contains a number which can be used (for the choosen
+         output format) to refer to that symbol.
+	 For AOF: if it is an area symbol, it's its area number. For all other
+	          symbols, the index in the symbol table.
+	 For ELF: the index in symbol table after the undefined symbol (area
+	          symbols also have an entry in the symbol table as
+	          STT_SECTION).  */
+      if (option_aof)
+	sym->used = (sym->type & SYMBOL_AREA) ? sym->area.info->number : symbolIndex;
+      else
+	sym->used = symbolIndex + 1;
     }
   return result;
 }
@@ -625,7 +566,7 @@ Symbol_OutputForAOF (FILE *outfile, const SymbolOut_t *symOutP)
                   case ValueSymbol:
 		    v = value->Data.Symbol.offset;
 		    break;
-		    
+
 		  default:
 		    assert (0 && "Wrong value tag selection");
 		    v = 0;
@@ -674,10 +615,11 @@ Symbol_OutputForELF (FILE *outfile, const SymbolOut_t *symOutP)
 	{
 	  assert (((sym->type & SYMBOL_ABSOLUTE) != 0) == ((sym->area.info->type & AREA_ABS) != 0));
 	  assert (SYMBOL_KIND (sym->type) == 0);
-	  asym.st_name = 0;
+          asym.st_name = 0;
 	  asym.st_value = (sym->area.info->type & AREA_ABS) ? Area_GetBaseAddress (sym) : 0;
 	  asym.st_info = ELF32_ST_INFO (STB_LOCAL, STT_SECTION);
-	  asym.st_shndx = sym->used;
+	  asym.st_shndx = sym->area.info->number;
+	  assert (asym.st_shndx >= 3);
 	  fwrite (&asym, sizeof (Elf32_Sym), 1, outfile);
 	}
       else
@@ -724,7 +666,7 @@ Symbol_OutputForELF (FILE *outfile, const SymbolOut_t *symOutP)
 		    break;
 		}
 	      asym.st_value = v;
-	      asym.st_shndx = (sym->type & SYMBOL_ABSOLUTE) && !Area_IsMappingSymbol (sym->str) ? SHN_ABS : sym->areaDef->used;
+	      asym.st_shndx = (sym->type & SYMBOL_ABSOLUTE) && !Area_IsMappingSymbol (sym->str) ? SHN_ABS : sym->areaDef->area.info->number;
 	    }
 	  else
 	    {
@@ -801,6 +743,10 @@ symFlag (unsigned int flags, const char *err)
 bool
 c_export (void)
 {
+  /* 'EXPORT'/'GLOBAL' is not supported when in AAsm compatibility mode.  */
+  if (option_abs)
+    return true;
+
   Symbol *sym = symFlag (SYMBOL_REFERENCE, "exported");
   skipblanks ();
   if (Input_Match ('[', true))
@@ -839,13 +785,17 @@ c_export (void)
     error (ErrorError, "Missing symbol to export");
   return false;
 }
-      
+
 /**
  * Implements STRONG.
  */
 bool
 c_strong (void)
 {
+  /* 'STRONG' is not supported when in AAsm compatibility mode.  */
+  if (option_abs)
+    return true;
+
   if (symFlag (SYMBOL_STRONG, "marked as 'strong'") == NULL)
     error (ErrorError, "Missing symbol to mark as 'strong'");
   return false;
@@ -859,6 +809,10 @@ c_strong (void)
 bool
 c_keep (void)
 {
+  /* 'KEEP' is not supported when in AAsm compatibility mode.  */
+  if (option_abs)
+    return true;
+
   if (symFlag (SYMBOL_KEEP, "marked to 'keep'") == NULL)
     oKeepAllSymbols = true;
   return false;
@@ -870,6 +824,10 @@ c_keep (void)
 bool
 c_import (void)
 {
+  /* 'IMPORT'/'EXTERN' is not supported when in AAsm compatibility mode.  */
+  if (option_abs)
+    return true;
+
   Symbol *sym = symFlag (SYMBOL_REFERENCE, "imported");
   if (sym == NULL)
     {
@@ -917,14 +875,13 @@ c_import (void)
   return false;
 }
 
-
 #ifdef DEBUG
 void
 symbolPrint (const Symbol *sym)
 {
   static const char *symkind[4] = { "UNKNOWN", "LOCAL", "REFERENCE", "GLOBAL" };
-  printf ("\"%.*s\": %s /",
-	  (int)sym->len, sym->str, symkind[SYMBOL_KIND (sym->type)]);
+  printf ("\"%s\": %s /",
+          sym->str, symkind[SYMBOL_KIND (sym->type)]);
   assert (strlen (sym->str) == (size_t)sym->len);
   /* The Symbol::area.info (or Symbol::area.rel) is non-NULL iff the symbol is
      an area name symbol or we have a relative symbol.  */
@@ -974,6 +931,15 @@ symbolPrint (const Symbol *sym)
       case SYMBOL_FPUREG:
 	printf ("FPU reg/");
 	break;
+      case SYMBOL_NEONQUADREG:
+	printf ("NEON quad reg/");
+	break;
+      case SYMBOL_NEONDOUBLEREG:
+	printf ("NEON/VFP double reg/");
+	break;
+      case SYMBOL_VFPSINGLEREG:
+	printf ("VFP single reg/");
+	break;
       case SYMBOL_COPREG:
 	printf ("coprocessor reg/");
 	break;
@@ -985,8 +951,7 @@ symbolPrint (const Symbol *sym)
 	break;
     }
 
-  printf (", def area \"%*.s\", size %zd, offset 0x%x, used %d : ",
-          sym->areaDef ? (int)sym->areaDef->len : (int)sizeof("<NULL>")-1,
+  printf (", def area \"%s\", size %zd, offset 0x%x, used %d : ",
           sym->areaDef ? sym->areaDef->str : "<NULL>",
           sym->codeSize, sym->offset, sym->used);
   valuePrint (&sym->value);

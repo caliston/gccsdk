@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -48,7 +48,10 @@
 #include "m_cpuctrl.h"
 #include "m_cpumem.h"
 #include "m_fpe.h"
+#include "opt.h"
 #include "option.h"
+#include "main.h"
+#include "state.h"
 #include "storage.h"
 
 typedef bool (*po_void)(void); /* For eCB_Void, eCB_NoLex and eCB_NoLexPMatch.  */
@@ -107,6 +110,8 @@ static const decode_table_t oDecodeTable[] =
   { "ADR", eCB_VoidPMatch, eRslt_ARM, { .vdpm = m_adr } }, /* ADR CC */
   { "ALIGN", eCB_Void, eRslt_Data, { .vd = c_align } }, /* ALIGN */
   { "AND", eCB_VoidPMatch, eRslt_ARM, { .vdpm = m_and } }, /* AND CC S */
+  { "AOF", eCB_Void, eRslt_None, { .vd = c_aof } }, /* AOF */
+  { "AOUT", eCB_Void, eRslt_None, { .vd = c_aout } }, /* AOUT */
   { "AREA", eCB_Void, eRslt_None, { .vd = c_area } }, /* AREA */
   { "ARM", eCB_Void, eRslt_None, { .vd = c_code32 } }, /* ARM/CODE32 */
   { "ASN", eCB_VoidPMatch, eRslt_ARM, { .vdpm = m_asn } }, /* ASN CC P R */
@@ -178,6 +183,7 @@ static const decode_table_t oDecodeTable[] =
   { "INCLUDE", eCB_Void, eRslt_None, { .vd = c_get } }, /* GET / INCLUDE */
   { "INFO", eCB_Void, eRslt_None, { .vd = c_info } }, /* INFO */
   { "ISB", eCB_Void, eRslt_ARM, { .vd = m_isb } }, /* ISB */
+  /* FIXME: IT */
   { "KEEP", eCB_Void, eRslt_None, { .vd = c_keep } }, /* KEEP */
   { "LCL", eCB_NoLexPMatch, eRslt_None, { .nolex = c_lcl } }, /* LCLA, LCLL, LCLS */
   { "LDC", eCB_VoidPMatch, eRslt_ARM, { .vdpm = m_ldc } }, /* LDC CC L */
@@ -204,6 +210,8 @@ static const decode_table_t oDecodeTable[] =
   { "MLS", eCB_VoidPMatch, eRslt_ARM, { .vdpm = m_mls } }, /* MLS CC */
   { "MNF", eCB_VoidPMatch, eRslt_ARM, { .vdpm = m_mnf } }, /* MNF CC P R */
   { "MOV", eCB_VoidPMatch, eRslt_ARM, { .vdpm = m_mov } }, /* MOV CC s */
+  /* FIXME: MOV32 */
+  /* FIXME: MOVT */
   { "MRC", eCB_VoidPMatch, eRslt_ARM, { .vdpm = m_mrc } }, /* MRC CC */
   { "MRC2", eCB_Void, eRslt_ARM, { .vd = m_mrc2 } }, /* MRC2 */
   { "MRRC", eCB_VoidPMatch, eRslt_ARM, { .vdpm = m_mrrc } }, /* MRRC CC */
@@ -401,10 +409,11 @@ decode (const Lex *label)
       (void) ASM_DefineLabel (label, areaCurrentSymbol->area.info->curIdx);
       return;
     }
-
+  
   const char * const inputMark = Input_GetMark ();
 
-  const bool doLowerCase = inputLook () >= 'a' && inputLook () <= 'z'; 
+  /* Determines whether the mnemonic is all lowercase or all uppercase.  */
+  const bool doLowerCase = !option_uppercase && inputLook () >= 'a' && inputLook () <= 'z'; 
   
   /* Locate mnemonic entry in decode table.  */
   size_t low = 0;
@@ -519,14 +528,36 @@ decode (const Lex *label)
       if (!IsPartiallyMatched (&oDecodeTable[indexFound]))
         skipblanks ();
 
-      /* Mark that this mnemonic will result in data, ARM or Thumb output.  */
-      if (oDecodeTable[indexFound].result != eRslt_None)
-	Area_MarkStartAs (oDecodeTable[indexFound].result == eRslt_ARM ? eARM
-			  : oDecodeTable[indexFound].result == eRslt_Data ? eData
-			  : eThumb);
+      /* FIXME: Labels in front of Thumb-2 instructions need to be
+	 aligned at 4 bytes.  */
+      unsigned alignValue;
+      Area_eEntryType entryType;
+      switch (oDecodeTable[indexFound].result)
+	{
+	  case eRslt_ARM:
+	    alignValue = 4;
+	    entryType = eARM;
+	    break;
+	  case eRslt_Thumb:
+	    alignValue = 2;
+	    entryType = eThumb;
+	    break;
+	  case eRslt_Data:
+	  case eRslt_None:
+	    alignValue = 1; /* No alignment.  */
+	    entryType = eData;
+	    break;
+	}
 
-      int startOffset = Area_IsImplicit (areaCurrentSymbol) ? 0 : areaCurrentSymbol->area.info->curIdx;
-      const Symbol * const startAreaSymbol = areaCurrentSymbol;
+      /* FIXME: test on currently unsupported Thumb/ThumbEE state.  */
+      if ((entryType == eARM || entryType == eThumb) && State_GetInstrType () != eInstrType_ARM)
+	{
+	  error (ErrorError, "Thumb/ThumbEE are currently unsupported"); /* FIXME */
+	  return;
+	}
+
+      uint32_t startOffset = Area_IsImplicit (areaCurrentSymbol) ? 0 : areaCurrentSymbol->area.info->curIdx;
+      Symbol * const startAreaSymbol = areaCurrentSymbol;
       Value startStorage =
 	{
 	  .Tag = ValueIllegal
@@ -549,7 +580,11 @@ decode (const Lex *label)
 	         with the current offset *before* processing the mnemonic
 	         (and only when the mnemonic is a valid one).  */
 	      if (label->tag != LexLocalLabel)
-		labelSymbol = tryAsMacro ? NULL : ASM_DefineLabel (label, startOffset);
+		{
+		  if (!tryAsMacro)
+		    startOffset = Area_AlignOffset (startAreaSymbol, startOffset, alignValue, "instruction");
+		  labelSymbol = tryAsMacro ? NULL : ASM_DefineLabel (label, startOffset);
+		}
 	      break;
 	    }
 
@@ -613,6 +648,10 @@ decode (const Lex *label)
 	    break;
 	}
 
+      /* Mark that this mnemonic will result in data, ARM or Thumb output.  */
+      if (!tryAsMacro && oDecodeTable[indexFound].result != eRslt_None)
+	Area_MarkStartAs (startAreaSymbol, startOffset, entryType);
+
       /* When areaCurrentSymbol changed, this can only be using "AREA" and that means
 	 no increase of curIdx.  */
       if (startAreaSymbol != areaCurrentSymbol)
@@ -633,7 +672,7 @@ decode (const Lex *label)
       /* Determine the code size associated with the label on this line (if any).  */
       if (labelSymbol != NULL)
         {
-	  size_t codeSize;
+	  uint32_t codeSize;
           /* Either we have an increase in code/data in our current area, either
              we have an increase in storage map, either non of the previous (like
 	     with "<lbl> * <value>" input).  */
@@ -651,7 +690,7 @@ decode (const Lex *label)
 	      else
 		error (ErrorError, "Failed to determine label size");
 	    }
-	  assert ((gASM_Phase == ePassOne && labelSymbol->codeSize == 0) || (gASM_Phase == ePassTwo && labelSymbol->codeSize == codeSize));
+	  assert ((gPhase == ePassOne && labelSymbol->codeSize == 0) || (gPhase == ePassTwo && labelSymbol->codeSize == codeSize));
 	  labelSymbol->codeSize = codeSize;
 	}
 

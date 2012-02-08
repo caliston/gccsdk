@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2001-2011 GCCSDK Developers
+ * Copyright (c) 2001-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,8 +30,8 @@
 #include "value.h"
 
 #define SYMBOL_LOCAL     0x0001	/* Defined with local scope */
-#define SYMBOL_REFERENCE 0x0002 /* E.g. IMPORT symbol, or unused EXPORT symbol.  */
-#define SYMBOL_GLOBAL    0x0003	/* Defined with global scope.  E.g. used EXPORT symbol.  */
+#define SYMBOL_REFERENCE 0x0002 /* E.g. IMPORT symbol, or undefined EXPORT symbol.  */
+#define SYMBOL_GLOBAL    0x0003	/* Defined with global scope.  E.g. defined EXPORT symbol.  */
 
 #define SYMBOL_KIND(x)   ((x) & 0x0003) /* Returns: 0 (area symbol (SYMBOL_AREA is set) or symbols which are not marked as imported nor exported), SYMBOL_LOCAL, SYMBOL_REFERENCE or SYMBOL_GLOBAL.  */
 
@@ -63,8 +63,12 @@
 
 #define SYMBOL_CPUREG		0x10000000
 #define SYMBOL_FPUREG		0x20000000
-#define SYMBOL_COPREG		0x30000000
-#define SYMBOL_COPNUM		0x40000000
+#define SYMBOL_NEONQUADREG	0x30000000 /* q0 - q15 : NEON quadword registers.  */
+#define SYMBOL_NEONDOUBLEREG	0x40000000 /* d0 - d31 : NEON doubleword registers, VFP double-precision registers.  */
+#define SYMBOL_VFPDOUBLEREG	SYMBOL_NEONDOUBLEREG
+#define SYMBOL_VFPSINGLEREG	0x50000000 /* s0 - s31 : VFP single-precision registers.  */
+#define SYMBOL_COPREG		0x60000000
+#define SYMBOL_COPNUM		0x70000000
 #define SYMBOL_GETREGTYPE(x)	((x) & 0x70000000)
 
 #define SYMBOL_TABLESIZE 1024
@@ -76,7 +80,7 @@ typedef struct Symbol
 
   unsigned int type; /** Cfr. SYMBOL_* bits.  */
   Value value; /** For AREA symbol, this is its current content size.  */
-  size_t codeSize; /** Size of the code associated with this symbol label (for AREA symbol, this is unused).  */
+  uint32_t codeSize; /** Size of the code associated with this symbol label (for AREA symbol, this is unused).  */
   union
     {
       struct Symbol *rel; /* FIXME: we need to support this better, i.e. this symbol (with ValueInt, ValueAddr) is relative to 'rel' symbol, i.e. only relevant when SYMBOL_ABSOLUTE is *not* set.  */
@@ -85,19 +89,23 @@ typedef struct Symbol
   struct Symbol *areaDef; /** Area where this symbol is defined in.  When SYMBOL_AREA is set, this is NULL.  */
 
   /* For output: */
-  unsigned int offset;	/** For area symbols, at start of outputAof()/outputElf(), this indicates the area symbol's position in the symbol table.  */
-  int used;		/** Has several usages:
-    At start of outputAof()/outputElf():
+  uint32_t offset; /** In Symbol_CreateSymbolOut() (called from Output_AOF()
+    and Output_ELF()): symbol's offset position in symbol table (for AOF,
+    minus 4).
+    For ELF, section (area) symbols: is 0.  */
+  int used; /** Has several usages:
+    At start of Output_AOF()/Output_ELF():
       either -1 (no relocation needed),
       either 0 (relocation needed, see Reloc_Create()).
 
-    At end of Symbol_CreateSymbolOut():
-      For area symbols:
-        - AOF output : this will be the area number counted from 0
-        - ELF output : this is the section number (counted from 3)
-      For other symbols:
-        When >= 0 : symbol index,
-        When -1 : symbol won't appear in the symbol table.  */
+    At end of Symbol_CreateSymbolOut(): an index suited for choosen output
+      format to refer to this symbol.
+      For AOF: For area symbols, this index is the area number.  For non area
+               symbols, this index is an index in the symbol table.
+               From 0 onwards.
+      For ELF: Index in the symbol table (area symbols also have an entry there).
+	       From 3 (for area symbols) or 0 (for non area symbols) onwards.
+      Is -1 when the symbol is not mentioned in the symbol table.  */
 
   /* Symbol name: */
   size_t len;		/** length of str[] without its NUL terminator.  */
@@ -107,7 +115,6 @@ typedef struct Symbol
 /* Prefix of all internal AsAsm symbols.  */
 #define kIntLabelPrefix "$$AsAsm$$Int$$"
 
-void Symbol_Init (void);
 Symbol *symbolGet (const Lex *l);
 Symbol *symbolFind (const Lex *l);
 void symbolRemove (const Lex *l);

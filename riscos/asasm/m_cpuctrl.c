@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -46,6 +46,7 @@
 #include "m_cpuctrl.h"
 #include "option.h"
 #include "os.h"
+#include "phase.h"
 #include "put.h"
 #include "targetcpu.h"
 #include "value.h"
@@ -53,7 +54,7 @@
 /** CONTROL **/
 
 static bool
-Branch_RelocUpdater (const char *file, int lineno, ARMWord offset,
+Branch_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 		     const Value *valueP, void *privData, bool final)
 {
   bool isBLX = *(bool *)privData;
@@ -62,65 +63,164 @@ Branch_RelocUpdater (const char *file, int lineno, ARMWord offset,
 
   if (final)
     return true;
-
-  /* Branch instruction with value 0 means a branch to {PC} + 8, so start
-     to compensate the {PC}+8, the result is a value what needs to be
-     added to that branch instruction.  */
-  const bool absArea = (areaCurrentSymbol->area.info->type & AREA_ABS) != 0; 
-  int numAreaCurrentSymbol = absArea ? 0 : -1;
-  int branchOffset = absArea ? -(offset + 8) - Area_GetBaseAddress (areaCurrentSymbol) : -(offset + 8);
-  for (size_t i = 0; i != valueP->Data.Code.len; ++i)
+  
+  int relocs = 0;
+  int relative = 0;
     {
-      const Code *codeP = &valueP->Data.Code.c[i];
-      if (codeP->Tag == CodeOperator)
+      int factor = 1;
+      for (size_t i = 0; i != valueP->Data.Code.len; ++i)
 	{
-	  if (codeP->Data.op != Op_add)
-	    return true;
-	  continue;
-	}
+	  if (i + 1 != valueP->Data.Code.len
+	      && valueP->Data.Code.c[i + 1].Tag == CodeOperator
+	      && valueP->Data.Code.c[i + 1].Data.op == Op_sub)
+	    factor = -1;
+	  else
+	    factor = 1;
 
-      assert (codeP->Tag == CodeValue);
-      const Value *valP = &codeP->Data.value;
-      switch (valP->Tag)
-	{
-	  case ValueInt:
-	    branchOffset += valP->Data.Int.i;
-	    break;
-
-	  case ValueSymbol:
+	  const Code *codeP = &valueP->Data.Code.c[i];
+	  if (codeP->Tag == CodeOperator)
 	    {
-	      int factor = valP->Data.Symbol.factor;
-	      if (factor != 1)
+	      if (codeP->Data.op != Op_add && codeP->Data.op != Op_sub)
 		return true;
-	      if (valP->Data.Symbol.symbol != areaCurrentSymbol)
-		{
-		  /* The R_ARM_PC24 ELF reloc needs to happen for a "B {PC}"
-		     instruction, while in AOF this needs to happen for a
-		     "B -<area origin>" instruction.  */
-		  if (!option_aof)
-		    branchOffset += offset;
-		  if (Reloc_Create (HOW2_INIT | HOW2_SIZE | HOW2_RELATIVE, offset, valP) == NULL)
-		    return true;
-		}
-	      if (absArea)
-		branchOffset += factor*Area_GetBaseAddress (areaCurrentSymbol);
-	      else
-	        numAreaCurrentSymbol += factor;
-	      branchOffset += valP->Data.Symbol.offset;
-	      break;
+	      continue;
 	    }
-		
-	  default:
-	    assert (0);
-	    break;
+	  assert (codeP->Tag == CodeValue);
+	  const Value *valP = &codeP->Data.value;
+
+	  switch (valP->Tag)
+	    {
+	      case ValueInt:
+		break;
+
+	      case ValueSymbol:
+		{
+		  Value value = *valP;
+		  if (Value_ResolveSymbol (&value))
+		    return true;
+		  assert (value.Tag == ValueSymbol);
+		  if (value.Data.Symbol.symbol == areaCurrentSymbol)
+		    {
+		      assert ((value.Data.Symbol.symbol->type & SYMBOL_ABSOLUTE) == 0);
+		      relative += factor * value.Data.Symbol.factor;
+		    }
+		  else
+		    {
+		      if (factor * value.Data.Symbol.factor < 0)
+			return true;
+		      relocs += factor * value.Data.Symbol.factor;
+		    }
+		  break;
+		}
+
+	      default:
+		return true;
+	    }
 	}
     }
-  if (numAreaCurrentSymbol != 0)
-    return true;
+  assert (relocs >= 0);
+  
+  /* Branch instruction with value 0 means a branch to {PC} + 8 which is
+     current area base + branch instruction offset + 8.
+     So start to compensate with this value, the result is a value what needs
+     to be added to that branch instruction with value 0.  */
+  int branchInstrValue = -(offset + 8);
+  relative -= 1;
+  if (areaCurrentSymbol->area.info->type & AREA_ABS)
+    {
+      branchInstrValue += relative * Area_GetBaseAddress (areaCurrentSymbol);
+      relative = 0;
+    }
+    {
+      int factor = 1;
+      for (size_t i = 0; i != valueP->Data.Code.len; ++i)
+	{
+	  if (i + 1 != valueP->Data.Code.len
+	      && valueP->Data.Code.c[i + 1].Tag == CodeOperator
+	      && valueP->Data.Code.c[i + 1].Data.op == Op_sub)
+	    factor = -1;
+	  else
+	    factor = 1;
+
+	  const Code *codeP = &valueP->Data.Code.c[i];
+	  if (codeP->Tag == CodeOperator)
+	    {
+	      if (codeP->Data.op != Op_add && codeP->Data.op != Op_sub)
+		return true;
+	      continue;
+	    }
+	  assert (codeP->Tag == CodeValue);
+	  const Value *valP = &codeP->Data.value;
+
+	  switch (valP->Tag)
+	    {
+	      case ValueInt:
+		branchInstrValue += factor * valP->Data.Int.i;
+		break;
+
+	      case ValueSymbol:
+		{
+		  Value value = *valP;
+		  if (Value_ResolveSymbol (&value))
+		    return true;
+		  assert (value.Tag == ValueSymbol);
+		  branchInstrValue += factor * value.Data.Symbol.offset;
+
+		  int numRelocs;
+		  if (valP->Data.Symbol.symbol == areaCurrentSymbol)
+		    {
+		      if (relative > 0)
+			{
+			  numRelocs = relative;
+			  relative = 0;
+			}
+		      else
+			numRelocs = 0; /* Nothing to be done.  */
+		    }
+		  else
+		    {
+		      numRelocs = factor * value.Data.Symbol.factor;
+		      relocs -= numRelocs;
+		    }
+		  while (numRelocs--)
+		    {
+		      int how2;
+		      if (relative < 0)
+			{
+			  ++relative;
+			  how2 = HOW2_INIT | HOW2_SIZE | HOW2_RELATIVE;
+			}
+		      else
+			how2 = HOW2_INIT | HOW2_SIZE;
+		      if (Reloc_Create (how2, offset, &value) == NULL)
+			return true;
+		      /* The R_ARM_PC24 ELF reloc needs to happen for a "B {PC}"
+			 instruction, while in AOF this needs to happen for a
+			 "B -<area origin>" instruction.  */
+		      if (!option_aof)
+			branchInstrValue += offset;
+		    }
+		  break;
+		}
+
+	      default:
+		assert (0);
+		break;
+	    }
+	}
+      while (relative < 0)
+	{
+	  ++relative;
+	  const Value value = Value_Symbol (areaCurrentSymbol, 1, 0);
+	  if (Reloc_Create (HOW2_INIT | HOW2_SIZE, offset, &value) == NULL)
+	    return true;
+	}
+      assert (!relocs && !relative);
+    }
+
   int mask = isBLX ? 1 : 3;
-  if (branchOffset & mask)
-    errorLine (file, lineno, ErrorError, "Branch value is not a multiple of %s", isBLX ? "two" : "four");
-  ir |= ((branchOffset >> 2) & 0xffffff) | (isBLX ? (branchOffset & 2) << 23 : 0);
+  if (branchInstrValue & mask)
+    errorLine (fileName, lineNum, ErrorError, "Branch value is not a multiple of %s", isBLX ? "two" : "four");
+  ir |= ((branchInstrValue >> 2) & 0xffffff) | (isBLX ? (branchInstrValue & 2) << 23 : 0);
   Put_InsWithOffset (offset, ir);
 
   return false;
@@ -134,7 +234,7 @@ branch_shared (ARMWord cc, bool isBLX)
   exprBuild ();
 
   Put_Ins (cc | 0x0A000000);
-  if (gASM_Phase != ePassOne
+  if (gPhase != ePassOne
       && Reloc_QueueExprUpdate (Branch_RelocUpdater, offset, ValueInt | ValueCode | ValueSymbol, &isBLX, sizeof (isBLX)))
     error (ErrorError, "Illegal branch expression");
   return false;
@@ -258,7 +358,7 @@ m_swi (bool doLowerCase)
 	break;
 
       default:
-	if (gASM_Phase == ePassTwo)
+	if (gPhase == ePassTwo)
 	  error (ErrorError, "Illegal SVC/SWI expression");
 	break;
     }
@@ -301,7 +401,7 @@ m_bkpt (void)
  * 2nd instruction.  When it is true, we have to.
  */
 static void
-ADR_RelocUpdaterCore (const char *file, int lineno, size_t offset, int constant,
+ADR_RelocUpdaterCore (const char *fileName, unsigned lineNum, size_t offset, int constant,
 		      int baseReg, bool fixedNumInstr, bool isADRL)
 {
   /* FIXME: Can clever use of ADD/SUB mixture cover more constants ? */
@@ -361,28 +461,28 @@ ADR_RelocUpdaterCore (const char *file, int lineno, size_t offset, int constant,
     {
       if (fixedNumInstr)
 	{
-	  errorLine (file, lineno, ErrorWarning, "ADRL at area offset 0x%08zx is not required for addressing 0x%08x", offset, constant);
+	  errorLine (fileName, lineNum, ErrorWarning, "ADRL at area offset 0x%08zx is not required for encoding 0x%08x", offset, constant);
 	  split[bestIndex].try[1] = 0;
 	  split[bestIndex].num = 2;
 	}
       else
-	errorLine (file, lineno, ErrorInfo, "ADRL at area offset 0x%08zx is not required for addressing 0x%08x, using ADR instead", offset, constant);
+	errorLine (fileName, lineNum, ErrorInfo, "ADRL at area offset 0x%08zx is not required for encoding 0x%08x, using ADR instead", offset, constant);
     }
   else if ((split[bestIndex].num == 2 && !isADRL)
 	   || split[bestIndex].num == 3 || split[bestIndex].num == 4)
     {
       if (fixedNumInstr)
 	{
-	  errorLine (file, lineno, ErrorError, "%s at area offset 0x%08zx can not address 0x%08x", (isADRL) ? "ADRL" : "ADR", offset, constant);
+	  errorLine (fileName, lineNum, ErrorError, "%s at area offset 0x%08zx can not be used to encode 0x%08x", (isADRL) ? "ADRL" : "ADR", offset, constant);
 	  split[bestIndex].num = (isADRL) ? 2 : 1;
 	}
       else
-	errorLine (file, lineno, ErrorWarning, "%s at area offset 0x%08zx can not address 0x%08x, using %d instruction sequence instead", (isADRL) ? "ADRL" : "ADR", offset, constant, split[bestIndex].num);
+	errorLine (fileName, lineNum, ErrorWarning, "%s at area offset 0x%08zx can not be used to encode 0x%08x, using %d instruction sequence instead", (isADRL) ? "ADRL" : "ADR", offset, constant, split[bestIndex].num);
     }
 
   ARMWord ir = GetWord (offset);
   if (split[bestIndex].num == 2 && GET_DST_OP(ir) == 15)
-    errorLine (file, lineno, ErrorError, "ADRL can not be used with register 15 as destination");
+    errorLine (fileName, lineNum, ErrorError, "ADRL can not be used with register 15 as destination");
 
   for (int n = 0; n < split[bestIndex].num; ++n)
     {
@@ -409,7 +509,7 @@ typedef struct
  * Shared reloc updater for ADR and ADRL.
  */
 static bool
-ADR_RelocUpdater (const char *file, int lineno, ARMWord offset,
+ADR_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 		  const Value *valueP, void *privData, bool final)
 {
   const ADR_PrivData_t *privDataP = (const ADR_PrivData_t *)privData;
@@ -434,11 +534,11 @@ ADR_RelocUpdater (const char *file, int lineno, ARMWord offset,
 	  case ValueInt:
 	    /* Absolute value : results in MOV/MVN (followed by ADD/SUB in case of
 	       ADRL).  */
-	    ADR_RelocUpdaterCore (file, lineno, offset, valP->Data.Int.i, -1, true /* final */, privDataP->userIntendedTwoInstr);
+	    ADR_RelocUpdaterCore (fileName, lineNum, offset, valP->Data.Int.i, -1, true /* final */, privDataP->userIntendedTwoInstr);
 	    break;
 
 	  case ValueAddr:
-	    ADR_RelocUpdaterCore (file, lineno, offset, valP->Data.Addr.i, valP->Data.Addr.r, true /* final */, privDataP->userIntendedTwoInstr);
+	    ADR_RelocUpdaterCore (fileName, lineNum, offset, valP->Data.Addr.i, valP->Data.Addr.r, true /* final */, privDataP->userIntendedTwoInstr);
 	    break;
 
 	  case ValueSymbol:
@@ -451,7 +551,7 @@ ADR_RelocUpdater (const char *file, int lineno, ARMWord offset,
 		    Put_InsWithOffset (offset + 4, 0);
 		  return true;
 		}
-	      ADR_RelocUpdaterCore (file, lineno, offset, -(offset + 8), 15, true /* final */, privDataP->userIntendedTwoInstr);
+	      ADR_RelocUpdaterCore (fileName, lineNum, offset, -(offset + 8), 15, true /* final */, privDataP->userIntendedTwoInstr);
 	      if (Reloc_Create (HOW2_INIT | HOW2_SIZE | HOW2_RELATIVE, offset, valP) == NULL)
 		return true;
 	    }
@@ -475,9 +575,16 @@ m_adr (bool doLowerCase)
   if (ir == optionError)
     return true;
 
-  if (gASM_Phase == ePassOne)
+  ARMWord regD = getCpuReg ();
+  
+  skipblanks ();
+  if (!Input_Match (',', false))
+    error (ErrorError, "%sdst", InsertCommaAfter);
+
+  exprBuild ();
+
+  if (gPhase == ePassOne)
     {
-      Input_Rest ();
       Put_Ins (0);
       /* When bit 0 is set, we'll emit ADRL (2 instructions).  */
       if (ir & 1)
@@ -488,17 +595,12 @@ m_adr (bool doLowerCase)
   /* When bit 0 is set, we'll emit ADRL (2 instructions).  */
   ADR_PrivData_t privData =
     {
-      .orgInstr = (ir | DST_OP (getCpuReg ()) | IMM_RHS) & ~1,
+      .orgInstr = (ir | DST_OP (regD) | IMM_RHS) & ~1,
       .userIntendedTwoInstr = (ir & 1) != 0
     };
 
-  skipblanks ();
-  if (!Input_Match (',', false))
-    error (ErrorError, "%sdst", InsertCommaAfter);
-
   /* The label will expand to either a field in a based map or a PC-relative 
      expression.  */
-  exprBuild ();
   if (Reloc_QueueExprUpdate (ADR_RelocUpdater,
 			     areaCurrentSymbol->area.info->curIdx,
 			     ValueAddr | ValueInt | ValueSymbol | ValueCode,

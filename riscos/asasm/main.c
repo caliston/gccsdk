@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,6 +42,7 @@
 #include "area.h"
 #include "asm.h"
 #include "common.h"
+#include "depend.h"
 #include "error.h"
 #include "filestack.h"
 #include "include.h"
@@ -49,9 +50,11 @@
 #include "main.h"
 #include "local.h"
 #include "output.h"
+#include "phase.h"
+#include "predef_reg.h"
+#include "state.h"
 #include "symbol.h"
 #include "targetcpu.h"
-#include "depend.h"
 #include "variables.h"
 
 jmp_buf asmContinue;
@@ -67,6 +70,8 @@ int option_fussy = 0;
 int option_throwback = 0;
 int option_apcs_softfloat = -1; /* -1 = option not specified.  */
 int option_aof = -1; /* -1 = option not specified.  */
+bool option_abs = false;
+bool option_uppercase = false;
 
 const char *predefines[MAX_PREDEFINES];
 int num_predefines = 0;
@@ -162,6 +167,7 @@ asasm_help (void)
 	   "-D<variable>               Define a string variable.\n"
 	   "-D<variable>=<value>       Define a string variable to a certain value.\n"
 	   "-PreDefine <value>         Predefine a value using SETA/SETS/SETL syntax.\n"
+	   "-UpperCase                 Recognise instruction mnemonics in upper case only.\n"
 	   "-Pedantic                  Display extra warnings.\n"
 	   "-Verbose                   Display progress information.\n"
 	   "-Fussy                     Display conversion information.\n"
@@ -174,6 +180,7 @@ asasm_help (void)
 	   "-VERsion                   Display the version number.\n"
 	   "-From asmfile              Source assembler file (ObjAsm compatibility).\n"
 	   "-To objfile                Destination AOF file (ObjAsm compatibility).\n"
+	   "-ABSolute                  Accept AAsm source code.\n"
 	   "-Apcs <APCS options>       Specifies one or more APCS options.\n"
 	   "-soft-float                Mark code as using -msoft-float (avoids explicit FP instructions).  This is a GCCSDK extension to the AOF file format.\n"
 	   "-hard-float                Mark code as using -mhard-float (uses explicit FP instructions) [default].\n"
@@ -181,16 +188,23 @@ asasm_help (void)
 	   "-elf                       Output ELF file [default].\n"
 #endif
 	   "-aof                       Output AOF file.\n"
+           "-16                        Start processing Thumb instructions (pre-UAL syntax).\n"
+           "-32                        Synonym for -arm.\n"
+           "-arm                       Start processing ARM instructions.\n" 
+           "-thumb                     Start processing Thumb instructions (UAL syntax).\n"
+           "-thumbx                    Start processing ThumbEE instructions (UAL syntax).\n"
 	   "\n");
 }
-
-static bool finished = false;
 
 static void
 atexit_handler (void)
 {
-  if (!finished || returnExitStatus () != EXIT_SUCCESS)
-    outputRemove ();
+  /* Only remove the output file when there was an error and we actually
+     started doing the assembling (i.e. don't remove the output file
+     when there was an option error).  */
+  if (returnExitStatus () != EXIT_SUCCESS
+      && gPhase >= ePassOne)
+    Output_Remove ();
 }
 
 static void
@@ -320,6 +334,8 @@ main (int argc, char **argv)
       else if (!strcasecmp (arg, "throwback") || !strcasecmp (arg, "tb"))
 	option_throwback++;
 #endif
+      else if (!strcasecmp (arg, "uc") || !strcasecmp (arg, "uppercase"))
+	option_uppercase = true;
       else if (!strcasecmp (arg, "pedantic") || !strcasecmp (arg, "p"))
 	option_pedantic++;
       else if (!strncasecmp (arg, "CPU", sizeof ("CPU")-1)
@@ -388,7 +404,7 @@ main (int argc, char **argv)
 	{
 	  fprintf (stderr,
 		   DEFAULT_IDFN "\n"
-		   "Copyright (c) 1992-2011 Niklas Röjemo, Darren Salt and GCCSDK Developers\n"
+		   "Copyright (c) 1992-2012 Niklas Röjemo, Darren Salt and GCCSDK Developers\n"
 		   "This is free software; see the source for copying conditions.  There is NO\n"
 		   "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n");
 	  return EXIT_SUCCESS;
@@ -433,12 +449,34 @@ main (int argc, char **argv)
 	      return EXIT_FAILURE;
 	    }
 	}
+      else if (!strcasecmp (arg, "absolute") || !strcasecmp (arg, "abs"))
+	option_abs = true;
 #ifndef NO_ELF_SUPPORT
       else if (!strcasecmp (arg, "elf"))
 	set_option_aof (0);
 #endif
       else if (!strcasecmp (arg, "aof"))
 	set_option_aof (1);
+      else if (!strcasecmp (arg, "16"))
+	{
+	  State_SetCmdLineInstrType (eInstrType_Thumb);
+	  State_SetCmdLineSyntax (eSyntax_PreUALOnly);
+	}
+      else if (!strcasecmp (arg, "32") || !strcasecmp (arg, "arm"))
+	{
+	  State_SetCmdLineInstrType (eInstrType_ARM);
+	  State_SetCmdLineSyntax (eSyntax_PreUALOnly);
+	}
+      else if (!strcasecmp (arg, "thumb"))
+	{
+	  State_SetCmdLineInstrType (eInstrType_Thumb);
+	  State_SetCmdLineSyntax (eSyntax_UALOnly);
+	}
+      else if (!strcasecmp (arg, "thumbx"))
+	{
+	  State_SetCmdLineInstrType (eInstrType_ThumbEE);
+	  State_SetCmdLineSyntax (eSyntax_UALOnly);
+	}
       else if (!strcasecmp (arg, "stamp") || !strcasecmp (arg, "quit"))
 	{
 	  /* -stamp & -quit are old AAsm/ObjAsm options which we silently
@@ -500,8 +538,8 @@ main (int argc, char **argv)
   else
     {
       asmAbortValid = true;
-      Symbol_Init ();
-      outputInit (ObjFileName);
+      PreDefReg_Init ();
+      Output_Init (ObjFileName);
 
       /* Do the two pass assembly.  */
       ASM_Assemble (SourceFileName);
@@ -515,21 +553,21 @@ main (int argc, char **argv)
 	    {
 	      asmContinueValid = true;
 	      /* Write the ELF/AOF output.  */
-	      Area_PrepareForPhase (eOutput);
-	      Local_PrepareForPhase (eOutput);
-	      gASM_Phase = eOutput;
+	      Phase_PrepareFor (eOutput);
+	      if (returnExitStatus () == EXIT_SUCCESS)
+		{
 #ifndef NO_ELF_SUPPORT
-	      if (!option_aof)
-		outputElf();
-	      else
+		  if (!option_aof)
+		    Output_ELF ();
+		  else
 #endif
-		outputAof();
+		    Output_AOF ();
+		}
 	    }
 	  asmContinueValid = false;
 	}
     }
-  outputFinish ();
+  Output_Finish ();
   errorFinish ();
-  finished = true; /* No longer enforce removing output file.  */
   return returnExitStatus ();
 }

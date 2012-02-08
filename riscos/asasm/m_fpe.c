@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -52,10 +52,10 @@ typedef enum
 } FPUsage_e;
 
 static FPUsage_e oFPUsage = eFPUsage_Possible;
-static const char *oFPUsageFirstUse_File = NULL; /**< First usage of FP instruction/directive (file).  */
-static int oFPUsageFirstUse_Line = 0; /**< First usage of FP instruction/directive (linenumber).  */
-static const char *oFPUsageNOFP_File = NULL; /**< Place of NOFP (file).  */
-static int oFPUsageNOFP_Line = 0; /**< Place of NOFP (linenumber).  */
+static const char *oFPUsageFirstUse_FileName = NULL; /**< First usage of FP instruction/directive (file).  */
+static unsigned oFPUsageFirstUse_LineNum = 0; /**< First usage of FP instruction/directive (linenumber).  */
+static const char *oFPUsageNOFP_FileName = NULL; /**< Place of NOFP (file).  */
+static unsigned oFPUsageNOFP_LineNum = 0; /**< Place of NOFP (linenumber).  */
 
 /**
  * \return always return false (so it can be used as tail-call).
@@ -73,8 +73,8 @@ CheckFPUsageIsAllowed (void)
     {
       case eFPUsage_Possible:
 	oFPUsage = eFPUsage_AlreadyUsed;
-	oFPUsageFirstUse_File = FS_GetCurFileName ();
-	oFPUsageFirstUse_Line = FS_GetCurLineNumber ();
+	oFPUsageFirstUse_FileName = FS_GetCurFileName ();
+	oFPUsageFirstUse_LineNum = FS_GetCurLineNumber ();
 	break;
 
       case eFPUsage_AlreadyUsed:
@@ -82,7 +82,7 @@ CheckFPUsageIsAllowed (void)
 	
       case eFPUsage_Forbidden:
 	error (ErrorError, "FP usage is not allowed");
-	errorLine (oFPUsageNOFP_File, oFPUsageNOFP_Line, ErrorError, "note: NOFP was mentioned here");
+	errorLine (oFPUsageNOFP_FileName, oFPUsageNOFP_LineNum, ErrorError, "note: NOFP was mentioned here");
 	break;
     }
 
@@ -179,13 +179,13 @@ Fix_ImmFloat (ARMWord ir, ARMFloat im)
 	    optype = op2; m1 = "CNF"; m2 = "CMF";
 	    break;
 
-	  case (M_CMF | EXEPTION_BIT) & M_FMNEM:
-	    ir |= M_CNF | EXEPTION_BIT;
+	  case (M_CMF | EXCEPTION_BIT) & M_FMNEM:
+	    ir |= M_CNF | EXCEPTION_BIT;
 	    optype = op2; m1 = "CMFE"; m2 = "CNFE";
 	    break;
 
-	  case (M_CNF | EXEPTION_BIT) & M_FMNEM:
-	    ir |= M_CMF | EXEPTION_BIT;
+	  case (M_CNF | EXCEPTION_BIT) & M_FMNEM:
+	    ir |= M_CMF | EXCEPTION_BIT;
 	    optype = op2; m1 = "CNFE"; m2 = "CMFE";
 	    break;
 
@@ -967,12 +967,12 @@ c_nofp (void)
   if (oFPUsage == eFPUsage_AlreadyUsed)
     {
       error (ErrorError, "Too late to ban floating point");
-      errorLine (oFPUsageFirstUse_File, oFPUsageFirstUse_Line, ErrorError, "note: first floating point usage was here");
+      errorLine (oFPUsageFirstUse_FileName, oFPUsageFirstUse_LineNum, ErrorError, "note: first floating point usage was here");
     }
   else
     {
-      oFPUsageNOFP_File = FS_GetCurFileName ();
-      oFPUsageNOFP_Line = FS_GetCurLineNumber ();
+      oFPUsageNOFP_FileName = FS_GetCurFileName ();
+      oFPUsageNOFP_LineNum = FS_GetCurLineNumber ();
       oFPUsage = eFPUsage_Forbidden;
     }
 

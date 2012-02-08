@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -688,6 +688,22 @@ Input_MatchString (const char *str)
 }
 
 
+bool
+Input_MatchStringLower (const char *str)
+{
+  int matched = 0;
+  while (input_pos[matched]
+         && tolower ((unsigned)input_pos[matched]) == str[matched])
+    ++matched;
+  if (str[matched] == '\0')
+    {
+      input_pos += matched;
+      return true;
+    }
+  return false;
+}
+
+
 /**
  * Checks if the end of the current keyword has been reached.
  */
@@ -696,29 +712,6 @@ Input_IsEndOfKeyword (void)
 {
   unsigned char c = *input_pos;
   return c == '\0' || isspace (c) || c == ';';
-}
-
-
-/**
- * Try to read a defining local label.
- */
-const char *
-Input_LocalLabel (size_t *ilen)
-{
-  if (!isdigit (*input_pos))
-    {
-      *ilen = 0;
-      return NULL;
-    }
-  const char * const rslt = input_pos;
-  /* Parse one or more digits.  */
-  for (/* */; *input_pos && isdigit ((unsigned char)*input_pos); ++input_pos)
-    /* */;
-  /* Parse routine name (optional).  */
-  for (/* */; *input_pos && (isalnum ((unsigned char)*input_pos) || *input_pos == '_'); ++input_pos)
-    /* */;
-  *ilen = input_pos - rslt;
-  return rslt;
 }
 
 

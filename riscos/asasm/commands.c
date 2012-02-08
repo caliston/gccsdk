@@ -2,7 +2,7 @@
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
  * Copyright (c) 1997 Darren Salt
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -50,6 +50,7 @@
 #include "local.h"
 #include "main.h"
 #include "output.h"
+#include "phase.h"
 #include "put.h"
 #include "symbol.h"
 #include "value.h"
@@ -176,7 +177,7 @@ c_data (void)
  * Reloc updater for DefineInt().
  */
 bool
-DefineInt_RelocUpdater (const char *file, int lineno, ARMWord offset,
+DefineInt_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 			const Value *valueP, void *privData, bool final)
 {
   const DefineInt_PrivData_t *privDataP = (const DefineInt_PrivData_t *)privData;
@@ -198,59 +199,169 @@ DefineInt_RelocUpdater (const char *file, int lineno, ARMWord offset,
       return false;
     }
 
-  for (size_t i = 0; i != valueP->Data.Code.len; ++i)
+  if (!final)
     {
-      const Code *codeP = &valueP->Data.Code.c[i];
-      if (codeP->Tag == CodeOperator)
-	{
-	  if (codeP->Data.op != Op_add)
-	    return true;
-	  continue;
-	}
-      assert (codeP->Tag == CodeValue);
-      const Value *valP = &codeP->Data.value;
+      Put_AlignDataWithOffset (offset, privDataP->size, 0, !privDataP->allowUnaligned);
+      return true;
+    }
 
-      switch (valP->Tag)
+  /* Figure out relocation type(s).
+   * relocs : Number of symbol/area relocations.
+   * relative : Number of relocs against current area.  When strict positive,
+   *   they become normal relocs.  When negate, -relative relocs will be
+   *   PC-relative ones (so -relative <= relocs), the rest of the relocs
+   *   will be ABS ones.
+   */
+  int relocs = 0;
+  int relative = 0;
+    {
+      int factor = 1;
+      for (size_t i = 0; i != valueP->Data.Code.len; ++i)
 	{
-	  case ValueInt:
+	  if (i + 1 != valueP->Data.Code.len
+	      && valueP->Data.Code.c[i + 1].Tag == CodeOperator
+	      && valueP->Data.Code.c[i + 1].Data.op == Op_sub)
+	    factor = -1;
+	  else
+	    factor = 1;
+
+	  const Code *codeP = &valueP->Data.Code.c[i];
+	  if (codeP->Tag == CodeOperator)
 	    {
-	      ARMWord word = Fix_Int (file, lineno, privDataP->size, valP->Data.Int.i);
-	      Put_AlignDataWithOffset (offset, privDataP->size, word, !privDataP->allowUnaligned);
+	      if (codeP->Data.op != Op_add && codeP->Data.op != Op_sub)
+		return true;
+	      continue;
 	    }
-	    break;
+	  assert (codeP->Tag == CodeValue);
+	  const Value *valP = &codeP->Data.value;
 
-	  case ValueSymbol:
+	  switch (valP->Tag)
 	    {
-	      if (!final)
+	      case ValueInt:
+		break;
+
+	      case ValueSymbol:
 		{
-		  Put_AlignDataWithOffset (offset, privDataP->size, 0, !privDataP->allowUnaligned);
-		  return true;
+		  Value value = *valP;
+		  if (Value_ResolveSymbol (&value))
+		    return true;
+		  assert (value.Tag == ValueSymbol);
+		  if (value.Data.Symbol.symbol == areaCurrentSymbol)
+		    {
+		      assert ((value.Data.Symbol.symbol->type & SYMBOL_ABSOLUTE) == 0);
+		      relative += factor * value.Data.Symbol.factor;
+		    }
+		  else
+		    {
+		      if (factor * value.Data.Symbol.factor < 0)
+			return true;
+		      relocs += factor * value.Data.Symbol.factor;
+		    }
+		  break;
 		}
-	      int How;
-	      switch (privDataP->size)
-		{
-		  case 1:
-		    How = HOW2_INIT | HOW2_BYTE;
-		    break;
-		  case 2:
-		    How = HOW2_INIT | HOW2_HALF;
-		    break;
-		  case 4:
-		    How = HOW2_INIT | HOW2_WORD;
-		    break;
-		  default:
-		    assert (0);
-		    break;
-		}
-	      if (Reloc_Create (How, offset, valP) == NULL)
+
+	      default:
 		return true;
 	    }
-	    break;
-
-	  default:
-	    return true;
 	}
     }
+  assert (relocs >= 0);
+  if (relative < 0 && -relative > relocs)
+    return true; /* More PC-rel relocs needed than relocs to be done.  */
+
+  const uint32_t relocOffset = (!privDataP->allowUnaligned) ? (offset + privDataP->size - 1) & -privDataP->size : offset;
+
+  ARMWord armValue = 0;
+    {
+      int factor = 1;
+      for (size_t i = 0; i != valueP->Data.Code.len; ++i)
+	{
+	  if (i + 1 != valueP->Data.Code.len
+	      && valueP->Data.Code.c[i + 1].Tag == CodeOperator
+	      && valueP->Data.Code.c[i + 1].Data.op == Op_sub)
+	    factor = -1;
+	  else
+	    factor = 1;
+
+	  const Code *codeP = &valueP->Data.Code.c[i];
+	  if (codeP->Tag == CodeOperator)
+	    {
+	      if (codeP->Data.op != Op_add && codeP->Data.op != Op_sub)
+		return true;
+	      continue;
+	    }
+	  assert (codeP->Tag == CodeValue);
+	  const Value *valP = &codeP->Data.value;
+
+	  switch (valP->Tag)
+	    {
+	      case ValueInt:
+		armValue += factor * valP->Data.Int.i;
+		break;
+
+	      case ValueSymbol:
+		{
+		  Value value = *valP;
+		  if (Value_ResolveSymbol (&value))
+		    return true;
+		  assert (value.Tag == ValueSymbol);
+		  armValue += factor * value.Data.Symbol.offset;
+		  int how;
+		  switch (privDataP->size)
+		    {
+		      case 1:
+			how = HOW2_INIT | HOW2_BYTE;
+			break;
+		      case 2:
+			how = HOW2_INIT | HOW2_HALF;
+			break;
+		      case 4:
+			how = HOW2_INIT | HOW2_WORD;
+			break;
+		      default:
+			assert (0);
+			break;
+		    }
+		  int numRelocs;
+		  if (value.Data.Symbol.symbol == areaCurrentSymbol)
+		    {
+		      if (relative > 0)
+			{
+			  numRelocs = relative;
+			  relative = 0;
+			}
+		      else
+			numRelocs = 0; /* Nothing to be done.  */
+		    }
+		  else
+		    {
+		      numRelocs = factor * value.Data.Symbol.factor;
+		      relocs -= numRelocs;
+		    }
+		  while (numRelocs--)
+		    {
+		      int how2;
+		      if (relative < 0)
+			{
+			  ++relative;
+			  how2 = how | HOW2_RELATIVE;
+			}
+		      else
+			how2 = how;
+		      if (Reloc_Create (how2, relocOffset, &value) == NULL)
+			return true;
+		    }
+		  break;
+		}
+
+	      default:
+		return true;
+	    }
+	}
+      assert (!relocs && !relative);
+    }
+  armValue = Fix_Int (fileName, lineNum, privDataP->size, armValue);
+  Put_AlignDataWithOffset (offset, privDataP->size, armValue, !privDataP->allowUnaligned);
   
   return false;
 }
@@ -266,7 +377,7 @@ DefineInt (int size, bool allowUnaligned, const char *mnemonic)
   do
     {
       exprBuild ();
-      if (gASM_Phase == ePassOne)
+      if (gPhase == ePassOne)
 	{
 	  const Value *result = codeEval (ValueInt | ValueString | ValueSymbol | ValueCode, NULL);
 	  if (result->Tag == ValueString)
@@ -281,8 +392,8 @@ DefineInt (int size, bool allowUnaligned, const char *mnemonic)
 	    Put_AlignDataWithOffset (areaCurrentSymbol->area.info->curIdx, privData.size, 0, !privData.allowUnaligned);
 	}
       else if (Reloc_QueueExprUpdate (DefineInt_RelocUpdater, areaCurrentSymbol->area.info->curIdx,
-				 ValueInt | ValueString | ValueSymbol | ValueCode,
-				 &privData, sizeof (privData)))
+				      ValueInt | ValueString | ValueSymbol | ValueCode,
+				      &privData, sizeof (privData)))
 	error (ErrorError, "Illegal %s expression", mnemonic);
 
       skipblanks ();
@@ -344,7 +455,7 @@ c_dcd (bool doLowerCase)
 bool
 c_dci (void)
 {
-  Area_AlignTo (areaCurrentSymbol->area.info->curIdx, 4, "instruction");
+  Area_AlignArea (areaCurrentSymbol, 4, "instruction");
   return DefineInt (4, false, "DCI");
 }
 
@@ -352,7 +463,7 @@ c_dci (void)
  * Reloc updater for DefineReal().
  */
 bool
-DefineReal_RelocUpdater (const char *file, int lineno, ARMWord offset,
+DefineReal_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 			 const Value *valueP, void *privData, bool final)
 {
   const DefineReal_PrivData_t *privDataP = (const DefineReal_PrivData_t *)privData;
@@ -390,7 +501,7 @@ DefineReal_RelocUpdater (const char *file, int lineno, ARMWord offset,
 					 !privDataP->allowUnaligned);
 		return true;
 	      }
-	    errorLine (file, lineno, ErrorError, "Can't create relocation");
+	    errorLine (fileName, lineNum, ErrorError, "Can't create relocation");
 	    break;
 
 	  default:
@@ -412,7 +523,7 @@ DefineReal (int size, bool allowUnaligned, const char *mnemonic)
   do
     {
       exprBuild ();
-      if (gASM_Phase == ePassOne)
+      if (gPhase == ePassOne)
 	Put_FloatDataWithOffset (areaCurrentSymbol->area.info->curIdx,
 				 privData.size, 0., !privData.allowUnaligned);
       else
@@ -460,11 +571,11 @@ c_dcfd (bool doLowerCase)
 bool
 c_get (void)
 {
-  char *filename;
-  if ((filename = strdup (Input_Rest ())) == NULL)
+  char *fileName;
+  if ((fileName = strdup (Input_Rest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
-  for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
+  for (cptr = fileName; *cptr && !isspace ((unsigned char)*cptr); cptr++)
     /* */;
   if (*cptr)
     {
@@ -475,8 +586,8 @@ c_get (void)
 	error (ErrorError, "Skipping extra characters '%s' after filename", cptr);
     }
 
-  if (!FS_PushFilePObject (filename) && option_verbose)
-    fprintf (stderr, "Including file \"%s\" as \"%s\"\n", filename, gCurPObjP->name);
+  if (!FS_PushFilePObject (fileName) && option_verbose)
+    fprintf (stderr, "Including file \"%s\" as \"%s\"\n", fileName, FS_GetCurFileName ());
   return false;
 }
 
@@ -486,11 +597,11 @@ c_get (void)
 bool
 c_lnk (void)
 {
-  char *filename;
-  if ((filename = strdup (Input_Rest ())) == NULL)
+  char *fileName;
+  if ((fileName = strdup (Input_Rest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
-  for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
+  for (cptr = fileName; *cptr && !isspace ((unsigned char)*cptr); cptr++)
     /* */;
   if (*cptr)
     {
@@ -509,8 +620,8 @@ c_lnk (void)
   /* Dump literal pool.  */
   Lit_DumpPool ();
 
-  if (!FS_PushFilePObject (filename) && option_verbose)
-    fprintf (stderr, "Linking to file \"%s\" as \"%s\"\n", filename, gCurPObjP->name);
+  if (!FS_PushFilePObject (fileName) && option_verbose)
+    fprintf (stderr, "Linking to file \"%s\" as \"%s\"\n", fileName, FS_GetCurFileName ());
   return false;
 }
 
@@ -532,22 +643,22 @@ c_idfn (void)
 bool
 c_incbin (void)
 {
-  char *filename;
-  if ((filename = strdup (Input_Rest ())) == NULL)
+  char *fileName;
+  if ((fileName = strdup (Input_Rest ())) == NULL)
     errorOutOfMem ();
   char *cptr;
-  for (cptr = filename; *cptr && !isspace ((unsigned char)*cptr); cptr++)
+  for (cptr = fileName; *cptr && !isspace ((unsigned char)*cptr); cptr++)
     /* */;
   *cptr = '\0';
 
   ASFile asFile;
-  FILE *binfp = Include_Get (filename, &asFile, true);
+  FILE *binfp = Include_Get (fileName, &asFile, true);
   if (!binfp)
-    error (ErrorError, "Cannot open file \"%s\"", filename);
+    error (ErrorError, "Cannot open file \"%s\"", fileName);
   else
     {
       if (option_verbose)
-	fprintf (stderr, "Including binary file \"%s\" as \"%s\"\n", filename, asFile.canonName);
+	fprintf (stderr, "Including binary file \"%s\" as \"%s\"\n", fileName, asFile.canonName);
 
       /* Include binary file.  */
       int c;
@@ -556,7 +667,7 @@ c_incbin (void)
       fclose (binfp);
     }
 
-  free (filename);
+  free (fileName);
   ASFile_Free (&asFile);
   return false;
 }
@@ -580,7 +691,7 @@ c_end (void)
 bool
 c_assert (void)
 {
-  if (gASM_Phase == ePassOne)
+  if (gPhase == ePassOne)
     Input_Rest ();
   else
     {
@@ -637,7 +748,7 @@ c_info (void)
     }
 
   /* Give output during pass one.  */
-  if (gASM_Phase == ePassOne)
+  if (gPhase == ePassOne)
     {
       if (giveErr)
 	error (ErrorError, "%.*s", (int)message->Data.String.len, message->Data.String.s);
@@ -648,23 +759,39 @@ c_info (void)
 }
 
 /**
- * Implements OPT.
- */
-bool
-c_opt (void)
-{
-  Input_Rest ();
-  /* Do nothing.  This is for compatiblity with objasm.  */
-  return false;
-}
-
-/**
  * Implements SUBT (subtitle) / TTL (title).
  */
 bool
 c_title (void)
 {
   Input_Rest ();
-  /* Do nothing right now.  This command is for the benefit of error reporting */
+  /* Do nothing right now.  This command is for the benefit of error reporting.  */
+  return false;
+}
+
+/**
+ * Implements AOF : selects AOF output format.
+ */
+bool
+c_aof (void)
+{
+  /* Not supported in AAsm compatibility mode.  */
+  if (option_abs)
+    return true;
+  error (ErrorError, "Directive %s to select output format is not supported.  Use command line option instead.", "AOF");
+  return false;
+}
+
+/**
+ * Implements AOUT : selects the AOUT output format.
+ * Note we do not support the aout output format.
+ */
+bool
+c_aout (void)
+{
+  /* Not supported in AAsm compatibility mode.  */
+  if (option_abs)
+    return true;
+  error (ErrorError, "Directive %s to select output format is not supported.  Use command line option instead.", "AOUT");
   return false;
 }

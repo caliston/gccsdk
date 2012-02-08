@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2010 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,50 +38,6 @@
 #include "option.h"
 #include "put.h"
 #include "targetcpu.h"
-
-/**
- * Implements CODE16.
- * What follows is in pre-UAL notation.
- */
-bool
-c_code16 (void)
-{
-  error (ErrorError, "Thumb code is not yet supported"); /* FIXME */
-  return false;
-}
-
-/**
- * Implements THUMB.
- * What follows in in UAL notation.
- */
-bool
-c_thumb (void)
-{
-  error (ErrorError, "Thumb code is not yet supported"); /* FIXME */
-  return false;
-}
-
-/**
- * Implements THUMBX.
- * What follows is in UAL notation.
- */
-bool
-c_thumbx (void)
-{
-  error (ErrorError, "Thumb-2EE code is not yet supported"); /* FIXME */
-  return false;
-}
-
-/**
- * Implements ARM / CODE32.
- * What follows can be in UAL or pre-UAL notation.
- */
-bool
-c_code32 (void)
-{
-  /* Ignore */
-  return false;
-}
 
 /** DATA none (or optional register) **/
 
@@ -318,7 +274,7 @@ lhsrhs (ARMWord ir)
 bool
 m_cmn (bool doLowerCase)
 {
-  ARMWord cc = optionCondSP (doLowerCase);
+  ARMWord cc = Option_CondSP (doLowerCase);
   if (cc == optionError)
     return true;
   return lhsrhs (cc | M_CMN);
@@ -330,7 +286,7 @@ m_cmn (bool doLowerCase)
 bool
 m_cmp (bool doLowerCase)
 {
-  ARMWord cc = optionCondSP (doLowerCase);
+  ARMWord cc = Option_CondSP (doLowerCase);
   if (cc == optionError)
     return true;
   return lhsrhs (cc | M_CMP);
@@ -342,7 +298,7 @@ m_cmp (bool doLowerCase)
 bool
 m_teq (bool doLowerCase)
 {
-  ARMWord cc = optionCondSP (doLowerCase);
+  ARMWord cc = Option_CondSP (doLowerCase);
   if (cc == optionError)
     return true;
   return lhsrhs (cc | M_TEQ);
@@ -354,7 +310,7 @@ m_teq (bool doLowerCase)
 bool
 m_tst (bool doLowerCase)
 {
-  ARMWord cc = optionCondSP (doLowerCase);
+  ARMWord cc = Option_CondSP (doLowerCase);
   if (cc == optionError)
     return true;
   return lhsrhs (cc | M_TST);

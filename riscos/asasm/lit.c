@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,6 +42,7 @@
 #include "lit.h"
 #include "local.h"
 #include "main.h"
+#include "phase.h"
 #include "put.h"
 #include "reloc.h"
 #include "value.h"
@@ -62,7 +63,7 @@ typedef struct LITPOOL
 {
   struct LITPOOL *next;
   const char *file;	/** Assembler filename where this literal got requested for the first time.  */
-  int lineno;		/** Assembler file linenumber where this literal got requested for the first time.  */
+  unsigned lineNum;	/** Assembler file linenumber where this literal got requested for the first time.  */
 
   unsigned offset;	/** Area offset where the literal got assembled.  */
   Value value;		/** Literal value.  */
@@ -149,7 +150,7 @@ Lit_CreateLiteralSymbol (const Value *valueP, Lit_eSize size)
     errorOutOfMem ();
   litP->next = NULL;
   litP->file = FS_GetCurFileName ();
-  litP->lineno = FS_GetCurLineNumber ();
+  litP->lineNum = FS_GetCurLineNumber ();
   litP->offset = 0;
   litP->value = *valueP; /* We have ownership of valueP, so we're free to pass it on to LitPool struct.  */
   litP->size = size;
@@ -325,13 +326,13 @@ Lit_RegisterInt (const Value *valueP, Lit_eSize size)
 	  assert (litPoolP->status != eNoNeedToAssemble);
 
 	  Symbol *symP = Lit_GetLitOffsetAsSymbol (litPoolP);
-	  assert (gASM_Phase != ePassTwo || (symP->type & SYMBOL_DEFINED) != 0);
+	  assert (gPhase != ePassTwo || (symP->type & SYMBOL_DEFINED) != 0);
 	  assert ((((symP->type & SYMBOL_DEFINED) == 0) && litPoolP->status == eNotYetAssembled)
 	          || (((symP->type & SYMBOL_DEFINED) != 0) && (litPoolP->status == eAssembledPassOne || litPoolP->status == eAssembledPassTwo)));
 	  if ((symP->type & SYMBOL_DEFINED) != 0)
 	    {
 	      assert (symP->value.Tag == ValueInt || symP->value.Tag == ValueSymbol);
-	      assert (gASM_Phase == ePassTwo || areaCurrentSymbol->area.info->curIdx >= litPoolP->offset);
+	      assert (gPhase == ePassTwo || areaCurrentSymbol->area.info->curIdx >= litPoolP->offset);
 	      if (areaCurrentSymbol->area.info->curIdx + 8 > litPoolP->offset + offset + ((isAddrMode3) ? 255 : 4095))
 		continue;
 
@@ -352,7 +353,7 @@ Lit_RegisterInt (const Value *valueP, Lit_eSize size)
 	}
     }
 
-  assert (gASM_Phase == ePassOne);
+  assert (gPhase == ePassOne);
   return Lit_CreateLiteralSymbol (&truncValue, size);
 }
 
@@ -402,13 +403,13 @@ Lit_RegisterFloat (const Value *valueP, Lit_eSize size)
 	  assert (litPoolP->status != eNoNeedToAssemble);
 
 	  Symbol *symP = Lit_GetLitOffsetAsSymbol (litPoolP);
-	  assert (gASM_Phase != ePassTwo || (symP->type & SYMBOL_DEFINED) != 0);
+	  assert (gPhase != ePassTwo || (symP->type & SYMBOL_DEFINED) != 0);
 	  assert ((((symP->type & SYMBOL_DEFINED) == 0) && litPoolP->status == eNotYetAssembled)
 	          || (((symP->type & SYMBOL_DEFINED) != 0) && (litPoolP->status == eAssembledPassOne || litPoolP->status == eAssembledPassTwo)));
 	  if ((symP->type & SYMBOL_DEFINED) != 0)
 	    {
 	      assert (symP->value.Tag == ValueFloat || symP->value.Tag == ValueSymbol);
-	      assert (gASM_Phase == ePassTwo || areaCurrentSymbol->area.info->curIdx >= litPoolP->offset);
+	      assert (gPhase == ePassTwo || areaCurrentSymbol->area.info->curIdx >= litPoolP->offset);
 	      if (areaCurrentSymbol->area.info->curIdx + 8 > litPoolP->offset + 1020)
 		continue;
 	      /* A literal with the same value got already assembled and is in
@@ -424,7 +425,7 @@ Lit_RegisterFloat (const Value *valueP, Lit_eSize size)
 	}
     }
 
-  assert (gASM_Phase == ePassOne);
+  assert (gPhase == ePassOne);
   return Lit_CreateLiteralSymbol (&truncValue, size);
 }
 
@@ -438,18 +439,18 @@ Lit_DumpPool (void)
   printf ("Lit_DumpPool(), area offset 0x%x\n", areaCurrentSymbol->area.info->curIdx);
 #endif
 
-  Status_e statusToLeaveAlone = (gASM_Phase == ePassOne) ? eAssembledPassOne : eAssembledPassTwo;
+  Status_e statusToLeaveAlone = (gPhase == ePassOne) ? eAssembledPassOne : eAssembledPassTwo;
   for (LitPool *litP = areaCurrentSymbol->area.info->litPool; litP != NULL; litP = litP->next)
     {
       if (litP->status == statusToLeaveAlone || litP->status == eNoNeedToAssemble)
 	continue;
-      assert ((gASM_Phase == ePassOne && litP->status == eNotYetAssembled) || (gASM_Phase == ePassTwo && litP->status == eAssembledPassOne));
+      assert ((gPhase == ePassOne && litP->status == eNotYetAssembled) || (gPhase == ePassTwo && litP->status == eAssembledPassOne));
 
       const size_t alignValue = Lit_GetAlignment (litP);
-      if (gASM_Phase == ePassTwo && litP->offset > ((areaCurrentSymbol->area.info->curIdx + alignValue-1) & -alignValue))
+      if (gPhase == ePassTwo && litP->offset > ((areaCurrentSymbol->area.info->curIdx + alignValue-1) & -alignValue))
 	break;
 
-      litP->status = gASM_Phase == ePassOne ? eAssembledPassOne : eAssembledPassTwo;
+      litP->status = gPhase == ePassOne ? eAssembledPassOne : eAssembledPassTwo;
       
       /* Re-evaluate symbol/code.  It might be resolvable by now.  */
       if (litP->value.Tag == ValueSymbol || litP->value.Tag == ValueCode)
@@ -461,7 +462,7 @@ Lit_DumpPool (void)
 	    Value_Assign (&litP->value, constValueP);
 	  else
 	    {
-	      errorLine (litP->file, litP->lineno, ErrorError, "Unsupported literal case");
+	      errorLine (litP->file, litP->lineNum, ErrorError, "Unsupported literal case");
 	      continue;
 	    }
 	}
@@ -510,7 +511,7 @@ Lit_DumpPool (void)
 		    break;
 		}
 	      if (constant != litP->value.Data.Int.i)
-		errorLine (litP->file, litP->lineno, ErrorWarning,
+		errorLine (litP->file, litP->lineNum, ErrorWarning,
 			   "Constant %d has been truncated to %d by the used mnemonic",
 			   litP->value.Data.Int.i, constant);
 
@@ -518,7 +519,7 @@ Lit_DumpPool (void)
 	      if (isImmediate
 		  && (help_cpuImm8s4 (constant) != -1 || help_cpuImm8s4 (~constant) != -1))
 		{
-		  if (gASM_Phase == ePassOne)
+		  if (gPhase == ePassOne)
 		    {
 		      /* The definition of the literal happeded after its use
 			 but before LTORG so we don't have to assemble it
@@ -532,7 +533,7 @@ Lit_DumpPool (void)
 		      /* We do MOV/MVN optimisation but as the literal value
 		         got defined after LTORG, we've already allocated
 		         some bytes which aren't going to be used.  */
-		      errorLine (litP->file, litP->lineno, ErrorWarning,
+		      errorLine (litP->file, litP->lineNum, ErrorWarning,
 			         "Literal loading optimized as MOV/MVN but because of literal value definition after LTORG this results in %zd bytes waste", Lit_GetSizeInBytes (litP));
 		      error (ErrorWarning, "note: LTORG was here");
 		    }
@@ -555,7 +556,7 @@ Lit_DumpPool (void)
 	      if (FPE_ConvertImmediate (constant) != (ARMWord)-1
 		  || FPE_ConvertImmediate (-constant) != (ARMWord)-1)
 		{
-		  if (gASM_Phase == ePassOne)
+		  if (gPhase == ePassOne)
 		    {
 		      /* The definition of the literal happeded after its use
 			 but before LTORG so we don't have to assemble it
@@ -569,7 +570,7 @@ Lit_DumpPool (void)
 		      /* We do MVF/MNF optimisation but as the literal value
 			 got defined after LTORG, we've already allocated
 			 some bytes which aren't going to be used.  */
-		      errorLine (litP->file, litP->lineno, ErrorWarning,
+		      errorLine (litP->file, litP->lineNum, ErrorWarning,
 				 "Literal loading optimized as MVF/MNF but because of literal value definition after LTORG this results in %zd bytes waste", Lit_GetSizeInBytes (litP));
 		      error (ErrorWarning, "note: LTORG was here");
 		    }
@@ -578,26 +579,26 @@ Lit_DumpPool (void)
 	    }
 	    
 	  default:
-	    errorLine (litP->file, litP->lineno, ErrorError, "Unsupported literal case");
+	    errorLine (litP->file, litP->lineNum, ErrorError, "Unsupported literal case");
 	    break;
 	}
 
       /* At this point we're sure we're going to write data in the current
          area.  Mark it as such.  */
-      Area_MarkStartAs (eData);
+      Area_MarkStartAs (areaCurrentSymbol, areaCurrentSymbol->area.info->curIdx, eData);
       
       /* Ensure alignment.  */
       switch (litP->size)
 	{
 	  case eLitIntUHalfWord:
 	  case eLitIntSHalfWord:
-	    Area_AlignTo (areaCurrentSymbol->area.info->curIdx, 2, NULL);
+	    Area_AlignArea (areaCurrentSymbol, 2, NULL);
 	    break;
 
 	  case eLitIntWord:
 	  case eLitFloat:
 	  case eLitDouble:
-	    Area_AlignTo (areaCurrentSymbol->area.info->curIdx, 4, NULL);
+	    Area_AlignArea (areaCurrentSymbol, 4, NULL);
 	    break;
 
 	  default:
@@ -612,7 +613,7 @@ Lit_DumpPool (void)
       Value newSymValue = Value_Symbol (areaCurrentSymbol, 1, areaCurrentSymbol->area.info->curIdx);
       Value_Assign (&symP->value, &newSymValue);
 
-      assert ((gASM_Phase == ePassOne && litP->offset == 0) || (gASM_Phase == ePassTwo && litP->offset == areaCurrentSymbol->area.info->curIdx));
+      assert ((gPhase == ePassOne && litP->offset == 0) || (gPhase == ePassTwo && litP->offset == areaCurrentSymbol->area.info->curIdx));
       litP->offset = areaCurrentSymbol->area.info->curIdx;
 
       switch (litP->size)
@@ -633,7 +634,7 @@ Lit_DumpPool (void)
 	      valuePrint (&litP->value);
 	      printf ("\n");
 #endif
-	      if (gASM_Phase == ePassOne)
+	      if (gPhase == ePassOne)
 		Put_AlignDataWithOffset (litP->offset, privData.size, 0, !privData.allowUnaligned);
 	      else
 		{
@@ -642,7 +643,7 @@ Lit_DumpPool (void)
 		  if (Reloc_QueueExprUpdate (DefineInt_RelocUpdater, litP->offset,
 					     ValueInt | ValueString | ValueSymbol | ValueCode,
 					     &privData, sizeof (privData)))
-		    errorLine (litP->file, litP->lineno, ErrorError, "Illegal %s expression", "literal");
+		    errorLine (litP->file, litP->lineNum, ErrorError, "Illegal %s expression", "literal");
 		}
 	    }
 	    break;
@@ -660,7 +661,7 @@ Lit_DumpPool (void)
 	      valuePrint (&litP->value);
 	      printf ("\n");
 #endif
-	      if (gASM_Phase == ePassOne)
+	      if (gPhase == ePassOne)
 		Put_FloatDataWithOffset (litP->offset, privData.size, 0.,
 					 !privData.allowUnaligned);
 	      else
@@ -669,14 +670,14 @@ Lit_DumpPool (void)
 		  codeValue (&litP->value, true);
 		  if (Reloc_QueueExprUpdate (DefineReal_RelocUpdater, litP->offset,
 					     ValueFloat | ValueSymbol | ValueCode, &privData, sizeof (privData)))
-		    errorLine (litP->file, litP->lineno, ErrorError, "Illegal %s expression", "literal");
+		    errorLine (litP->file, litP->lineNum, ErrorError, "Illegal %s expression", "literal");
 		}
 	    }
 	    break;
 	}
     }
 
-  Area_AlignTo (areaCurrentSymbol->area.info->curIdx, 4, NULL);
+  Area_AlignArea (areaCurrentSymbol, 4, NULL);
 }
 
 

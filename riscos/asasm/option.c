@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,12 +32,15 @@
 #include "input.h"
 #include "main.h"
 #include "option.h"
+#include "targetcpu.h"
 
 /**
  * Try to parse a 2 character condition code.
+ * \return Parsed condition code.  When there is no condition code, optionError
+ * is returned instead.
  */
 static ARMWord
-GetCCode (bool doLowerCase)
+GetCCodeIfThere (bool doLowerCase)
 {
   ARMWord cc = optionError;
   const char c1 = inputLook ();
@@ -73,7 +76,7 @@ GetCCode (bool doLowerCase)
       if (c2 == (doLowerCase ? 'i' : 'I'))
 	cc = HI;
       else if (c2 == (doLowerCase ? 's' : 'S'))
-	cc = HS;
+	cc = CS; /* HS == CS */
     }
   else if (c1 == (doLowerCase ? 'l' : 'L'))
     {
@@ -81,7 +84,7 @@ GetCCode (bool doLowerCase)
       if (c2 == (doLowerCase ? 'e' : 'E'))
 	cc = LE;
       else if (c2 == (doLowerCase ? 'o' : 'O'))
-	cc = LO;
+	cc = CC; /* LO == CC */
       else if (c2 == (doLowerCase ? 's' : 'S'))
 	cc = LS;
       else if (c2 == (doLowerCase ? 't' : 'T'))
@@ -98,7 +101,23 @@ GetCCode (bool doLowerCase)
       if (c2 == (doLowerCase ? 'e' : 'E'))
 	cc = NE;
       else if (c2 == (doLowerCase ? 'v' : 'V'))
-	cc = NV;
+	{
+	  /* Pre-ARMv4, NV is supported.
+	     ARMv4, NV is UNPREDICTABLE.
+	     ARMv5 and later, used for "Unconditional instruction extension space"  */
+	  ARM_eArchitectures arch = Target_GetArch ();
+	  if (arch >= ARCH_ARMv5)
+	    {
+	      /* cc already is optionError.  */
+	    }
+	  else if (arch >= ARCH_ARMv4)
+	    {
+	      error (ErrorWarning, "For ARMv4, use of NV condition code is UNPREDICTABLE");
+	      cc = NV;
+	    }
+	  else
+	    cc = NV;
+	}
     }
   else if (c1 == (doLowerCase ? 'p' : 'P'))
     {
@@ -116,9 +135,22 @@ GetCCode (bool doLowerCase)
 
   if (cc != optionError)
     inputSkipN (2);
-  else
-    cc = AL;
   return cc;
+}
+
+
+/**
+ * Try to parse a 2 character condition code.
+ * \return Parsed condition code.  When there is no condition code, AL
+ * is returned instead.
+ */
+static ARMWord
+GetCCode (bool doLowerCase)
+{
+  ARMWord ccode = GetCCodeIfThere (doLowerCase);
+  if (ccode == optionError)
+    ccode = AL;
+  return ccode;
 }
 
 
@@ -256,19 +288,32 @@ Option_SCond (bool doLowerCase)
 
 /**
  * Used for CMN, CMP, TEQ and TST.
+ *   <condition code> "S" ["P"] : pre-UAL
+ *   <condition code> "P" ["S"] : pre-UAL
+ *   "S" <condition code> : UAL
+ * Support pre-UAL and UAL syntax (order of (deprecated) "S" and condition
+ * code is irrelevant).
  */
 ARMWord
-optionCondSP (bool doLowerCase)
+Option_CondSP (bool doLowerCase)
 {
+  bool gotS = Input_Match (doLowerCase ? 's' : 'S', false);
   ARMWord option = GetCCode (doLowerCase) | PSR_S_FLAG;
-  if (Input_Match (doLowerCase ? 's' : 'S', false) && option_pedantic)
-    error (ErrorInfo, "S is implicit in test instructions");
-  if (Input_Match (doLowerCase ? 'p' : 'P', false))
+  if (!gotS)
+    gotS = Input_Match (doLowerCase ? 's' : 'S', false);
+  bool gotP = Input_Match (doLowerCase ? 'p' : 'P', false);
+  if (!gotS)
+    gotS = Input_Match (doLowerCase ? 's' : 'S', false);
+
+  if (gotS && option_pedantic)
+    error (ErrorInfo, "%c suffix on comparison instruction is DEPRECATED", doLowerCase ? 's' : 'S');
+  if (gotP)
     {
       option |= PSR_P_FLAG;
       if (gOptionAPCS & APCS_OPT_32BIT)
 	error (ErrorWarning, "TSTP/TEQP/CMNP/CMPP inadvisable in 32-bit PC configurations");
     }
+
   return IsEndOfKeyword (option);
 }
 
@@ -283,27 +328,21 @@ optionCondB (bool doLowerCase)
 }
 
 
-/**
- * Supports {<cond>} [ "" | "T" | "B" | "BT" | "D" | "H" | "SB" | "SH" ]
- * in LDR and STR.
- * Note STR<cond>SB and STR<cond>SH are not supported, use STR<cond>B and
- * STR<cond>H instead.
- */
-ARMWord
-optionCondBT (bool isStore, bool doLowerCase)
+static ARMWord
+Option_LdrStrType (bool isStore, bool doLowerCase)
 {
-  ARMWord option = GetCCode (doLowerCase);
+  ARMWord option;
   if (Input_Match (doLowerCase ? 's' : 'S', false))
     {
       if (isStore)
-	option = optionError;
+	option = optionError; /* "STR<cond>S<...>" is not possible.  */
       else
 	{
 	  /* "LDR<cond>SB" or "LDR<cond>SH".  */
 	  if (Input_Match (doLowerCase ? 'h' : 'H', false))
-	    option |= H_FLAG | 0x90 | S_FLAG | L_FLAG; /* "LDR<cond>SH".  */
+	    option = H_FLAG | 0x90 | S_FLAG | L_FLAG; /* "LDR<cond>SH".  */
 	  else if (Input_Match (doLowerCase ? 'b' : 'B', false))
-	    option |= 0x90 | S_FLAG | L_FLAG; /* "LDR<cond>SB".  */
+	    option = 0x90 | S_FLAG | L_FLAG; /* "LDR<cond>SB".  */
 	  else
 	    option = optionError;
 	}
@@ -313,13 +352,13 @@ optionCondBT (bool isStore, bool doLowerCase)
       /* "" | "T" | "B" | "BT" | "D" | "H" */
       if (Input_Match (doLowerCase ? 'd' : 'D', false))
 	{ /* "D". Address mode 3.  */
-	  option |= 0x90 | S_FLAG;
+	  option = 0x90 | S_FLAG;
 	  if (isStore)
 	    option |= H_FLAG;
 	}
       else if (Input_Match (doLowerCase ? 'h' : 'H', false))
 	{ /* "H". Address mode 3.  */
-	  option |= 0x90 | H_FLAG;
+	  option = 0x90 | H_FLAG;
 	  if (!isStore)
 	    option |= L_FLAG;
 	}
@@ -327,8 +366,10 @@ optionCondBT (bool isStore, bool doLowerCase)
 	{
 	  if (Input_Match (doLowerCase ? 'b' : 'B', false))
 	    { /* "B", "BT". Address mode 2.  */
-	      option |= B_FLAG;
+	      option = B_FLAG;
 	    }
+	  else
+	    option = 0;
 
 	  /* "", "T", "B", "BT". Address mode 2.  */
 	  option |= 1<<26;
@@ -338,6 +379,34 @@ optionCondBT (bool isStore, bool doLowerCase)
 	    option |= W_FLAG;
 	}
     }
+
+  return option;
+}
+
+/**
+ * Pre-UAL:
+ *   Supports {<cond>} [ "" | "T" | "B" | "BT" | "D" | "H" | "SB" | "SH" ]
+ *   in LDR and STR.
+ *   Note STR<cond>SB and STR<cond>SH are not supported, use STR<cond>B and
+ *   STR<cond>H instead.
+ * UAL:
+ *   Supports [ "" | "T" | "B" | "BT" | "D" | "H" | "SB" | "SH" ] {<cond>}
+ *   in LDR and STR.
+ */
+ARMWord
+Option_LdrStrCondAndType (bool isStore, bool doLowerCase)
+{
+  ARMWord option = GetCCodeIfThere (doLowerCase);
+  if (option == optionError)
+    {
+      /* No condition code recognised, try to parse <type> + [ <cond> ]
+	 instead.  */
+      option = Option_LdrStrType (isStore, doLowerCase);
+      if (option != optionError)
+	option |= GetCCode (doLowerCase);
+    }
+  else
+    option |= Option_LdrStrType (isStore, doLowerCase);
   
   return IsEndOfKeyword (option);
 }
@@ -365,7 +434,7 @@ optionCondLdmStm (bool isLDM, bool doLowerCase)
     return optionError;
   ARMWord stackMode = GetStackMode (isLDM, doLowerCase);
   if (stackMode == optionError)
-    stackMode = (isLDM) ? STACKMODE_IA : STACKMODE_DB;
+    stackMode = STACKMODE_IA;
   return IsEndOfKeyword (option | stackMode);
 }
 
@@ -441,7 +510,7 @@ optionLinkCond (bool doLowerCase)
       return IsEndOfKeyword (LE);
     }
   if (Input_Match (doLowerCase ? 'o' : 'O', false))
-    return IsEndOfKeyword (LO); /* Only b.lo possible */
+    return IsEndOfKeyword (CC); /* Only b.lo possible.  LO == CC */
   if (Input_Match (doLowerCase ? 's' : 'S', false))
     return IsEndOfKeyword (LS); /* Only b.ls possible */
   if (Input_Match (doLowerCase ? 't' : 'T', false))
@@ -460,7 +529,7 @@ optionExceptionCond (bool doLowerCase)
   if (Input_Match (doLowerCase ? 'q' : 'Q', false))
     return IsEndOfKeyword (EQ); /* Only cmf.eq */
   /* Only cmfe.CC */
-  return IsEndOfKeyword (GetCCode (doLowerCase) | EXEPTION_BIT);
+  return IsEndOfKeyword (GetCCode (doLowerCase) | EXCEPTION_BIT);
 }
 
 
