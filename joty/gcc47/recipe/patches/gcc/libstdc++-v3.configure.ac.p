@@ -1,6 +1,6 @@
 Index: libstdc++-v3/configure.ac
 ===================================================================
---- libstdc++-v3/configure.ac	(revision 180696)
+--- libstdc++-v3/configure.ac	(revision 184284)
 +++ libstdc++-v3/configure.ac	(working copy)
 @@ -88,6 +88,11 @@
  # up critical shell variables.
@@ -29,7 +29,7 @@ Index: libstdc++-v3/configure.ac
  GLIBCXX_ENABLE_ATOMIC_BUILTINS
  GLIBCXX_ENABLE_DECIMAL_FLOAT
  GLIBCXX_ENABLE_INT128_FLOAT128
-@@ -165,7 +177,10 @@
+@@ -166,7 +178,10 @@
  GLIBCXX_ENABLE_LIBSTDCXX_TIME([no])
  
  # For gthread support
