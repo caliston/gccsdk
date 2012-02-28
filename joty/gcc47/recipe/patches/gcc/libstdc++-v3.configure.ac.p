@@ -1,6 +1,6 @@
 Index: libstdc++-v3/configure.ac
 ===================================================================
---- libstdc++-v3/configure.ac	(revision 184284)
+--- libstdc++-v3/configure.ac	(revision 184613)
 +++ libstdc++-v3/configure.ac	(working copy)
 @@ -88,6 +88,11 @@
  # up critical shell variables.
@@ -29,15 +29,15 @@ Index: libstdc++-v3/configure.ac
  GLIBCXX_ENABLE_ATOMIC_BUILTINS
  GLIBCXX_ENABLE_DECIMAL_FLOAT
  GLIBCXX_ENABLE_INT128_FLOAT128
-@@ -166,7 +178,10 @@
- GLIBCXX_ENABLE_LIBSTDCXX_TIME([no])
+@@ -335,7 +347,10 @@
+ GLIBCXX_CONFIGURE_TESTSUITE
  
- # For gthread support
+ # For gthread support.  Depends on GLIBCXX_ENABLE_SYMVERS.
 -GLIBCXX_CHECK_GTHREADS
 +# SCL does not have thread support:
 +if [[ ! -n "`echo $CC 2>&1 | grep -- -mlibscl`" ]]; then
 +  GLIBCXX_CHECK_GTHREADS
 +fi
  
- AC_LC_MESSAGES
+ # Define documentation rules conditionally.
  
