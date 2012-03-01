@@ -139,7 +139,7 @@ strong_alias (fseek, fseeko)
 int
 fseeko64 (FILE *stream, __off64_t offset, int w)
 {
-  if (offset >= (__off_t)-1)
+  if (offset >= -1U && (__off_t)(offset >> 32) != -1U)
     return __set_errno (EOVERFLOW);
   return fseek (stream, (__off_t)offset, w);
 }
