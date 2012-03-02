@@ -1,3 +1,160 @@
+Sat Mar  3 00:28:46 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/nop_new_style.s: Rename to...
+	* regression/tests_pass/instr_nop_new_style.s: ...this.  Add Thumb
+	test.
+	* regression/tests_pass/nop_old_style.s: Rename to...
+	* regression/tests_pass/instr_nop_old_style.s: ...this.
+	* regression/tests_pass/instr_und.s: Add.
+	* regression/tests_pass/builtinvar_linenum.s: Improve comment.
+	* put.c, put.h (Put_InsWithOffset, Put_Ins): Add 'size' parameter.
+	* decode.c (po_void, po_void_pm): Change return value type back to bool.
+	(decode_table_t): Add updateMap field.
+	(oDecodeTable): Update.  Add UND.
+	(IsARMOrThumbInstr): Add.
+	(decode): Fix assert.  Follow po_void/po_void_pm/decode_table_t changes.
+	* decode.h (Rslt_e): Remove.
+	* m_cpuctrl.c, m_cpuctrl.h, help_cop.c, m_cop.c, m_cop.h, m_cpumem.c,
+	m_cpumem.h, m_cpu.c, m_cpu.h, m_fpe.c, m_fpe.h, m_copmem.c, m_copmem.h,
+	directive_data.c, directive_data.h: Follow above changes.
+	* directive_data.c (DefineInt_RelocUpdater, DefineInt): Support swapHalfwords.
+	(c_dci): Support 2 byte Thumb instructions.
+	* directive_data.h (DefineInt_PrivData_t): Add swapHalfwords field.
+	* lit.c (Lit_DumpPool): Follow DefineInt_PrivData_t change.
+	* option.c (Option_GetInstrWidth): Fix implementation.
+	(IsEndOfKeyword): Fix width specification parsing.
+	* area.c (Area_MarkStartAs): Simplify.
+	* m_cpu.c (m_nop): Support Thumb.
+	(m_und): Add.
+	* targetcpu.c, targetcpu.h (Target_CheckFeature): Add dummy
+	implementation
+	* targetcpu.h (Arch_Feature_e): Add.
+
+Fri Mar  2 16:16:18 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/symbols.s: Add test on redefining same symbol.
+	* regression/tests_pass/variables.s: Add test with register cases.
+	* regression/tests_pass/operator_relational.s: Reimplement using
+	macro.  Add test case for comparing addr.
+	* symbol.c (Symbol_Define): Only give error on redefining symbols
+	for non-absolute symbols. 
+	* directive_symbol.c: Revert ValueRegister, registers are acting like
+	integers.  Introduce Value::Data.Int.type.  Renamed eRegType_* to
+	eIntType_*.
+	* code.c, area.c, value.c, value.h, predef_reg.c, get.c, asm.c,
+	eval.c, lit.c: Likewise.
+	* eval.c (COMPARE): Put test on ValueAddr back in.
+
+Wed Feb 29 00:58:58 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* configure.ac (AC_CHECK_FUNCS): Add strcasecmp.
+	* area.c, input.c: Add include alloca.h.
+	* strdup.c (strncasecmp): Character comparison should happen on
+	lowercase characters.
+	(strcasecmp): Add.
+	* phase.h, predef_reg.h: Add terminating newline.
+
+Sun Feb 12 23:34:02 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+  	* regression/tests_pass/operator_reverse_cc.s: Add.
+	* regression/tests_pass/operator_cc_encoding.s: Add.
+	* regression/tests_pass/operator_rconst.s: Add.
+	* regression/tests_pass/operator_string.s: Add :LOWERCASE: and
+	:UPPERCASE: tests.
+	* regression/tests_pass/operator_relational.s: Add integer vs 1
+	character string tests. Add register tests. Move :LEOR: test to...
+	* regression/tests_pass/operator_boolean.s: ...here.
+	* lexAcorn.c, lexAcorn.h: Merge into...
+	* lex.c: ...this.
+	(Lex_OperatorAsStr): Add support for eOp_LowerCase, eOp_UpperCase,
+	eOp_RevCC, eOp_CCEnc and eOp_RConst.
+	* lex.h: Rename Op_* to eOp_*, Operator to Operator_e.
+	* Makefile.am: Follow lexAcorn.c merge.
+	* decode.c (oDecodeTable): DCI has now eCB_VoidPMatch callback.
+	(decode): Only give Thumb unsupported warning once.
+	* code.c, code.h, m_cpuctrl.c, help_cop.c, m_cop.cm,
+	directive_storagemap.c,	m_cpumem.c, directive_data.c, m_fpe.c,
+	m_copmem.c, m_cpu.c, eval.c, eval.h, lex.c: Follow optionError to
+	kOption_NotRecognized rename. Follow Op_* to eOp_* renames. Follow
+	Operator to Operator-e rename.
+	* directive_data.c (DefineInt_RelocUpdater, DefineInt): unsigned char
+	cast value before calling Put_AlignDataWithOffset.
+	(c_dci): Support .W postfix.
+	* directive_data.h (c_dci): Follow API change.
+	* option.c, option.h (optionError): Rename to kOption_NotRecognized.
+	(Option_GetInstrWidth): Add.
+	(IsEndOfKeyword): Allow instruction width specifier to terminate
+	keyword as well.
+	* expr.c (prim): LexOperator: Remove Op_none test.
+	* eval.c (GetCCode): Add.
+	(evalUnop): Add support for :LOWERCASE:, :UPPERCASE:, :REVERSE_CC:,
+	:CC_ENCODING:, :RCONST:
+	(COMPARE): Remove comparisions between ValueAddr.
+	(evalBinop): Simplify eOp_EQ and eOp_NE.
+	* value.c, value.h (ValueRegister): Add.
+	* directive_symbol.c (Define, c_cn, c_fn, c_rn, c_cp): Teach about
+	ValueRegister.
+	* symbol.h (SYMBOL_CPUREG,SYMBOL_FPUREG,SYMBOL_NEONQUADREG,
+	SYMBOL_NEONDOUBLEREG,SYMBOL_VFPSINGLEREG,SYMBOL_COPREG,SYMBOL_COPNUM,
+	SYMBOL_GETREGTYPE): Remove.
+	* symbol.c (Symbol_Define, symbolPrint): Follow SYMBOL_* removal.
+
+Sun Feb 12 14:35:31 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/record_basic.s: Renamed to...
+	* regression/tests_pass/storagemap_basic.s: ...this.
+	* regression/tests_pass/register_based_map.s: Renamed to...
+	* regression/tests_pass/storagemap_register.s: ...this.
+	* storage.c, storage.h: Renamed to...
+	* directive_storagemap.c, directive_storagemap.h: ...these.
+	* code.c, decode.c, Makefile.am: Follow renames.
+
+Sun Feb 12 14:08:35 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/reserve_space.s: Add.
+	* put.c (ReportOverflow): Add.
+	(Put_DataWithOffset): Add times parameter. Use ReportOverflow.
+	(Put_InsWithOffset): Make use of Put_DataWithOffset.
+	* put.h (Put_DataWithOffset): Add times parameter.
+	* decode.c (oDecodeTable): Add FILL.
+	* area.c, area.h (c_align, c_reserve): Move to...
+	* directive_data.c, directive.h: ...here.
+	(DefineInt_RelocUpdater, DefineInt): Follow Put_AlignDataWithOffset API
+	change.
+	(ReserveSpace): Add.
+	(c_fill): Add.
+	* lit.c (Lit_DumpPool): Follow Put_AlignDataWithOffset API change.
+
+Sat Feb 11 18:01:47 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c, commands.h: Refactor into...
+	* directive_data.c, directive_data.h: ...this and...
+	* directive_file.c, directive_file.h: ...this and...
+	* directive_misc.c, directive_misc.h: ...this and...
+	* directive_symbol.c, directive_symbol.h: ...this.
+	* Makefile.am, lit.c, decode.c: Follow changes.
+	* area.c, macros.c, whileif.c: Remove useless include commands.h.
+
+Sat Feb 11 17:08:51 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.h (Rslt_e): Add.
+	* decode.c (po_void, po_void_lc): Return Rslt_e iso bool.
+	(po_void_lc): Rename to po_void_pm.
+	(po_nolex): Add.
+	(decode_table_t::result): Remove.
+	(decode_table_t::instr): Add.
+	(oDecodeTable): Follow changes.
+	* commands.c, commands.h, m_cpuctrl.c, m_cop.c, m_cpuctrl.h, m_cpumem.c,
+	m_cop.h, m_cpumem.h, area.c, area.h, m_fpe.c, m_fpe.h, m_copmem.c,
+	m_copmem.h, m_cpu.c, m_cpu.h: Follow changes.
+
+Sat Feb 11 13:49:29 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): !, ALIGN, AOF, AOUT, AREA, ARM, ASSERT,
+	CODE16, CODE32, ENTRY, EXPORT, EXTERN, GET, GLOBAL, IDFN, IMPORT,
+	INCLUDE, INFO, KEEP, LTORG, OPT, ORG, PRESERVE8, STRONG, SUBT, THUMBX,
+	THUMBX, TTL: Don't allow a label in front of these directives.
+
 Mon Feb  6 04:08:14 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
 
 	* regression/tests_pass/builtinvar_codesize_config.s: Add.

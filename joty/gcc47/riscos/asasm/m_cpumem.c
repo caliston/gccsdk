@@ -69,7 +69,7 @@ DestMem_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
       const Code *codeP = &valueP->Data.Code.c[i];
       if (codeP->Tag == CodeOperator)
 	{
-	  if (codeP->Data.op != Op_add)
+	  if (codeP->Data.op != eOp_Add)
 	    return true;
 	  continue;
 	}
@@ -103,7 +103,7 @@ DestMem_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 		}
 	      else
 		return true;
-	      Put_InsWithOffset (offset, newIR);
+	      Put_InsWithOffset (offset, 4, newIR);
 	      break;
 	    }
 
@@ -113,7 +113,7 @@ DestMem_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 	      if (isAddrMode3)
 		ir |= B_FLAG;
 	      ir = Fix_CPUOffset (fileName, lineNum, ir, valP->Data.Addr.i);
-	      Put_InsWithOffset (offset, ir);
+	      Put_InsWithOffset (offset, 4, ir);
 	      break;
 	    }
 
@@ -212,7 +212,7 @@ dstmem (ARMWord ir, const char *mnemonic)
 			codeInit ();
 			codeAddr (baseReg, 0);
 			codeValue (&symValue, false);
-			codeOperator (Op_add);
+			codeOperator (eOp_Add);
 			Value_Assign (&symValue, codeEval (ValueAddr | ValueSymbol | ValueCode, &offset));
 			if (symValue.Tag != ValueIllegal)
 			  break;
@@ -368,7 +368,7 @@ dstmem (ARMWord ir, const char *mnemonic)
 	}
     }
 
-  Put_Ins (ir);
+  Put_Ins (4, ir);
 
   if (gPhase != ePassOne)
     {
@@ -412,7 +412,7 @@ bool
 m_ldr (bool doLowerCase)
 {
   ARMWord cc = Option_LdrStrCondAndType (false, doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   return dstmem (cc, "LDR");
 }
@@ -442,7 +442,7 @@ LdrStrEx (bool isLoad, bool doLowerCase)
     type = wtype;
 
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
 
   if (type == wtype)
@@ -510,9 +510,9 @@ LdrStrEx (bool isLoad, bool doLowerCase)
       return false;
     }
   if (isLoad)
-    Put_Ins (cc | 0x00100F9F | type | (regN<<16) | (regT<<12));
+    Put_Ins (4, cc | 0x00100F9F | type | (regN<<16) | (regT<<12));
   else
-    Put_Ins (cc | 0x00000F90 | type | (regN<<16) | (regD<<12) | regT);
+    Put_Ins (4, cc | 0x00000F90 | type | (regN<<16) | (regD<<12) | regT);
   return false;
 }
 
@@ -554,7 +554,7 @@ bool
 m_str (bool doLowerCase)
 {
   ARMWord cc = Option_LdrStrCondAndType (true, doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   return dstmem (cc, "STR");
 }
@@ -581,7 +581,7 @@ m_clrex (void)
 {
   if (Target_GetArch () != ARCH_ARMv6K)
     Target_NeedAtLeastArch (ARCH_ARMv7);
-  Put_Ins (0xF57FF01F);
+  Put_Ins (4, 0xF57FF01F);
   return false;
 }
 
@@ -673,7 +673,7 @@ m_pl (bool doLowerCase)
       if (!Input_Match (']', true))
 	error (ErrorError, "Expected closing ]");
     }
-  Put_Ins(ir);
+  Put_Ins (4, ir);
   return false;
 }
 
@@ -781,10 +781,9 @@ dstreglist (ARMWord ir, bool isPushPop)
 	error (ErrorInfo, "Writeback together with force user");
       ir |= FORCE_FLAG;
     }
-// A little bit too spammy for the legacy code.  Make this optional ?
-//  if ((ir & L_FLAG) && (1 << 15) && Target_GetArch() == ARCH_ARMv4T)
-//    error (ErrorWarning, "ARMv4T does not switch ARM/Thumb state when LDM/POP specifies PC (use BX instead)");
-  Put_Ins (ir);
+  if (option_pedantic && (ir & L_FLAG) && (1 << 15) && Target_GetArch() == ARCH_ARMv4T)
+    error (ErrorWarning, "ARMv4T does not switch ARM/Thumb state when LDM/POP specifies PC (use BX instead)");
+  Put_Ins (4, ir);
 }
 
 
@@ -795,7 +794,7 @@ bool
 m_ldm (bool doLowerCase)
 {
   ARMWord cc = optionCondLdmStm (true, doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstreglist (cc | 0x08100000, false);
   return false;
@@ -811,7 +810,7 @@ bool
 m_pop (bool doLowerCase)
 {
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstreglist (cc | STACKMODE_IA | 0x08100000, true);
   return false;
@@ -825,7 +824,7 @@ bool
 m_stm (bool doLowerCase)
 {
   ARMWord cc = optionCondLdmStm (false, doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstreglist (cc | 0x08000000, false);
   return false;
@@ -841,7 +840,7 @@ bool
 m_push (bool doLowerCase)
 {
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstreglist (cc | STACKMODE_DB | 0x08000000, true);
   return false;
@@ -855,7 +854,7 @@ bool
 m_swp (bool doLowerCase)
 {
   ARMWord cc = optionCondB (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
 
   Target_NeedAtLeastArch (ARCH_ARMv2a);
@@ -877,7 +876,7 @@ m_swp (bool doLowerCase)
   skipblanks ();
   if (!Input_Match (']', true))
     error (ErrorError, "Inserting missing ']'");
-  Put_Ins (ir);
+  Put_Ins (4, ir);
   return false;
 }
 
@@ -963,7 +962,7 @@ m_dmb (void)
 {
   Target_NeedAtLeastArch (ARCH_ARMv7);
   Barrier_eType bl = GetBarrierType ();
-  Put_Ins (0xF57FF050 | bl);
+  Put_Ins (4, 0xF57FF050 | bl);
   return false;
 }
 
@@ -977,7 +976,7 @@ m_dsb (void)
 {
   Target_NeedAtLeastArch (ARCH_ARMv7);
   Barrier_eType bl = GetBarrierType ();
-  Put_Ins (0xF57FF040 | bl);
+  Put_Ins (4, 0xF57FF040 | bl);
   return false;
 }
 
@@ -993,7 +992,7 @@ m_isb (void)
   Barrier_eType bl = GetBarrierType ();
   if (option_pedantic && bl != BL_eSY)
     error (ErrorWarning, "Using reserved barrier type");
-  Put_Ins (0xF57FF060 | bl);
+  Put_Ins (4, 0xF57FF060 | bl);
   return false;
 }
 
@@ -1006,7 +1005,7 @@ bool
 m_rfe (bool doLowerCase)
 {
   ARMWord option = Option_CondRfeSrs (true, doLowerCase);
-  if (option == optionError)
+  if (option == kOption_NotRecognized)
     return true;
 
   Target_NeedAtLeastArch (ARCH_ARMv6);
@@ -1022,7 +1021,7 @@ m_rfe (bool doLowerCase)
 
   if (updateStack)
     option |= W_FLAG;
-  Put_Ins (0xF8100A00 | option | (regN<<16));
+  Put_Ins (4, 0xF8100A00 | option | (regN<<16));
   return false;
 }
 
@@ -1036,7 +1035,7 @@ bool
 m_srs (bool doLowerCase)
 {
   ARMWord option = Option_CondRfeSrs (false, doLowerCase);
-  if (option == optionError)
+  if (option == kOption_NotRecognized)
     return true;
 
   Target_NeedAtLeastArch (ARCH_ARMv6);
@@ -1091,7 +1090,7 @@ m_srs (bool doLowerCase)
 
   if (updateStack)
     option |= W_FLAG;
-  Put_Ins (0xF84D0500 | option | mode);
+  Put_Ins (4, 0xF84D0500 | option | mode);
 
   return false;
 }

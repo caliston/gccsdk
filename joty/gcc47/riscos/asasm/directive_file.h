@@ -2,7 +2,7 @@
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
  * Copyright (c) 2004-2012 GCCSDK Developers
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -17,21 +17,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
- * put.h
+ * directive_file.h
  */
 
-#ifndef put_header_included
-#define put_header_included
+#ifndef directive_file_header_included
+#define directive_file_header_included
 
-#include "global.h"
+#include <stdbool.h>
 
-void Put_Data (unsigned size, ARMWord data);
-void Put_AlignDataWithOffset (uint32_t offset, unsigned size, ARMWord data,
-			      uint32_t times, bool alignBefore);
-void Put_FloatDataWithOffset (uint32_t offset, unsigned size, ARMFloat data, bool alignBefore);
-void Put_Ins (unsigned size, ARMWord ins);
-void Put_InsWithOffset (uint32_t offset, unsigned size, ARMWord data);
-
-ARMWord GetWord (uint32_t offset);
+bool c_end (void);
+bool c_get (void);
+bool c_incbin (void);
+bool c_lnk (void);
 
 #endif

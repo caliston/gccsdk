@@ -18,149 +18,92 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
- * commands.c
+ * directive_data.c
  */
 
 #include "config.h"
 
 #include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
-#ifdef HAVE_STDINT_H
-#  include <stdint.h>
-#elif HAVE_INTTYPES_H
-#  include <inttypes.h>
-#endif
-#include <math.h>
 
 #include "area.h"
 #include "code.h"
-#include "commands.h"
-#include "common.h"
+#include "directive_data.h"
 #include "error.h"
 #include "expr.h"
-#include "filestack.h"
 #include "fix.h"
-#include "include.h"
 #include "input.h"
-#include "lex.h"
-#include "local.h"
-#include "main.h"
-#include "output.h"
+#include "option.h"
 #include "phase.h"
 #include "put.h"
-#include "symbol.h"
-#include "value.h"
+#include "state.h"
+
 
 /**
- * Define given symbol with what's located at the parser.  Fail when the
- * symbol is already defined with a value different than parsed.
+ * Implements ALIGN [<power-of-2> [, <offset>]]
  */
-static bool
-Define (const char *msg, Symbol *sym, unsigned symType, ValueTag legal)
+bool
+c_align (void)
 {
-  bool fail;
-  if (sym == NULL)
+  skipblanks ();
+  uint32_t alignValue, offsetValue;
+  if (Input_IsEolOrCommentStart ())
     {
-      error (ErrorError, "Missing label before %s", msg);
-      fail = true;
+      alignValue = 1<<2;
+      offsetValue = 0;
     }
   else
     {
-      const Value *value = exprBuildAndEval (legal);
-      if (value->Tag == ValueIllegal)
+      /* Determine align value */
+      const Value *value = exprBuildAndEval (ValueInt);
+      if (value->Tag == ValueInt)
 	{
-	  error (ErrorError, "Illegal %s", msg);
-	  fail = true;
+	  alignValue = value->Data.Int.i;
+	  if (alignValue <= 0 || (alignValue & (alignValue - 1)))
+	    {
+	      error (ErrorError, "ALIGN value is not a power of two");
+	      alignValue = 1<<0;
+	    }
 	}
       else
-	fail = Symbol_Define (sym, SYMBOL_ABSOLUTE | symType, value);
-    }
-  return fail;
-}
-
-/**
- * Implements EQU and *.
- */
-bool
-c_equ (Symbol *symbol)
-{
-  Define ("* or EQU", symbol, 0, ValueAll);
-  return false;
-}
-
-/**
- * Implements FN.
- */
-bool
-c_fn (Symbol *symbol)
-{
-  if (!Define ("float register", symbol, SYMBOL_FPUREG, ValueInt))
-    {
-      int no = symbol->value.Data.Int.i;
-      if (no < 0 || no > 7)
 	{
-	  symbol->value.Data.Int.i = 0;
-	  error (ErrorError, "Illegal %s register %d (using 0)", "FPU", no);
+	  error (ErrorError, "Unrecognized ALIGN value");
+	  alignValue = 1<<0;
+	}
+
+      /* Determine offset value */
+      skipblanks ();
+      if (Input_IsEolOrCommentStart ())
+	offsetValue = 0;
+      else if (Input_Match (',', false))
+	{
+	  const Value *valueO = exprBuildAndEval (ValueInt);
+	  if (valueO->Tag == ValueInt)
+	    offsetValue = ((uint32_t)valueO->Data.Int.i) % alignValue;
+	  else
+	    {
+	      error (ErrorError, "Unrecognized ALIGN offset value");
+	      offsetValue = 0;
+	    }
+	}
+      else
+	{
+	  error (ErrorError, "Unrecognized ALIGN offset value");
+	  offsetValue = 0;
 	}
     }
-  return false;
-}
 
-/**
- * Implements RN.
- */
-bool
-c_rn (Symbol *symbol)
-{
-  if (!Define ("register", symbol, SYMBOL_CPUREG, ValueInt))
-    {
-      int no = symbol->value.Data.Int.i;
-      if (no < 0 || no > 15)
-	{
-	  symbol->value.Data.Int.i = 0;
-	  error (ErrorError, "Illegal %s register %d (using 0)", "CPU", no);
-	}
-    }
-  return false;
-}
+  /* We have to align on alignValue + offsetValue */
 
-/**
- * Implements CN.
- */
-bool
-c_cn (Symbol *symbol)
-{
-  if (!Define ("coprocessor register", symbol, SYMBOL_COPREG, ValueInt))
-    {
-      int no = symbol->value.Data.Int.i;
-      if (no < 0 || no > 15)
-	{
-	  symbol->value.Data.Int.i = 0;
-	  error (ErrorError, "Illegal %s register %d (using 0)", "coprocessor", no);
-	}
-    }
-  return false;
-}
+  uint32_t curPos = (areaCurrentSymbol->area.info->type & AREA_ABS) ? Area_GetBaseAddress (areaCurrentSymbol) : 0;
+  curPos += areaCurrentSymbol->area.info->curIdx;
+  uint32_t newPos = ((curPos - offsetValue + alignValue - 1) / alignValue)*alignValue + offsetValue;  
+  uint32_t bytesToStuff = newPos - curPos;
 
-/**
- * Implements CP.
- */
-bool
-c_cp (Symbol *symbol)
-{
-  if (!Define ("coprocessor number", symbol, SYMBOL_COPNUM, ValueInt))
-    {
-      int no = symbol->value.Data.Int.i;
-      if (no < 0 || no > 15)
-	{
-	  symbol->value.Data.Int.i = 0;
-	  error (ErrorError, "Illegal coprocessor number %d (using 0)", no);
-	}
-    }
+  Area_EnsureExtraSize (areaCurrentSymbol, bytesToStuff);
+
+  while (bytesToStuff--)
+    areaCurrentSymbol->area.info->image[areaCurrentSymbol->area.info->curIdx++] = 0;
+
   return false;
 }
 
@@ -195,13 +138,16 @@ DefineInt_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
       const char *str = valueP->Data.Code.c[0].Data.value.Data.String.s;
       /* Lay out a string.  */
       for (size_t i = 0; i != len; ++i)
-	Put_AlignDataWithOffset (offset + i, privDataP->size, str[i], !privDataP->allowUnaligned);
+	Put_AlignDataWithOffset (offset + i, privDataP->size,
+	                         (unsigned char)str[i], 1,
+	                         !privDataP->allowUnaligned);
       return false;
     }
 
   if (!final)
     {
-      Put_AlignDataWithOffset (offset, privDataP->size, 0, !privDataP->allowUnaligned);
+      Put_AlignDataWithOffset (offset, privDataP->size, 0, 1,
+                               !privDataP->allowUnaligned);
       return true;
     }
 
@@ -220,7 +166,7 @@ DefineInt_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 	{
 	  if (i + 1 != valueP->Data.Code.len
 	      && valueP->Data.Code.c[i + 1].Tag == CodeOperator
-	      && valueP->Data.Code.c[i + 1].Data.op == Op_sub)
+	      && valueP->Data.Code.c[i + 1].Data.op == eOp_Sub)
 	    factor = -1;
 	  else
 	    factor = 1;
@@ -228,7 +174,7 @@ DefineInt_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 	  const Code *codeP = &valueP->Data.Code.c[i];
 	  if (codeP->Tag == CodeOperator)
 	    {
-	      if (codeP->Data.op != Op_add && codeP->Data.op != Op_sub)
+	      if (codeP->Data.op != eOp_Add && codeP->Data.op != eOp_Sub)
 		return true;
 	      continue;
 	    }
@@ -278,7 +224,7 @@ DefineInt_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 	{
 	  if (i + 1 != valueP->Data.Code.len
 	      && valueP->Data.Code.c[i + 1].Tag == CodeOperator
-	      && valueP->Data.Code.c[i + 1].Data.op == Op_sub)
+	      && valueP->Data.Code.c[i + 1].Data.op == eOp_Sub)
 	    factor = -1;
 	  else
 	    factor = 1;
@@ -286,7 +232,7 @@ DefineInt_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 	  const Code *codeP = &valueP->Data.Code.c[i];
 	  if (codeP->Tag == CodeOperator)
 	    {
-	      if (codeP->Data.op != Op_add && codeP->Data.op != Op_sub)
+	      if (codeP->Data.op != eOp_Add && codeP->Data.op != eOp_Sub)
 		return true;
 	      continue;
 	    }
@@ -361,18 +307,22 @@ DefineInt_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
       assert (!relocs && !relative);
     }
   armValue = Fix_Int (fileName, lineNum, privDataP->size, armValue);
-  Put_AlignDataWithOffset (offset, privDataP->size, armValue, !privDataP->allowUnaligned);
+  if (privDataP->size == 4 && privDataP->swapHalfwords)
+    armValue = (armValue >> 16) | (armValue << 16);
+  Put_AlignDataWithOffset (offset, privDataP->size, armValue, 1,
+                           !privDataP->allowUnaligned);
   
   return false;
 }
 
-static bool
-DefineInt (int size, bool allowUnaligned, const char *mnemonic)
+static void
+DefineInt (int size, bool allowUnaligned, bool swapHalfwords, const char *mnemonic)
 {
   DefineInt_PrivData_t privData =
     {
       .size = size,
-      .allowUnaligned = allowUnaligned
+      .allowUnaligned = allowUnaligned,
+      .swapHalfwords = swapHalfwords
     };
   do
     {
@@ -386,10 +336,14 @@ DefineInt (int size, bool allowUnaligned, const char *mnemonic)
 	      const char *str = result->Data.String.s;
 	      /* Lay out a string.  */
 	      for (size_t i = 0; i != len; ++i)
-		Put_AlignDataWithOffset (areaCurrentSymbol->area.info->curIdx, privData.size, str[i], !privData.allowUnaligned);
+		Put_AlignDataWithOffset (areaCurrentSymbol->area.info->curIdx,
+		                         privData.size, (unsigned char)str[i],
+		                         1, !privData.allowUnaligned);
 	    }
 	  else
-	    Put_AlignDataWithOffset (areaCurrentSymbol->area.info->curIdx, privData.size, 0, !privData.allowUnaligned);
+	    Put_AlignDataWithOffset (areaCurrentSymbol->area.info->curIdx,
+	                             privData.size, 0, 1,
+	                             !privData.allowUnaligned);
 	}
       else if (Reloc_QueueExprUpdate (DefineInt_RelocUpdater, areaCurrentSymbol->area.info->curIdx,
 				      ValueInt | ValueString | ValueSymbol | ValueCode,
@@ -399,7 +353,6 @@ DefineInt (int size, bool allowUnaligned, const char *mnemonic)
       skipblanks ();
     }
   while (Input_Match (',', false));
-  return false;
 }
 
 /**
@@ -409,7 +362,8 @@ DefineInt (int size, bool allowUnaligned, const char *mnemonic)
 bool
 c_dcb (void)
 {
-  return DefineInt (1, true, "DCB or =");
+  DefineInt (1, true, false, "DCB or =");
+  return false;
 }
 
 /**
@@ -422,7 +376,8 @@ c_dcw (bool doLowerCase)
   bool allowUnaligned = Input_Match (doLowerCase ? 'u' : 'U', false);
   if (!Input_IsEndOfKeyword ())
     return true;
-  return DefineInt (2, allowUnaligned, allowUnaligned ? "DCWU" : "DCW");
+  DefineInt (2, allowUnaligned, false, allowUnaligned ? "DCWU" : "DCW");
+  return false;
 }
 
 /**
@@ -432,7 +387,8 @@ c_dcw (bool doLowerCase)
 bool
 c_ampersand (void)
 {
-  return DefineInt (4, false, "&");
+  DefineInt (4, false, false, "&");
+  return false;
 }
 
 /**
@@ -445,19 +401,45 @@ c_dcd (bool doLowerCase)
   bool allowUnaligned = Input_Match (doLowerCase ? 'u' : 'U', false);
   if (!Input_IsEndOfKeyword ())
     return true;
-  return DefineInt (4, allowUnaligned, allowUnaligned ? "DCDU" : "DCD");
+  DefineInt (4, allowUnaligned, false, allowUnaligned ? "DCDU" : "DCD");
+  return false;
 }
 
+
 /**
- * Implements DCI.
- * "Define Constant Instruction"
+ * Implements DCI : "Define Constant Instruction"
+ *   {label} DCI{.W} expr{,expr}
+ * In ARM code: align to 4 bytes and write 4-byte value(s).
+ * In Thumb code: align to 2 bytes and write 2-byte value(s).
  */
 bool
-c_dci (void)
+c_dci (bool doLowerCase)
 {
-  Area_AlignArea (areaCurrentSymbol, 4, "instruction");
-  return DefineInt (4, false, "DCI");
+  InstrWidth_e instrWidth = Option_GetInstrWidth (doLowerCase);
+  if (instrWidth == eInstrWidth_Unrecognized)
+    return true;
+  unsigned alignValue;
+  int instructionSize;
+  bool swapHalfwords;
+  if (State_GetInstrType () == eInstrType_ARM)
+    {
+      alignValue = 4;
+      instructionSize = 4;
+      swapHalfwords = false;
+    }
+  else
+    {
+      alignValue = 2;
+      /* In Thumb mode, with DCI we're writing 2 byte instructions by default
+         unless .W is explictly mentioned.  */
+      instructionSize = instrWidth == eInstrWidth_Enforce32bit ? 4 : 2;
+      swapHalfwords = true;
+    }
+  Area_AlignArea (areaCurrentSymbol, alignValue, "instruction");
+  DefineInt (instructionSize, true, swapHalfwords, "DCI");
+  return false;
 }
+
 
 /**
  * Reloc updater for DefineReal().
@@ -475,7 +457,7 @@ DefineReal_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
       const Code *codeP = &valueP->Data.Code.c[i];
       if (codeP->Tag == CodeOperator)
 	{
-	  if (codeP->Data.op != Op_add)
+	  if (codeP->Data.op != eOp_Add)
 	    return true;
 	  continue;
 	}
@@ -512,7 +494,7 @@ DefineReal_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
   return false;
 }
 
-static bool
+static void
 DefineReal (int size, bool allowUnaligned, const char *mnemonic)
 {
   DefineReal_PrivData_t privData =
@@ -536,7 +518,6 @@ DefineReal (int size, bool allowUnaligned, const char *mnemonic)
       skipblanks ();
     }
   while (Input_Match (',', false));
-  return false;
 }
 
 /**
@@ -549,7 +530,8 @@ c_dcfs (bool doLowerCase)
   bool allowUnaligned = Input_Match (doLowerCase ? 'u' : 'U', false);
   if (!Input_IsEndOfKeyword ())
     return true;
-  return DefineReal (4, allowUnaligned, allowUnaligned ? "DCFSU" : "DCFS");
+  DefineReal (4, allowUnaligned, allowUnaligned ? "DCFSU" : "DCFS");
+  return false;
 }
 
 /**
@@ -562,236 +544,88 @@ c_dcfd (bool doLowerCase)
   bool allowUnaligned = Input_Match (doLowerCase ? 'u' : 'U', false);
   if (!Input_IsEndOfKeyword ())
     return true;
-  return DefineReal (8, allowUnaligned, allowUnaligned ? "DCFDU" : "DCFD");
+  DefineReal (8, allowUnaligned, allowUnaligned ? "DCFDU" : "DCFD");
+  return false;
 }
 
+
 /**
- * Called for GET / INCLUDE
+ * Used for '%', 'FILL' and 'SPACE' implementations.
+ * \param isFill Is 'FILL' mnemonic.  Otherwise it is '%' or 'SPACE'.
  */
-bool
-c_get (void)
+static void
+ReserveSpace (bool isFill)
 {
-  char *fileName;
-  if ((fileName = strdup (Input_Rest ())) == NULL)
-    errorOutOfMem ();
-  char *cptr;
-  for (cptr = fileName; *cptr && !isspace ((unsigned char)*cptr); cptr++)
-    /* */;
-  if (*cptr)
+  const Value *valueTimesP = exprBuildAndEval (ValueInt);
+  if (valueTimesP->Tag != ValueInt)
     {
-      *cptr++ = '\0'; /* must be a space */
-      while (*cptr && isspace ((unsigned char)*cptr))
-	cptr++;
-      if (*cptr && *cptr != ';')
-	error (ErrorError, "Skipping extra characters '%s' after filename", cptr);
+      error (ErrorError, "Unresolved reserve not possible");
+      return;
     }
+  uint32_t times = (uint32_t)valueTimesP->Data.Int.i;
 
-  if (!FS_PushFilePObject (fileName) && option_verbose)
-    fprintf (stderr, "Including file \"%s\" as \"%s\"\n", fileName, FS_GetCurFileName ());
-  return false;
-}
-
-/**
- * Implements LNK.
- */
-bool
-c_lnk (void)
-{
-  char *fileName;
-  if ((fileName = strdup (Input_Rest ())) == NULL)
-    errorOutOfMem ();
-  char *cptr;
-  for (cptr = fileName; *cptr && !isspace ((unsigned char)*cptr); cptr++)
-    /* */;
-  if (*cptr)
+  ARMWord value = 0;
+  unsigned valueSize = 1;
+  if (isFill)
     {
-      *cptr++ = '\0'; /* must be a space */
-      while (*cptr && isspace ((unsigned char)*cptr))
-	cptr++;
-      if (*cptr && *cptr != ';')
-	error (ErrorError, "Skipping extra characters '%s' after filename", cptr);
-    }
-
-  /* Terminate all outstanding macro calls and finish the current file.  */
-  while (gCurPObjP->type == POType_eMacro)
-    FS_PopPObject (true);
-  FS_PopPObject (true);
-
-  /* Dump literal pool.  */
-  Lit_DumpPool ();
-
-  if (!FS_PushFilePObject (fileName) && option_verbose)
-    fprintf (stderr, "Linking to file \"%s\" as \"%s\"\n", fileName, FS_GetCurFileName ());
-  return false;
-}
-
-/**
- * Implements IDFN.
- */
-bool
-c_idfn (void)
-{
-  free ((void *)idfn_text);
-  if ((idfn_text = strdup (Input_Rest ())) == NULL)
-    errorOutOfMem();
-  return false;
-}
-
-/**
- * Implements BIN / INCBIN.
- */
-bool
-c_incbin (void)
-{
-  char *fileName;
-  if ((fileName = strdup (Input_Rest ())) == NULL)
-    errorOutOfMem ();
-  char *cptr;
-  for (cptr = fileName; *cptr && !isspace ((unsigned char)*cptr); cptr++)
-    /* */;
-  *cptr = '\0';
-
-  ASFile asFile;
-  FILE *binfp = Include_Get (fileName, &asFile, true);
-  if (!binfp)
-    error (ErrorError, "Cannot open file \"%s\"", fileName);
-  else
-    {
-      if (option_verbose)
-	fprintf (stderr, "Including binary file \"%s\" as \"%s\"\n", fileName, asFile.canonName);
-
-      /* Include binary file.  */
-      int c;
-      while ((c = getc (binfp)) != EOF)
-	Put_Data (1, c);
-      fclose (binfp);
-    }
-
-  free (fileName);
-  ASFile_Free (&asFile);
-  return false;
-}
-
-/**
- * Implements END.
- */
-bool
-c_end (void)
-{
-  if (gCurPObjP->type == POType_eMacro)
-    error (ErrorError, "Cannot use END within a macro");
-  else
-    FS_PopPObject (false);
-  return false;
-}
-
-/**
- * Implements ASSERT.
- */
-bool
-c_assert (void)
-{
-  if (gPhase == ePassOne)
-    Input_Rest ();
-  else
-    {
-      const Value *value = exprBuildAndEval (ValueBool);
-      switch (value->Tag)
+      /* Check for <value> presence.  */
+      if (Input_Match (',', false))
 	{
-	  case ValueBool:
-	    if (!value->Data.Bool.b)
-	      error (ErrorError, "Assertion failed");
-	    break;
+	  const Value *valueValueP = exprBuildAndEval (ValueInt);
+	  if (valueValueP->Tag != ValueInt)
+	    {
+	      error (ErrorError, "Unresolved reserve value not possible");
+	      return;
+	    }
+	  value = (ARMWord)valueValueP->Data.Int.i;
 
-	  default:
-	    error (ErrorError, "ASSERT expression must be boolean");
-	    break;
+	  /* Check for <valuesize> presence.  */
+	  if (Input_Match (',', false))
+	    {
+	      const Value *valueSizeP = exprBuildAndEval (ValueInt);
+	      if (valueSizeP->Tag != ValueInt)
+		{
+		  error (ErrorError, "Unresolved reserve value size not possible");
+		  return;
+		}
+	      valueSize = (unsigned)valueSizeP->Data.Int.i;
+	      if (valueSize != 1 && valueSize != 2 && valueSize != 4)
+		{
+		  error (ErrorError, "Reserve value size can only be 1, 2 or 4");
+		  return;
+		}
+	    }
 	}
     }
   
+  if ((int32_t)times < 0)
+    error (ErrorWarning, "Reserve space value is considered unsigned, i.e. reserving %u bytes now\n", times);
+
+  Put_AlignDataWithOffset (areaCurrentSymbol->area.info->curIdx, valueSize,
+			   value, times, false);
+}
+
+
+/**
+ * Implements 'FILL'.
+ *   {label} FILL <expr> {,<value>{,<valuesize>}}
+ */
+bool
+c_fill (void)
+{
+  ReserveSpace (true);
   return false;
 }
 
-/**
- * Implementation for:
- *   ! <arithmetic expression>, <string expression>
- *   INFO <arithmetic expression>, <string expression>
- *
- * When <arithmetic expression> evaluates to 0, <string expression> is
- * outputed as is.  When it evaluates to non-0, <string expression> is given
- * as error.
- */
-bool
-c_info (void)
-{
-  const Value *value = exprBuildAndEval (ValueInt | ValueFloat);
-  if (value->Tag != ValueInt && value->Tag != ValueFloat)
-    {
-      error (ErrorError, "INFO expression must be arithmetic");
-      return false;
-    }
-  bool giveErr = (value->Tag == ValueInt && value->Data.Int.i != 0)
-		   || (value->Tag == ValueFloat && fabs (value->Data.Float.f) >= 0.00001);
-
-  skipblanks();
-  if (!Input_Match (',', false))
-    {
-      error (ErrorError, "Missing , in INFO directive");
-      return false;
-    }
-
-  const Value *message = exprBuildAndEval (ValueString);
-  if (message->Tag != ValueString)
-    {
-      error (ErrorError, "INFO message must be a string");
-      return false;
-    }
-
-  /* Give output during pass one.  */
-  if (gPhase == ePassOne)
-    {
-      if (giveErr)
-	error (ErrorError, "%.*s", (int)message->Data.String.len, message->Data.String.s);
-      else
-	printf ("%.*s\n", (int)message->Data.String.len, message->Data.String.s);
-    }
-  return false;
-}
 
 /**
- * Implements SUBT (subtitle) / TTL (title).
+ * Implements '%', 'SPACE'.
+ *   {label} % <expr>
+ *   {label} SPACE <expr>
  */
 bool
-c_title (void)
+c_reserve (void)
 {
-  Input_Rest ();
-  /* Do nothing right now.  This command is for the benefit of error reporting.  */
-  return false;
-}
-
-/**
- * Implements AOF : selects AOF output format.
- */
-bool
-c_aof (void)
-{
-  /* Not supported in AAsm compatibility mode.  */
-  if (option_abs)
-    return true;
-  error (ErrorError, "Directive %s to select output format is not supported.  Use command line option instead.", "AOF");
-  return false;
-}
-
-/**
- * Implements AOUT : selects the AOUT output format.
- * Note we do not support the aout output format.
- */
-bool
-c_aout (void)
-{
-  /* Not supported in AAsm compatibility mode.  */
-  if (option_abs)
-    return true;
-  error (ErrorError, "Directive %s to select output format is not supported.  Use command line option instead.", "AOUT");
+  ReserveSpace (false);
   return false;
 }

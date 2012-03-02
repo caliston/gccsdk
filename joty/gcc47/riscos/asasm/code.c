@@ -32,15 +32,14 @@
 #endif
 #include <string.h>
 
-#include "aoffile.h"
 #include "area.h"
 #include "code.h"
+#include "directive_storagemap.h"
 #include "error.h"
 #include "eval.h"
 #include "input.h"
 #include "main.h"
 #include "option.h"
-#include "storage.h"
 
 #ifdef DEBUG
 //#  define DEBUG_CODE
@@ -67,7 +66,7 @@ codeInit (void)
 }
 
 void
-codeOperator (Operator op)
+codeOperator (Operator_e op)
 {
   if (FirstFreeIns < CODE_SIZECODE)
     {
@@ -108,7 +107,7 @@ codeStorage (void)
   if (FirstFreeIns < CODE_SIZECODE)
     {
       Program[FirstFreeIns].Tag = CodeValue;
-      Program[FirstFreeIns].Data.value = *storageValue ();
+      Program[FirstFreeIns].Data.value = *StorageMap_Value ();
       ++FirstFreeIns;
     }
   else
@@ -136,7 +135,7 @@ codeInt (int value)
   if (FirstFreeIns < CODE_SIZECODE)
     {
       Program[FirstFreeIns].Tag = CodeValue;
-      Program[FirstFreeIns].Data.value = Value_Int (value);
+      Program[FirstFreeIns].Data.value = Value_Int (value, eIntType_PureInt);
       ++FirstFreeIns;
     }
   else
@@ -271,7 +270,7 @@ Code_EvalLowest (size_t size, const Code *program, const ARMWord *instrOffsetP,
 		{
 		  assert (spStart < *sp - 1); /* At least two entries on the stack.  */
 
-		  Operator op = program[i].Data.op;
+		  Operator_e op = program[i].Data.op;
 		  if (!evalBinop (op, &Stack[*sp - 2], &Stack[*sp - 1]))
 		    {
 #ifdef DEBUG_CODE
@@ -299,7 +298,7 @@ Code_EvalLowest (size_t size, const Code *program, const ARMWord *instrOffsetP,
 		 isn't the OpSize one).  */
 	      bool nextIsOpSize = i + 1 != size
 				    && program[i + 1].Tag == CodeOperator
-				    && program[i + 1].Data.op == Op_size;
+				    && program[i + 1].Data.op == eOp_Size;
 	      if (!nextIsOpSize && Value_ResolveSymbol (&value))
 		{
 #ifdef DEBUG_CODE
