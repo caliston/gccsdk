@@ -29,6 +29,7 @@ AUTOCONF_FOR_GCC_VERSION=2.64
 AUTOMAKE_FOR_GCC_VERSION=1.11.1
 GCC_VERSION=$(GCCSDK_SUPPORTED_GCC_RELEASE)
 GCC_USE_SCM=yes
+GCC_SCM_PATH=branches/gcc-4_7-branch
 NEWLIB_VERSION=1.19.0
 NEWLIB_USE_SCM=no
 GDB_VERSION=7.2
@@ -92,7 +93,7 @@ GCC_CONFIG_ARGS += --enable-checking=release
 # For debugging:
 # FIXME: add to GCC_BUILD_FLAGS for optimized ARM libraries: CFLAGS_FOR_TARGET="-O3 -march=armv5" CXXFLAGS_FOR_TARGET="-O3 -march=armv5"
 # Or perhaps better, at GCC configure time something like --with-arch=armv6 --with-tune=cortex-a8 --with-float=softfp --with-fpu=vfp ?
-GCC_BUILD_FLAGS := CFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g"
+##GCC_BUILD_FLAGS := CFLAGS="-O0 -g" LIBCXXFLAGS="-O0 -g"
 ##BINUTILS_BUILD_FLAGS = CFLAGS="-O0 -g"
 
 ROOT := $(shell pwd)
@@ -556,6 +557,7 @@ ifeq "$(NEWLIB_USE_SCM)" "yes"
 src-newlib-copied:
 	-rm -rf $(SRCDIR)/newlib
 	-mkdir -p $(SRCORIGDIR)/newlib-cvs
+	# FIXME? Use -d cvs co option ?
 	cd $(SRCORIGDIR)/newlib-cvs && cvs -z 9 -d :pserver:anoncvs@sources.redhat.com:/cvs/src co newlib
 	ln -s $(SRCORIGDIR)/newlib-cvs/src $(SRCDIR)/newlib
 	touch $(BUILDSTEPSDIR)/src-newlib-copied
@@ -616,7 +618,7 @@ ifeq "$(GCC_USE_SCM)" "yes"
 # Checkout gcc source:
 $(SRCORIGDIR)/gcc-trunk/LAST_UPDATED:
 	-mkdir -p $(SRCORIGDIR)
-	cd $(SRCORIGDIR) && svn co svn://gcc.gnu.org/svn/gcc/trunk gcc-trunk
+	cd $(SRCORIGDIR) && svn co svn://gcc.gnu.org/svn/gcc/$(GCC_SCM_PATH) gcc-trunk
 	cd $(SRCORIGDIR)/gcc-trunk && ./contrib/gcc_update
 else
 # Download gcc source:
