@@ -1,0 +1,3707 @@
+Sat Mar  3 00:28:46 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/nop_new_style.s: Rename to...
+	* regression/tests_pass/instr_nop_new_style.s: ...this.  Add Thumb
+	test.
+	* regression/tests_pass/nop_old_style.s: Rename to...
+	* regression/tests_pass/instr_nop_old_style.s: ...this.
+	* regression/tests_pass/instr_und.s: Add.
+	* regression/tests_pass/builtinvar_linenum.s: Improve comment.
+	* put.c, put.h (Put_InsWithOffset, Put_Ins): Add 'size' parameter.
+	* decode.c (po_void, po_void_pm): Change return value type back to bool.
+	(decode_table_t): Add updateMap field.
+	(oDecodeTable): Update.  Add UND.
+	(IsARMOrThumbInstr): Add.
+	(decode): Fix assert.  Follow po_void/po_void_pm/decode_table_t changes.
+	* decode.h (Rslt_e): Remove.
+	* m_cpuctrl.c, m_cpuctrl.h, help_cop.c, m_cop.c, m_cop.h, m_cpumem.c,
+	m_cpumem.h, m_cpu.c, m_cpu.h, m_fpe.c, m_fpe.h, m_copmem.c, m_copmem.h,
+	directive_data.c, directive_data.h: Follow above changes.
+	* directive_data.c (DefineInt_RelocUpdater, DefineInt): Support swapHalfwords.
+	(c_dci): Support 2 byte Thumb instructions.
+	* directive_data.h (DefineInt_PrivData_t): Add swapHalfwords field.
+	* lit.c (Lit_DumpPool): Follow DefineInt_PrivData_t change.
+	* option.c (Option_GetInstrWidth): Fix implementation.
+	(IsEndOfKeyword): Fix width specification parsing.
+	* area.c (Area_MarkStartAs): Simplify.
+	* m_cpu.c (m_nop): Support Thumb.
+	(m_und): Add.
+	* targetcpu.c, targetcpu.h (Target_CheckFeature): Add dummy
+	implementation
+	* targetcpu.h (Arch_Feature_e): Add.
+
+Fri Mar  2 16:16:18 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/symbols.s: Add test on redefining same symbol.
+	* regression/tests_pass/variables.s: Add test with register cases.
+	* regression/tests_pass/operator_relational.s: Reimplement using
+	macro.  Add test case for comparing addr.
+	* symbol.c (Symbol_Define): Only give error on redefining symbols
+	for non-absolute symbols. 
+	* directive_symbol.c: Revert ValueRegister, registers are acting like
+	integers.  Introduce Value::Data.Int.type.  Renamed eRegType_* to
+	eIntType_*.
+	* code.c, area.c, value.c, value.h, predef_reg.c, get.c, asm.c,
+	eval.c, lit.c: Likewise.
+	* eval.c (COMPARE): Put test on ValueAddr back in.
+
+Wed Feb 29 00:58:58 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* configure.ac (AC_CHECK_FUNCS): Add strcasecmp.
+	* area.c, input.c: Add include alloca.h.
+	* strdup.c (strncasecmp): Character comparison should happen on
+	lowercase characters.
+	(strcasecmp): Add.
+	* phase.h, predef_reg.h: Add terminating newline.
+
+Sun Feb 12 23:34:02 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+  	* regression/tests_pass/operator_reverse_cc.s: Add.
+	* regression/tests_pass/operator_cc_encoding.s: Add.
+	* regression/tests_pass/operator_rconst.s: Add.
+	* regression/tests_pass/operator_string.s: Add :LOWERCASE: and
+	:UPPERCASE: tests.
+	* regression/tests_pass/operator_relational.s: Add integer vs 1
+	character string tests. Add register tests. Move :LEOR: test to...
+	* regression/tests_pass/operator_boolean.s: ...here.
+	* lexAcorn.c, lexAcorn.h: Merge into...
+	* lex.c: ...this.
+	(Lex_OperatorAsStr): Add support for eOp_LowerCase, eOp_UpperCase,
+	eOp_RevCC, eOp_CCEnc and eOp_RConst.
+	* lex.h: Rename Op_* to eOp_*, Operator to Operator_e.
+	* Makefile.am: Follow lexAcorn.c merge.
+	* decode.c (oDecodeTable): DCI has now eCB_VoidPMatch callback.
+	(decode): Only give Thumb unsupported warning once.
+	* code.c, code.h, m_cpuctrl.c, help_cop.c, m_cop.cm,
+	directive_storagemap.c,	m_cpumem.c, directive_data.c, m_fpe.c,
+	m_copmem.c, m_cpu.c, eval.c, eval.h, lex.c: Follow optionError to
+	kOption_NotRecognized rename. Follow Op_* to eOp_* renames. Follow
+	Operator to Operator-e rename.
+	* directive_data.c (DefineInt_RelocUpdater, DefineInt): unsigned char
+	cast value before calling Put_AlignDataWithOffset.
+	(c_dci): Support .W postfix.
+	* directive_data.h (c_dci): Follow API change.
+	* option.c, option.h (optionError): Rename to kOption_NotRecognized.
+	(Option_GetInstrWidth): Add.
+	(IsEndOfKeyword): Allow instruction width specifier to terminate
+	keyword as well.
+	* expr.c (prim): LexOperator: Remove Op_none test.
+	* eval.c (GetCCode): Add.
+	(evalUnop): Add support for :LOWERCASE:, :UPPERCASE:, :REVERSE_CC:,
+	:CC_ENCODING:, :RCONST:
+	(COMPARE): Remove comparisions between ValueAddr.
+	(evalBinop): Simplify eOp_EQ and eOp_NE.
+	* value.c, value.h (ValueRegister): Add.
+	* directive_symbol.c (Define, c_cn, c_fn, c_rn, c_cp): Teach about
+	ValueRegister.
+	* symbol.h (SYMBOL_CPUREG,SYMBOL_FPUREG,SYMBOL_NEONQUADREG,
+	SYMBOL_NEONDOUBLEREG,SYMBOL_VFPSINGLEREG,SYMBOL_COPREG,SYMBOL_COPNUM,
+	SYMBOL_GETREGTYPE): Remove.
+	* symbol.c (Symbol_Define, symbolPrint): Follow SYMBOL_* removal.
+
+Sun Feb 12 14:35:31 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/record_basic.s: Renamed to...
+	* regression/tests_pass/storagemap_basic.s: ...this.
+	* regression/tests_pass/register_based_map.s: Renamed to...
+	* regression/tests_pass/storagemap_register.s: ...this.
+	* storage.c, storage.h: Renamed to...
+	* directive_storagemap.c, directive_storagemap.h: ...these.
+	* code.c, decode.c, Makefile.am: Follow renames.
+
+Sun Feb 12 14:08:35 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/reserve_space.s: Add.
+	* put.c (ReportOverflow): Add.
+	(Put_DataWithOffset): Add times parameter. Use ReportOverflow.
+	(Put_InsWithOffset): Make use of Put_DataWithOffset.
+	* put.h (Put_DataWithOffset): Add times parameter.
+	* decode.c (oDecodeTable): Add FILL.
+	* area.c, area.h (c_align, c_reserve): Move to...
+	* directive_data.c, directive.h: ...here.
+	(DefineInt_RelocUpdater, DefineInt): Follow Put_AlignDataWithOffset API
+	change.
+	(ReserveSpace): Add.
+	(c_fill): Add.
+	* lit.c (Lit_DumpPool): Follow Put_AlignDataWithOffset API change.
+
+Sat Feb 11 18:01:47 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c, commands.h: Refactor into...
+	* directive_data.c, directive_data.h: ...this and...
+	* directive_file.c, directive_file.h: ...this and...
+	* directive_misc.c, directive_misc.h: ...this and...
+	* directive_symbol.c, directive_symbol.h: ...this.
+	* Makefile.am, lit.c, decode.c: Follow changes.
+	* area.c, macros.c, whileif.c: Remove useless include commands.h.
+
+Sat Feb 11 17:08:51 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.h (Rslt_e): Add.
+	* decode.c (po_void, po_void_lc): Return Rslt_e iso bool.
+	(po_void_lc): Rename to po_void_pm.
+	(po_nolex): Add.
+	(decode_table_t::result): Remove.
+	(decode_table_t::instr): Add.
+	(oDecodeTable): Follow changes.
+	* commands.c, commands.h, m_cpuctrl.c, m_cop.c, m_cpuctrl.h, m_cpumem.c,
+	m_cop.h, m_cpumem.h, area.c, area.h, m_fpe.c, m_fpe.h, m_copmem.c,
+	m_copmem.h, m_cpu.c, m_cpu.h: Follow changes.
+
+Sat Feb 11 13:49:29 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): !, ALIGN, AOF, AOUT, AREA, ARM, ASSERT,
+	CODE16, CODE32, ENTRY, EXPORT, EXTERN, GET, GLOBAL, IDFN, IMPORT,
+	INCLUDE, INFO, KEEP, LTORG, OPT, ORG, PRESERVE8, STRONG, SUBT, THUMBX,
+	THUMBX, TTL: Don't allow a label in front of these directives.
+
+Mon Feb  6 04:08:14 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/builtinvar_codesize_config.s: Add.
+	* regression/tests_pass/builtinvar_areaname1.s: Add.
+	* regression/tests_pass/builtinvar_areaname2.s: Add.
+	* regression/tests_pass/builtinvar_opt.s: Add.
+	* regression/tests_pass/builtinvar_cpu1.s: Add.
+	* regression/tests_pass/builtinvar_cpu2.s: Add.
+	* regression/tests_pass/builtinvar_inputfile.s: Add.
+	* regression/tests_pass/builtinvar_linenum.s: Add.
+	* regression/tests_pass/builtinvar_pc.s: Enhance for testing .
+	* regression/tests_pass/lowercase.s: Add -CPU option to silence NV
+	deprecation warning.
+	* regression/tests_pass/arithmetic1.s: Add -APCS option to silence
+	CMN/... + "P" warning.
+	* commands.c: Have consistent line number variables as 'lineNum' and
+	unsigned. Also filename variables are named 'fileName'.
+	* os.c, os.h: Likewise.
+	* m_cpuctrl.c: Likewise.
+	* m_cpumem.c: Likewise.
+	* m_fpe.c: Likewise.
+	* help_cop.c: Likewise.
+	* error.c, error.h: Likewise.
+	* local.c, local.h: Likewise.
+	* filestack.c, filestack.h: Likewise.
+	* area.c: Likewise.
+	* macros.c, macros.h: Likewise.
+	* whileif.c: Likewise.
+	* reloc.c, reloc.h: Likewise.
+	* asm.c: Likewise.
+	* include.c, include.h: Likewise.
+	* fix.c, fix.h: Likewise.
+	* lit.c: Likewise.
+	* lex.c: Likewise.
+	* commands.c, commands.h (c_opt): Moved to...
+	* opt.c, opt.h: ...here.
+	* Makefile.am (opt.c): Add.
+	* decode.c (decode): Only give error on currently unsupported
+	Thumb/ThumbEE when processing an instruction.
+	* filestack.c, filestack.h (FS_GetBuiltinVarLineNum,
+	FS_GetBuiltinVarLineNumUp, FS_GetBuiltinVarLineNumUpper): Add.
+	* macros.c (FS_PushMacroPObject): Initialise MacroPObject::optDirective.
+	(FS_PopMacroPObject): Restore gOpt_DirectiveValue.
+	* macros.h (MacroPObject): Add optDirective field.
+	* phase.c (Phase_PrepareFor): Add call to Opt_PrepareForPhase.
+	* targetcpu.c (Target_GetCPU): Return "Generic ARM" when an
+	architecture got selected with -CPU
+	* input.c, input.h (Input_MatchStringLower): Add.
+	* lexAcorn.c (lexAcornPrim): Add support for {AREANAME}, {CODESIZE},
+	{INPUTFILE}, {LINENUM}, {LINENUMUP}, {LINENUMUPPER}.
+	{CPU}: Fix when architecture selected.
+
+Sun Feb  5 20:09:39 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/arithmetic1.s: Reimplemented using macros
+	exercising more combinations.
+	* option.c (Option_CondSP): Renamed from optionCondSP.  Add UAL
+	support.
+	* option.h, m_cpu.c: Follow Option_CondSP rename.
+	* regression/tests_pass/loadstore_ual.s: Add no condition code
+	specified test case.
+
+Sun Feb  5 16:25:43 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/Makefile (ASFLAGS): Remove -CPU option.
+	* regression/tests_pass/sev_wfe_wfi_yield.s: Specify CPU option.
+	* regression/tests_pass/misc.s:
+	* regression/tests_pass/dbg.s
+	* regression/tests_pass/dcb_dcw_dcd.s
+	* regression/tests_pass/mul_mla_mls.s
+	* regression/tests_pass/loadstore2.s
+	* regression/tests_pass/loadstore2.s
+	* regression/tests_pass/copro.s
+	* regression/tests_pass/dmb_dsb_isb.s
+	* regression/tests_pass/rfe_srs.s
+	* regression/tests_pass/smc.s
+	* regression/tests_pass/loadstore.s
+	* regression/tests_pass/branch.s
+	* regression/tests_pass/load_literal.s
+	* regression/tests_pass/clrex_ldrex_strex.s
+	* regression/tests_pass/pld_pldw_pli.s
+
+	* regression/tests_pass/nop.s: Move to...
+	* regression/tests_pass/include/nop.s: ...here.
+	* regression/tests_pass/nop_new_style.s: Add.
+	* regression/tests_pass/nop_old_style.s: Add.
+
+	* regression/tests_pass/loadstore_ual.s: Add.
+
+	* regression/tests_pass/dsp.s: Move LDRD/STRD tests to...
+	* regression/tests_pass/loadstore2.s: ...here. Test if 'T' variant
+	does not result in pre-index.
+	* m_cpumem.c (dstmem): D variant : Test for whether first transfer
+	register is uneven.  Support specifying second transfer register.
+	T variant: Don't switch to pre-index mode.
+	(m_ldr,m_str): Follow optionCondBT to Option_LdrStrCondAndType rename.
+	* option.c (GetCCodeIfThere): Renamed from GetCCode.  Add checks for
+	NV condition code.
+	(GetCCode): Use GetCCodeIfThere.
+	(Option_LdrStrType): Renamed from optionCondBT.
+	(Option_LdrStrCondAndType):  New, support UAL syntax.
+	* option.h (Option_LdrStrCondAndType): Renamed from optionCondBT.
+	(HS,LO): Remove.
+	(EXCEPTION_BIT): Renamed from EXEPTION_BIT.
+	* m_fpe.c: Follow EXCEPTION_BIT rename.
+
+Tue Jan 31 03:34:35 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/ldm_stm_pop_push.s: Fix test.
+	* option.c (optionCondLdmStm): Default stack type of LDM/STM is IA.
+
+Sun Jan 29 19:50:59 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c: Move predefined register values to...
+	* predef_reg.c: ...here (new file).
+	* symbol.h (SYMBOL_NEONQUADREG, SYMBOL_NEONDOUBLEREG,
+	SYMBOL_VFPDOUBLEREG, SYMBOL_VFPSINGLEREG): Add.
+	* decode.c (decode): Add test on currently unsupported Thumb/ThumbEE
+	state.
+	* asm.c, asm.h (gASM_Phase): Move to...
+	* phase.c, phase.h (gPhase): ...here.
+	(Phase_PrepareFor): Add.
+	* m_cpu.c, m_cpu.h (c_code16,c_thumb,c_thumbx,c_code32): Move to...
+	* state.c, state.h: ...here (new files).
+	(Syntax_e, InstrType_e, State_SetCmdLineSyntax,
+	State_SetCmdLineInstrType, State_PrepareForPhase, State_GetSyntax,
+	State_GetInstrType): Add.
+	* main.c (-16,-32,-arm,-thumb,-thumbx): Add new command line options.
+	* Makefile.am (phase.c, predef_reg.c, state.c): Add.
+	* commands.c, m_cpuctrl.c, help_cop.c, error.c, local.c, local.h,
+	m_cpumem.c, area.c, area.h, macros.c, reloc.c, get.c, asm.c, main.c,
+	asm.h, eval.c, lit.c: Follow above changes.
+
+Sun Jan 29 15:55:33 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* macros.c (MKeyword_e): Add.
+	(Macro_GetKeyword): Renamed from Macro_IsMENDAtInput and support
+	MACRO keyword as well.
+	(c_macro): Use Macro_GetKeyword iso Macro_IsMENDAtInput and add check
+	on nested MACRO construction.
+
+Sun Jan 29 15:28:22 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (DefineInt_RelocUpdater): Fix reloc issue against
+	current area.
+	* m_cpuctrl.c (Branch_RelocUpdater): Support more reloc combinations
+	(based on what we have in DefineInt_RelocUpdater).
+
+Sat Jan 28 13:48:16 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.h (Area): Add 'number' field. Change 'int norelocs' field into
+	'uint32_t numRelocs'.
+	* area.c (areaNew): Follow Area struct change.
+	* symbol.h (Symbol): Change type 'codeSize' from size_t to uint32_t,
+	'offset' from unsigned int to uint32_t.  Update comments on the meaning
+	of 'used' field.
+	* symbol.c (Symbol_CreateSymbolOut): Follow the new Symbol::used
+	conventin.
+	* output.c (Output_AOF, Output_ELF): Follow above changes.
+	* reloc.c (relocELFOutput): Likewise.
+
+Sat Jan 28 03:30:49 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* put.c (Put_DataWithOffset): Made local.  Change type of data
+	parameter from ARMWord to uint64_t.  Increase area index for
+	NOINIT areas.  Follow AREA_IMAGE to Area_IsNoInit change.
+	(Put_FloatDataWithOffset): Use Put_DataWithOffset.
+	(Put_InsWithOffset): Increase area index for NOINIT areas.
+	Follow AREA_IMAGE to Area_IsNoInit change.  Allow zero value
+	instruction in NOINIT area.
+	* put.h (Put_DataWithOffset): Remove.
+	* area.h (AREA_IMAGE): Remove.
+	(Area_IsNoInit): Add.
+	* output.c (Output_AOF): Follow AREA_IMAGE to Area_IsNoInit change.
+	(Output_ELF): Likewise.
+
+Fri Jan 27 03:11:21 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c, output.h (outputInit, outputFinish, outputRemove,
+	outputAof, outputElf): Rename to Output_Init, Output_Finish,
+	Output_Remove, Output_AOF, Output_ELF.
+	* main.c: Follow output.c/output.h renames.
+
+Fri Jan 27 03:03:31 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (Symbol_CreateSymbolOut): Don't report the implicit area
+	name for unused imported/exported symbols.
+
+Sun Jan 22 19:31:25 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (SymbolCompare): Fix AOF symbol sorting.
+	(Symbol_CreateSymbolOut): When doing AOF output, have local symbols
+	last.
+
+Sun Jan 22 18:12:47 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/label_alignment.s: Add.
+	* commands.c (c_dci): Use Area_AlignArea iso Area_AlignTo.
+	* symbol.c (SymbolCompare): Order AOF mapping symbols differently.
+	There are no specifications of this, so this is guesswork.
+	* put.c (Put_DataWithOffset, Put_InsWithOffset): Follow
+	Area_EnsureExtraSize API change.
+	* put.c, put.h (Put_Data, Put_DataWithOffset, Put_AlignDataWithOffset,
+	Put_FloatDataWithOffset, Put_InsWithOffset, GetWord): Change type of
+	offset into uint32_t and size into unsigned.
+	* decode.c (decode): Align label value in front of ARM/Thumb
+	instruction.
+	* local.c (c_rout): Align label value.
+	* area.c, area.h (Area_EnsureExtraSize): Add area symbol parameter.
+	(Area_AlignOffset, Area_AlignArea): Add.
+	(Area_AlignTo): Change type offset into uint32_t and type align into
+	unsigned.
+	(Area_MarkStartAs): Add area symbol and offset parameters.
+	* asm.c, asm.h (ASM_DefineLabel): Change type offset into uint32_t.
+	* lit.c (Lit_DumpPool): Follow Area_MarkStartAs API change. Use
+	Area_AlignArea iso Area_AlignTo.
+
+Sun Jan 15 22:06:27 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/register_types.s: Add.
+	* symbol (Symbol_Define): Don't check for symbol redefinition being
+	done in different areas for registers.
+
+Sun Jan 15 21:14:55 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* main.c (finished): Remove.
+	(atexit_handler): Delete output file on error when we have at least
+	reached the assembling stage.
+
+Sun Jan 15 19:28:41 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/option_uppercase.s: Add.
+	* decode.c (decode): Take option_uppercase into account.
+	* main.c (option_uppercase): Add.
+	(main): Add support for -UpperCase option.
+	* main.h (option_uppercase): Add.
+
+Sun Jan 15 19:03:25 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/aasm_compatibility.s: Add.
+	* regression/Makefile (RUNOPTACT,RUNOPTREF): Add.
+	* commands.c (c_aof, c_aout): Add minimal legacy support for AOF, AOUT.
+	* commands.h (c_aof, c_aout): Likewise.
+	* decode.c (oDecodeTable): Add AOF and AOUT.
+	* symbol.c (oSymRegsAPCS): Revert the APCS register names v6, sl and
+	fp (this is conditionally done depending on APCS value). Revert
+	upcase APCS register name support (ObjAsm doesn't do this either).
+	(c_export,c_strong,c_keep,c_import): Disable directive when in AAsm
+	compatibility support.
+	* area.c (newArea): Change type type into uint32_t.
+	(c_entry,c_area): Disable directive when in AAsm compatibility support.
+	(c_area): Factor out APCS & soft-float area type bits setting into...
+	(Area_ApplyAPCSOption): ...this.
+	(Area_Ensure): Create ABS$$BLOCK area when in AAsm compatibility mode.
+	* main.c (option_abs): Add.
+	(main): Add support for -ABSolute option.
+	* main.h (option_abs): Add.
+
+Sun Jan 15 15:05:50 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (DefineInt_RelocUpdater): Add missing test on current
+	area.
+
+Sun Jan 15 19:13:00 CST 2011   Christopher Martin  <belles@internode.on.net>
+
+	* symbol.c (oSymRegsAPCS): Predefined APCS register names v6, sl and fp
+	and uppercase APCS register names.
+	(symbolFree): Changed parameter from Symbol* to Symbol** and
+	moved list-maintenance logic into here from...
+	(symbolRemove): ...here, simplfying the block that calls symbolFree.
+	(Symbol_Define): Ensured that when a referenced label is actually defined,
+	the Symbol struct's areaDef field is updated to reflect the current area.
+	Trying to define a label in two different areas will generate an error.
+
+Thu Jan  5 02:05:35 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (DefineInt_RelocUpdater): Support relative relocations.
+	* code.c (Code_HasUndefSymbols): Remove.
+	(Code_EvalLowest.c): Factor out symbol resolving to Value_ResolveSymbol.
+	* code.h (Code_HasUndefSymbols): Remove.
+	* value.c, value.h (Value_ResolveSymbol): Add.
+	* aoffile.h: Reposition comments.
+	* fix.c (Fix_Int): Use assert instead of errorAbort.
+
+Wed Jan  4 23:27:33 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/variables.s: Fix test.
+	* area.c (c_area): Remove 2nd sanity check on AREA_REENTRANT.  Minor
+	cleanup.
+	* main.c (main): Adjust copyright year.
+
+Fri Dec 30 19:00:39 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/local_label.s: Renamed to...
+	* regression/tests_pass/local_label1.s: ...this.  Removed the :DEF:
+	based tests.  Enhanced.
+	* regression/tests_pass/local_label0.s: Add.
+	* regression/tests_pass/local_label2.s: Add.
+	* regression/tests_pass/local_label3.s: Add.
+	* regression/tests_pass/local_label4.s: Add.
+	* symbol.c (Symbol_CreateSymbolOut): Removed local label code.
+	(symbolPrint): Fix printing out area symbol.
+	* m_cpuctrl.c (m_adr): Evaluate all arguments even in pass one.
+	* local.c, local.h: Complete rework.
+	* lex.c: Follow local label API changes.
+	* filestack.c (FS_GetMacroDepth): Add.
+	(FS_PopPObject): Call Local_FinishMacro.
+	* filestack.h (FS_GetMacroDepth): Add.
+	* input.c, input.h (Input_LocalLabel): Removed.
+	* get.c (getRhs): Evaluate all arguments even in pass one.
+	* main.c (main): Check for errors just before output.
+
+Fri Dec 30 03:13:56 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/fpe_immediate.s: Remove obsolete
+	(and default now) option -autocast.
+	* regression/tests_pass/fpe_literal.s: Likewise.
+	* regression/tests_pass/fpe_memory.s: Likewise.
+
+Thu Dec 22 17:46:30 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* asm.c (ASM_NextLine, ASM_DoPass): Simplify code a little bit.
+
+Sat Dec 17 15:42:08 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (Symbol_CreateSymbolOut): Add warning for unused
+	imported and undefined exported symbols.
+	Move test on mapping symbols to...
+	(NeedToOutputSymbol): ...here.  Properly test for
+	SYMBOL_REFERENCE and SYMBOL_GLOBAL symbols for determining
+	whether they should be outputed or not.
+	* symbol.h (SYMBOL_REFERENCE, SYMBOL_GLOBAL): Update comments.
+
+Sat Dec 10 13:39:26 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpuctrl.c (ADR_RelocUpdaterCore): Less confusing error message.
+
+Fri Dec  2 02:28:38 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/swi.s: Enhance testcase.
+	* m_cpuctrl.c (m_swi): Only give error on Invalid SWI/SVC argument
+	during pass 2.
+	* symbol.c (symbolPrint): Symbol::areaDef can be NULL.
+
+Fri Dec  2 02:00:02 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* eval.c (evalUnop): Case Op_fsize: Fix FILE handle leak.
+
+Wed Nov 30 03:05:20 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (c_head): Remove.
+	(c_data): Add.
+	* commands.h (c_head): Likewise.
+	(c_data): Add.
+	* decode.c (oDecodeTable): Add DATA.  Remove HEAD, RET, STACK and TAIL.
+	* m_cpuctrl.c (m_stack, m_ret, m_tail): Remove.
+	* m_cpuctrl.h (m_stack, m_ret, m_tail): Likewise.
+
+Tue Nov 29 02:23:19 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (NeedToOutputSymbol): Limit KEEP'd symbols to Int and Bool
+	types.
+	(symFlag): Avoid local/global symbols to be marked for STRONG, KEEP,
+	EXPORT or IMPORT.
+	* variables.c (declare_var): Tune erorr when symbol was already
+	marked for IMPORT, EXPORT, STRONG or KEEP.
+	(c_set): Avoid wrong assert when symbol was already marked for
+	IMPORT, EXPORT, STRONG or KEEP.
+
+Sun Nov 27 22:18:30 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (c_lnk): Dump literal pool.
+
+Sun Nov 27 21:05:44 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/include/foo-filetypeAB3,ab3,
+	regression/tests_pass/include/foo-3bytes.s,
+	regression/tests_pass/operator_fileinfo.s: Added.
+	* riscos_c.c: Rename to...
+	* os.c: ...this.
+	(ASFile_Create, ASFile_Free): Add.
+	(CanonicalisePath): Make local.
+	* os.h (ASFile): Define.
+	(ASFile_Create, ASFile_Free): Add prototypes.
+	* include.c (Include_Find): Create ASFile version based on Include_Get.
+	(Include_Get): Use Include_Find and merge Include_Open in it.
+	* include.h (Include_Get): Use ASFile.
+	(Include_Find): Add.
+	* commands.c (c_incbin): Follow Include_Get API change.
+	* filestack.c (FS_PushFilePObject): Likewise.
+	* eval.c (evalUnop): Implement Op_fattr, Op_fexec, Op_fload.
+	Reimplement Op_fsize.
+	* Makefile.am: Follow riscos_c.c to os.c rename.
+
+Sun Nov 27 16:40:56 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c, os.h, local.c, strdup.c, macros.c, input.c, lexAcorn.c,
+	filename.c, main.c, eval.c: Add include common.h.
+	* variables.c, value.c, strdup.c, macros.c, input.c, get.c, main.c,
+	eval.c, lex.c: Remove include os.h.
+	* os.h (strndup, strdup, strncasecmp): Move prototypes to...
+	* common.h: ...here.
+	* lit.c (DEBUG_LIT): Add.
+
+Mon Nov 21 02:23:27 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/macro_args.s: Enhance.
+	* macros.c (c_macro): Support vertical bars around macro arguments.
+
+Sun Nov 20 23:17:23 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c: Improve previous change.
+
+Sun Nov 20 23:02:10 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* variables.c, variables.h (c_gbl, c_lcl, c_set): Drop doLowerCase
+	parameter.
+	* decode.c: Follow c_gbl, c_lcl, c_set parameter change.
+
+Sun Nov 20 22:40:21 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/lowercase.s: Add.
+	* common.h: Add.
+	* lex.c (Lex_MakeLocalLabel): Make use of UNUSED.
+	* help_cop.c (DestMem_RelocUpdaterCoPro): Likewise.
+	* m_cpumem.c (DestMem_RelocUpdater): Likewise.
+	* commands.c, commands.h, decode.c, m_cpuctrl.c, m_cop.c, m_cpuctrl.h,
+	m_cpumem.c, m_cop.h, m_cpumem.h, option.c, variables.c, option.h,
+	variables.h, m_fpe.c, m_fpe.h, m_copmem.c, m_copmem.h, m_cpu.c,
+	m_cpu.h: Add support for lowercase instruction mnemonics.
+
+Tue Nov 15 22:31:06 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/decode.s: Enhance.
+	* symbol.c (symbolPrint): Output defining area and code size.
+	* variables.c (c_lcl): Reset defining area and code size.
+
+Tue Nov 15 20:37:49 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (decode): Don't give warning on unsupported local labels
+	when it concerns a macro.
+
+Mon Nov 14 23:20:43 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/local_label.s: Enhance.
+	* symbol.c (Symbol_CreateSymbolOut): Make missing local label an
+	abort error to avoid an assert going off later.
+	* decode.c (decode): Define local lable before trying to parse
+	the mnemonic.
+
+Sun Nov 13 18:33:56 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/include/predef_reg_test.s: Add test on v8.
+	* regression/tests_pass/apcs-none.s: Update reference.
+	* regression/tests_pass/apcs-3-reentrant.s: Likewise.
+	* regression/tests_pass/apcs-3.s: Likewise.
+	* regression/tests_pass/apcs-3-reentrant-noswstackcheck.s: Likewise.
+	* regression/tests_pass/apcs-3-nofp.s: Add.
+	* symbol.c (Symbol_Init): When a nofp APCS flavour is selected, don't
+	define fp but define v8 instead.
+
+Sun Nov 13 17:47:43 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* main.c, main.h (option_autocast): Remove.
+	* commands.c (DefineReal): Drop support for option autocast.  Assume
+	this to be always set.
+	* code.c (codeEvalLow): Likewise.
+	* help_cop.c (help_copAddr): Likewise.
+	* value.c (valueEqual): Likewise.
+	* m_fpe.c (getFloatRhs): Likewise.
+	* lit.c (Lit_DumpPool): Likewise.
+
+Sun Nov 13 17:28:06 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/variable_substitution.s: Enhance test.
+	* input.c (Input_ArgSub): Vertical bar prevented variable substitution.
+
+Sun Nov 13 16:22:24 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (NeedToOutputSymbol): Fix KEEP support.
+	(Symbol_OutputForAOF, Symbol_OutputForELF): Remove ValueCode support.
+	* m_cpuctrl.c (Branch_RelocUpdater, branch_shared): Simplify.
+	* output.c (outputElf): Fix section start address for absolute
+	areas.
+	* targetcpu.c (Target_NeedAtLeastArch): Avoid crash when no CPU can
+	be suggested.
+	* reloc.c (Reloc_QueueExprUpdate): Remove test on undefined symbols.
+	* eval.c (evalBinop): Remove error on addition/subtraction of two
+	different symbols.
+
+Sat Nov 12 00:11:50 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/decode.s: Add.
+	* decode.c (decode): Don't match on too short mnemonic. Don't
+	remove existing symbol when it is used as macro label.
+	* help_cpu.c (ShiftL): un-inline.
+	* whileif.c (WhileBlock_t::restoreData::offsetFile): Change type
+	from long to off_t.
+	* Makefile.am (asasm_CFLAGS): Add _LARGEFILE_SOURCE define.
+
+Fri Nov 11 16:40:03 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/label.s: Add.
+	* regression/tests_pass/while.s: Enhance test.
+	* filestack.h (PObject::lastLineSize): Add comment.
+	* macros.c (Macro_GetLine): lastLineSize was wrongly calculated
+	when macro variable substitution was done.
+	* input.c (Input_NextLineCore): Add buffer size check for predefine
+	handling.
+
+Wed Nov  2 01:58:58 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/variables.s: Enhance test.
+	* variables.c (declare_var): Ignore type difference when local variable
+	shares the same name as global variable.
+	* lex.c (Lex_MakeLocalLabel): Fix compiler warning.
+
+Wed Nov  2 00:45:10 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/adr.s: Disable tests which are too
+	far fetched.  Add a new one.
+	* symbol.c (Symbol_OutputForAOF, Symbol_OutputForELF): ...
+	* code.c, code.h (Code_Normalize, Code_ExpandCode,
+	Code_ExpandCurrAreaSymbolAsOffset, Code_HasNonAddOperator,
+	Code_Assign): Remove.
+	(Code_EvalLowest): Remove doNormalize parameter.  Simply
+	evalUnop and evalBinop handling.
+	(codeEvalLow): When result is not of required type but ValueCode
+	is allowed, return ValueCode result.
+	(Code_PrintValueArray): Add.
+	(Stack): Change type from Code to Value.
+	(FirstFreeIns): Make type unsigned.
+	(codeSymbol): Add offset parameter.
+	(codePosition): Follow offset in ValueSymbol change.
+	(Code_ExpandCurrAreaSymbolAsAddr): Add test on factor.  Remove
+	ValueCode support.
+	* m_cpuctrl (branch_shared): Simplify.
+	(ADR_RelocUpdaterCore): Fix offset reporting.
+	* m_cpumem.c (dstmem): Give error in pass two only.
+	* storage.c (storageValue, c_record, c_alloc): Add ValueSymbol.
+	(c_alloc): Don't pass SYMBOL_DEFINED into Symbol_Define.
+	* value.c, value.h: Add offset to ValueSymbol.
+	(Value_Symbol): Add offset parameter.
+	* expr.c (prim): Add zero offset to codeSymbol.
+	* get.c (getRhs): Likewise.
+	* asm.c (ASM_DefineLabel): Use Value_Symbol instead of Value_Code.
+	* eval.c: Only give error in pass two.  Better support for
+	ValueSymbol.
+	* lit.c: Use Value_Symbol instead of Value_Code.
+
+Tue Oct 25 02:13:03 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lex.c (Lex_ReadLocalLabelFromLex): Add.
+	(Lex_ReadLocalLabel): Drop noCheck parameter.  Process characters
+	unsigned.
+	(Lex_GetDefiningLabel): Drop noCheck parameter.
+	(Lex_DefineLocalLabel): Add.
+	(Lex_SkipDefiningLabel): Support more than 2 digits local labels.
+	(lexPrint): Add LexLocalLabel case.
+	(Lex_Char2Int): Make local.
+	* lex.h (Lex): Add LocalLabel field.
+	* asm.c (ASM_DefineLabel): Support LexLocalLabel.
+	* input.c, input.h (Input_LocalLabel): Add.
+	* decode.c (oDecodeTable): % results in data output.  END can't
+	have any label.
+	(decode): Fix startOffset when area gets changed.  Support
+	LexLocalLabel.
+	* macros.c (Macro_Call): Support LexLocalLabel.
+	* regression/tests_pass/macro.s: Enhance.
+
+Tue Oct 25 02:02:20 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* get.c (getRhs): Treat 1 character strings as unsigned
+	integer.
+
+Sun Oct 23 03:46:45 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/builtinvar_pc.s: Enhance.
+
+Sun Oct 23 03:26:57 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_questionmark.s: Enhance.
+	* commands.c (Define): Don't pass SYMBOL_DEFINE in Symbol_Define.
+	* symbol.c (Symbol_Define): Make sure this can't be called
+	to define area symbols.  Improve DEBUG output.
+	(Symbol_CreateSymbolOutm, Symbol_OutputForAOF,
+	Symbol_OutputForELF): Area symbols no longer have
+	SYMBOL_DEFINED set.
+	* symbol.h (SYMBOL_KIND): Update comment.
+	* code.c (Code_EvalLowest): Area symbols no longer have
+	SYMBOL_DEFINED set.
+	* area.c (Area_Ensure, c_area): Likewise.
+	* asm.c (ASM_DefineLabel): Likewise.
+	* eval.c (Op_size): Support area symbols.
+	* decode.c (decode): areaCurrentSymbol can not be NULL here.
+	* INSTALL: Update cross-compile section.
+	* reloc.c (relocFix): Improve DEBUG output.
+
+Sat Oct 22 22:41:41 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c (oArea_EntrySymbolFile, oArea_EntrySymbolLineNum): Add.
+	(Area_ResetPrivateVars): Add.
+	(Area_PrepareForPhase): Use Area_ResetPrivateVars.
+	(c_entry): Improve error message for the 2nd occurance of ENTRY.
+	(Area_MarkStartAs): Fix compiler warning.
+	* decode.c (oDecodeTable): Add MEND.
+	* macros.c (c_mend): Renamed to Macro_IsMENDAtInput.
+	(c_macro): Follow c_mend rename.
+	(c_mend): Add.
+	* macros.h (c_mend): Add prototype.
+
+Sat Oct 22 22:37:37 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c (Input_ArgSub): Fix processing comments.  Fix buffer
+	overflow case.
+
+Sat Oct 22 22:29:52 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* eval.c (GetInt): Value 1 character long string should be
+	handled as unsigned.
+	(COMPARE): Support comparing integers and 1 character long
+	strings.
+	* regression/tests_pass/operator_relational.s: Enhance.
+
+Sat Oct 22 22:22:45 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* INSTALL: Add.
+
+Fri Oct 14 02:15:19 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* asm.c (ASM_DoPass): Break out assemble loop when longjmp is
+	taken.
+	* filename.c, filename.h: Change eB_Dot_A into eB_DirSep_A.
+	* include.c (Include_Get): Follow eB_Dot_A change into eB_DirSep_A.
+	Fix include path processing.
+	* output.c (): Follow eB_Dot_A change into eB_DirSep_A.
+
+Mon Oct 10 23:20:11 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.c (File_GetLine): don't chop off last character of file
+	when it is not NL.
+	* decode.c (decode): Avoid early breakout when mnemonic hasn't been
+	fully matched.
+	* regression/tests_pass/macro.s: Enhance test.
+
+Mon Oct 10 00:55:46 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* code.c (codePosition): Add workaround.
+	* eval.c (evalBinop): Enhance Op_ne for Symbol comparison.
+	* regression/tests_pass/operator_relational.s: Enhance with Symbol
+	equivalence tests.
+
+Sat Oct  8 19:09:57 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c (c_align): Add support for ABS area.  Negative offset values
+	are allowed.  Simplified implementation.
+	* regression/tests_pass/align.s: Add.
+	* decode.c (oDecodeTable): Add FIXME for RLIST.
+
+Sat Oct  8 16:43:23 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.h (SYMBOL_NOTRESOLVED): Remove.
+	(SYMBOL_RW): Add.
+	* symbol.c (symbolPrint): Add support for SYMBOL_MACRO_LOCAL and
+	SYMBOL_RW.  Follow SYMBOL_NOTRESOLVED removal.
+	* variables.c (declare_var): Make variable symbols with SYMBOL_RW.
+	* input.c (Input_VarSub): Do only substitution for variable symbols.
+	* regression/tests_pass/variable_substitution.s: Enhance test.
+
+Sat Oct  8 15:37:42 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile.am (tooldir, .PHONY, install-exec-local): Remove.
+
+Sat Oct  8 15:05:48 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* riscos_c.c (ThrowbackSendError): Fix info throwback messages.
+	(ThrowbackEnd): Reset ErrorFile.
+	* error.c (errorCore): Pass calling sequence as info throwback messages.
+	* output.c (outputFinish): AOF output has filetype Data.
+
+Sat Oct  8 12:57:06 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): CN/FN are not producing ARM code.
+	* area.c (Area_MarkStartAs): Don't do anything when we're in the
+	implicit area.
+	* symbol.c (symbolSymbolELFOutput): Mention symbol name for which we
+	can't find the section id.
+
+Sat Oct  8 11:40:24 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpumem.c (DestMem_RelocUpdater): Fix load pc-rel based in ABS Area.
+	* regression/tests_pass/ldr_from_addr.s: Add ABS Area test case.
+
+Sat Oct  8 02:48:28 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_precedence.s: Add.
+	* regression/tests_pass/operator_shift.s: Added :ASR: test.
+	* code.c (Code_EvalLowest,codePrint): Follow OperatorAsStr to
+	Lex_OperatorAsStr rename. Follow isUnop to IsUnop rename.
+	* expr.c (expr,exprBuild): Use kPrioOp_Min and kPrioOp_Max.
+	* lexAcorn.c: Use kPrioOp_* values.
+	(lexAcornBinop): Add support for :ASR:.
+	* eval.c (evalBinop): Add support for :LEOR: as Op_leor.
+	* lex.c (Pri): Remove.
+	Use kPrioOp_* values.
+	(OperatorAsStr): Rename to Lex_OperatorAsStr.  Follow Op_* reshuffle.
+	(lexPrint): Follow Lex00Label removal.
+	* lex.h (Operator): Reshuffle according to precedence.  Add Op_leor.
+	(kPrioOp_*): Define.
+	(isUnop): Rename to IsUnop and turns this into an inline.
+	(LexTag): Remove Lex00Label.
+	(Lex): Remove Label.
+
+Wed Oct  5 00:46:48 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* local.h (kIntLabelPrefix): Move to...
+	* symbol.h: ...here.
+	* local.c (routPos, rout_null, routList, routListEnd): Rename to
+	RoutPos_t, oRout_Null, oRout_List, oRout_ListEnd.
+	(Local_ROUTLblNo): Remove.
+	(oLocal_LabelNum): Add.
+	(Local_ResetLabels): Add.
+	(Local_PrepareForPhase, c_rout): Make use of Local_ResetLabels.
+	(Local_GetLabel): Add.
+	* local.h (Local_Label_t, Local_GetLabel): Add.
+	(Local_ROUTLblNo): Remove.
+	* lex.c (Lex_ReadLocalLabel): Support bigger label numbers.
+	(Lex_GetDefiningLabel, Lex_MakeLocalLabel): Use Local_GetLabel.
+
+Tue Oct  4 21:42:10 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lit.c (Lit_RegisterInt): Fix Value free problem.
+
+Mon Oct  3 21:45:10 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* macros.h (MACRO_ARG_LIMIT): Increased to 18.
+	(MACRO_ARG0): Changed from 16 to 14.
+	(MACRO_ARG15): Removed.
+	* macros.C (Macro_GetLine): Follow MACRO_ARG15 removal.
+
+Fri Sep 30 01:56:17 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.h (PObject::lastLineSize): Added.
+	* filestack.c (FS_GetLine): Update PObject::lastLineSize.
+	(FS_PushFilePObject): Initialise PObject::lastLineSize.
+	* macros.c (Macro_GetLine): Update PObject::lastLineSize.
+	(FS_PushMacroPObject): Initialise PObject::lastLineSize.
+	* whileif.c (if_skip, while_skip): Rename to If_Skip, While_Skip.
+	(While_Unwind): Remove.
+	(While_ReEvalAndDo): Renamed to While_Rewind.
+	(c_while, While_Rewind, c_wend, FS_PopIfWhile): Reparse WHILE input
+	line before re-evaluation.
+	* regression/tests_pass/while.s: Added test case.
+	* input.c (inputThisInstead): Rename to Input_ThisInstead.
+
+Thu Sep 29 22:01:10 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* local.c (Local_ROUTLblNo): Support up to 1000 local labels.
+	* local.h (Local_ROUTLblNo): Likewise.
+	* lex.c (Lex_ReadLocalLabel): Likewise.
+	* variables.c (varPos): Rename to VarPos.
+	(varPos::symptr): Rename to VarPos::symbolP.
+	(varPos::symbol): Rename to VarPos::symbol.
+	(var_restoreLocals): Rename to Var_RestoreLocals.
+	(var_define): Rename to Var_Define.
+	* variables.h: Likewise.
+	* macros.c, macro.h: Follow variables.c/variables.h renames.
+	* main.c: Likewise.
+
+Thu Sep 29 21:21:50 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lexAcorn.c (lexAcornUnop, lexAcornBinop): Avoid inputUnGet error on
+	unknown operations.
+
+Tue Sep 27 23:42:27 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* code.c (Code_ExpandCurrAreaSymbolAsOffset): Disabled.
+	* eval.c (GetInt): Added.
+	(evalBinop): Extend Op_mul, Op_div, Op_mod, Op_add, Op_sub, Op_and,
+	Op_or, Op_xor with support for one character long strings.
+	Simplified Op_asr, Op_sr, Op_sl, Op_ror, Op_rol by using GetInt.
+	Add restrict.
+	* eval.h (evalBinOp): Add restrict.
+	* regression/tests_pass/operator_multiplication.s: Enhanced.
+	* regression/tests_pass/operator_addition_logical.s: Likewise.
+	* Makefile.am (asasm_CFLAGS): Add -fstrict-aliasing -Wstrict-aliasing.
+
+Tue Sep 27 01:13:43 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c (inputGiveRestLine): Remove.
+	(inputNextLineNoSubst): Remove.
+	(inputArgSub): Rename to Input_ArgSub and give it a warnOnVarSubFail
+	parameter.
+	(inputNextLine): Rename to Input_NextLine and give it a warnOnVarSubFail
+	parameter.
+	(inputVarSub): Rename to Input_VarSub and give it a warnOnVarSubFail
+	parameter.
+	(inputNextLineCore): Rename to Input_NextLineCore.  Move END check
+	and FS_PopPObject call to ASM_GetLine.
+	* input.h (inputGiveRestLine, inputNextLineNoSubst): Remove declaration.
+	(inputNextLine): Rename to Input_NextLine.
+	(Level_e): Add.
+	* asm.c (ASM_GetLine): Add.
+	(ASM_DoPass): Call ASM_GetLine instead inputNextLine.
+	* whileif.c (if_skip): Drop onerror and *matchingToken parameters.
+	Replace inputNextLineNoSubst call by Input_NextLine (eVarSubstNoWarning).
+	No longer test on END. No longer report an error on end-of-data but
+	give an empty input line instead.
+	(while_skip): Apply recent if_skip fixes. Report labels being used
+	for WHILE/WEND.  Give an empty input line when WEND is missing.
+	(c_wend,FS_PopIfWhile): Enhance error messages.
+	* macros.c (c_macro): Replace inputNextLineNoSubst call by
+	Input_NextLine (eNoVarSubst).
+	* regression/tests_pass/if_else.s: Add test for verifying variable
+	expansion being done in skipped branch.
+	* regression/tests_pass/while.s: Add test for verifying variable
+	expansion being done when WHILE body gets skipped.
+
+Sun Sep 25 00:35:56 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): Mark the output of ALIGN as data.
+	* area.c, commands.c, symbol.c, symbol.h, put.c, lit.c:	Get rid of
+	SYMBOL_DECLARED.
+	* commands.c, symbol.c, put.c, code.c, decode.c, m_cpuctrl.c,
+	help_cop.c, local.c, m_cpumem.c, area.c, expr.c, output.c, asm.c,
+	lit.c: Have absolute base address in area symbol Symbol::value,
+	current area index value at Symbol::info.area::curIdx and size of
+	area at the end of pass one at Symbol::info.area::maxIdx.
+	* area.c (c_area, c_org): Make area symbol absolute when area is
+	absolute.
+	* area.h (AREA): Remove baseAddr, add curIdx and maxIdx.
+	(Area_GetBaseAddress): Add.
+	* code.c (Code_EvalLowest): Support absolute AREA symbols.
+	(Code_ExpandCurrAreaSymbolAsOffset): Make static.
+	* code.h (Code_ExpandCurrAreaSymbolAsOffset): Remove declaration.
+	* output.c (writeElfSH): Add addr parameter.
+	* regression/tests_pass/org.s: Added.
+	* regression/tests_pass/def.s: Added.
+
+Sat Sep 24 14:02:06 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* rname.c, rname.h, rname2.h: Remove.
+	* filename.c, filename.h: Add.
+	* Makefile.am: Follow rname.c, rname.h, rname2.h removal and
+	filename.c, filename.h addition.
+	* riscos_c.c (__riscosify_control): Don't do any filename processing
+	in UnixLib (when used).
+	* output.c (outputInit): Use FN_AnyToNative.
+	(outputAof, outputElf): Add verbose message.
+	* include.c (Input_Get,Input_Open): Use FN_AnyToNative.
+	* docs/asasm.txt: Add.
+
+Sun Sep 11 14:06:06 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* error.c (errorCore): PObject::name can't be NULL anymore.
+	* filestack.c (ReportFSStack, FS_GetCurFileName): Likewise.
+
+Sun Sep 11 14:01:08 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* error.c (no_errors, no_warnings, ThrowbackStarted): Rename to
+	oNumErrors, oNumWarnings, oThrowbackStarted.
+	(errorCore): Report error backtrace via throwback as well.
+
+Sun Sep 11 13:53:10 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* riscos_c.c (OSCanonicalisePath): Make it static.
+	* os.h (OSCanonicalisePath): Remove prototype.
+
+Sun Sep 11 13:50:41 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* macros.c (c_macro): Fix comment.
+	* main.c (main): Unbuffered stdout for DEBUG builds.
+
+Sun Sep 11 13:39:32 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lex.c (Lex_SkipDefiningLabel): Add.
+	* lex.h (Lex_SkipDefiningLabel): Likewise.
+	* whileif.c (if_skip, while_skip): Don't define local labels when
+	skipping if/while bodies.
+
+Sun Sep 11 13:33:06 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* local.h (Local_CurROUTId): Remove.
+	(Local_GetCurROUTId, Local_DumpAll): Add.
+	* local.c: Likewise.
+	(Local_PrepareForPhase): Follow Local_CurROUTId removal and use
+	Local_GetCurROUTId.
+	(c_rout): Likewise.  Initialise routPos::next.
+	* lex.c (Lex_ReadLocalLabel, Lex_MakeLocalLabel,Lex_GetDefiningLabel):
+	Follow Local_CurROUTId removal and use Local_GetCurROUTId.
+
+Sun Sep 11 12:11:22 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.c (FS_PushFilePObject): Add return value.
+	* filestack.h (FS_PushFilePObject): Likewise.
+	* commands.c (c_get, c_lnk): Check return value of
+	FS_PushFilePObject.
+	(c_info): Only report during phase one.
+
+Sun Sep 11 12:04:11 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (Symbol_CreateSymbolOut): Update local label error.
+
+Sat Sep 10 10:51:37 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c (inputEnvSub): When cross-compiled, substitute $ into _
+	when initial environment variable retrieve didn't work.
+
+Sun Aug  7 18:39:49 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lexAcorn.c (lexAcornUnop, lexAcornBinop): Don't consume characters
+	which weren't expected.
+	* lex.c (lexGetPrim, lexGetBinop): Return : back to input stream if
+	tokenizing failed.
+
+Sun Aug  7 17:30:45 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* code.c (Code_EvalLowest): Don't call operator size for non-defined
+	symbols.
+	* eval.c (evalUnop): Op_size: Remove implementation for non-defined
+	symbols.
+	* regression/tests_pass/operator_questionmark.s: Add tests.
+	* asm.c (DEBUG_ASM): More debug.
+	* regression/tests_pass/load_literal4.s: Add.
+
+Thu Aug  4 22:58:58 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (c_assert): Make it phase aware.
+	* regression/tests_pass/assert.s: Added.
+	* regression/tests_pass/if_else.s: Removed bogus 2nd parameter of
+	ASSERT.
+	* error.c (error): Don't call Input_ShowLine during phase 1.
+	* local.c (Local_PrepareForPhase): Surpress compiler warning.
+	* eval.c (evalBinop): Teach Op_eq about comparing ValueCode and
+	ValueSymbol values.
+
+Thu Aug  4 01:37:50 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* asm.c (ASM_DoPass, gASM_Phase): Add.
+	(ASM_Assemble): Assemble source code twice.
+	* asm.h (gASM_Phase): Add.
+	* commands.c (DefineInt): Make it phase aware.
+	(DefineReal): Likewise.
+	* decode.c (decode): Likewise.
+	* eval.c (evalUnop): Likewise.
+	* symbol.c (Symbol_OutputForAOF): Support area mapping symbols.
+	(Symbol_OutputForELF): Likewise.
+	* m_cpuctrl.c (branch_shared): Likewise.
+	(m_adr): Likewise.
+	* help_cop.c (help_copAddr): Likewise.
+	* error.c (errorCore): Likewise.
+	(errorCoreLine): Likewise.
+	* macros.c (c_macro): Likewise.
+	* reloc.c (Reloc_QueueExprUpdate): Likewise.
+	* get.c (getRhs): Likewise.
+	* main.c (main): Likewise.
+	* area.c (Area_EnsureExtraSize): Likewise.
+	(areaInit): Remove.
+	(Area_PrepareForPhase): Add.
+	(Area_MarkStartAs): Add SYMBOL_DATUM for data area mappings.
+	* area.h (Area_PrepareForPhase): Add.
+	* lit.c (Lit_GetSizeInBytes, Lit_GetAlignment, Lit_CreateLiteralSymbol):
+	Add.
+	(Lit_RegisterInt,Lit_RegisterFloat,Lit_DumpPool): Fix memory
+	corruption.  Make it phase aware.
+	* value.c (valueEqual): Reevaluate Code and Symbol values before
+	comparision.
+	* m_cpumem.c (DestMem_RelocUpdater): Support relocation to another
+	area than current one.  Fix relocation flags.
+	(dstmem): Fix memory corruption.  Make it phase aware.
+	* local.c (Local_PrepareForPhase): Add.
+	* local.h (Local_PrepareForPhase): Add.
+	* regression/tests_pass/record_basic.s: Enable tests which work now.
+	* regression/tests_pass/operator_index.s: Likewise.
+	* regression/tests_pass/adr.s: Account for missing ADRL to ADR
+	optimisation.
+	* regression/tests_pass/register_based_map.s: Likewise.
+	* regression/tests_fail/ldr_from_expr_fail.s: Move to...
+	* regression/tests_pass/ldr.s: ...here.  Disable the relocation
+	part of the test.
+	* regression/tests_pass/load_literal3.s: Add.
+	* regression/tests_pass/load_literal.s: Update reference part.
+
+Fri Jul 22 16:00:45 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (Symbol_PreDefReg): Use symbolGet instead of symbolAdd.
+	(symbolAdd): Remove.
+	(symbolGet): Drop NULL assignment.
+	(Symbol_Define): New.
+	* symbol.h (Symbol_Define): Add declaration.
+	(symbolAdd): Remove declaration.
+	* commands.c (Define): Renamed from c_define.  Use Symbol_Define.
+	(c_equ, c_fn, c_rn, c_cn, c_cp): Use Define.
+	* decode.c (decode): Use symbolGet instead of symbolAdd.
+	* storate.c (c_alloc): Likewise.
+	* asm.c (ASM_DefineLabel): Likewise.
+	* variables.c (declare_var): Likewise.  Add AREA symbol clash test.
+	* include.c (Include_Get): Fix const problem.
+	* lit.h (struct LITPOOL): Move to...
+	* lit.c (struct LITPOOL): ...here.
+	(Lit_GetLitOffsetAsSymbol): Use snprintf instead of sprintf.
+	(Lit_RegisterInt): Store trunced values as unsigned.
+	(Lit_RegisterFloat): Test upfront on well known FPE constants.
+
+Wed Jul 20 00:08:18 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* macros.c (Macro_Call): Duplicate default argument.
+	(c_macro): Don't do argument substitution when skipping until MEND.
+
+Sun Jul 10 19:21:24 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c, area.h (areaGrow): Rename to Area_EnsureExtraSize and drop area
+	parameter. Add test if there is anything to do so that AREA_NOSPACE is
+	no longer needed.
+	* put.c (Put_DataWithOffset, Put_FloatDataWithOffset,
+	Put_InsWithOffset): Follow areaGrow/Area_EnsureExtraSize change.
+
+Sun Jul 10 15:05:20 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include.h (addInclude, getInclude): Rename to Include_Add, Include_Get.
+	* include.c: Likewise.
+	(Include_Add): Drop return value.
+	(Include_Get): Add inc parameter.
+	* commands.c (c_incbin): Follow Include_* API change.
+	* main.c (main): Likewise.
+	* eval.c (evalUnop): Likewise.
+	* filestack.c (FS_PushFilePObject): Use Include_Get to open the
+	command line specified assembler file.  This removes stdin support.
+	* regression/Makefile: Add V variable.
+
+Sun Jul 10 14:12:34 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c (inputInit): Remove.
+	* input.h: Likewise.
+	* asm.c (ASM_Assemble): Call FS_PushFilePObject instead of inputInit.
+	* include.c (incDirCurSize, incDirMaxSize): Make type unsigned.
+
+Sun Jul 10 17:35:39 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c (c_area): Relax the AREA attribute test on redefinition.
+	* regression/tests_pass/area.s: Add.
+
+Sun Jul 10 16:49:00 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* local.c (c_rout): When label is supplied, it should be defined as
+	global label just like any others.
+	* regression/tests_pass/local_label.s: Enhance ROUT test.
+
+Sat Jun 25 17:57:13 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/rotator.s: Added.
+	* get.c (getRhs): Support symbol as value type for rotator value.
+	* m_cpuctrl.c (m_msr): Add fixme.
+	* symbol.h: Comment update.
+	* symbol.c (SymbolCompare): Remove comment.
+
+Tue Jun 14 02:12:06 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (NeedToOutputSymbol): When we having a global keep, don't
+	output the register symbols.
+	(symbolFix,symbolStringOutput, symbolSymbolAOFOutput,
+	symbolSymbolELFOutput): Refactored code into...
+	(SymbolCompare, Symbol_CreateSymbolOut, Symbol_OutputStrings,
+	Symbol_OutputForAOF, Symbol_OutputForELF, Symbol_FreeSymbolOut,
+	SymbolOut_t): ...this. Now outputing local symbols first and order them
+	alphabetically.
+	(symFlag): Don't give error when no symbol can be read.
+	(c_keep): Fix return value check of symFlag call.
+	(c_import): Give error when no symbol can be read.
+	* symbol.h (symbolFix,symbolStringOutput, symbolSymbolAOFOutput,
+	symbolSymbolELFOutput): Remove.
+	(SymbolCompare, Symbol_CreateSymbolOut, Symbol_OutputStrings,
+	Symbol_OutputForAOF, Symbol_OutputForELF, Symbol_FreeSymbolOut,
+	SymbolOut_t): Add.
+	* output.c (outputAof, outputElf): Use new Symbol_* code.
+	(outputElf): Add preprocessor test on ELF_EABI for EABI v5 output.
+	* elf.h: Remove non-ARM bits.  Update ARM relocation list.
+	* local.c (kIntLabelPrefix): Move to...
+	* local.h: ...here.
+	* lit.c (Lit_GetLitOffsetAsSymbol): Use kIntLabelPrefix.
+	* input.c (Input_Rest): Add test on input_pos.
+
+Mon Jun 13 15:02:52 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (symbolFix, symbolSymbolELFOutput): For ELF output, section
+	names should not even be mentioned in the string table at all.
+	* symbol.h (Symbol): Update comments.
+	* area.h (AREA_ALIGN_MASK): Define.
+	* area.c (c_area): Use AREA_ALIGN_MASK.
+	* output.c (outputElf): Properly fill in info field of the symbol
+	table section; Support non-4 AREA alignments.
+
+Mon Jun 13 01:10:34 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (symbolFix): Return the number of symbol entries to include
+	in output file (not the number of unique symbols); For ELF output,
+	use empty section names as symbols.
+	(symbolStringOutput): For ELF output, use empty section names as
+	symbols; Add offset asserts.
+	* symbol.h (Symbol): Update comments.
+	* area.c (Area_MarkStartAs): Fix Mapping Symbol string length.
+	* output.c (writeElfSH): Round offset calculation.
+	(outputElf): Don't round the string table length.
+
+Sun Jun 12 21:09:33 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/sev_wfe_wfi_yield.s,
+	regression/tests_pass/misc.s, regression/tests_pass/mul_mla_mls.s,
+	regression/tests_pass/swi.s, regression/tests_pass/ldm_stm_pop_push.s,
+	regression/tests_pass/loadstore2.s, regression/tests_pass/copro.s,
+	regression/tests_pass/dmb_dsb_isb.s,
+	regression/tests_pass/asr_lsl_lsr_ror_rrx.s,
+	regression/tests_pass/fpe_memory.s, regression/tests_pass/rfe_srs.s
+	regression/tests_pass/arithmetic1.s, regression/tests_pass/dsp.s,
+	regression/tests_pass/nop.s, regression/tests_pass/loadstore.s,
+	regression/tests_pass/branch.s, regression/tests_pass/fpe.s,
+	regression/tests_pass/cps.s, regression/tests_pass/fpe_immediate.s,
+	regression/tests_pass/clrex_ldrex_strex.s,
+	regression/tests_pass/pld_pldw_pli.s,
+	regression/tests_pass/arithmetic2.s: Use DCI instead of DCD as
+	reference for ARM instructions.
+	* commands.c (c_dci): Do align with warning like we do when
+	emitting unaligned instructions.
+	* regression/tests_pass/dcb_dcw_dcd.s: Remove ALIGN, this is now done
+	implicitely (with warning), use instructions as reference for DCI.
+	* symbol.c (symbolFix, symbolStringOutput): Map mapping symbols names
+	to their 2 character prefix.
+	(symbolStringOutput): Add stringSizeNeeded parameter for consistency
+	check.
+	(symFlag): Add error when a mapping symbol explicitely gets created.
+	* symbol.h (symbolStringOutput): Add stringSizeNeeded parameter.
+	(c_exportas): Drop unused declaration.
+	* decode.c (decode_table_t): Use bitfields & enums. Add result subfield.
+	(decode): Follow decode_table_t change; Add call to Area_MarkStartAs;
+	Add warning when code gets created in DATA area.
+	* storage.c (c_alloc): Remove unnecessary test.
+	* area.c (oArea_CurrentEntryType, Area_MarkStartAs,
+	Area_IsMappingSymbol): Add.
+	* area.h (Area_MarkStartAs, Area_IsMappingSymbol): Add.
+	* output.c (outputAof): Follow symbolStringOutput change.
+	(outputElf): Follow symbolStringOutput change; Drop prefix dot of a
+	section name when determining relocation section name.
+	* lit.c (Lit_DumpPool): Add call Area_MarkStartAs.
+
+Sun Jun  5 15:53:04 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c, input.h (Input_Rest): Renamed from inputRest.
+	* commands.c, decode.c, whileif.c, lexAcorn.c : Follow inputRest rename.
+	* input.c, input.h (skiprest): Remove.
+	* commands (c_idfn): Don't call skiprest.
+	* error.c, macros.c, frame.c, whileif.c: Call Input_Rest instead of
+	skiprest.
+	* filestack.c (FS_PushFilePObject): Don't call skiprest.
+	* output.c (outputElf): Fix writing empty sections.
+	* elf.h (EF_ARM_CURRENT): Change to EABI version 5.
+	* decode.c (oDecodeTable): Fix alphabetical order.
+
+Sun Jun  5 02:33:29 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* frame.c (c_function, c_endfunc, c_frame): Add.  Dummy implementations
+	for FUNCTION/PROC/ENDFUNC/ENDP/FRAME.
+	* frame.h: Add.
+	* decode.c (oDecodeTable): Add FUNCTION, PROC, ENDFUNC, ENDP and FRAME.
+
+Sat Jun  4 18:29:35 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpumem.c (dstreglist): Add test on LDM instructions and
+	multi-register POP instructions with writeback and base register in
+	register list.
+
+Wed May 25 20:02:48 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/macro.s: Added testcase from Christopher Martin
+	for his previous variable.c (c_lcl) fix.
+	* commands.c (c_dc*): Add comment.
+	* output.c: Always include errno.h.
+	* input.c: Remove needless include of errno.h.
+
+Wed May 25 23:48:44 CST 2011   Christopher Martin  <belles@internode.on.net>
+
+	* reloc.c (relocELFOutput): Removed an excess armword() operation that
+	would inappropriately undo the byte-sex conversion of a preceding
+	armword() operation.
+	* reloc.c (relocELFOutput): Corrected misuse of 'offset' and 'used'
+	fields in Symbol struct which was causing relocations in ELF object
+	files to have messed up symbol table entries.
+	* symbol.h: Edited comments to better reflect how 'offset' and 'used'
+	fields in Symbol struct are used for relating symbols to symbol table
+	entries.
+	* variables.c (c_lcl): Ensure that a copied (sub)string is terminated.
+	Bug found when comments in macros messed up assembly.
+
+Wed Apr 13 01:45:58 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/misc.s: Add MSR/MRS APSR tests.
+	* m_cpuctrl.c (getpsr): Support APSR; Give legacy warning on non
+	csxf format usage; Give warning on immediate value usage to update
+	status and/or extension fields.
+
+Fri Apr  1 01:50:52 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/variable_substitution.s: Add check on empty
+	string variable expansion.
+	* input.c (inputVarSub): Add return value indicating additional
+	environment expansion or not.
+	(inputArgSub): Follow inputVarSub API change.
+
+Wed Mar 30 01:38:58 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/environment_variable.s: Improve test.
+	* regression/tests_pass/environment_variable2.s: Likewise.
+
+Wed Mar 30 01:27:33 CEST 2011  John-Mark Bell  <jmb@netsurf-browser.org>
+			       John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c (inputArgSub): Re-expand variable contents.
+	* regression/tests_pass/environment_variable.s: Ensure we do not do
+	environment variable expansion inside strings.
+	* regression/tests_pass/environment_variable2.s: Make sure we do
+	environment variable expansion after string variable expansion.
+
+Mon Mar 28 01:58:51 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.h (Symbol::areaDef): Add.
+	* symbol.c (symbolNew): Initialise Symbol::areaDef.
+	(symbolFix): Add asserts. Area symbols are always STB_LOCAL. Non
+	area symbols should have as st_shndx the section number where they
+	are defined.
+	* output.c (countRels): Removed.
+	(writeElfSH): Fix area/section counting.  Add relocation section
+	counting. Prefix relocation section names with ".rel." instead of ".rel".
+	* reloc.c (relocELFOutput): Don't call armword() twice for the same
+	word.
+
+Sat Mar 26 12:44:29 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/smc.s: Add.
+	* m_cpumem.c (getRhs): Follow API change.
+	(m_swp): Add warning about deprecation.
+	* m_cpu.c (dstlhsrhs, dstrhs, lhsrhs): Add bool return value.
+	* get.c (getShift): Invert first parameter.
+	(getRhs): Likewise.
+
+Sat Mar 12 16:25:23 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): Add SMC/SMI.
+	* m_cpuctrl.c, m_cpuctrl.h (m_smc): Add.
+
+Thu Mar 10 00:45:15 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): Add DBG.
+	* m_cpuctrl.c, m_cpuctrl.h (m_dbg): Add.
+	* regression/tests_pass/dbg.s: Add.
+
+Mon Feb 21 02:28:15 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/fpe_memory.s: Split of fp.s only containing
+	the FPE memory related mnemonics. Use DCI instead of DCD.
+	* regression/tests_pass/operator_index.s: Enabled disabled test lines.
+	* regression/tests_pass/ldr_from_addr.s: Likewise.
+	* regression/tests_pass/fpe.s: Renamed from fp.s.
+	* regression/tests_pass/fpa_immediate.s: Renamed from fpa_immediate.s
+	and addd -autocast test option.
+	* regression/tests_pass/fpe_literal.s: Added.
+	* commands.c (DefineInt_PrivData_t, DefineReal_PrivData_t): Move to
+	commands.h.
+	* m_fpu.c, m_fpu.h: Rename to m_fpe.c, m_fpe.h.
+	* help_cop.c (DestMem_RelocUpdaterCoPro): Added.
+	(help_copAddr): Support late definitions and literals.
+	* help_cop.h (CP_GET_NUMBER): Added.
+	* m_cpumem.c (dstmem): Support late immediate definitions. Refactoring.
+	Remove several unnecessary calls to skipblanks.
+	* option.h (PRECISION_MEM_MASK): Added.
+	* value.h (Value_Float): Added.
+	* m_fpe.c (M_*): Move to m_fpe.h.
+	(CheckFPUsageIsAllowedAndGiveHWWarning): Give warning only in
+	pedantic mode.
+	(fpuImm): Rename to FPE_ConvertImmediate, pre-add immediate bit and
+	export it.
+	(getFloatRhs): Only integer support when autocast is specified.
+	(m_lfd, m_stf): Add deprecated warning for packed option.
+	* m_cpu.c: Remove unnecessary skipblanks calls.
+	* fix.c, fix.h (fixCopOffset): Rename to Fix_CopOffset and add file
+	parameter.
+	* lit.c (Lit_RegisterInt): Add asserts and remove preliminary float
+	support.
+	(Lit_RegisterFloat): Added.
+	(Lit_DumpPool): Add float support and fix Reloc_QueueExprUpdate()
+	calls concerning passing on private data.
+	* lit.h (Lit_RegisterFloat): Added.
+	* Makefile.am: Follow m_fpu.c to m_fpe.c rename.
+
+Sat Feb 19 16:42:01 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/fpa_immediate.s: Add ABS test.
+	* code.c (codeEvalLow): One -fussy is enough.
+	* fix.c (fixImm8s4): Likewise.
+	* m_fpu.c (Fix_ImmFloat): Avoid unnecessary abort situation. One
+	-fussy is enough.
+	* main.c (asasm_help): Don't mention more than one -fussy.
+
+Wed Feb 16 00:56:28 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/fpa_immediate.s: New.
+	* regression/tests_pass/fp.s: Avoid using F0/R0.
+	* help_cop.c, help_cop.h (help_copAddr): Add stack parameter.
+	* m_cop.c (coprocessor): Also test on coprocessor 2.
+	* option.c (getPrec): Rename to GetFPAPrecision.
+	(getRound): Rename to GetFPARounding.
+	(optionCondOptPrecRound): Remove.
+	* option.h (optionCondOptPrecRound): Remove.
+	(PRECISION_MASK): Add.
+	* m_copmem.c (dstmem): Add literal parameter.
+	* m_fpu.c (CheckFPUsageIsAllowedAndGiveHWWarning): Add.
+	(m_fdv,m_fml,m_frd): Warn when used in non-single precision.
+	(m_pol,m_pow,m_rpw,m_acs,m_asn,m_atn,m_cos,m_exp,m_lgn,m_log,m_sin,
+	m_tan): Warn these will never be hardware accelerated.
+	(dstmemx): Add bool return value and return true when mnemonic is not
+	recognized.
+
+Sat Feb 12 16:02:33 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_fpu.c (CheckFPUsageIsAllowed): Move all soft-float option testing
+	to here.
+
+Wed Feb  2 01:46:54 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/apcs.s: Moved to...
+	* regression/tests_pass/environment_variable.s: ...here.
+	* regression/hdr: Moved to...
+	* regression/tests_pass/include/hdr: ...here.
+	* regression/Makefile: Add support for RUNOPT.
+	* regression/tests_pass/apcs-3-32bit.s,
+	regression/tests_pass/apcs-3-26bit.s,
+	regression/tests_pass/apcs-none.s,
+	regression/tests_pass/apcs-3.s,
+	regression/tests_pass/apcs-3-reentrant.s,
+	regression/tests_pass/apcs-3-reentrant-noswstackcheck.s,
+	regression/tests_pass/include/predef_reg_test.s
+	: New.
+	* symbol.c: Fix conditional defined of CPU symbol registers based
+	on -APCS option.
+	* main.c, main.h: Support -APCS option, remove -apcs26, -apcs32,
+	-apcsfpv2 and -apcsfpv3 options.
+	* lexAcorn.c, area.c, option.c: Follow -APCS option support.
+
+Thu Jan 27 02:35:32 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_fpumem.c, m_fpumem.h: Merge content to...
+	* m_fpu.c, m_fpu.h: ...here.
+	* Makefile.am: Remove m_fpumem.c.
+	* decode.h: Remove include m_fpumem.h.
+
+Thu Jan 27 02:13:13 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): Add NOFP.
+	* m_fpu.c, m_fpu.h (c_nofp, CheckFPUsageIsAllowed): New.
+	Move M_* from m_fpu.h to m_fpu.c.
+	* fix.c, fix.h (fixImmFloat): Move to m_fpu.c, m_fpu.h.
+
+Tue Jan 25 01:38:58 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* storage.c (c_alloc): Don't give an error on negative or zero field
+	sizes.
+	* regression/tests_pass/record_basic.s: Enhance test for negative and
+	0 field sizes.
+	* commands.c (c_incbin): Fix BIN/INCBIN implementation.
+	* regression/tests_pass/bin.s, regression/tests_pass/include/def.txt:
+	Add BIN/INCBIN tests.
+	* symbol.c (NeedToOutputSymbol): Centralizes the decision which symbols
+	need to be included in the output.
+	(SYMBOL_OUTPUT, SYMBOL_ELF_OUTPUT, SYMBOL_AOF_OUTPUT): Remove.
+	(findAreaIndex): Remove.
+	(symbolSymbolELFOutput): Use the upfront calculated section number
+	instead of calling findAreaIndex.
+	* output.c (outputInit): Try to recognize RISC OS filename syntax.
+	(writeElfSH): Proper upfront calculation of section number for all our
+	areas.
+	* main.c, main.h (ProgName): Remove.
+
+Fri Jan 21 03:20:48 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c (Area_AlignTo): Fix zeroing of memory. Fix updating area end.
+
+Sun Jan 16 23:30:44 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* depend.c (dependWrite): Write one long dependency line instead of
+	using continuation character.  Looks like this is more amu friendly.
+	* filestack.c (ReportFSStack): Added (for debug purposes).
+	(FS_PushFilePObject): Initialise PObject::type.
+	* input.c (inputVarSub): When variable is not known, report this as
+	a warning, not an error.  Vertical bars in string should also disable
+	variable substitution.
+	(inputSymbol): Never process further than a semi-column.
+	* regression/tests_pass/macro_args.s: Enhance test.
+	* regression/tests_pass/variable_substitution.s: Enhance test.
+
+Sun Jan 16 15:23:32 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpuctrl.c (branch_shared): Drop support for " and #.
+	* whileif.c (while_skip): Make use of inputNextLineNoSubst instead of
+	inputNextLine.
+	* input.c (inputVarSub): Don't corrupt input_pos, only temporarily
+	change it.
+	* main.c (main): Accept and ignore -stamp/-quit options because of
+	legacy reasons.
+
+Mon Jan 10 00:09:05 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/dcb_dcw_dcd.s: Enhance test case with tests for
+	'=' and one character strings.
+	* regression/tests_pass/operator_shift.s: Enhance test case for one
+	character strings.
+	* regression/tests_pass/operator_unary.s: Likewise.
+	* commands.c (DefineInt_RelocUpdater): Support for non-1 byte data size
+	combined with string size 1.
+	* input.c (inputNextLineNoSubst,inputNextLine,Input_ShowLine,
+	Input_GetColumn): Invalidate input_pos when building up the contents of
+	input_buf so that Input_ShowLine doesn't show half built up content.
+	* eval.c (evalBinop): Case Op_asr, Op_sr, Op_sl, Op_ror, Op_rol:
+	Support one character strings.
+	(Eval_NegValue): Likewise.
+	(evalUnop): Case Op_neg, likewise.
+	* main.c & elsewhere: Adjust (c) year dates.
+
+Sun Jan  2 22:06:06 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/dcb_dcw_dcd.s: Enhanced test case with '&'.
+	* commands.c (*, EQU, RN, FN, CN, CP): Better behaviour when symbol
+	was already defined (when value is the same, don't complain).
+	* decode.c (oDecodeTable): Fix inconsistency for '&'.
+	(decode): Always pass on symbol for .sym callback.
+	* input.c (Input_ShowLine): Use stderr instead of stdout.
+
+Sun Jan  2 20:21:18 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/macro.s: New.
+	* regression/tests_pass/while.s: New.
+	* error.c (MAXERROR): Reduced to 30.
+	* whileif.c, whileif.h: Merge if/while tracking together.
+	* filestack.h (PObject): Follow if/while changes.
+	* filestack.c (FS_PushFilePObject): Likewise.
+	(File_GetLine): Parsing long lines didn't correctly increment line
+	number.
+	* variables.c (c_lcl, c_gbl, c_set): Properly test end of keyword.
+	(c_lcl): Restore local variable only once.
+	* macros.c: Follow if/while changes.
+	(c_mend): Simplify implementation.
+	(c_mexit): Call FS_PopPObject instead of FS_PopMacroPObject (which was
+	not meant to be called by anything else than FS_PopPObject).
+
+Thu Dec 30 02:32:50 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/dsp.s: Move PLD tests to...
+	* regression/tests_pass/pld_pldw_pli.s: ...here.
+	* regression/tests_pass/nop.s: New.
+	* regression/tests_pass/branch.s: Move BX/BLX tests to separate
+	section and add BXJ test.
+	* regression/tests_pass/arithmetic2.s: Move MUL/MLA tests to...
+	* regression/tests_pass/mul_mla_mls.s: ...here and add MLS test.
+	* regression/tests_pass/ldm_stm_pop_push.s: Add test on UAL syntax
+	and condition codes.
+	* regression/Makefile: Change asasm option -t into -cpu.
+	* decode.c (oDecodeTable): Reinstate BIN; add BXJ, MLS, NOP; change PLD
+	into PL; add suggestions for improvement.
+	* m_cpuctrl.c: Use Target_NeedAtLeastArch.
+	(m_bxj): New.
+	* help_cop.c (help_copInt): Move to...
+	* m_cop.c (CopInt): ...here. Use Target_NeedAtLeastArch.
+	* m_cpumem.c: Use Target_NeedAtLeastArch.
+	* option.c (GetCCode): Renamed from getCond and cleanup.
+	(IsEndOfKeyword): Make use of Input_IsEndOfKeyword.
+	(optionCondS): Support UAL syntax.
+	(optionCondLdmStm): Support case where stack mode is not specified.
+	* m_copmem.c (m_ldc2, m_stc2): Simplify. Use Target_NeedAtLeastArch.
+	* m_cpu.c (m_nop): Support ARMv6K/ARMv6T2/ARMv7 NOP flavour.
+	(onlyregs): Support MLS, check on PC being used.
+	Use Target_NeedAtLeastArch.
+	* targetcpu.c, targetcpu.h: Reimplemented to support -cpu fully.
+	* input.c, input.h (notinput): Remove.
+	(Input_MatchString, Input_IsEndOfKeyword): Added.
+	* lexAcorn.c: Use Input_MatchString instead of notinput.
+	(lexAcornPrim): Support {ARCHITECTURE}, {CPU}.
+	* main.c: Drop -target option, add -cpu.
+
+Tue Dec 28 17:30:18 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/rfe_srs.s: New.
+	* decode.c (oDecodeTable): Add RFE and SRS.
+	* m_cpuctrl.c (m_cps): Limit mode to 5 bits.
+	* m_cpuctrl.c, m_cpuctrl.h (IsValidARMMode, ARM_MODE_*): Move to...
+	* option.c, option.h: ...here.
+	(GetStackMode): Renamed from getDir.
+	(Option_CondRfeSrs): Added.
+	* m_cpumem.c, m_cpumem.h (m_rfe, m_srs): New.
+	* lex.c (lexGetBinop): Don't eat lonely exclamation marks.
+
+Tue Dec 28 14:02:11 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/ldrex_strex.s: Renamed to...
+	* regression/tests_pass/clrex_ldrex_strex.s: ...this. Add CLREX test.
+	* decode.c (oDecodeTable): Add CLREX.
+	* m_cpumem.c, m_cpumem.h (m_clrex): New.
+
+Tue Dec 28 02:32:35 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/sev_wfe_wfi_yield.s: New.
+	* regression/tests_pass/ldrex_strex.s: New.
+	* regression/tests_pass/misc.s: Move SWI test to...
+	* regression/tests_pass/swi.s: ...here. Update test for SVC and '#'
+	usage.
+	* decode.c (oDecodeTable): Add LDREX, STREX, SEV, SVC, WFE, WFI, YIELD.
+	* m_cpuctrl.c (m_swi): Fix # usage.
+	(m_sev, m_wfe, m_wfi, m_yield): Added.
+	* m_cpumem.c (LdrStrEx, m_ldrex, m_strex): Added.
+
+Mon Dec 27 22:11:02 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/symbols.s: New.
+	* area.h (AREA_DEFAULT_ALIGNMENT): Renamed from AREA_INIT.
+	* area.c (Area_Ensure): Follow AREA_INIT rename to AREA_DEFAULT_ALIGNMENT.
+	(c_area): Area alignment is from 2 up to 31 (incl).
+	* input.c (Input_Symbol): Support double bar symbol name bracketing.
+
+Mon Dec 27 21:35:46 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/asr_lsl_lsr_ror_rrx.s: New.
+	* decode.c (oDecodeTable): Add ASR, LSL, LSR, ROR and RRX.
+	(decode): Issue error instead of abort when there are unused input
+	characters left.
+	* get.c (Get_CPURegNoError): Renamed from getCpuRegNoError and make
+	sure if it fails, it doesn't consume any input characters.
+	* m_cpuctrl.c (m_blx): Follow Get_CPURegNoError changes.
+	(m_cps): Use Input_MatchKeyword.
+	* m_cpumem.c (dstreglist): Add skip blanks for POP/PUSH case.
+	(BL_eIllegal): Remove.
+	* option.c (IsEndOfKeyword): Renamed from isOK.
+	(Option_SCond): New.
+	* option.h (Option_SCond): New.
+	* m_cpu.c, m_cpu.h (UALShift, m_asr, m_lsl, m_lsr, m_ror, m_rrx): New.
+	* fix.h (RRX, LSL, ASL, LSR, ASR, ROR, NO_SHIFT, SHIFT_OP, SHIFT_REG,
+	SHIFT_IMM): Move to...
+	* get.h: ...here.
+	* fix.c (Fix_ShiftImm): Renamed from fixShiftImm and added filename
+	parameter.
+
+Mon Dec 27 17:17:04 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/dmb_dsb_isb.s: New.
+	* decode.c (oDecodeTable): Add DMB, ISB and DSB.
+	* m_cpumem.c (Barrier_eType, GetBarrierType, m_dmb, m_isb, m_dsb): New.
+	* whileif.c (if_skip): Add extra token for better error reporting.
+	Use Input_MatchKeyword.
+	(c_if, c_else, c_elif): Follow if_skip API change.
+	(c_while): Use Input_MatchKeyword.
+	* input.c, input.h (Input_MatchKeyword, Input_MatchKeywordLower): New.
+
+Mon Dec 27 03:52:29 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (c_define): Fix SYMBOL_ABSOLUTE.
+	* symbol.c (symbolAdd): Use assert.
+	(symbolSymbolAOFOutput,symbolSymbolELFOutput): Constify.
+	(symbolPrint): Enalbe SYMBOL_ABSOLUTE assert.
+	* decode.c (DTABLE_CALLBACK_NOLEX): New.
+	(oDecodeTable): Call c_allow with Lex instead of Symbol, check for
+	non-LexId for c_else, c_elif, c_endif, c_gbl, c_if, c_lcl, c_macro,
+	c_record, c_mexit, c_wend, c_while.
+	(decode): Support DTABLE_CALLBACK_NOLEX.  In case of
+	DTABLE_CALLBACK_SYMBOL, don't call ASM_DefineLabel for defining the
+	symbol.
+	* storage (c_alloc): Deal with Lex instead of Symbol parameter.
+	* area.c (c_area): Give warning instead of error when 2nd instance
+	of same area differs in attributes.
+	* variables.c, variables.h (c_gbl, c_lbl): Drop Lex parameter.
+	* macros.c, macros.h (c_macro, c_mexit): Likewise.
+	* whileif.c, whileif.h (c_if, c_else, c_elif, c_endif, c_while, c_wend):
+	Likewise.
+	* get.c (getTypeInternal): Drop SYMBOL_ABSOLUTE check.
+	* asm.c (ASM_DefineLabel): Proper support for SYMBOL_ABSOLUTE.
+	* lit.c (Lit_DumpPool): Likewise.
+
+Sun Dec 26 23:40:44 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/cps.s: New.
+	* decode.c (oDecodeTable): Add CPS.
+	* m_cpuctrl.c, m_cpuctrl.h (ARM_MODE_*, m_cps, IsValidMode): New.
+
+Sun Dec 26 20:16:33 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* macros.c (Macro_Call): Don't pass the comment as part of the last macro
+	argument.
+	* regression/tests_pass/macro_args.s: Update test.
+	* input.h (TOLOWER): Remove.
+
+Sun Dec 26 19:00:22 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/if_else.s: Add ELIF tests.
+	* symbol.c (symbolPrint): Make more robust.
+	* decode.c (oDecodeTable): Add ARM, ELIF, THUMB and THUMBX.
+	* m_cpu.c, m_cpu.h (c_thumb, c_thumbx): New.
+	* whileif.c (if_skip): Add ELIF support.
+	* whileif.c, whileif.h (c_elif): New.
+	* input.c (Input_Symbol): Allow symbols to start with an underscore
+	character.
+
+Sun Dec 26 16:47:19 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/require8_preserve8.s: New.
+	* decode.c (oDecodeTable): Add PRESERVE8/REQUIRE8.
+	* m_cpumem.c (dstreglist): Add check for when PRESERVE8 is declared.
+	* filestack.c (File_GetLine): Fix no-newline-before-EOF case.
+	* area.c, area.h (c_preserve8, c_require8, gArea_Require8,
+	gArea_Preserve8, gArea_Preserve8Guessed): New.
+	* lexAcorn.c (lexAcornPrim): Drop {MODULE}.
+	* get.h (GET_BASE_MULTI): New.
+	* main.c (option_rma_module, -module): Remove.
+	(main): Support double dash option prefix, add implemented -apcs,
+	more foolproof -From/-o/-To parsing.
+	* main.h (option_rma_module): Remove.
+
+Sun Dec 26 02:54:13 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/loadstore3.s: Rename to...
+	* regression/tests_pass/ldm_stm_pop_push.s: ...this.  Add PUSH/POP
+	tests.
+	* decode.c (oDecodeTable): Add PUSH/POP.
+	* m_cpumem.c (dstreglist): Add isPushPop parameter, drop #<num reg>
+	feature.
+	(m_ldm, m_stm): Follow optionCondDirLdm/optionCondDirStm merge.
+	(m_pop,m_push): New.
+	* m_cpumem.h (m_pop, m_push): New.
+	* option.c, option.h (optionCondLdmStm): Merged from optionCondDirLdm
+	and optionCondDirStm.
+
+Tue Dec 21 22:04:53 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* put.c (Put_Ins): Renamed from putIns.  Reimplement this using
+	Put_InsWithOffset.
+	* put.h (Put_Ins): Renamed from putIns.
+	* m_cpuctrl.c, m_cop.c, m_cpumem.c, m_copmem.c, m_cpu.c, m_fpumem.c,
+	m_fpu.c: Follow putIns to Put_Ins rename.
+	* area.c, area.h (Area_AlignTo): Add offset parameter.
+	* commands.c, lit.c, put.c: Follow new Area_AlignTo API.
+
+Tue Dec 21 06:00:34 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.c (File_GetLine): Support continuation lines.
+	* regression/tests_pass/long_line.s: Added.
+
+Tue Dec 21 05:32:48 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): Add ORG.
+	* m_cpuctrl.c (ADR_RelocUpdaterCore, ADR_RelocUpdater, m_adr): Add
+	absolute area support.
+	* code.c (codePosition): Likewise.
+	* asm.c (ASM_DefineLabel): Likewise.
+	* area.c: Likewise.
+	(c_org): Added.
+	* area.h (Area): Add baseAddr member.
+	* help_cpu.c,help_cpu.h (Help_SplitByImm8s4): Write result in an
+	array, instead of via individual argument pointers.
+	* output.c (outputAof): Support non-zero base area address.
+	* aoffile.h (AofEntry): Renamed Unused member into BaseAddr.
+	* commands.c (c_assert): Small cleanup.
+	* put.c, put.h (PutWord): Remove, use Put_InsWithOffset instead.
+	* macros.c (Macro_GetLine): Support empty line during macro replay.
+	(c_macro): Fix problem whe macro starts with one or more empty lines.
+	* regression/tests_pass/builtinvar_pc.s: Add test case when {PC} is
+	used in an absolute area.
+	* regression/tests_pass/adr.s: Add test case when ADR/ADRL are used
+	in an absolute area.
+	* regression/tests_pass/branch.s: Add test case when branches are used
+	in absolute area.
+	* regression/tests_pass/ldr_from_addr.s: Add test case when LDR is used
+	in absolute area.
+	* regression/tests_pass/load_literal.s: Add disabled test case for
+	LDR literals in absolute area.
+	* regression/tests_pass/variable_substitution.s: More variable & macro
+	argument substitution cases.
+
+Mon Dec 20 20:30:15 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (c_end): Use ErrorError instead of ErrorAbort.
+	(c_incbin): Renamed from c_bin.
+	(symFlag,c_globl,c_strong,c_keep,c_import): Move to...
+	* symbol.c, symbol.h: ...here.  Support for keep all symbols. Support
+	EXPORT arguments.
+	(c_extern): Added.
+	(symbolPrint): Revive relative symbols, more work to do.
+	* decode (oDecodeTable): Add EXTERN, renamed GLOBL to GLOBAL, rename
+	BIN to INCBIN.
+	* m_cpumem.c (m_pld): Use Input_Match instead of inputGet.
+	* variables.c (declare_var): Mark as ABSOLUTE variables.
+	* input.c (inputNextLineCore): Beter reporting of missing END.
+
+Mon Dec 20 15:53:22 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/dcb_dcw_dcd.s: Added DCI, DCWU and DCDU tests.
+	* regression/tests_pass/dcfs_dcfd.s: Added DCFSU and DCFDU tests.
+	* commands.c (c_head): Fix signature output.
+	(DefineInt_RelocUpdater, DefineInt, c_dcw, c_dcd, DefineReal_RelocUpdater,
+	DefineReal, c_dcfs, c_dcfd): Add support DCWU, DCDU, DCFSU, DCFDU.
+	(c_dci): Added.
+	(c_ltorg): Move to...
+	* lit.c: ...here.
+	* commands.h (c_dci): Add prototype.
+	(c_ltorg): Move prototype to...
+	* lit.h: ...here.
+	* put.c (Put_AlignDataWithOffset): Add.
+	(putData): Rename to Put_Data and implement using Put_DataWithOffset.
+	(Put_FloatDataWithOffset): Add alignBefore parameter.
+	* decode.c (oDecodeTable): Add SPACE, DCI, DCWU, DCDU, DCFSU and DCFDU.
+	* main.c, main.h (option_align): Remove noalign option.
+
+Sun Dec 19 03:19:05 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lit.c (Lit_RegisterInt): Do upfront trunctation + report when this
+	makes a difference.
+	(Lit_GetLitOffsetAsSymbol): Renamed from Lit_GetOffsetAsSymbol.
+	(Lit_DumpPool): Support ValueSymbol/ValueCode as literals.
+	* regression/tests_pass/load_literal.s: Enhance with PC relative
+	loading of literals.
+	* regression/tests_fail/load_constant.s: Move to...
+	* regression/tests_pass/load_literal2.s: ...here as it is now working.
+	* tests_fail/register_based_map_fail.s: Removed, was already working
+	and covered by tests_pass/ldr_from_addr.s.
+	* commands.c (DefineInt_RelocUpdater): Remove FIXMEs.
+	* area.c (Area_AlignTo): Report unaligned status as warning.
+	* reloc.c (relocFix): Fix number of relocations calculation.
+	(relocELFOutput): Fix typo.
+
+Sat Dec 18 18:58:17 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/int.s: Add string constant tests.
+	* help_lex.c, help_lex.h: Remove.
+	* commands.c, variables.c, Makefile.am: Follow the removal of
+	help_lex.c and help_lex.h.
+	* input.c, input.h (Input_GetString): Added.
+	(inputSymbol): Simplify as there are less usecases for this routine.
+	* macros.c (Macro_Call, c_macro): Use Input_GetString for double
+	quoted strings instead of inputSymbol.
+	* lex.c (Lex_Char2Int): Added and use it...
+	(lexGetPrim): ...here.  Use Input_GetString for double quoted string
+	lexing.
+	* symbol.c (symbolSymbolAOFOutput, symbolSymbolELFOutput): Restrict
+	the output of symbol to ValueInt and ValueBool.
+
+Sat Dec 18 16:24:41 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lex.c: Reindent.
+
+Sat Dec 18 14:42:42 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c (c_area): A BASED area does not need to be marked as READONLY.
+	* aoffile.h (HOW_TYPE2, HOW_TYPE3): Remove.
+
+Sat Dec 18 03:49:09 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_fail/label_space.s: Merge into...
+	* regression/tests_pass/operator_questionmark.s: ...here with a couple
+	of fixes.
+	* regression/tests_fail/local_label2.s: Added prototype test but is not
+	yet fully fleshed out.
+	* put.c, put.h (Put_FloatDataWithOffset): Renamed from putDataFloat
+	and add offset parameter.
+	* commands.c (DefineReal_RelocUpdater): Take offset into account.
+	Follow Put_FloatDataWithOffset rename.
+
+Fri Dec 17 18:30:42 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_index.s: Use once {VAR} instead of @.
+	* regression/tests_pass/local_label.s: Added.
+	* symbol.c (symbolFix): Fix test on unresolved local (forward) label.
+	* local.c, local.h: Cleanup.  Function & global variable rename.
+	* commands.c (symFlag): Follow localTest to Local_IsLocalLabel rename.
+	* expr.c (prim): Invalid Lex object should abort the expression
+	evaluations as otherwise asserts will go off later.
+	* output.c (countAreas): Merge into outputElf
+	* lex.c, lex.h (Lex_ReadLocalLabel, Lex_GetDefiningLabel): Add noCheck
+	parameter which needs to be set when skipping if branch or while body.
+	Clean up the local label code, more work is needed.
+	* whileif.c (if_skip,while_skip): Follow API change of
+	Lex_GetDefiningLabel.
+	* asm.c (ASM_Assemble): Likewise.
+	* lexAcorn.c (lexAcornUnop): Fix tokenizing of :FATTR:, :FEXEC:,
+	:FLOAD: and :FSIZE:.
+
+Thu Dec 16 17:35:59 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* local.c: Throw out original AS local variable support, we're only
+	going to support the ObjAsm one.
+	* local.h, input.c, main.c, lex.c: Follow.
+	* decode.c (oDecodeTable): Remove LOCAL.
+
+Thu Dec 16 04:20:50 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* code.c, code.h (Code_HasUndefSymbols): Made static.
+	(codeValue): Merge Code_AddValueCode code into it.
+	* decode.c (oDecodeTable): Add MAP/FIELD.
+	(decode): Support ValueCode for StorageV values.
+	* m_cpumem.c (DestMem_RelocUpdater): Don't assert on ValueInt result
+	when ValueCode has length non-1, this is just an error.
+	(dstmem): Follow codeValue API change.
+	* storage.c: Support ValueCode as storage base.
+	* regression/tests_pass/record_basic.s: Add MAP/FIELD tests, add test
+	for MAP	argument being a label in the current AREA.
+	* reloc.c (relocFix): Follow codeValue API change.
+	* lit.c (Lit_DumpPool): Likewise.
+
+Wed Dec 15 18:18:26 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/string.s: Enhance test with string escape
+	characters.
+	* regression/tests_pass/int.s: Added.
+	* symbol.c (symbolFix): Always emit the implicit symbol reference
+	warning.
+	* error.c (errorCoreLine): Don't print linenumber 0.
+	* macro.c (FS_PopMacroPObject): Reset pointer to NULL after freeing.
+	(FS_PushMacroPObject): Copy all macro arguments instead of only the
+	first one.
+	(Macro_Call,Macro_Find): Renamed from macroCall/macroFind.
+	(Macro_Call): Don't error on not using the macro label; Support default
+	argument values; More reliable argument excess check.
+	(c_macro): Support default argument values.
+	* macro.h (Macro): Add defArgs array.
+	(Macro_Call,Macro_Find): Renamed from macroCall/macroFind.
+	(macroGetLine): Remove prototype.
+	* decode.c: Follow the macroFind/macroCall rename.
+	* whileif.c (if_skip): Support macro labels.
+	* regression/tests_pass/macro_args.s: Added.
+
+Wed Dec 15 13:47:41 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): Add CODE16/CODE32.
+	* m_cpu.c (c_code16, c_code32): Added.
+	* m_cpu.h: Likewise.
+
+Wed Dec 15 13:09:16 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* error.c (errorCore): Change "<stdin>" to "{standard input}" like the
+	GNU tools are using.
+	* filestack.c (FS_GetCurFileName): Likewise.
+
+Tue Dec 14 02:08:35 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* tests_pass/ldr_from_addr.s: Enhance test.
+	* tests_pass/dcb_dcw_dcd.s: Added.
+	* tests_pass/storage_map.s: Added.
+
+Sat Dec 11 14:08:06 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (DefineInt_RelocUpdater, DefineReal_RelocUpdater): Add
+	check on operator Op_add being used. Add check on Reloc_Create return
+	value.
+	* m_cpuctrl.c (Branch_RelocUpdater, ADR_RelocUpdater): Likewise.
+	* m_cpumem.c (DestMem_RelocUpdater): Likewise.
+	* code.c (Code_EvalLowest): Allow ValueSymbol for Op_neg.
+	* reloc.c (Reloc_Create): Add check on negative symbols.  Simplify
+	code.
+	(relocAOFOutput, relocELFOutput): Remove FIXMEs.
+
+Thu Dec  9 01:24:47 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* put.c (putDataFloat): Write out double FPA value correctly on non-ARM
+	hosts.
+	* lex.c (lexfloat): Remove.
+	(lexGetPrim): Use strtod for enhanced precision float reading. Support
+	floating point number starting with a period.
+	* regression/tests_pass/dcfs_dcfd.s: Added.
+
+Tue Dec  7 23:57:07 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	Start of v2.00 : too many changes to list them in detail, but:
+	- Rewrote relocation code, removal of ValueLateLabel.
+	- Significantly reworked the 'Code' evaluation.
+	- Previously known broken test cases are now working.
+
+Tue Nov 16 23:25:13 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_relational.s: Fix the boolean tests.
+
+Tue Nov  9 12:41:48 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c (c_fn, c_rn, c_cn): Improve error message.
+	(symFlag): Change return type to bool.  Add comment.
+	(c_globl,c_strong,c_keep): Tail call symFlag.
+	(c_import): Fix comment.  Use Input_Match instead of inputGet.
+	* decode.c (decode): Deal with empty lines.
+	* asm.c (assemble): Let decode deal with empty lines.
+	* macros.c (c_macro): Report file and line number of previous
+	defined macro with same name.
+	* output.c (writeEntry, outputAof): Cleanup.
+	* m_cpu.c (lhsrhs): Cleanup.
+	* aoffile.h: Make use of uint32_t instead of unsigned int.
+	* whileif.c (if_skip): Early skip empty lines.
+	* input.c (Input_Symbol): Unbracketed symbol name can not start
+	with digit. Return NULL consistently when we can't read a symbol.
+	* get.c (getTypeInternal): Renamed from getCpuRegInternal and
+	generalise it with type.
+	(getCpuReg, getCpuRegNoError, getFpuReg, getCopReg, getCopNum):
+	Make use of getTypeInternal.
+	* lex.c (lexGetId): Tune error message.
+
+Tue Nov  9 05:01:07 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (oDecodeTable): Add IF/ELSE/ENDIF mnemonics.
+	(decode): Fix END/ENDIF selection.
+	* whileif.c (if_skip): Support IF/ELSE/ENDIF mnemonics.
+	* regression/tests_pass/if_else.s: Added.
+
+Sun Nov  7 16:26:09 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (symbolInit): Remove the need of a terminator.
+	(symbolAdd): Don't reinitialise existing symbol.
+	(symbolPrintAll): Start each symbol output at beginning of line.
+
+Sat Nov  6 23:34:12 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (decode): Use Input_Symbol for fetching macro name.
+	(decode_finalcheck): Added.
+	* decode.h (decode_finalcheck): Added.
+	* variables.c (var_inputSymbol): Removed.
+	(c_gbl, c_lcl): Use Input_Symbol instead of var_inputSymbol.
+	* macros.c (macroFind): Swap parameter order.
+	(c_macro): Use Input_Symbol.
+	* macros.h (macroFind): Swap parameter order.
+	* whileif.c (ignore_else): Removed.
+	(if_skip): Add closeOnly parameter, make it more robust against wrong
+	input, use Lex_GetDefiningLabel() to determing label definition.
+	(c_if): Cosmetic change.
+	(c_else): Ignore mismatched |, follow if_skip changes.
+	(c_endif): Ignore mismatched ], follow if_skip changes.
+	(while_skip): Use Lex_GetDefiningLabel() to determine label definition,
+	support comment char after WHILE and WEND.
+	(FS_PopIfWhile): Don't use errorAbort as this results in an infinite
+	loop here.
+	* input.c (inputRewind): Removed.
+	(Input_Symbol): Added.  Should replace inputSymbol() over time.
+	* input.h (inputRewind): Removed.
+	(Input_Symbol): Added.
+	* asm.c (assemble): Use Lex_GetDefiningLabel().
+	* lex.c (lexGetIdNoError): Use Input_Symbol.
+	(Lex_GetDefiningLabel): Renamed from lexGetLocal.
+	(lexGetPrim): Simply the symbol case, use Input_Symbol.
+	* lex.h (Lex_GetDefiningLabel): Renamed from lexGetLocal.
+	(lexGetIdMunge): Removed.
+	* regression/tests_pass/if_else.s: Added.
+
+Sat Nov  6 20:37:32 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c (outputAof): Fix zero sized AREA case.
+
+Wed Nov  3 21:56:52 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c (c_entry): Fix test ENTRY being used without AREA specified.
+	* value.c, help_eval.c, main.c, symbol.c, symbol.h, commands.c,
+	storage.c: Minor tweeks.
+
+Tue Nov  2 22:39:16 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c (Input_Match): Added and use this instead of
+	"if (inputLook() == ...) + inputSkip() + optional skipblanks()".
+	* input.h (Input_Match): Declare.
+	* asm.c, fix.c, get.c, help_cop.c, lex.c, macros.c, m_cop.c, m_copmem.c,
+	m_cpu.c, m_cpuctrl.c, m_cpumem.c, m_fpu.c, m_fpumem.c, option.c,
+	storage.c, variables.c, whileif.c: Use Input_Match.
+	* commands.c, output.c, reloc.h: Minor change.
+	* symbol.c: Remove FIXME.
+	(symbolPrint): Fix build.
+	* code.c (codePrint): Print ??? for undetermined case.
+	* lex.h (lexGetLabel): Remove.
+
+Tue Nov  2 14:28:09 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (decode): Converted into a table lookup and push any
+	additional mnemonic parsing (like condition codes) to the mnemonic
+	implementation itself.
+	* area.c, area.h, commands.c, commands.h, decode.h, help_lex.c,
+	help_lex.h, input.c, input.h, local.c, local.h, macros.c, macros.h
+	m_cop.c, m_copmem.c, m_cpu.c, m_cpuctrl.c, m_cpu.h, m_cpumem.c,
+	m_fpu.c, m_fpu.h, m_fpumem.c, option.c, storage.c, storage.h,
+	variables.c, variables.h, whileif.c, whileif.h: Follow above changes.
+	* m_cop.h, m_copmem.h, m_cpuctrl.h, m_cpumem.h, m_fpumem.h: Added.
+	* mnemonics.h: Removed.
+
+Mon Nov  1 15:24:53 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* storage.c (c_alloc): Simplify.
+	* lex.h: Fix comment.
+	* symbol.c (symbolAdd): Add description.
+
+Mon Nov  1 14:20:09 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_index.s: Add (commented out)
+	unsupported case.
+	* regression/tests_fail/label_space.s: Extended.  There are now only
+	two unsupported cases left.
+	* commands.c (c_ltorg, c_head): Count on areaCurrentSymbol being
+	valid.
+	(c_dcfe, c_dcfp): Removed.
+	* commands.h (c_dcfe,c_dcfp): Removed.
+	* symbol.c (symbolNew): Support Symbol::codeSize.
+	(symbolInit): Make use of lexTempLabel.
+	(symbolGet): Assume given Lex object is always a LexId.
+	(symbolRemove): Likewise.
+	(symbolFix,symbolStringOutput,symbolSymbolAOFOutput,findAreaIndex,
+	symbolSymbolELFOutput): Skip implicit area.
+	* put.c (putAlign,putData,putDataFloat,putIns): Count on
+	areaCurrentSymbol being valid.
+	* symbol.h (SYMBOL_BASED): Removed.
+	(Symbol::codeSize): Added.
+	* code.c (codePosition): Cound on area parameter always being defined.
+	(codeCopy,codeEqual): Use size_t i.s.o. int.
+	* code.h (codeCopy,codeEqual): Use size_t i.s.o. int.
+	* decode.c (C_FINISH_FLOW,C_FINISH_VAR): Reset symbol label to NULL.
+	(decode): Assign Symbol::codeSize of all parsed labels. Drop DCFE,
+	DCFP (non)support.  Added some missing 'default' cases. Implemented
+	'if'/'else'/'endif' using C_FINISH_FLOW macro.
+	* local.c (c_local): Assume label parameter can never be NULL.
+	(localTest): Change return type into bool.
+	* local.h (localTest): Change return type into bool.
+	* storage.c (storageV): Default value is a zero non-reg (instead of
+	giving an error).
+	* area.c: Introduce concept of default area.  When this results in
+	a non-zero size afterwards, this is an error.
+	(Area_Ensure): Added.
+	(Area_IsImplicit): Added.
+	(areaNew): Add Symbol parameter which is used to name the area.
+	(c_align,c_reserve): Count on areaCurrentSymbol being valid.
+	(c_area): Bail out when there is no area name defined.
+	* area.h (Area_IsImplicit): Added.
+	* value.c (valueLateToCode): Constify and rework code slightly.
+	* value.h (valueLateToCode): Consitfy.
+	* output.c (countAreas,outputAof,countRels,outputElf): Skip implicit
+	area.
+	* whileif.c (c_if): Add Lex label parameter and check on it.
+	(c_else,c_endif): Change label presence check into a warning (like
+	in all other cases).
+	(c_while, c_wend): Add Lex label check.
+	* whileif.h (c_if): Add Lex label parameter.
+	* input.c (inputVarSub): Add warning when there was no $ expansion
+	done.
+	* reloc.c (relocOp, relocAdd): Count on areaCurrentSymbol being valid.
+	* lit.c (litInt): Likewise.
+	* lexAcorn.c (lexAcornUpop): Fix for :DEF:.
+	* asm.c (asm_label): Count on areaCurrentSymbol being valid. Drop
+	SYMBOL_BASED (non ?) support.
+	* lex.c (lexHashStr): Make local.
+	(lexGetIdInternal): Make this the lexGetIdNoError implementation and
+	let lexGetId give an error when we didn't get a LexId.
+	(lexGetPrim): Add support for '?' for labels already defined (no
+	late label support).
+	* lex.h (lexHashStr): Remove.
+
+Mon Oct 25 01:04:28 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/string.s: Added.
+
+Sun Oct 24 18:16:54 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* tests_fail/load_constant.s: Add case of missing constant load
+	optimisation.
+
+Sun Oct 24 17:04:18 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/variable_substitution.s: Added.
+	* regression/Makefile: Drop asasm's -objasm option.
+	* commands.c (defineint, c_head): Follow the lexGetCharFromString
+	removal.
+	(c_get,c_lnk,c_bin): Follow the inputExpoand removal.
+	* decode.c (decode): Revert the end newline removal in error message
+	as this not necessary when we make sure our predefines don't have
+	newlines.  Follow constify of Input_GetMark() return value.
+	* m_cpuctrl.c: Follow constify of Input_GetMark() return value.
+	* m_fpumem.c: Likewise.
+	* macros.c (c_mend): Check for upcase MEND.
+	(c_macro): Follow the inputExpand removal and call inputNextLineNoSubst
+	instead of inputNextLine.  Follow constify of Input_GetMark() and
+	inputSymbol return value.
+	* whileif.c (ifskip): Follow the inputExpand removal and call
+	inputNextLineNoSubst instead of inputNextLine.
+	(while_skip): Check for upcase WHILE/WEND.
+	(c_while): Follow constify of Input_GetMark() and inputSymbol return
+	value.
+	* lexAcorn.c (lexAcornPrim): Follow constify of Input_GetMark return
+	value.
+	* input.c (inputExpand): Remove.
+	(input_pos,inputRest,Input_RollBackToMark): Constify.
+	(inputNextLineNoSubst, inputNextLineCore): Refactored out of
+	inputNextLine.
+	(inputEnvSub,inputVarSub,inputArgSub): Simplified.
+	(inputSymbol): Follow the option_objasm removal.
+	* input.h (inputExpand): Remove.
+	(inputNextLineNoSubst): Add.
+	(Input_GetMark,Input_RollBackToMark): Constify.
+	* help_lex.c (lexGetCharFromString): Removed.
+	(lexChar2Int): Follow the lexGetCharFromString removal.
+	* asm.c (assemble): Follow inputExpand removal.  Simplify.
+	* main.c, main.h (option_objasm): Remove.
+
+Sun Oct 24 00:15:15 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (decode): Get rid of macro variable.
+
+Sat Oct 23 23:53:10 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c: Fix compiler warning.
+	* value.c: Likewise.
+	* lex.c: Likewise.
+	* code.c: Likewise.
+	(codeEvalLow): Removed assert.  This can happen.
+	* decode.c (decode): Only process uppercase mnemonics.  Reformat. Don't
+	output the ending newline in abort messages.
+	(ignoreInput): Removed.
+	* option.c (getCond,getDir,getPrec,getRound,optionCondS,optionCondSP,
+	optionCondB,optionCondBT,optionCondL,optionLinkCond,optionExceptionCond,
+	optionAdrL): Upcase input only.
+	* lexAcorn.c: Likewise.
+	* main.c,main.h: Drop -upper option.
+	* error.c: Don't output linenumber nor filename when we're still at
+	line number 0.
+	* area.c: Follow the inputComment to Input_IsEolOrCommentStart rename.
+	* macros.c: Likewise.
+	* m_cpu.c (m_nop): Likewise.
+	* asm.c: Likewise.
+	* variables.c: Likewise.
+	(c_set): Don't call inputRest on error as this is already going to
+	happen later on.
+	* regression/tests_pass/operator_shift.s: Fixed case typo.
+
+Sat Oct 23 16:08:30 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (symbolNew): Swap parameters.
+	(symbolGet): Add assert on case which is not believed to happen.
+	* area.c (c_area): Change type of rel_specified and data_specified to
+	bool.
+	* variables.c (declare_var): Return Symbol ptr (or NULL in case of
+	failure).
+	(var_define): Make use of it.
+	* lex.c (lexTempLabel): Make use of C99 initializer. Swap parameters.
+	* lex.h (Lex): Make Lex::Id.hash unsigned int.
+	(lexTempLable): Follow swap parameters.
+
+Fri Oct 22 01:34:52 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.h (Symbol): Change type of len from int to size_t.
+	* value.h (Value): Likewise for Value::String::len, Value::Code::len.
+	* lex.h (Lex): Likewise for Lex::String::len, Lex::Id::len.
+	* commands.c, symbol.c, code.c, decode.c, variables.c, macros.c,
+	whileif.c, input.c, help_lex.c, input.h, reloc.c, eval.c, lex.c: Deal
+	with the fallout.
+	* help_lex.c (lexChar2Int): Avoid compiler warning.
+	* lex.c (lexHashStr): Work with unsigned types.
+
+Fri Oct 22 00:17:59 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* expr.c (exprBuildAndEval): Added.
+	* expr.h (exprBuildAndEval): Added.
+	* commands.c, m_cpuctrl.c, help_cop.c, m_cpumem.c, storage.c,
+	area.c, variables.c, m_fpumem.c, m_fpu.c, whileif.c, get.c: Replace
+	exprBuild() and exprEval() by exprBuildAndEval() where possible.
+
+Thu Oct 21 22:38:11 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* code.h (Code): Change union into struct and have only one Tag entry.
+	* code.c, value.c, value.h, reloc.c: Follow Code change.
+
+Thu Oct 21 22:19:35 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lex.h (Lex): Change union into struct and have only one Tag entry.
+	* commands.c, symbol.c, local.c, area.c, variables.c, expr.c, macros.c,
+	input.c, lexAcorn.c, get.c, lex.c: Follow Lex change.
+
+Thu Oct 21 22:02:28 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* value.h (Value): Change union into struct and have only one Tag
+	entry.
+	* commands.c, symbol.c, put.c, code.c, m_cpuctrl.c, help_cop.c,
+	m_cpumem.c, storage.c, area.c, variables.c, value.c, output.c,
+	m_fpumem.c, m_fpu.c, whileif.c, input.c, help_eval.c, reloc.c, get.c,
+	asm.c, eval.c, lit.c: Follow Value change.
+
+Thu Oct 21 02:01:34 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/record_basic.s: Enabled the disabled sub-tests
+	as they are now supported and working.
+	* regression/tests_fail/record_basic_fail.s: Removed.
+	* regression/Makefile (EXTENSION): Define as assembler boolean.
+	* regression/tests_pass/operator_string.s (EXTENSION): Test on it for
+	features which objasm does not know about.
+	* regression/tests_pass/operator_shift.s: Likewise.
+	* regression/tests_pass/operator_relational.s: Likewise.  Add :LEOR:
+	test.
+	* regression/tests_pass/operator_index.s: Add :BASE: tests.
+	* regression/tests_pass/operator_boolean.s: Added.
+	* regression/tests_pass/operator_addition_logical.s: Likewise.
+	* regression/tests_pass/operator_unary.s: Likewise.
+	* symbol.c (symbolPrintAll): Added.
+	(symbolPrint): Made used by symbolPrintAll.
+	* symbol.h (symbolPrintAll, symbolPrint): Add/tune prototype.
+	* code.h (CODE_SIZECODE, CODE_SIZESTACK, CODE_SIZELATE): Move to...
+	* code.c: ...here.
+	(codePrint): Added, and other DEBUG code as well.
+	(Sp): Removed.
+	(codeStorage): Make difference between register based record and a non
+	register based one.
+	* decode.c: Whitespace changes.
+	(decode): Constify parameter.
+	* decode.h (decode): Constify parameter.
+	* local.c (c_rout, c_local): Constify parameter.
+	* local.h (c_rout, c_local): Likewise.
+	* whileif.c (c_else, c_endif, c_while, c_wend): Likewise.
+	* whileif.h (c_else, c_endif, c_while, c_wend): Likewise.
+	* input.c (inputGiveRestLine): Disable for non-debug builds.
+	* input.h (inputGiveRestLien): Likewise.
+	* storage.c (storageValue, c_record): Make difference between
+	(non)register based record.
+	(c_record): drop expecting ValueAddr as result.
+	* variables.c (assign_var): Make warning on redefinition a pedantic
+	one.
+	(c_set): Simplify.
+	* lexAcorn.c (lexAcornUnop): Add :BASE: support.
+	* eval.c (evalBinop): Fix Op_add, Op_sub, Op_and, Op_or, Op_xor,
+	Op_land, Op_lor, Op_lnot, Op_not, Op_neg, Op_index, Op_len. Add Op_base.
+	* lex.c (OperatorAsStr):
+	* value.h (ValueType): Drop and change its use in Value by ValueTag.
+	* commands.c: Follow the ValueType removal in Value.
+	* symbol.c: Likewise.
+	* code.c: Likewise.
+	* m_cpuctrl.c: Likewise.
+	* help_cop.c: Likewise.
+	* m_cpumem.c: Likewise.
+	* storage.c: Likewise.
+	* area.c: Likewise.
+	* variables.c: Likewise.
+	* value.c: Likewise.
+	* whileif.c: Likewise.
+	* input.c: Likewise.
+	* help_eval.c: Likewise.
+	* reloc.c: Likewise.
+	* get.c: Likewise.
+	* asm.c: Likewise.
+	* eval.c: Likewise.
+	Several minor cleanups.
+
+Sun Oct 17 22:35:00 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c (symbolFree): Added.
+	(symbolRemove): Added.
+	(symbolFix): Don't check on sym->value.Tag.v, this doesn't make sense.
+	Information to determine a symbol needs to be dumped in output, needs
+	to be derived from other bits.
+	* symbol.h (symbolRemove): Declare.
+	* code.c (exprNotConst): Removed.
+	* code.h (exprNotConst): Likewise.
+	* local.c: Fix indentation.
+	* storage.c (storageD): Removed, test on storageV.Tag.t instead.
+	* storage.h: Fix whitespace.
+	* variables.c (c_lcl): Follow the varPos changes. When symbol is
+	defined for the first time, don't bother updating varPos::symbol.
+	Fix local symbol indication for declare_var() when symbol is already
+	known as local symbol.
+	(var_restoreLocals): Restore of local symbol which was defined for the
+	first time, was wrong. We really need to remove its entry from the
+	symbolTable instead of invalidating it. Follow the varPos changes.
+	Constify argument.
+	* variables.h (varPos): Move symbol name to end of structure so we have
+	to do one allocation less.
+	(var_restoreLocals): Constify argument.
+	* value.c (valueFree): Case ValueString, don't bother checking for
+	Tag.v.  Export it.
+	* value.h (valueFree): Add prototype.
+	* whileif.c (c_while): No longer check on constant expression.  We need
+	to find something better for this.
+	* lexAcorn.c (lexAcornUnop): Reorder :DEF: case.
+	* regression/tests_pass/variables.s: Update test case for the case we're
+	fixing here.
+
+Sun Oct 17 17:24:54 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpuctrl.c (m_swi): Improve SWI name processing.
+	* help_cop.c (help_copAddr): Replace abort() by error(ErrorAbort, ...).
+	* variables.c (assign_var): Likewise.  Improve empty string case.
+	* value.c (valueCopy): Fix case of copying strings containing NUL char.
+
+Sun Oct 17 14:58:42 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* riscos_c.c, main.c, main.h (option_dde): Remove @/Prefix$Dir hack.
+	* main.c: Improve -ver/-version output.
+	Support "asasm <asmfile> <objfile>" syntax. Better protection against
+	missing input or output filename.
+
+Sun Oct 17 05:40:33 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_multiplication.s: Added.  Tests
+	multiplication, division and modulo operators.
+	* eval.c (evalBinop): Fix and cleanup Op_mul, Op_div and Op_mod.
+
+Sun Oct 17 04:52:15 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_shift.s: Added.  Tests the shift
+	operators.
+	* eval.c (evalBinop): Fix and cleanup Op_rol, Op_ror, Op_sl, Op_sr,
+	Op_asr operator code.
+
+Sun Oct 17 03:08:27 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_relational.s: Added.  Tests the
+	relational operators.
+	* eval.c (COMPARE): Cleaned up, simplified and report proper operand
+	type mistake if so. Compare integers unsigned.
+	(ememcmp): Simplified.
+	(evalBinop): Cleanup relational operators.
+	* lex.c (lexGetBinop): Support /=.
+
+Sun Oct 17 01:33:47 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_string.s: Added.  Tests :LEFT:,
+	:RIGHT:, :CC:, :LEN:, :STR:.
+	* regression/tests_pass/operator_index.s: Added.  Tests :INDEX:.
+	* regression/tests_pass/info.s: Changed into a pure test on ! and INFO.
+	* regression/Makefile: Update comment & output.
+	* commands.c (c_info): Better error behaviour.  When arithmetic
+	expression evaluates to 0, output string expression via stdout as is,
+	not as warning.
+	* error.c (errorCore): When not in parse context, add extra newline
+	to stderr output.
+	* value.h (ValueString): Update comment that NUL termination of string
+	is not garanteed.
+	* reloc.c: Fix identation.
+	* eval.c (evalBinop): Fix/update/clean Op_concat, Op_left, Op_right
+	case.
+	(evalUnop): Fix/update/clean Op_str, Op_chr.
+
+Sat Oct 16 19:25:14 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression: Removed the need of creating config.h by using asasm's
+	-PD option.
+	* regression/tests_pass/apcs.s, regression/hdr/APCS-32/Common: Made
+	test stronger by assuring the GET command succeeded.
+	* input.c (inputNextLine): Simplified code a little bit. Integer
+	variable setting happens with SETA, not SETI.
+	* main.c: Improve objasm compatibility by supporting -PreDefine as an
+	alias to -PD.
+	* variables.c (var_type): Integer variable type is 'A', not 'I'.
+
+Sat Oct 16 18:06:47 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_fail/register_based_map_fail.s,
+	regression/tests_fail/ldr_from_expr_fail.s: Add missing END.
+	* regression/tests_fail/label_space.s: Added (shows missing
+	support for label space operator).
+	* global.h: Add missing config.h include.
+	* output.h, Makefile.am: Add subversion revision number we
+	used for build.
+
+Sat Oct 16 17:08:12 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Rename BOOL/TRUE/FALSE to ISO C99's bool/true/false.
+	* Rename WORD/FLOAT into ARMWord/ARMFloat.
+
+Tue Feb 2  18:29:10 2010  Lee Noar  <leenoar@sky.com>
+
+	Fix build errors:
+
+	* filestack.c: #include header that defines riscosify related
+	bits.
+	* os.h: Make sure declaration of CanonicalisePath matches
+	definition.
+
+Wed Jan 27 00:31:34 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.c/filestack.h: Merged the macro, external linked,
+	'if'/'while' code all together so that nested usage works and
+	results also in much cleaner code (too many changes to mention in
+	detail).
+	* depend.c: Proper dependency generation (all input files are
+	taken into account).
+	* symbol.h(SYMBOL_MACRO_LOCAL): Set when symbol is only defined
+	as macro local variable.
+	* m_cpuctrl.c(fixBranchT,fixAdrl,fixInt): Drop inputLineNo parameter.
+	* help_cop.c(fixCopOffset): Likewise.
+	* decode.h(returnvalue): Removed.
+	(decode): Made return parameter void.
+	* error.c(source,errorInit): Remove.
+	(TB): Rename to DoThrowback.
+	* error.c/error.h(errorAbort,errorAbortLine): Created to report the
+	final error and use this where applicable.
+	(ErrorSerious): Removed.
+	(error): Drop c parameter.
+	(errorLine): Drop c parameter.
+	(errorOutOfMem): Drop fn parameter.
+	* riscos_c.c(CanonicalisePath): Constify return pointer.
+	* regression/Makefile: Added comments.
+	* regression/tests_pass/variables.s: Added.
+
+Sun Jan 17 15:23:22 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* error.c(doline): Fix RISC OS native build.  Bug #188.
+
+Sun Jan 10 04:41:35 CET 2010  John Tytgat  <John.Tytgat@aaug.net>
+
+	* configure.ac: Version 1.48
+	* decode.c(decode): Avoid variable being written but not read
+	afterwards.  Follow constification of macro functions.
+	* error.c(doline): Likewise.
+	* rname.c(riscos_to_unix): Likewise.
+	* whileif.c(if_skip,while_skip): Likewise.
+	* variables.c(declare_var,c_lcl): Warn when same variable get
+	defined but when type changes, give an error.
+	* value.c,value.h(valueTagAsString): Added.
+	* value.h(ValueSingle,ValueDouble,ValueExtended,ValuePacked): Removed.
+	* macros.c,macros.h(macroCurrent,macroFind,macroCall,Macro::next,
+	MacroStack::macro): Constify.
+	* output.c(writeElfSH): Drop return value.
+	* asm.c(asm_label): Use NULL iso 0.
+	* lex.c(lexReadLocal): Likewise.
+
+Tue Oct  6 02:22:15 CEST 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* storate.c(c_alloc): Revert previous change as it introduces a
+	regression in the register_based_maps.s test.
+	* configure.ac: Revert back to 1.47.
+	* regression/tests_pass/record_basic.s: Uncomment part that now no
+	longer works.
+	* regression/tests_pass/record_basic.s,
+	regression/tests_fail/record_basic_fail.s: Update reference.
+
+Tue Sep 29 00:21:05 CEST 2009  Christopher Martin  <belles@internode.on.net>
+
+	* storage.c(c_alloc): Enable expression evaluation that includes
+	symbols defined in record layouts.
+	* regression/tests_pass/record_basic.s,
+	regression/tests_fail/record_basic_fail.s: Added test case.
+	* configure.ac: Bumped version to 1.48.
+
+Wed May 27 20:28:55 PDT 2009  Peter Naulls  <peter@chocky.org>
+
+	* input.c, input.h, main.c: Approximate the -PD flag to objasm
+	to allow the SETx syntax to be passed on the command line.
+	This is largely a hack for the benefit of ROOL source.
+
+Mon May 11 23:17:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c(inputVarSub): Permit verbatim '$' in string literals.
+
+Mon Feb 23 15:40:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* eval.c(evalUnop): Stub implementations of :fload: and :fexec:. These
+	aren't particularly useful, but are better than bailing out.
+	* lexAcorn.c(lexAcornUnop): Fix decode of :fexec:.
+	(lexAcornPrim): Add {ASASM}, so existing code can work around our
+	deficiencies (specifically ?A and ASSERT using late labels in the code
+	I'm currently assembling). Comments about this welcome.
+
+Mon Feb 23 13:37:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpumem.c: Revert r3747 -- LDR|STR Rd,[Rm,#xxx] may have xxx as a
+	register-relative expression if xxx is a field in a map.
+	* regression/{Makefile,ldr_from_addr.s}: Test data for the above.
+
+Mon Feb 23 12:15:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* decode.c, commands.[ch]: Add support for the INFO directive and the
+	! shorthand.
+	* regression/{info.s,Makefile}: Test case for the above.
+
+Mon Feb 23 11:35:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpuctrl.c(m_adr): Permit use of ADR(L) to obtain address of fields
+	in register-based maps.
+	* regression/register_based_map.s: Expand test data to cover the
+	above.
+
+Mon Feb 23 04:54:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* include.c(getInclude): Consult the original filespec to determine
+	whether to perform '.' -> '/' conversion on Unix.
+	* filestack.c: Duplicate filename strings when pushing onto the stack.
+	Free the current input name when popping off the stack. This avoids
+	double freeing of data when an included file includes multiple files
+	itself.
+
+Mon Feb 23 03:51:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpumem.c: Partial support for LDR/STR to fields in register-based
+	maps. Currently, the map must be defined before it is used.
+
+Mon Feb 23 01:19:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpumem.c: LDR|STR Rd,[Rm,#xxx] has no business expecting "xxx"
+	to be a register-relative expression.
+
+Sun Feb 22 18:47:47 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.c: Added GPL license header.
+	* filestack.h: Likewise.
+
+Sun Feb 22 13:21:55 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* decode.c: ENTRY must be all caps, treat as macro otherwise.
+
+Mon Jan 26 01:46:49 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c(c_get,c_lnk,c_idfn): Fix memory leaks.
+	* riscos_c.c: Define __riscosify_control.
+	* input.c(inputInit): Don't use the internal UnixLib
+	__set_riscosify_control and __get_riscosify_control routines; Use
+	static 16K input buffer instead of malloced one.
+	(inputFinish): Support setting new input stream.
+	(inputComment): Change return type from int into bool.
+	* input.h: Likewise.
+	* include.c(openInclude): Drop mode parameter; Don't use the internal
+	UnixLib __set_riscosify_control and __get_riscosify_control routines.
+	(getInclude): Simplify.
+	* symbol.h(symbolSymbolELFOutput): Disable prototype for non ELF
+	output build.
+	* reloc.h(relocELFOutput): Likewise.
+	* decode.c(decode): Support INCLUDE keyword (synonym for GET).
+	* os.h: Define CanonicalisePath as strdup() instead of
+	OSCanonicalisePath.
+	* error.c(LF): Remove, wasn't used.
+	* output.c(idfn_text): Is now a pointer to malloced block holding a
+	user defined identification string. Use DEFAULT_IDFN is there is none
+	defined. Use GET_IDFN to get the identification string under all
+	circumstances.
+	* output.h(DEFAULT_IDFN): Define.
+	* main.c(as_help): Use DEFAULT_IDFN.
+	+ minor source cleanups.
+
+Sun Jan 25 23:08:47 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lex.h(lexAcornBinop,lexAcornUnop,lexAcornPrim): Move too...
+	* lexAcorn.h: ...here and change return value into void; new file.
+	* lexAcorn.c(lexAcornBinop,lexAcornUnop,lexAcornPrim): Change return
+	value into void.
+	(lexAcornPrim): Support {ENDIAN}
+	* regression/{builtinvar_endian.s,Makefile}: Add test for {ENDIAN}
+	support.
+	* lex.c,lexAcorn.c: Minor source cleanup.
+
+Sat Jan 24 14:33:32 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* riscos_c.c(switonum): Return -1 on error.
+	(ThrowbackSendError): Rename error into errstr avoiding a compiler
+	warning.
+	* help_cop.c,m_cpumem.c,lit.c: Pass Value parameter by const reference,
+	not by copy.
+	* put.c,code.c,code.h,error.c,error.h,area.c,value.c,area.h,value.h,
+	input.c,reloc.c,reloc.h,asm.c,main.c,lit.c,lex.c,lit.h,lex.h: Minor
+	source cleanups.
+
+Thu Jan 22 03:34:31 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* fix.c(fixInt): Upper limit for 1 or 2 byte sized words was one off.
+
+Tue Jan 13 03:42:37 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c: Previous fix wasn't correct.
+	* code.h(codeFixReloc): Remove prototype, this wasn't defined.
+	* value.c: Minor reidentation.
+
+Mon Jan 12 21:20:52 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c: Define OS_File etc SWI numbers for native RISC OS build
+	and using UnixLib.
+
+Mon Jan 12 01:58:02 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/Makefile: Output OK when all tests passed succesfully.
+	* regression/branch.s: Output local label 'label' otherwise ELF output
+	differs.
+	* symbol.c(SYMBOL_ELF_OUTPUT): Symplify and make it more bulletproof.
+	* Makefile.am: Add comment.
+
+Mon Jan 12 01:09:31 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/Makefile: Remake all references and redo all tests when
+	Makefile changes; A failed test should be redone when retrying.
+
+Sun Jan 11 22:48:00 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpuctrl.c,expr.c,help_eval.c: Minor source cleanup.
+	* reloc.c(relocWrite): R_ARM_PC24 ELF reloc needs to happen for a
+	"B + PC - 8" instruction, while in AOF this needs to happen for a
+	"B 0" one.
+
+Sun Jan 11 21:35:31 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.h: Have SYMBOL_CPUREG, SYMBOL_FPUREG, SYMBOL_COPREG and
+	SYMBOL_COPNUM defined as values not individual bits. Define
+	SYMBOL_DECLARED as a new bit and remove Symbol::declared.
+	* commands.c(c_define,symFlag), symbol.c(symbolNew,symbolInit,
+	symbolPrint),area.c(c_area): Follow previous changes.
+	* symbol.c(symbolPrint): Skip the internally defined register and
+	coprocessor number symbols.
+	* code.c: Add comments.
+	* reloc.c(relocShiftImm,relocImm8s4,relocImmFloat,relocBranch,
+	relocBranchT,relocSwi,relocCpuOffset,relocCopOffset,relocAdr,relocAdrl,
+	relocMask,relocInt,relocFloat,relocAdd),value.c(valueFree): Pass Value
+	parameter as reference, not by copy.
+	* reloc.h,commands.c(defineint,definereal),m_cpuctrl.c(m_branch,
+	m_blx,m_swi,m_adr),help_cop.c(help_copAddr),m_cpumem.c(dstmem,
+	dstreglist),value.c(valueEqual),m_fpu.c(getFloatRhs),reloc.c(relocNew),
+	get.c(getShift,getRhs): Follow previous change.
+	* output.c(countAreas): Get rid of parameter.
+	(outputAof,outputElf): Follow previous change.
+	* symbol.c(symbolFix,symbolStringOutput): Implicitly imported symbol
+	warning was wrongly given for some symbols in ELF output mode.
+
+Sun Jan 11 18:32:47 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* docs/{AIF-1993,ALF-1989,ALF-1993,AOF-1989,AOF-2002,APCS,AIF-1989,
+	ASDTF}: Added.
+
+Sun Jan 11 18:21:17 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c(symbolSymbolELFOutput): Output local symbols in ELF mode.
+	(symbolPrint): Added for debug purposes.
+	* symbol.h: Added comments and symbolPrint prototype.
+
+Sun Jan 11 18:18:31 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* variables.c(var_inputSymbol): Make return type const char ptr.
+	* value.c(valuePrint), help_lex.c(lexChar2Int): Minor source
+	cleanup.
+
+Wed Jan  7 02:44:53 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c,riscos_c.c,symbol.c,put.c,code.c,decode.c,error.c,local.c,
+	m_cop.c,storage.c,option.c,area.c,output.c,m_cpu.c,m_fpumem.c,m_fpu.c,
+	input.c,help_lex.c,lexAcorn.c,main.c,fix.c,lex.c,main.h,lex.h:
+	Prefixed option verbose,pedantic,fussy,throwback,dde,autocast,
+	align,gas_backend,local,objasm,uc,apcs_32bit,apcs_fpv3,apcs_softfloat,
+	rma_module with "option_".
+
+Tue Jan  6 22:09:45 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile.am: Go for C99 and more warnings enabled.
+	* commands.c,symbol.c,decode.c,error.c,local.c,area.c,rname.c,input.c,
+	get.c,include.c,eval.c,lex.c,include.h: Lots of small cleanups.
+
+Tue Jan  6 21:50:41 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* main.c(main): Change default output format back to ELF (was wrongly
+	AOF since r3694 / Sun Jan  4 15:46:16 CET 2009).
+
+Mon Jan  5 02:17:02 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c(symbolFix): Let it return the offset in the symbol strings
+	array without the AOF 4 byte length included (as the ELF output only
+	needs one byte extra)
+	(symbolStringSize): Remove, no longer needed.
+	* symbol.h: Updated comments, removed symbolStringSize prototype.
+	* output.c(outputAlf,outputElf): Follow above changes.
+
+Sun Jan  4 21:36:15 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c(c_define): Remove return parameter, is the same as its
+	2nd one.
+
+Sun Jan  4 21:00:58 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c,symbol.h(symbolAdd,symbolGet): Pass Lex parameter by (const)
+	pointer, not by value.
+	* commands.c,area.c,variables.c,expr.c,get.c,asm.c,asm.h: Follow
+	change.
+
+Sun Jan  4 20:04:39 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* commands.c,symbol.c,put.c,m_cpuctrl.c,help_cop.c,m_cpumem.c,area.c,
+	area.h,expr.c,output.c,reloc.c,asm.c,lit.c,lex.c: Rename
+	areaCurrent/areaEntry/areaHead to
+	areaCurrentSymbol/areaEntrySymbol/areaHeadSymbol.
+
+Sun Jan  4 17:21:39 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* global.h,area.c,area.h,fix.c: Small code cleanup.
+
+Sun Jan  4 17:14:00 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c,code.c,m_cpuctrl.c,m_cpumem.c,get.c: Put some extra brackets
+	around '&' tests where it improves readability.
+
+Sun Jan  4 15:46:16 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* symbol.c,code.c,symbol.h,code.h,decode.c,variables.c,value.c
+	value.h,output.c,m_fpumem.c,m_fpu.c,targetcpu.c,main.c,main.h:
+	Small code cleanups; have option_aof available instead of
+	option_elf and drop the latter completely.
+
+Sun Jan  4 15:31:53 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* reloc.c,reloc.h,output: Small code cleanup.
+
+Sun Jan  4 03:26:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpuctrl.c: Permit ValueAddr as SWI value.
+
+Sun Jan  4 03:16:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c: Invalidate asmfile in inputFinish. This allows multiple
+	calls to inputFinish to occur (may happen if we longjmp to the abort
+	handler after inputFinish is called in normal execution).
+
+Sun Jan  4 03:02:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* decode.c: Treat SET[^ALS] as illegal.
+
+Sun Jan  4 03:58:08 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* configure.ac: Invoke AC_C_BIGENDIAN so we have WORDS_BIGENDIAN
+	defined when necessary.
+
+Sun Jan  4 03:37:05 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c(outputElf): Allow switch between softfloat vs hardfloat
+	ELF output.
+
+Sun Jan  4 02:24:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* storage.c: Permit use of ValueAddr in record base calculation.
+	For example:
+			^	0
+			#	1
+		foo	#	1
+			^	foo + 4
+		bar	#	1
+	should result in "bar" having a value of 5.
+	* input.c: Pedantic whitespace removal.
+
+Sun Jan  4 02:36:02 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* riscos_c.c: Use _kernel_swi instead of __os_swi.
+	* os.h, error.c, input.c: Minor source cleanup.
+	* output.c: Remaining as -> asasm renaming; write ELF filetyped files
+	in ELF output mode.
+	* rname.c: include rname.h instead of having double prototypes.
+	* main.c,main.h: make option ELF available to other files.
+
+Sat Jan  3 19:53:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c: Don't treat "<>" as an environment variable substitution.
+
+Sat Jan  3 19:47:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c: Prevent runaway execution when $foo is not substituted in
+	string literals.
+
+Sat Jan  3 18:52:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* eval.c: Allow :INDEX: to be used in storage declarations
+
+Sat Jan  3 19:24:38 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* version.h: Removed as the version info comes from config.h.
+	* main.c,output.c: Remove include of version.h.
+
+Sat Jan  3 18:14:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* symbol.c,symbol.h,get.c,main.c,lex.c,lex.h: Predefine register names
+	properly, so that "foo RN R10" works correctly. Remove special case
+	predefinitions from get.c, as the symbol system will handle these.
+
+Sat Jan  3 03:13:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* include.c: Use unixified filename when searching include paths and
+	cross compiling.
+
+Sat Jan  3 02:22:00 UTC 2009  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c: Implement environment variable substitution in objasm mode.
+	* include.c: Remove <APCS> substitution -- define APCS as an
+	environment variable, instead.
+	* ChangeLog: Update my email address.
+
+Sat Jan  3 03:02:40 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/Makefile: follow objasm -> asasm name change.
+
+Sat Jan  3 01:08:33 CET 2009  John Tytgat  <John.Tytgat@aaug.net>
+
+	* configure.ac,Makefile.am: Instead of having 'as' known as 'objasm'
+	with all possible confusion, rename it to 'asasm'.
+	* *.c,*.h: Fixed several wrongly encoded instances of "Niklas Röjemo"
+	by using UTF-8 now.
+	* README: Added.
+
+2009-01-02 03:33  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* input.c: Fix runaway execution and segfault when encountering
+	uses of undefined variables.
+	Also, more comments and rather more robustness here.
+
+2008-12-31 14:51  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* include.c: Fix buffer overflow. This entire thing needs replacing
+	with environment variable lookup, anyway.
+
+2008-12-31 14:15  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* decode.c: Fix handling of SUBS -- when you're potentially going
+	to put a character back on the input stream, you need to use
+	inputGet(), and not inputGetUC().
+
+2008-12-31 14:14  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* regression/Makefile: Fixup regression test makefile to not assume
+	that we're gcc's backend assembler.
+	Don't bother linking the output, as we can compare the intermediate
+	objects.
+
+2008-12-22 21:07  John Tytgat  <John.Tytgat@aaug.net>
+
+	* .: Ignore the autotool generated files.
+
+Sun Dec 14 16:56:28 CET 2008  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Migrated GCCSDK 3.4.6 'as' as 'objasm' in GCCSDK 4.1.1 and brought
+	its build up to date.
+	* Removed the unimplemented -gas option.
+	* Made ELF output format default and provided new option -aof for AOF
+	output format.
+
+2008-05-10 16:02  Peter Naulls  <peter@chocky.org>
+
+	* commands.c, commands.h, decode.c, symbol.c: Add dummy TTL and
+	SUBT commands (Title, Subtitle) for objasm comaptiblity
+	Allow register name symbosl to be redefined. This looks to be consistent
+	with objasm.
+
+2008-05-06 03:03  Peter Naulls  <peter@chocky.org>
+
+	* error.c, include.c, symbol.c: Warning fixes.
+
+2008-04-21 03:26  Peter Naulls  <peter@chocky.org>
+
+	* Makefile, input.c: The assebler wasn't correctly replacing
+	variables in strings. This caused some of the macros in use in the
+	RISC OS 5 source to break. This change makes it more like objasm -
+	variables in strings are replaced, and if they don't match, they're
+	left alone.
+
+	With this and previous improvements, I have been able to build a
+	working !Paint using GCC.
+
+	This change is a bit invasive, so any review is appreciated.
+
+2008-04-20 05:40  Peter Naulls  <peter@chocky.org>
+
+	* include.c: Correct logic, otherwise the APCS processing is missed
+	for second try.
+
+2008-04-20 05:14  Peter Naulls  <peter@chocky.org>
+
+	* commands.c, commands.h, decode.c, include.c, lexAcorn.c: objasm
+	compatibility improvements. Support <APCS> in include paths. Try
+	harder for variations on include filenames with no extension. Add
+	in dummy opt variable.
+
+2006-10-14 15:38  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c: Set the ARM EABI version to 0 (which is EF_ARM_ABI_UNKNOWN)
+	instead of EF_ARM_CURRENT (which was version 2) as we're not complying
+	to any of the ARM EABI versions.
+
+2006-10-02 01:58  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include.c, include.h, main.c, version.h: No longer using a fixed
+	limit on number of include directories (was 40); Increased version
+	number to 1.46.
+
+2006-09-17 15:49  Peter Naulls  <peter@chocky.org>
+
+	* include.c: Raise needlessly low limit (jmb's change meant that more
+	complex programs easily have more than 10 paths).
+
+2006-09-15 00:50  John Tytgat  <John.Tytgat@aaug.net>
+
+	* aoffile.h, area.c, area.h, asm.c, asm.h, chunkfile.h, code.c,
+	code.h, commands.c, commands.h, decode.c, decode.h, depend.c,
+	depend.h, error.c, error.h, eval.c, eval.h, expr.c, expr.h,
+	filestack.c, filestack.h, fix.c, fix.h, get.c, get.h, global.h,
+	help_cop.c, help_cop.h, help_cpu.c, help_cpu.h, help_eval.c,
+	help_eval.h, help_lex.c, help_lex.h, include.c, include.h,
+	input.c, input.h, lex.c, lex.h, lexAcorn.c, lit.c, lit.h,
+	local.c, local.h, m_cop.c, m_copmem.c, m_cpu.c, m_cpu.h,
+	m_cpuctrl.c, m_cpumem.c, m_fpu.c, m_fpu.h, m_fpumem.c, macros.c,
+	macros.h, main.c, main.h, mnemonics.h, option.c, option.h, os.h,
+	output.c, output.h, put.c, put.h, reloc.c, reloc.h, riscos_c.c,
+	storage.c, storage.h, strdup.c, symbol.c, symbol.h, targetcpu.c,
+	targetcpu.h, value.c, value.h, variables.c, variables.h,
+	whileif.c, whileif.h: Updated Copyright statements based on
+	contribution history in cvs/svn.
+
+2006-09-14 00:01  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* commands.c, include.c, input.c, lex.c, main.c, main.h, version.h:
+	Remove gcc_backend option & associated code. This was solely support
+	for @ as a comment indicator. It appears to be unnecessary now as
+	GCCSDK builds without it; Fix include processing to handle hdr.foo
+	and foo.hdr correctly; Bump version number.
+
+2006-09-06 21:47  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* code.c, decode.c, fix.c, fix.h, get.c, get.h, lex.c, lex.h,
+	m_cop.c, m_copmem.c, m_cpu.c, m_cpu.h, m_cpuctrl.c, m_cpumem.c,
+	mnemonics.h, option.c, regression/branch.s, regression/copro.s,
+	regression/dsp.s, regression/misc.s, reloc.c, reloc.h: Complete
+	ARMv5E support. This adds support for the following instructions:
+
+	  BKPT, BLX
+	  CDP2, CLZ
+	  LDC2, LDRD
+	  MCR2, MCRR, MRC2, MRRC
+	  QADD, QDADD, QDSUB, QSUB
+	  SMLAxy, SMLALxy, SMLAWy, STC2, STRD
+
+	Additionally:
+
+	  Fix BX detection to be case insensitive.
+	  Fix Coprocessor 1 detection for pedantic FP warning.
+	  Fix opcode1 generation for MCR/MRC.
+
+2006-09-06 21:43  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* help_cop.c: Tidy up numeric offset handling (no longer accepts
+	{+/-}#NN). Make FP stack handling (LFMFD etc) less intrusive.
+	Add support for Unindexed LDC/STC addressing (eg LDC p0,c0,[R0],{16})
+	* m_cop.c: Minor tidying.
+	* m_copmem.c: Fix coprocessor detection such that it actually works.
+	* m_cpumem.c: Tidy up numeric offset handling for LDR etc (no longer
+	accepts {+/-}#NN); Fix PLD encoding to assemble PLD [R0, #-4]
+	correctly.
+	* main.c: Fix ELF output to not append AOF output, too.
+
+2006-09-06 21:42  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	Testcases for instruction generation (up to, and including ARMv5TE):
+	* regression/Makefile: New, processes all regression tests.
+	* regression/arithmetic1.s: Data processing instructions using
+	addressing mode 1.
+	* regression/arithmetic2.s: Multiply/multiply accumulate.
+	* regression/branch.s: Branch instructions.
+	* regression/copro.s: Coprocessor instructions (addressing mode 5).
+	* regression/dsp.s: Enhanced DSP extensions.
+	* regression/fp.s: FPA instructions.
+	* regression/loadstore.s: A selection of LDR{B,H,SB,SH} instructions.
+	* regression/loadstore2.s: Load/Store instructions using addressing
+	modes 2 & 3.
+	* regression/loadstore3.s: Load/Store multiple (addressing mode 4).
+	* regression/misc.s: Miscellaneous other instructions.
+
+2006-09-06 21:41  John-Mark Bell  <jmb@netsurf-browser.org>
+
+	* m_cpumem.c: Fix LDR|STR{H,SH,SB} Rd,[Rn] - was encoding as
+	... Rd,[Rn,R0].
+	* regression/loadstore2.s: Add regression test for full set of
+	(non-multiple) load/store operations.
+
+2006-09-06 21:19  Peter Naulls  <peter@chocky.org>
+
+	* main.c, targetcpu.c, targetcpu.h: Create a TARGET_CPU assembler
+	variable.
+
+2006-07-16 16:43  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile: Add riscos-dist rule.
+
+2006-06-26 03:09  Peter Naulls  <peter@chocky.org>
+
+	* decode.c: Accidental removal.
+
+2006-06-26 01:56  Peter Naulls  <peter@chocky.org>
+
+	* decode.c, m_cpu.c, m_cpu.h, mnemonics.h: Support additiona ARMv5
+	instructions
+
+2006-06-08 09:28  Peter Naulls  <peter@chocky.org>
+
+	* input.c: Fall back for filenames like the compiler does
+
+2006-06-07 14:24  Peter Naulls  <peter@chocky.org>
+
+	* get.c: Fix range
+
+2006-06-06 22:20  John Tytgat  <John.Tytgat@aaug.net>
+
+	* fix.c (fixImm8s4): fussy output via errorLine	had missing printf
+	format specifiers which could lead to crashes.
+	(fixImm8s4, fixImmFloat): small constify change; upcasing opcodes.
+	* main.c (as_help): clarified -fussy and -soft-float options a bit
+	more.
+
+2006-06-06 05:55  Peter Naulls  <peter@chocky.org>
+
+	* fix.c, get.c: Support for rotated constants
+
+2006-05-16 00:07  John Tytgat  <John.Tytgat@aaug.net>
+
+	* main.c: Check on conflicting APCS options
+
+2006-05-10 23:02  John Tytgat  <John.Tytgat@aaug.net>
+
+	* help_cpu.c, lex.c, local.c, symbol.c: Remove compiler warnings
+
+2006-03-09 22:59  John Tytgat  <John.Tytgat@aaug.net>
+
+	* ChangeLog: Removed, was no longer kept up-to-date.
+	* area.c (c_align): ALIGN statement on its own in an uninitialised
+	area sets a non-zero area size without allocating area memory
+	leading to a crash at outputAof() time (solving bug 149); Support of
+	ALIGN <offset> parameter.
+	* area.c (c_reserve): reorganised code a bit so it looks more similar
+	to c_align().
+	* area.c (c_area): Support for ALIGN area attribute.
+	* area.h (AREA:type): Add comment.
+	* version.h (AS_VERSION): Bumped version to 1.44.
+	* output.c: A bit of code cleanup (like using AREA_IMAGE() macro);
+	(outputAof): pad unaligned data at end of area with zero bytes instead
+	of random bytes.
+
+2005-10-08 18:57  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile: Added -W for more compiler warnings.
+	* area.c: Added more checks for conflicting area attributes; Add
+	logic dealing when COMMON/COMREF and COMMON/NOINIT attributes are
+	specified.
+	* area.h: Defined AREA_MASKBASEREGS.
+	* commands.c (c_import): New IMPORT options "COMMON", "NOCASE" and
+	"FPREGARGS".
+	* input.c (inputUnGet/inputPutBack): Disabled debug printf.
+	* symbol.c (EqSymLex): use memcmp() instead of for() loop.
+	* symbol.c (symbolAdd): Changed printf '%*s' into '%.*s'; no longer
+	give an error when symbol is defined with a same name as an existing
+	area as long its value is the same.
+	* symbol.c (symbolSymbolOutout): Value of COMMON symbol was always
+	0 and not its real value.
+	* symbol.h: Updated the symbol attribute definitions.
+	* variables.c: Changed printf '%*s' into '%.*s'; Removed compiler
+	warning signed/unsigned.
+	* version.h: Bumped version to 1.43.
+	* Various src cleanups.
+
+2005-10-06 19:43  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c, area.h: Relocated the SOFTFLOAT AOF area attribute from
+	bit 27 to bit 31 as area bits 24 - 27 (incl) are already used for
+	specifying the 'base register for base area'.
+
+2005-08-10 00:25  John Tytgat  <John.Tytgat@aaug.net>
+
+	* main.c, output.c, version.h: Use __VERSION__ in version string
+	too so that it is more clear from which GCCSDK release the binaries
+	come from.
+
+2005-07-23 21:33  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile: Move the #define of _GNU_SOURCE to the individual
+	riscos-aof projects which require this. CMunge is explicitly not
+	compiled with _GNU_SOURCE because it is known to have slashes like
+	getline() and stricmp().
+
+2005-07-23 01:11  John Tytgat  <John.Tytgat@aaug.net>
+
+	* output.c, symbol.c, symbol.h: Drop the "Creator: " part of the
+	IDFN string; The STRT first word should be the unaligned length of
+	the STRT chunk; Make a clear difference between the official AOF
+	symbol attributes and the internal AS AOF symbol attributes and only
+	write the former set of attributes in the AOF file.
+
+2005-06-22 21:40  John Tytgat  <John.Tytgat@aaug.net>
+
+	* fix.c: fix.c(fixImm8s4): fix for previous version which wrongly
+	assumed that MOV vs MVN and AND vs BIC immediate constants differ in
+	sign (they differ in two-complement).
+
+2005-06-17 10:10  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, input.c, main.c: Revert hacks that accidently made it
+	into the last commit.
+
+2005-06-17 10:05  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, area.c, commands.c, filestack.h, fix.c, hash.c, hash.h,
+	help_cpu.h, input.c, lex.c, m_fpu.h, main.c, reloc.c, reloc.h,
+	strdup.c, variables.c: Move hashstr function into lex.c for better
+	optimisation. Minor code factoring improvements.
+
+2005-05-31 21:34  John Tytgat  <John.Tytgat@aaug.net>
+
+	* config.h: Check for stricmp() existence: HAVE_STRICMP; Indicate
+	support cpu_type=POWERPC and os_type=DARWIN.
+
+2005-05-25 07:47  John Tytgat  <John.Tytgat@aaug.net>
+
+	* filestack.c, filestack.h: Removed useless const on return value
+	(resulting in a compiler warning anyway).
+
+2005-05-20 09:11  Nick Burrett  <nick@sqrt.co.uk>
+
+	* lexAcorn.c, main.c, main.h: RMA module support. Accept '-module'
+	option and set 'MODULE' to true if switch passed on command line.
+
+2005-05-13 20:48  Peter Naulls  <peter@chocky.org>
+
+	* area.c: Ignore REL area attribute
+
+2005-05-11 15:45  Peter Naulls  <peter@chocky.org>
+
+	* m_cpuctrl.c: Correct BX bit pattern
+
+2005-05-04 13:20  Peter Naulls  <peter@chocky.org>
+
+	* error.c, riscos_c.c: Fix throwback reason code
+
+2005-05-04 09:22  Peter Naulls  <peter@chocky.org>
+
+	* m_cpuctrl.c: Add warnings for BX
+
+2005-05-03 22:42  Peter Naulls  <peter@chocky.org>
+
+	* decode.c, m_cpuctrl.c, mnemonics.h: Add BX instruction, which GCC
+	outputs for ARMv5 targets.
+
+2005-05-02 11:24  Peter Naulls  <peter@chocky.org>
+
+	* lexAcorn.c, m_fpu.c, m_fpumem.c: Complain about FP instructions
+	when -soft-float is specified. Add a soft-float macro value.
+
+2005-04-29 21:00  Peter Naulls  <peter@chocky.org>
+
+	* area.c, area.h, main.c, main.h: Add soft-float support to tools
+
+2005-04-29 10:51  Peter Naulls  <peter@chocky.org>
+
+	* depend.c, depend.h, help_cop.c, help_cop.h, local.c, local.h,
+	macros.c, macros.h, main.h, output.c, strdup.c, targetcpu.c,
+	targetcpu.h, whileif.c, whileif.h: Update copyright further.
+
+2005-04-25 14:47  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, config.h, error.c, main.c, os.h, os.s, riscos_c.c,
+	targetcpu.c: For stage 2 builds, use intermodule-analysis during
+	compilation. Delete assembler file and re-write functions in C.
+
+2005-04-24 10:11  Peter Naulls  <peter@chocky.org>
+
+	* COPYING, aoffile.h, area.c, area.h, asm.c, asm.h, chunkfile.h,
+	code.c, code.h, commands.c, commands.h, decode.c, decode.h,
+	error.c, error.h, eval.c, eval.h, expr.c, expr.h, fix.c, fix.h,
+	get.c, get.h, global.h, help_cpu.c, help_cpu.h, help_eval.c,
+	help_eval.h, help_lex.c, help_lex.h, input.c, input.h, lex.c,
+	lex.h, lexAcorn.c, lit.c, lit.h, m_cop.c, m_copmem.c, m_cpu.c,
+	m_cpu.h, m_cpuctrl.c, m_cpumem.c, m_fpu.c, m_fpu.h, m_fpumem.c,
+	main.c, mnemonics.h, option.c, option.h, output.c, output.h,
+	put.c, put.h, reloc.c, reloc.h, riscos_c.c, storage.c, storage.h,
+	symbol.c, symbol.h, value.c, value.h, variables.h: Relicense
+	where appropriate to GPL - permission given by Niklas Röjemo.
+
+2005-04-20 13:20  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, area.c, asm.c, code.c, commands.c, config.h, decode.c,
+	error.c, expr.c, filestack.c, get.c, help_cop.c, help_eval.c,
+	input.c, lex.c, lexAcorn.c, lit.c, local.c, m_cop.c, m_copmem.c,
+	m_cpu.c, m_cpuctrl.c, m_cpumem.c, m_fpu.c, m_fpumem.c, macros.c,
+	main.c, option.c, os.h, output.c, put.c, reloc.c, riscos_c.c,
+	storage.c, strdup.c, symbol.c, value.c, variables.c, whileif.c:
+	Work around a problem of building a native RISC OS binary by
+	supplying a default configuration that works for UnixLib and for
+	the SCL.
+
+2005-04-07 18:47  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, output.c: (outputFinish): Once objfile is closed, set
+	NULL to prevent a possible double free bug.
+
+2005-01-30 12:00  Peter Naulls  <peter@chocky.org>
+
+	* include.c: fix bracket placement
+
+Sun Jan 30 00:50:54 2005  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Changed #define tests on __riscos__ into CROSS_COMPILE tests.
+	* Makefile: OBJS in alphabetic order.
+	* asm.{c,h}: asm_() -> assemble()
+	* commands.c, include.{c,h}: No longer using FILE ptr to
+	canonicalise to full path via OSArgs 7. This fixes bug #132.
+	* depend.c: Made it more robust; Added dependInit() and
+	dependFinish().
+	* error.c: Output Throwback errors when verbose is set.
+	* filestack.{c,h}, whileif.h: Removed fileNo, fileCurrentNo (wasn't
+	really used).
+	* os.{h,s}: Removed unused bits; Made APCS-32 compliant.
+	* version.h: Bumped version to 1.42.
+
+2004-12-20 18:07  Peter Naulls  <peter@chocky.org>
+
+	* get.c, m_cop.c: Co-processor register support, from John-Mark
+	Bell.
+
+2004-12-20 10:45  Peter Naulls  <peter@chocky.org>
+
+	* lex.c, local.c, output.c: Improve error messages. Set output
+	filetype to text when using SCL.
+
+2004-12-14 23:30  Peter Naulls  <peter@chocky.org>
+
+	* Makefile, include.c, input.c, output.c, riscos_c.c, strdup.c,
+	uname.c, uname.h: Use libscl instead of Unixlib. Remove some of
+	the complexity in filename handling.
+
+2004-11-30 19:54  Peter Naulls  <peter@chocky.org>
+
+	* decode.c, m_cpumem.c, mnemonics.h: Add support for ARMv5 PLD
+	instruction.
+
+2004-10-17 16:00  John Tytgat  <John.Tytgat@aaug.net>
+
+	* ChangeLog, aoffile.h, area.c, area.h, asm.c, asm.h, chunkfile.h,
+	code.c, code.h, commands.c, commands.h, decode.c, decode.h,
+	depend.c, depend.h, elf.h, error.c, error.h, eval.c, eval.h,
+	expr.c, expr.h, filestack.c, filestack.h, fix.c, fix.h, get.c,
+	get.h, global.h, hash.c, hash.h, help_cop.c, help_cop.h,
+	help_cpu.c, help_cpu.h, help_eval.c, help_eval.h, help_lex.c,
+	help_lex.h, include.c, include.h, input.c, input.h, lex.c, lex.h,
+	lexAcorn.c, lit.c, lit.h, local.c, local.h, m_cop.c, m_copmem.c,
+	m_cpu.c, m_cpu.h, m_cpuctrl.c, m_cpumem.c, m_fpu.c, m_fpu.h,
+	m_fpumem.c, macros.c, macros.h, main.c, main.h, mnemonics.h,
+	option.c, option.h, os.h, os.s, output.c, output.h, put.c, put.h,
+	reloc.c, reloc.h, riscos.s, riscos_c.c, rname.c, rname.h,
+	storage.c, storage.h, strdup.c, symbol.c, symbol.h, targetcpu.c,
+	targetcpu.h, uname.c, uname.h, value.c, value.h, variables.c,
+	variables.h, version.h, whileif.c, whileif.h: Various fixes &
+	cleanups.
+
+2004-09-23 10:31  Peter Naulls  <peter@chocky.org>
+
+	* output.c, output.h: Recorrect endian handling.
+
+2004-09-19 13:01  Peter Naulls  <peter@chocky.org>
+
+	* output.c, output.h: Fix for big endian.
+
+2004-08-16 14:30  Nick Burrett  <nick@sqrt.co.uk>
+
+	* area.c, area.h: Implement a new AREA attribute called LINKONCE
+	that merges COMDEF areas but does not compare the contents of the
+	COMDEF areas for a match.
+	This is to aid C++ vtables created by the compiler which can be
+	duplicated between different object files.
+
+2004-08-16 13:45  Nick Burrett  <nick@sqrt.co.uk>
+
+	* area.c: Fix COMDEF area definition.
+
+2004-08-13 10:52  Nick Burrett  <nick@sqrt.co.uk>
+
+	* main.c, output.c, output.h, riscos_c.c: Fixes for -funit-at-a-time
+	compilation.
+
+2004-06-18 16:54  Nick Burrett  <nick@sqrt.co.uk>
+
+	* input.s: Import GCC snapshot from 20040618.
+
+2004-01-21 20:16  Nick Burrett  <nick@sqrt.co.uk>
+
+	* main.c: Tony van der Hoff: Increase 'as' compatibility with
+	objasm when the -objasm flag is set on the command line:
+
+	The token '@' will be treated as the current location counter, as
+	used by objasm, instead of as an introduction to a comment, which is
+	required in GCC mode.
+
+2003-11-23 14:31  Nick Burrett  <nick@sqrt.co.uk>
+
+	* put.c: Fix a segfault caused by the attempted output of an
+	unaligned word at the start of the AREA e.g.
+
+	  AREA |foo|, DATA
+	  ALIGN 2
+	  DCD 1
+
+2003-10-29 08:11  Peter Naulls  <peter@chocky.org>
+
+	* area.c, reloc.c, symbol.c: Relocation fixes from David David
+	Marston.
+
+2003-10-25 20:51  Peter Naulls  <peter@chocky.org>
+
+	* output.c: Really fix it this time
+
+2003-10-25 20:44  Peter Naulls  <peter@chocky.org>
+
+	* output.c: Further fix for ELF output from David David Marston.
+
+2003-10-22 18:24  Peter Naulls  <peter@chocky.org>
+
+	* output.c, symbol.c, symbol.h: Fixes from David Marston to fix ELF
+	output after yesterday's general fixes.
+
+2003-10-22 14:05  Peter Naulls  <peter@chocky.org>
+
+	* asm.c, code.c, commands.c, symbol.c: David Marston's fixes for
+	area handling.
+
+2003-10-20 20:47  Peter Naulls  <peter@chocky.org>
+
+	* asm.c, code.c, elf.h, main.c, output.c, output.h, reloc.c,
+	reloc.h, symbol.c, symbol.h: 'as' ELF output by David Marston.
+	Please test.
+
+2003-10-06 09:25  Nick Burrett  <nick@sqrt.co.uk>
+
+	* commands.c: EXPORT should set the SYMBOL_GLOBAL flag rather than
+	SYMBOL_REFERENCE.
+
+2003-08-18 18:08  Nick Burrett  <nick@sqrt.co.uk>
+
+	* area.c, main.c, output.c, version.h: BUG 104: Bump version to
+	1.40 to differentiate from other distributions of 'as'. Clean up
+	description a little.
+
+2003-06-24 09:33  Peter Naulls  <peter@chocky.org>
+
+	* m_cpumem.c, regression, regression/loadstore.s, targetcpu.c,
+	targetcpu.h: Fix behaviour of ldr/str h/sb
+	Add some token XScale support
+	Add a regression test for ldr cases, since it has caused so much
+	trouble.
+
+2003-06-23 10:18  Peter Naulls  <peter@chocky.org>
+
+	* asm.c, commands.c, include.c, input.c, input.h, lex.c, main.c,
+	riscos_c.c, uname.h: as fixes from Tony van der Hoff:
+
+	Added various comments to the code, to help me understand it.
+
+	GET files were not being found via the -I path:
+	added some debuggging code in as/include.c; found that "." was
+	being used as directory separator.
+	- In as/uname.h changed switch from "#ifdef UNIX" to "#if defined
+	  CROSS_COMPILE"
+
+	Local labels with default scope were giving warning:
+	"Assumed 'a' in local label name". This is not a dodgy code
+	warning, but a warning that the range qualifiers for local labels is
+	not implemented.
+	- changed lex.c to produce more appropriate warning, and wrapped
+	warning under "pedantic".
+
+	AS barfed on variable substitution operator "$":
+	- inputUnGet() called from lexGetId() assumes that the input
+	buffer is pointed to by |input_buff|. It isn't in this case. The check
+	against the buffer seems superfluous anyway. Fixed by introducing a
+	variant form of inputUnGet(), imaginitively called inputPutBack().
+
+2003-06-02 22:29  Peter Naulls  <peter@chocky.org>
+
+	* lex.c, symbol.h: More spelling corrections.
+
+2003-06-02 22:22  Peter Naulls  <peter@chocky.org>
+
+	* symbol.c: Correct spelling of "table".
+
+2003-06-02 22:19  Peter Naulls  <peter@chocky.org>
+
+	* output.c, symbol.c: More corrections for Big Endian host output,
+	including endian function that actually works.
+
+2003-06-02 20:31  Peter Naulls  <peter@chocky.org>
+
+	* Makefile, output.c, output.h, reloc.c: Big Endian host support
+	for 'as' output. Add in liberty for stpcpy on IRIX
+
+2003-04-21 16:27  Peter Naulls  <peter@chocky.org>
+
+	* Makefile, decode.c, get.c, include.c, input.c, input.h, lex.c,
+	m_cpu.c, macros.c, os.h, riscos_c.c, rname.c, rname.h, rname2.c,
+	strdup.c, symbol.c, variables.c, whileif.c: Improved filename
+	handling for GET from 2.95 branch.
+	Reinstate strdup from branch.
+
+2003-04-20 22:30  Peter Naulls  <peter@chocky.org>
+
+	* get.c, main.c, uname.h: 32-bit changes.
+
+2003-04-15 09:17  Peter Naulls  <peter@chocky.org>
+
+	* m_cpu.c: Add 32-bit warning.
+
+2003-04-06 14:25  Peter Naulls  <peter@chocky.org>
+
+	* m_cpumem.c: Post increment warning from 2.95.4 branch.
+
+2003-01-02 10:24  Nick Burrett  <nick@sqrt.co.uk>
+
+	* m_cpumem.c: Peter Naulls: Fix incorrect generation of pre/post
+	index instructions.
+
+2002-12-22 21:38  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, os.h, strdup.c: Drop strdup. It is provided by Unixlib.
+
+2002-12-22 18:30  Nick Burrett  <nick@sqrt.co.uk>
+
+	* os.h: Changes for new UnixLib riscosify and resolver code.
+
+2002-09-24 21:05  Nick Burrett  <nick@sqrt.co.uk>
+
+	* code.c, commands.c, decode.c, decode.h, error.c, error.h,
+	filestack.c, get.c, hash.c, help_cop.c, help_cop.h, include.c,
+	lex.c, lex.h, lexAcorn.c, local.c, local.h, m_cop.c, m_cpu.c,
+	m_cpuctrl.c, m_fpu.c, macros.c, macros.h, main.c, main.h, os.h,
+	output.c, output.h, reloc.c, riscos_c.c, strdup.c, symbol.c,
+	targetcpu.h, value.c, version.h, whileif.c: Merge release_2_95
+	branch to mainline (20020924).
+
+2002-02-14 15:56  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile, area.c, commands.c, decode.c, error.c, eval.c, get.c,
+	include.c, input.c, input.c.broke, lex.c, lexAcorn.c, local.c,
+	m_cpumem.c, macros.c, main.c, os.h, output.c, reloc.c,
+	riscos_c.c, strdup.c, strdup.h, symbol.c, targetcpu.c, uname.c,
+	value.c, variables.c, whileif.c: Merge all bug from the
+	release_2_95 branch to mainline (20020214).
+
+2001-08-01 07:59  Nick Burrett  <nick@sqrt.co.uk>
+
+	* decode.c, input.c, input.h, lex.c, macros.c, variables.c,
+	whileif.c: Accept dots in labels.
+
+2001-07-25 15:28  Nick Burrett  <nick@sqrt.co.uk>
+
+	* input.c: Support dots in labels without having to revert to
+	enclosing the label in |...|.
+
+2001-07-23 15:51  Nick Burrett  <nick@sqrt.co.uk>
+
+	* aoffile.h, area.h, chunkfile.h, os.h, symbol.h: Change uint32_t
+	to unsigned int.
+	Change int32_t to int.
+	This fixes a problem with older machines that don't support C99.
+
+2001-03-26 13:05  Nick Burrett  <nick@sqrt.co.uk>
+
+	* endian.c, endiandef.h, output.c: Use AUTOCONF based endian-ness
+	detection.
+
+2001-03-20 15:00  Nick Burrett  <nick@sqrt.co.uk>
+
+	* commands.c, os.h, os.s, riscos_c.c: Attempt to display correct
+	file names in error messages.
+
+2001-03-20 14:50  Nick Burrett  <nick@sqrt.co.uk>
+
+	* decode.c, macros.c, whileif.c: Darren Salt: Fix up some |label|
+	handling. Errors are generated for unterminated |...| e.g. |...\n.
+	Replace some hard-coded limits with macros.
+
+2001-03-20 14:49  Nick Burrett  <nick@sqrt.co.uk>
+
+	* lex.c, lexAcorn.c: Darren Salt: Implement :DEF: and {var}
+	:DEF:foo = true if foo exists when the expression is evaluated.
+	{var} is a synonym for @.
+	Fault usage of ?, reporting that it is unimplemented.
+
+2001-03-20 14:47  Nick Burrett  <nick@sqrt.co.uk>
+
+	* get.c, hash.c, help_cpu.c: Make the cpu_regs, T and mask arrays
+	const.
+
+2001-01-04 10:27  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile: Add executable suffix (,ff8) support.
+
+2001-01-02 09:30  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile: Makefile and configuration re-structure.
+
+2000-12-27 16:10  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile: Autoconf configuration support.
+
+2000-12-27 14:31  Nick Burrett  <nick@sqrt.co.uk>
+
+	* endiandef.h: Add missing #if from last change.
+
+2000-12-27 14:30  Nick Burrett  <nick@sqrt.co.uk>
+
+	* endiandef.h: Include endian.h or machine/endian.h here. Fix to
+	work with header files that define BYTE_ORDER but not __BYTE_ORDER.
+
+2000-12-27 14:29  Nick Burrett  <nick@sqrt.co.uk>
+
+	* endian.c: Don't include endian.h or machine/endian.h
+
+2000-12-27 14:22  Nick Burrett  <nick@sqrt.co.uk>
+
+	* m_fpumem.c: Include sdk-config.h.
+
+2000-12-27 14:20  Nick Burrett  <nick@sqrt.co.uk>
+
+	* m_cpuctrl.c, m_fpu.c: Include sdk-config.h.
+
+2000-12-27 14:19  Nick Burrett  <nick@sqrt.co.uk>
+
+	* error.c: Include sdk-config.h and conditionally include stdint.h
+	or inttypes.h.
+
+2000-12-27 14:16  Nick Burrett  <nick@sqrt.co.uk>
+
+	* area.c, asm.c, code.c, commands.c, decode.c, endian.c, expr.c,
+	filestack.c, get.c, help_cop.c, help_eval.c, input.c, lex.c,
+	lexAcorn.c, lit.c, local.c, m_cop.c, m_copmem.c, m_cpu.c,
+	m_cpumem.c, macros.c, main.c, option.c, output.c, put.c, reloc.c,
+	storage.c, symbol.c, value.c, variables.c, whileif.c: Include
+	sdk-config.h. Conditionally include inttypes.h or stdint.h.
+
+2000-12-27 14:02  Nick Burrett  <nick@sqrt.co.uk>
+
+	* cabs.s: Junk file. Was used for debug.
+
+2000-12-27 14:01  Nick Burrett  <nick@sqrt.co.uk>
+
+	* Makefile: Add path to top-level directory to compiler command
+	line so that we may include the autoconf info.
+
+2000-12-27 12:56  Nick Burrett  <nick@sqrt.co.uk>
+
+	* test.c: A junk file.
+
+2000-11-08 09:38  Nick Burrett  <nick@sqrt.co.uk>
+
+	* ., Makefile, aoffile.h, area.c, area.h, asm.c, asm.h, cabs.s,
+	chunkfile.h, code.c, code.h, commands.c, commands.h, decode.c,
+	decode.h, depend.c, depend.h, endian.c, endiandef.h, error.c,
+	error.h, eval.c, eval.h, expr.c, expr.h, filestack.c,
+	filestack.h, fix.c, fix.h, get.c, get.h, global.h, hash.c,
+	hash.h, help_cop.c, help_cop.h, help_cpu.c, help_cpu.h,
+	help_eval.c, help_eval.h, help_lex.c, help_lex.h, include.c,
+	include.h, input.c, input.c.broke, input.h, input.s, lex.c,
+	lex.h, lexAcorn.c, lit.c, lit.h, local.c, local.h, m_cop.c,
+	m_copmem.c, m_cpu.c, m_cpu.h, m_cpuctrl.c, m_cpumem.c, m_fpu.c,
+	m_fpu.h, m_fpumem.c, macros.c, macros.h, main.c, mnemonics.h,
+	option.c, option.h, os.h, os.s, output.c, output.h, put.c, put.h,
+	reloc.c, reloc.h, riscos.s, riscos_c.c, storage.c, storage.h,
+	strdup.c, strdup.h, symbol.c, symbol.h, targetcpu.c, targetcpu.h,
+	test.c, uname.c, uname.h, value.c, value.h, variables.c,
+	variables.h, version.h, whileif.c, whileif.h: Initial revision

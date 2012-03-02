@@ -1,0 +1,5 @@
+This gccsdk/branches/developers/joty/gcc47 branch is to develop a GCCSDK based
+on gcc4.7trunk together with binutils 2.21.1.
+
+It also follows gccsdk/trunk/gcc4 (i.e. GCCSDK 4.6 developments).
+
