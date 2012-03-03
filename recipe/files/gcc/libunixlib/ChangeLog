@@ -1,12 +1,88 @@
+Sat Mar  3 17:37:27 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* netlib/get_ro_socket.c: Add.
+	* include/unixlib/local.h (__get_ro_socket): Add.
+	* Makefile.am (netlib_src): Add netlib/get_ro_socket.c.
+
+Fri Mar  2 22:51:55 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* unix/features.c (__sfix_default): Remove "a".
+	* common/riscosify.c (__sfix_default): Likewise.
+
 Thu Mar 01 14:51:32 GMT 2012  Lee Noar  <leenoar@sky.com>
 
 	* stdio/fpos.c(fseeko64): Fix offset sanity check. This fixes
 	the "Value too large for defined data type" errors in GAS.
 	Already fixed on trunk in r5495.
 
+Sat Feb 18 11:44:27 GMT 2012  Lee Noar  <leenoar@sky.com>
+
+	* unistd/symlink.c(symlink): More compact code and better
+	error handling.
+
+Fri Feb 17 20:36:11 GMT 2012  Lee Noar  <leenoar@sky.com>
+
+	* unistd/symlink.c(symlink): Implement writing of symlink
+	files.
+
+Sat Feb  4 12:04:02 GMT 2012  Lee Noar  <leenoar@sky.com>
+
+	* include/sys/mman.h: Define MADV_FREE (even though we
+	don't support madvise).
+	* pthread/sem.c (sem_timedwait): Dummy function to prevent
+	linker errors in programs that reference it.
+
+Thu Feb  2 22:54:49 GMT 2012  Lee Noar  <leenoar@sky.com>
+
+	* unix/dev.c (__fslseek): File pointer should be set based
+	on the old value of lpos not being 0.
+
+Thu Feb  2 20:39:37 GMT 2012  Lee Noar  <leenoar@sky.com>
+
+	* unix/dev.c (__fslseek): For SEEK_CUR, return the current
+	file pointer even if lpos is 0.
+
+Sat Jan 21 17:39:02 GMT 2012  Lee Noar  <leenoar@sky.com>
+
+	* include/dlfcn.h: Define RTLD_LOCAL.
+
 Tue Jan 10 23:24:55 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
 
 	* include/stdlib.h (realloc): Drop malloc attribute.
+
+Thu Dec 29 22:01:36 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* debug/dvsprintf.c (UNIXLIB_STDERR): Remove support (causes more
+	trouble than it is able to pinpoint).
+
+Thu Dec 29 21:50:41 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* stdio/printf.c: Minor cleanup.
+	* stdio/newstream.c: Likewise.
+	* string/mempcpy.c: White space change.
+	* string/strdup.c: Likewise.
+	* wchar/wmempcpy.c
+	* stdio/fgets.c (fgets): Remove test on input parameters.
+	Simplify (remove test on ferror).
+	* stdio/gets.c (gets): Likewise.
+	* stdio/flsbuf.c (__flslbbuf): Minor cleanup.
+	(__flsbuf): Add check on writable streams. Use size_t instead of
+	int as type for number of bytes to write. Fix return value check
+	of write.
+	* stdio/filbuf.c (check_stream): A non-readable stream should
+	set stream in error state.  Move EOF check to...
+	(__filbuf): ...here. Use ssize_t instead of int.
+	(fill_buffer): Minor cleanup.  Use ssize_t instead of int.
+	(__peek_char): Add check on EOF.  Use ssize_t instead of int.
+	* unix/scl_lseek.c (lseek): Fix fseeko return value check.
+	* unix/dev.c (__fsopen): Minor cleanup.
+	* locale/localeconv.c (xfree): Remove.
+	(localeconv): Use free directly.
+
+Mon Dec 26 16:06:13 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
+
+	* stdio/fpurge.c (__fpurge): Define as strong alias of fpurge.
+	(fpurge): Drop unused variable.
 
 Mon Dec 26 16:04:12 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
 
