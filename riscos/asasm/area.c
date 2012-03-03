@@ -22,6 +22,7 @@
 
 #include "config.h"
 
+#include <alloca.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -36,7 +37,6 @@
 
 #include "area.h"
 #include "asm.h"
-#include "commands.h"
 #include "error.h"
 #include "expr.h"
 #include "filestack.h"
@@ -276,76 +276,6 @@ c_entry (void)
 
 
 /**
- * Implements ALIGN [<power-of-2> [, <offset>]]
- */
-bool
-c_align (void)
-{
-  skipblanks ();
-  uint32_t alignValue, offsetValue;
-  if (Input_IsEolOrCommentStart ())
-    {
-      alignValue = 1<<2;
-      offsetValue = 0;
-    }
-  else
-    {
-      /* Determine align value */
-      const Value *value = exprBuildAndEval (ValueInt);
-      if (value->Tag == ValueInt)
-	{
-	  alignValue = value->Data.Int.i;
-	  if (alignValue <= 0 || (alignValue & (alignValue - 1)))
-	    {
-	      error (ErrorError, "ALIGN value is not a power of two");
-	      alignValue = 1<<0;
-	    }
-	}
-      else
-	{
-	  error (ErrorError, "Unrecognized ALIGN value");
-	  alignValue = 1<<0;
-	}
-
-      /* Determine offset value */
-      skipblanks ();
-      if (Input_IsEolOrCommentStart ())
-	offsetValue = 0;
-      else if (Input_Match (',', false))
-	{
-	  const Value *valueO = exprBuildAndEval (ValueInt);
-	  if (valueO->Tag == ValueInt)
-	    offsetValue = ((uint32_t)valueO->Data.Int.i) % alignValue;
-	  else
-	    {
-	      error (ErrorError, "Unrecognized ALIGN offset value");
-	      offsetValue = 0;
-	    }
-	}
-      else
-	{
-	  error (ErrorError, "Unrecognized ALIGN offset value");
-	  offsetValue = 0;
-	}
-    }
-
-  /* We have to align on alignValue + offsetValue */
-
-  uint32_t curPos = (areaCurrentSymbol->area.info->type & AREA_ABS) ? Area_GetBaseAddress (areaCurrentSymbol) : 0;
-  curPos += areaCurrentSymbol->area.info->curIdx;
-  uint32_t newPos = ((curPos - offsetValue + alignValue - 1) / alignValue)*alignValue + offsetValue;  
-  uint32_t bytesToStuff = newPos - curPos;
-
-  Area_EnsureExtraSize (areaCurrentSymbol, bytesToStuff);
-
-  while (bytesToStuff--)
-    areaCurrentSymbol->area.info->image[areaCurrentSymbol->area.info->curIdx++] = 0;
-
-  return false;
-}
-
-
-/**
  * Aligns given offset in given area for given align value.  If non-zero
  * alignment needs to be done, a warning is given based on given reason.
  * The current area index is updated when alignment surpasses it. 
@@ -393,30 +323,6 @@ uint32_t
 Area_AlignArea (Symbol *areaSym, unsigned alignValue, const char *msg)
 {
   return Area_AlignOffset (areaSym, areaSym->area.info->curIdx, alignValue, msg);
-}
-
-
-/**
- * Implements '%' and 'SPACE'.
- */
-bool
-c_reserve (void)
-{
-  const Value *value = exprBuildAndEval (ValueInt);
-  if (value->Tag == ValueInt)
-    {
-      if (value->Data.Int.i < 0)
-	error (ErrorWarning, "Reserve space value is considered unsigned, i.e. reserving %u bytes now\n", value->Data.Int.i);
-      uint32_t extraSize = (uint32_t)value->Data.Int.i;
-      Area_EnsureExtraSize (areaCurrentSymbol, extraSize);
-
-      size_t i = areaCurrentSymbol->area.info->curIdx;
-      areaCurrentSymbol->area.info->curIdx += extraSize;
-      memset (&areaCurrentSymbol->area.info->image[i], 0, extraSize);
-    }
-  else
-    error (ErrorError, "Unresolved reserve not possible");
-  return false;
 }
 
 
@@ -470,7 +376,7 @@ Area_Ensure (void)
   else if ((sym->type & SYMBOL_AREA) == 0)
     {
       sym->type = SYMBOL_AREA;
-      sym->value = Value_Int (0);
+      sym->value = Value_Int (0, eIntType_PureInt);
       sym->area.info = areaNew (sym, areaType);
     }
   areaCurrentSymbol = sym;
@@ -513,7 +419,7 @@ c_area (void)
     {
       oldAreaType = 0;
       sym->type = SYMBOL_AREA;
-      sym->value = Value_Int (0);
+      sym->value = Value_Int (0, eIntType_PureInt);
       sym->area.info = areaNew (sym, 0);
     }
   skipblanks ();
@@ -787,24 +693,24 @@ Area_MarkStartAs (const Symbol *areaSymbol, uint32_t offset, Area_eEntryType typ
     {
       oArea_CurrentEntryType = type;
 
-      const char *baseMappingSymbol;
+      char baseMappingSymbol;
       switch (type)
 	{
 	  case eARM:
-	    baseMappingSymbol = "$a";
+	    baseMappingSymbol = 'a';
 	    break;
 	  case eData:
-	    baseMappingSymbol = "$d";
+	    baseMappingSymbol = 'd';
 	    break;
 	  case eThumb:
-	    baseMappingSymbol = "$t";
+	    baseMappingSymbol = 't';
 	    break;
 	  case eInvalid:
 	    break;
 	}
       size_t mappingSymbolSize = 2 + 1 + areaSymbol->len + 1 + 8 + 1;
       char *mappingSymbol = alloca (mappingSymbolSize);
-      int size = snprintf (mappingSymbol, mappingSymbolSize, "%s.%s.%08X",
+      int size = snprintf (mappingSymbol, mappingSymbolSize, "$%c.%s.%08X",
 			   baseMappingSymbol,
 			   areaSymbol->str,
 			   offset);

@@ -147,7 +147,7 @@ Value_ResolveSymbol (Value *valueP)
 	      break;
 	    }
 	  case ValueInt:
-	    *valueP = Value_Int (factor * newValueP->Data.Int.i + offset);
+	    *valueP = Value_Int (factor * newValueP->Data.Int.i + offset, eIntType_PureInt);
 	    break;
 	  case ValueFloat:
 	    *valueP = Value_Float (factor * newValueP->Data.Float.f + offset);
@@ -214,6 +214,7 @@ valueEqual (const Value *a, const Value *b)
 	break;
 
       case ValueInt:
+	/* FIXME? Check on Value::Data.Int.type ? */
 	result = (b->Tag == ValueInt && a->Data.Int.i == b->Data.Int.i)
 		   || (b->Tag == ValueFloat && (ARMFloat)a->Data.Int.i == b->Data.Float.f);
 	break;
@@ -233,6 +234,12 @@ valueEqual (const Value *a, const Value *b)
 	result = b->Tag == ValueBool && a->Data.Bool.b == b->Data.Bool.b;
 	break;
 
+      case ValueCode:
+	result = b->Tag == ValueCode
+		   && a->Data.Code.len == b->Data.Code.len
+		   && codeEqual (a->Data.Code.len, a->Data.Code.c, b->Data.Code.c);
+	break;
+
       case ValueAddr:
 	result = b->Tag == ValueAddr
 		   && a->Data.Addr.i == b->Data.Addr.i
@@ -244,12 +251,6 @@ valueEqual (const Value *a, const Value *b)
 		   && a->Data.Symbol.factor == b->Data.Symbol.factor
 		   && a->Data.Symbol.symbol == b->Data.Symbol.symbol
 		   && a->Data.Symbol.offset == b->Data.Symbol.offset;
-	break;
-
-      case ValueCode:
-	result = b->Tag == ValueCode
-		   && a->Data.Code.len == b->Data.Code.len
-		   && codeEqual (a->Data.Code.len, a->Data.Code.c, b->Data.Code.c);
 	break;
 
       default:
@@ -276,7 +277,7 @@ valueTagAsString (ValueTag tag)
         str = "illegal";
         break;
       case ValueInt:
-        str = "integer";
+        str = "integer/register/coprocessornumber";
         break;
       case ValueFloat:
         str = "float";
@@ -317,8 +318,52 @@ valuePrint (const Value *v)
 	printf ("<illegal>");
 	break;
       case ValueInt:
-	printf ("Int <%d = 0x%x>", v->Data.Int.i, v->Data.Int.i);
-	break;
+	{
+	  if (v->Data.Int.type == eIntType_PureInt)
+	    printf ("Int <%d = 0x%x>", v->Data.Int.i, v->Data.Int.i);
+	  else
+	    {
+	      char type;
+	      bool isReg;
+	      switch (v->Data.Int.type)
+		{
+		  case eIntType_CPU:
+		    type = 'r';
+		    isReg = true;
+		    break;
+		  case eIntType_FPU:
+		    type = 'f';
+		    isReg = true;
+		    break;
+		  case eIntType_NeonQuadReg:
+		    type = 'q';
+		    isReg = true;
+		    break;
+		  case eIntType_NeonOrVFPDoubleReg:
+		    type = 'd';
+		    isReg = true;
+		    break;
+		  case eIntType_VFPSingleReg:
+		    type = 's';
+		    isReg = true;
+		    break;
+		  case eIntType_CoProReg:
+		    type = 'p';
+		    isReg = true;
+		    break;
+		  case eIntType_CoProNum:
+		    type = 'c';
+		    isReg = false;
+		    break;
+		  default:
+		    type = '?';
+		    isReg = true;
+		    break;
+		}
+	      printf ("%s %c%d", isReg ? "Reg" : "CoPro num ", type, v->Data.Int.i);
+	    }
+	  break;
+	}
       case ValueFloat:
 	printf ("Float <%g>", v->Data.Float.f);
 	break;

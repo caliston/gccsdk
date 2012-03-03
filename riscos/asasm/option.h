@@ -31,7 +31,7 @@ ARMWord optionCond (bool doLowerCase);
 ARMWord optionCondS (bool doLowerCase);
 ARMWord Option_SCond (bool doLowerCase);
 ARMWord Option_CondSP (bool doLowerCase);
-ARMWord optionCondB (bool doLowerCase);
+ARMWord Option_CondB (bool doLowerCase);
 ARMWord Option_LdrStrCondAndType (bool isStore, bool doLowerCase);
 ARMWord Option_CondRfeSrs (bool isLoad, bool doLowerCase);
 ARMWord optionCondLdmStm (bool isLDM, bool doLowerCase);
@@ -45,7 +45,19 @@ ARMWord optionLinkCond (bool doLowerCase);
 ARMWord optionExceptionCond (bool doLowerCase);
 ARMWord optionAdrL (bool doLowerCase);
 
-#define optionError ((ARMWord) -1)
+#define kOption_NotRecognized ((ARMWord) -1)
+
+typedef enum
+{
+  eInstrWidth_Unrecognized,
+  eInstrWidth_NotSpecified,
+  eInstrWidth_Enforce16bit, /* .N is specified. Thumb code: enforce 16bit (when
+    not possible -> error).  ARM code : error.  */
+  eInstrWidth_Enforce32bit, /* .W is specified. Thumb code (ARMv6T2 or later) :
+    force 32bit thumb variant.  ARM code : ignore.  */
+} InstrWidth_e;
+
+InstrWidth_e Option_GetInstrWidth (bool doLowerCase);
 
 #define EQ ((ARMWord)0<<28)
 #define NE ((ARMWord)1<<28)

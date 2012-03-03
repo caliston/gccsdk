@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,8 +59,9 @@ CopInt (int max, const char *msg)
   return i->Data.Int.i;
 }
 
+/* Parses: p#,cpop,cpdst,cplhs,cprhs {,info} */
 static void
-coprocessor (bool CopOnly, ARMWord ir, int maxop)	/* p#,cpop,cpdst,cplhs,cprhs {,info} */
+coprocessor (bool CopOnly, ARMWord ir, int maxop)
 {
   int cop = CP_NUMBER (getCopNum ());
 
@@ -94,7 +95,7 @@ coprocessor (bool CopOnly, ARMWord ir, int maxop)	/* p#,cpop,cpdst,cplhs,cprhs {
   skipblanks ();
   if (Input_Match (',', true))
     ir |= CP_INFO (CopInt (7, "coprocessor info"));
-  Put_Ins (ir);
+  Put_Ins (4, ir);
 }
 
 /**
@@ -105,7 +106,7 @@ bool
 m_cdp (bool doLowerCase)
 {
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   coprocessor (true, cc | 0x0e000000, 15);
   return false;
@@ -131,7 +132,7 @@ bool
 m_mcr (bool doLowerCase)
 {
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   coprocessor (false, cc | 0x0e000010, 7);
   return false;
@@ -155,7 +156,7 @@ bool
 m_mrc (bool doLowerCase)
 {
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   coprocessor (false, cc | 0x0e100010, 7);
   return false;
@@ -193,7 +194,7 @@ coprocessorr (ARMWord ir)
     error (ErrorError, "%slhs", InsertCommaAfter);
   ir |= CPRHS_OP (getCopReg ());
 
-  Put_Ins (ir);
+  Put_Ins (4, ir);
 }
 
 /**
@@ -203,7 +204,7 @@ bool
 m_mcrr (bool doLowerCase)
 {
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   Target_NeedAtLeastArch (ARCH_ARMv6);
   coprocessorr (cc | 0x0C400000);
@@ -217,7 +218,7 @@ bool
 m_mrrc (bool doLowerCase)
 {
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   Target_NeedAtLeastArch (ARCH_ARMv6);
   coprocessorr (cc | 0x0C500000);

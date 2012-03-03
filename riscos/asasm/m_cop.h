@@ -1,6 +1,6 @@
 /*
  * AS an assembler for ARM
- * Copyright (c) 2010-2011 GCCSDK Developers
+ * Copyright (c) 2010-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,6 +23,8 @@
 #define m_cop_header_included
 
 #include <stdbool.h>
+
+#include "decode.h"
 
 bool m_cdp (bool doLowerCase);
 bool m_cdp2 (void);

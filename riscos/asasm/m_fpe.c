@@ -251,7 +251,7 @@ dstlhsrhs (ARMWord ir)
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
-  Put_Ins (getFloatRhs (ir));
+  Put_Ins (4, getFloatRhs (ir));
 }
 
 
@@ -263,7 +263,7 @@ bool
 m_adf (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstlhsrhs (M_ADF | cc);
   return CheckFPUsageIsAllowed ();
@@ -277,7 +277,7 @@ bool
 m_dvf (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstlhsrhs (M_DVF | cc);
   return CheckFPUsageIsAllowed ();
@@ -291,7 +291,7 @@ bool
 m_fdv (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   if ((cc & PRECISION_MASK) != PRECISION_SINGLE)
     error (ErrorWarning, "%s is only defined for single precision use", "FDV");
@@ -307,7 +307,7 @@ bool
 m_fml (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   if ((cc & PRECISION_MASK) != PRECISION_SINGLE)
     error (ErrorWarning, "%s is only defined for single precision use", "FML");
@@ -323,7 +323,7 @@ bool
 m_frd (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   if ((cc & PRECISION_MASK) != PRECISION_SINGLE)
     error (ErrorWarning, "%s is only defined for single precision use", "FRD");
@@ -339,7 +339,7 @@ bool
 m_muf (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstlhsrhs (M_MUF | cc);
   return CheckFPUsageIsAllowed ();
@@ -353,7 +353,7 @@ bool
 m_pol (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstlhsrhs (M_POL | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -367,7 +367,7 @@ bool
 m_pow (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstlhsrhs (M_POW | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -381,7 +381,7 @@ bool
 m_rdf (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstlhsrhs (M_RDF | cc);
   return CheckFPUsageIsAllowed ();
@@ -395,7 +395,7 @@ bool
 m_rmf (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstlhsrhs (M_RMF | cc);
   return CheckFPUsageIsAllowed ();
@@ -409,7 +409,7 @@ bool
 m_rpw (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstlhsrhs (M_RPW | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -423,7 +423,7 @@ bool
 m_rsf (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstlhsrhs (M_RSF | cc);
   return CheckFPUsageIsAllowed ();
@@ -437,7 +437,7 @@ bool
 m_suf (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstlhsrhs (M_SUF | cc);
   return CheckFPUsageIsAllowed ();
@@ -454,7 +454,7 @@ dstrhs (ARMWord ir)
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
-  Put_Ins (getFloatRhs (ir));
+  Put_Ins (4, getFloatRhs (ir));
 }
 
 /**
@@ -465,7 +465,7 @@ bool
 m_abs (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_ABS | cc);
   return CheckFPUsageIsAllowed ();
@@ -479,7 +479,7 @@ bool
 m_acs (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_ACS | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -493,7 +493,7 @@ bool
 m_asn (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_ASN | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -507,7 +507,7 @@ bool
 m_atn (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_ATN | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -521,7 +521,7 @@ bool
 m_cos (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_COS | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -535,7 +535,7 @@ bool
 m_exp (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_EXP | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -549,7 +549,7 @@ bool
 m_lgn (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_LGN | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -563,7 +563,7 @@ bool
 m_log (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_LOG | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -577,7 +577,7 @@ bool
 m_mnf (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_MNF | cc);
   return CheckFPUsageIsAllowed ();
@@ -591,7 +591,7 @@ bool
 m_mvf (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_MVF | cc);
   return CheckFPUsageIsAllowed ();
@@ -605,7 +605,7 @@ bool
 m_rnd (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_RND | cc);
   return CheckFPUsageIsAllowed ();
@@ -619,7 +619,7 @@ bool
 m_sin (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_SIN | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -633,7 +633,7 @@ bool
 m_sqt (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_SQT | cc);
   return CheckFPUsageIsAllowed ();
@@ -647,7 +647,7 @@ bool
 m_tan (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_TAN | cc);
   return CheckFPUsageIsAllowedAndGiveHWWarning ();
@@ -661,7 +661,7 @@ bool
 m_urd (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_URD | cc);
   return CheckFPUsageIsAllowed ();
@@ -675,7 +675,7 @@ bool
 m_nrm (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstrhs (M_NRM | cc);
   return CheckFPUsageIsAllowed ();
@@ -688,7 +688,7 @@ comparelow (ARMWord ir)		/* No precision and no rounding allowed ? */
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
-  Put_Ins (getFloatRhs (ir));
+  Put_Ins (4, getFloatRhs (ir));
 }
 
 /**
@@ -698,7 +698,7 @@ bool
 m_cmf (bool doLowerCase)
 {
   ARMWord cc = optionExceptionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   comparelow (M_CMF | cc);
   return CheckFPUsageIsAllowed ();
@@ -711,7 +711,7 @@ bool
 m_cnf (bool doLowerCase)
 {
   ARMWord cc = optionExceptionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   comparelow (M_CNF | cc);
   return CheckFPUsageIsAllowed ();
@@ -727,7 +727,7 @@ bool
 m_fix (bool doLowerCase)
 {
   ARMWord cc = optionCondOptRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
 
   ARMWord ir = M_FIX | cc;
@@ -735,7 +735,7 @@ m_fix (bool doLowerCase)
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
-  Put_Ins (getFloatRhs (ir));
+  Put_Ins (4, getFloatRhs (ir));
   return CheckFPUsageIsAllowed ();
 }
 
@@ -747,7 +747,7 @@ bool
 m_flt (bool doLowerCase)
 {
   ARMWord cc = optionCondPrecRound (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
 
   ARMWord ir = M_FLT | cc;
@@ -756,7 +756,7 @@ m_flt (bool doLowerCase)
   if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
   ir |= DST_OP (getCpuReg ());
-  Put_Ins (ir);
+  Put_Ins (4, ir);
   return CheckFPUsageIsAllowed ();
 }
 
@@ -765,7 +765,7 @@ flagtransfer (ARMWord ir)
 {
   ARMWord op = getCpuReg ();
   ir |= DST_OP (op);
-  Put_Ins (ir);
+  Put_Ins (4, ir);
 }
 
 /**
@@ -776,7 +776,7 @@ bool
 m_wfs (bool doLowerCase)
 {
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   flagtransfer (M_WFS | cc);
   return CheckFPUsageIsAllowed ();
@@ -790,7 +790,7 @@ bool
 m_rfs (bool doLowerCase)
 {
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   flagtransfer (M_RFS | cc);
   return CheckFPUsageIsAllowed ();
@@ -804,7 +804,7 @@ bool
 m_wfc (bool doLowerCase)
 {
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   flagtransfer (M_WFC | cc);
   return CheckFPUsageIsAllowed ();
@@ -818,7 +818,7 @@ bool
 m_rfc (bool doLowerCase)
 {
   ARMWord cc = optionCond (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   flagtransfer (M_RFC | cc);
   return CheckFPUsageIsAllowed ();
@@ -838,7 +838,7 @@ bool
 m_stf (bool doLowerCase)
 {
   ARMWord cc = optionCondPrec_P (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstmem (M_STF | cc, false);
   /* LDFP and STFP are deprecated instructions and are intended for backwards
@@ -856,7 +856,7 @@ bool
 m_ldf (bool doLowerCase)
 {
   ARMWord cc = optionCondPrec_P (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   dstmem (M_LDF | cc, true);
   /* LDFP and STFP are deprecated instructions and are intended for backwards
@@ -937,7 +937,7 @@ bool
 m_sfm (bool doLowerCase)
 {
   ARMWord cc = optionCondLfmSfm (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   if (dstmemx (M_SFM | cc, doLowerCase))
     return true;
@@ -951,7 +951,7 @@ bool
 m_lfm (bool doLowerCase)
 {
   ARMWord cc = optionCondLfmSfm (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   if (dstmemx (M_LFM | cc, doLowerCase))
     return true;

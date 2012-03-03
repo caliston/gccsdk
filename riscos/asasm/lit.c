@@ -34,7 +34,7 @@
 
 #include "area.h"
 #include "code.h"
-#include "commands.h"
+#include "directive_data.h"
 #include "error.h"
 #include "filestack.h"
 #include "m_fpe.h"
@@ -245,7 +245,7 @@ Lit_RegisterInt (const Value *valueP, Lit_eSize size)
           || help_cpuImm8s4 (~truncForUser) != -1)
 	{
 	  valueFree (&truncValue); /* Not really needed as it is ValueInt.  */
-	  return Value_Int (truncForUser);
+	  return Value_Int (truncForUser, eIntType_PureInt);
 	}
     }
   
@@ -524,7 +524,7 @@ Lit_DumpPool (void)
 		      /* The definition of the literal happeded after its use
 			 but before LTORG so we don't have to assemble it
 			 explicitely.  */
-		      symP->value = Value_Int (constant);
+		      symP->value = Value_Int (constant, eIntType_PureInt);
 		      litP->status = eNoNeedToAssemble;
 		      continue;
 		    }
@@ -627,7 +627,8 @@ Lit_DumpPool (void)
 	      DefineInt_PrivData_t privData =
 		{
 		  .size = (int) Lit_GetSizeInBytes (litP),
-		  .allowUnaligned = false
+		  .allowUnaligned = false,
+		  .swapHalfwords = false
 		};
 #ifdef DEBUG_LIT
 	      printf ("  Place at 0x%x value ", litP->offset);
@@ -635,7 +636,8 @@ Lit_DumpPool (void)
 	      printf ("\n");
 #endif
 	      if (gPhase == ePassOne)
-		Put_AlignDataWithOffset (litP->offset, privData.size, 0, !privData.allowUnaligned);
+		Put_AlignDataWithOffset (litP->offset, privData.size, 0, 1,
+		                         !privData.allowUnaligned);
 	      else
 		{
 		  codeInit ();

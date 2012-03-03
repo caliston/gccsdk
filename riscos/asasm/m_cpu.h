@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2004-2010 GCCSDK Developers
+ * Copyright (c) 2004-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,6 +24,8 @@
 #define m_cpu_header_included
 
 #include <stdbool.h>
+
+#include "decode.h"
 
 #define M_MNEM	0x01e00000
 
@@ -123,6 +125,7 @@ bool m_teq (bool doLowerCase);
 bool m_tst (bool doLowerCase);
 bool m_umull (bool doLowerCase);
 bool m_umlal (bool doLowerCase);
+bool m_und (bool doLowerCase);
 
 bool m_asr (bool doLowerCase);
 bool m_lsl (bool doLowerCase);

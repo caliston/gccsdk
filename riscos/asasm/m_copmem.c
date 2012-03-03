@@ -1,7 +1,7 @@
 /*
  * AS an assembler for ARM
  * Copyright (c) 1992 Niklas Röjemo
- * Copyright (c) 2000-2011 GCCSDK Developers
+ * Copyright (c) 2000-2012 GCCSDK Developers
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -54,7 +54,7 @@ bool
 m_ldc (bool doLowerCase)
 {
   ARMWord cc = optionCondL (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   return dstmem (cc | 0x0c100000, true);
 }
@@ -82,7 +82,7 @@ bool
 m_stc (bool doLowerCase)
 {
   ARMWord cc = optionCondL (doLowerCase);
-  if (cc == optionError)
+  if (cc == kOption_NotRecognized)
     return true;
   return dstmem (cc | 0x0c000000, false);
 }
