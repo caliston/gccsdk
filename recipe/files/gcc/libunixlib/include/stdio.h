@@ -515,7 +515,6 @@ __END_NAMESPACE_STD
 extern char *fgets_unlocked (char *__restrict __s, int __n,
 			     FILE *__restrict __stream);
 #  endif
-#define fgets_unlocked fgets
 #endif
 
 /* Formatted I/O */
