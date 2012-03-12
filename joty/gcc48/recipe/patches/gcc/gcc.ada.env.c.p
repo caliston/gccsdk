@@ -1,8 +1,8 @@
 Index: gcc/ada/env.c
 ===================================================================
---- gcc/ada/env.c	(revision 177481)
+--- gcc/ada/env.c	(revision 185264)
 +++ gcc/ada/env.c	(working copy)
-@@ -84,6 +84,9 @@
+@@ -76,6 +76,9 @@
  #include "system.h"
  #endif /* IN_RTS */
  

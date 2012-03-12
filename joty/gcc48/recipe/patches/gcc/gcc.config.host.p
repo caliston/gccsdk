@@ -1,8 +1,8 @@
 Index: gcc/config.host
 ===================================================================
---- gcc/config.host	(revision 180169)
+--- gcc/config.host	(revision 185264)
 +++ gcc/config.host	(working copy)
-@@ -205,6 +205,9 @@
+@@ -201,6 +201,9 @@
      prefix=/gnu
      local_prefix=/gnu/local
      ;;
