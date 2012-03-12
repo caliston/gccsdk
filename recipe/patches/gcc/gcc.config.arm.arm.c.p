@@ -1,5 +1,5 @@
---- gcc/config/arm/arm.c.orig	2006-10-17 03:04:38.000000000 +0200
-+++ gcc/config/arm/arm.c	2010-07-04 19:34:08.665720719 +0200
+--- gcc/config/arm/arm.c.orig	2012-03-11 20:17:57.000000000 +0000
++++ gcc/config/arm/arm.c	2012-03-11 20:17:04.000000000 +0000
 @@ -112,6 +112,7 @@ static tree arm_handle_isr_attribute (tr
  #if TARGET_DLLIMPORT_DECL_ATTRIBUTES
  static tree arm_handle_notshared_attribute (tree *, tree, tree, int, bool *);
@@ -176,7 +176,7 @@
    if (NUM_ARG_REGS > nregs
        && (NUM_ARG_REGS < nregs + ARM_NUM_REGS2 (mode, type))
        && pcum->can_split)
-@@ -3136,7 +3208,8 @@ arm_function_ok_for_sibcall (tree decl, 
+@@ -3136,7 +3208,8 @@ arm_function_ok_for_sibcall (tree decl,
      return false;
  
    /* Never tailcall something for which we have no decl, or if we
@@ -186,7 +186,7 @@
    if (decl == NULL || TARGET_THUMB)
      return false;
  
-@@ -3162,6 +3235,26 @@ arm_function_ok_for_sibcall (tree decl, 
+@@ -3162,6 +3235,26 @@ arm_function_ok_for_sibcall (tree decl,
    if (IS_INTERRUPT (arm_current_func_type ()))
      return false;
  
@@ -391,7 +391,7 @@
      mask |= 1 << ARM_HARD_FRAME_POINTER_REGNUM;
  
    /* LR will also be pushed if any lo regs are pushed.  */
-@@ -9471,7 +9630,7 @@ output_return_instruction (rtx operand, 
+@@ -9471,7 +9630,7 @@ output_return_instruction (rtx operand,
  	     corrupted it, or 3) it was saved to align the stack on
  	     iWMMXt.  In case 1, restore IP into SP, otherwise just
  	     restore IP.  */
@@ -400,7 +400,7 @@
  	    {
  	      live_regs_mask &= ~ (1 << IP_REGNUM);
  	      live_regs_mask |=   (1 << SP_REGNUM);
-@@ -9504,9 +9663,18 @@ output_return_instruction (rtx operand, 
+@@ -9504,9 +9663,18 @@ output_return_instruction (rtx operand,
  
  	  /* Generate the load multiple instruction to restore the
  	     registers.  Note we can get here, even if
@@ -946,10 +946,10 @@
 -	  if (GET_CODE (x) == SYMBOL_REF
 -	      && (CONSTANT_POOL_ADDRESS_P (x)
 -		  || SYMBOL_REF_LOCAL_P (x)))
+-	    fputs ("(GOTOFF)", asm_out_file);
+-	  else if (GET_CODE (x) == LABEL_REF)
 +	  if (TARGET_MODULE) /* -mmodule */
  	    fputs ("(GOTOFF)", asm_out_file);
--	  else if (GET_CODE (x) == LABEL_REF)
--	    fputs ("(GOTOFF)", asm_out_file);
 -	  else
 +	  else if (flag_pic == 2) /* -fPIC */
  	    fputs ("(GOT)", asm_out_file);
@@ -984,7 +984,7 @@
  }
  #endif
  
-@@ -11955,7 +12383,7 @@ arm_debugger_arg_offset (int value, rtx 
+@@ -11955,7 +12383,7 @@ arm_debugger_arg_offset (int value, rtx
  
    /* If we are using the stack pointer to point at the
       argument, then an offset of 0 is correct.  */
@@ -1064,7 +1064,35 @@
      {
        emit_insn (gen_movsi (stack_pointer_rtx, hard_frame_pointer_rtx));
        amount = offsets->locals_base - offsets->saved_regs;
-@@ -15065,7 +15509,7 @@ arm_set_return_address (rtx source, rtx 
+@@ -14366,6 +14810,27 @@ arm_file_end (void)
+ {
+   int regno;
+ 
++#ifdef TARGET_RISCOSELF
++  {
++    extern const char version_string[];
++    char buffer[20];
++    const char *from = version_string;
++    char *to = buffer;
++
++    while (!ISDIGIT (*from) && *from != '\0')
++      from++;
++
++    while ((ISDIGIT (*from) || *from == '.') && *from != '\0')
++      *to++ = *from++;
++
++    *to = '\0';
++
++    asm_fprintf (asm_out_file, "\t.section .riscos.gcc.dir,\"aSM\",%%note,1\n");
++    asm_fprintf (asm_out_file, "\t.asciz \"%s\"\n", buffer);
++    asm_fprintf (asm_out_file, "\t.align\t2\n");
++  }
++#endif
++
+   if (! thumb_call_reg_needed)
+     return;
+ 
+@@ -15065,7 +15530,7 @@ arm_set_return_address (rtx source, rtx
      emit_move_insn (gen_rtx_REG (Pmode, LR_REGNUM), source);
    else
      {
@@ -1073,7 +1101,7 @@
  	addr = plus_constant(hard_frame_pointer_rtx, -4);
        else
  	{
-@@ -15108,7 +15552,7 @@ thumb_set_return_address (rtx source, rt
+@@ -15108,7 +15573,7 @@ thumb_set_return_address (rtx source, rt
        offsets = arm_get_frame_offsets ();
  
        /* Find the saved regs.  */
@@ -1082,7 +1110,7 @@
  	{
  	  delta = offsets->soft_frame - offsets->saved_args;
  	  reg = THUMB_HARD_FRAME_POINTER_REGNUM;
-@@ -15165,13 +15609,102 @@ arm_shift_truncation_mask (enum machine_
+@@ -15165,13 +15630,102 @@ arm_shift_truncation_mask (enum machine_
    return mode == SImode ? 255 : 0;
  }
  
@@ -1186,7 +1214,7 @@
      return regno;
  
    /* TODO: Legacy targets output FPA regs as registers 16-23 for backwards
-@@ -15179,7 +15712,10 @@ arm_dbx_register_number (unsigned int re
+@@ -15179,7 +15733,10 @@ arm_dbx_register_number (unsigned int re
    if (IS_FPA_REGNUM (regno))
      return (TARGET_AAPCS_BASED ? 96 : 16) + regno - FIRST_FPA_REGNUM;
  
