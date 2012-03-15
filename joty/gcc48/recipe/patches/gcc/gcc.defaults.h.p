@@ -1,8 +1,8 @@
 Index: gcc/defaults.h
 ===================================================================
---- gcc/defaults.h	(revision 181309)
+--- gcc/defaults.h	(revision 185443)
 +++ gcc/defaults.h	(working copy)
-@@ -402,7 +402,7 @@
+@@ -395,7 +395,7 @@
  #endif
  
  /* This decision to use a .jcr section can be overridden by defining
@@ -11,7 +11,7 @@ Index: gcc/defaults.h
     can define JCR_SECTION_NAME but does not have crtstuff or
     linker support for .jcr section.  */
  #ifndef TARGET_USE_JCR_SECTION
-@@ -411,7 +411,11 @@
+@@ -404,7 +404,11 @@
  #else
  #define TARGET_USE_JCR_SECTION 0
  #endif

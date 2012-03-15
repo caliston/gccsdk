@@ -1,8 +1,8 @@
 Index: gcc/dwarf2cfi.c
 ===================================================================
---- gcc/dwarf2cfi.c	(revision 177297)
+--- gcc/dwarf2cfi.c	(revision 185443)
 +++ gcc/dwarf2cfi.c	(working copy)
-@@ -1598,7 +1598,9 @@
+@@ -1594,7 +1594,9 @@
  	      /* Rule 3 */
  	      /* Either setting the FP from an offset of the SP,
  		 or adjusting the FP */
@@ -12,7 +12,7 @@ Index: gcc/dwarf2cfi.c
  
  	      gcc_assert (REG_P (XEXP (src, 0))
  			  && dwf_regno (XEXP (src, 0)) == cur_cfa->reg
-@@ -1648,6 +1650,14 @@
+@@ -1644,6 +1646,14 @@
  		  cur_trace->cfa_temp.reg = dwf_regno (dest);
  		  cur_trace->cfa_temp.offset = INTVAL (XEXP (src, 1));
  		}

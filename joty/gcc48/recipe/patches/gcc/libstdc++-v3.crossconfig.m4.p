@@ -1,6 +1,6 @@
 Index: libstdc++-v3/crossconfig.m4
 ===================================================================
---- libstdc++-v3/crossconfig.m4	(revision 176416)
+--- libstdc++-v3/crossconfig.m4	(revision 185443)
 +++ libstdc++-v3/crossconfig.m4	(working copy)
 @@ -196,6 +196,41 @@
      GLIBCXX_CHECK_MATH_SUPPORT
@@ -43,4 +43,4 @@ Index: libstdc++-v3/crossconfig.m4
 +    ;;
    *-solaris*)
      case "$target" in
-       *-solaris2.8 | *-solaris2.9 | *-solaris2.10)
+       *-solaris2.9 | *-solaris2.10)
