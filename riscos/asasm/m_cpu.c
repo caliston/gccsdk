@@ -21,6 +21,7 @@
  */
 
 #include "config.h"
+#include <assert.h>
 #ifdef HAVE_STDINT_H
 #  include <stdint.h>
 #elif HAVE_INTTYPES_H
@@ -137,11 +138,7 @@ m_und (bool doLowerCase)
   unsigned maxValue;
   InstrType_e instrState = State_GetInstrType ();
   if (instrState == eInstrType_ARM)
-    {
-      if (instrWidth == eInstrWidth_Enforce16bit)
-	error (ErrorError, ".N width specifier can't be used in ARM mode");
-      maxValue = 65536;
-    }
+    maxValue = 65536;
   else
     {
       if (instrWidth == eInstrWidth_NotSpecified)
@@ -443,7 +440,7 @@ onlyregs (MulFlavour_e mulType, ARMWord ir)
     error (ErrorWarning, "Use of register PC is unpredictable");
   if (mulType != Is_eMLS)
     {
-      if (regD == regN)
+      if (regD == regN && Target_GetArch () < ARCH_ARMv6)
 	{
 	  if (regN == regM)
 	    error (ErrorError, "Destination and left operand are the same register %d", regD);
@@ -523,6 +520,10 @@ m_mul (bool doLowerCase)
   return false;
 }
 
+
+/**
+ * Used for implementing SMUL*, SMLA*, UMUL*, UMLA.
+ */
 static void
 l_onlyregs (ARMWord ir, const char *op)
 {
@@ -566,9 +567,9 @@ l_onlyregs (ARMWord ir, const char *op)
     {
       if (dstl == dsth)
         error (ErrorError, "Destination high and low are the same register %d", dstl);
-      if (dstl == lhs || dsth == lhs)
+      if ((dstl == lhs || dsth == lhs) && Target_GetArch () < ARCH_ARMv6)
         {
-          if (dstl == rhs || dsth == rhs)
+          if (dstl == rhs || dsth == rhs) 
             error (ErrorError, "Left operand register %d also occurs in destination", lhs);
           else
 	    {
@@ -581,10 +582,10 @@ l_onlyregs (ARMWord ir, const char *op)
         }
      }
   else
-     {
-       if (dsth == 15 || lhs == 15 || rhs == 15)
-         error (ErrorError, "Cannot use R15 with %s", op);
-     }
+    {
+      if (dsth == 15 || lhs == 15 || rhs == 15)
+	error (ErrorError, "Cannot use R15 with %s", op);
+    }
   if (!issmull && (issmlaxy || issmlawy))
     {
       if (!Input_Match (',', true))
@@ -1111,4 +1112,462 @@ m_rrx (bool doLowerCase)
   Put_Ins (4, cc | M_MOV | DST_OP (regD) | regM | SHIFT_OP (RRX));
   
   return false;
+}
+
+typedef enum
+{
+  eIsBFC,
+  eIsBFI,
+  eIsSBFX,
+  eIsUBFX
+} BitFieldType_e;
+
+/**
+ * Implements BFC, BFI, SBFX and UBFX.
+ */
+static bool
+core_bitfield_instr (bool doLowerCase, BitFieldType_e bitFieldType)
+{
+  ARMWord cc = optionCond (doLowerCase);
+  if (cc == kOption_NotRecognized)
+    return true;
+
+  InstrWidth_e instrWidth = Option_GetInstrWidth (doLowerCase);
+  if (instrWidth == eInstrWidth_Unrecognized)
+    return true;
+
+  /* Only ARM and 32 bit Thumb is possible for BFC/BFI/SBFX/UBFX.  */
+  if (instrWidth == eInstrWidth_Enforce16bit)
+    error (ErrorError, "Narrow instruction qualifier for Thumb is not possible");
+    
+  Target_NeedAtLeastArch (ARCH_ARMv6T2); /* Only ARMv6T2 and ARMv7.  */
+
+  ARMWord rd = getCpuReg ();
+  if (!Input_Match (',', true))
+    error (ErrorError, "%sRd", InsertCommaAfter);
+  ARMWord rn;
+  if (bitFieldType != eIsBFC)
+    {
+      /* BFI, SBFX and UBFX.  */
+      rn = getCpuReg ();
+      if (!Input_Match (',', true))
+	error (ErrorError, "%sRd", InsertCommaAfter);
+
+      if (rn == 15)
+	error (ErrorWarning, "Use of PC for Rn makes BFI behave like BFC");
+    }
+  else
+    rn = 15;
+  if (!Input_Match ('#', false))
+    error (ErrorError, "Missing #");
+  unsigned lsb;
+  const Value *lsbValue = exprBuildAndEval (ValueInt);
+  if (lsbValue->Tag != ValueInt)
+    {
+      error (ErrorError, "Failed to evaluate immediate constant");
+      lsb = 0;
+    }
+  else
+    lsb = lsbValue->Data.Int.i;
+  if (!Input_Match (',', true))
+    error (ErrorError, "%sRd", InsertCommaAfter);
+  if (!Input_Match ('#', false))
+    error (ErrorError, "Missing #");
+  unsigned width;
+  const Value *widthValue = exprBuildAndEval (ValueInt);
+  if (widthValue->Tag != ValueInt)
+    {
+      error (ErrorError, "Failed to evaluate immediate constant");
+      width = 1;
+    }
+  else
+    width = widthValue->Data.Int.i;
+
+  if (/* lsb < 0 || */ lsb > 32)
+    {
+      error (ErrorError, "lsb value needs be in range 0 to 31 (incl)");
+      lsb = 0;
+    }
+  if (width < 1 || width > 32 - lsb)
+    {
+      error (ErrorError, "width value needs to be in range 1 to 32 - lsb (incl)");
+      width = 1;
+    }
+
+  unsigned widthInd;
+  ARMWord baseInstr;
+  switch (bitFieldType)
+    {
+      case eIsBFC:
+      case eIsBFI:
+	{
+	  widthInd = lsb + width - 1;
+	  if (State_GetInstrType () == eInstrType_ARM)
+	    {
+	      if (rd == 15)
+		error (ErrorWarning, "Use of PC is unpredictable");
+	      if (rd == 13 || rn == 13)
+		error (ErrorWarning, "Use of R13 as Rd or Rn is deprecated");
+	      baseInstr = 0x07C00010;
+	    }
+	  else
+	    {
+	      if (rd == 13 || rd == 15 || rn == 13)
+		error (ErrorWarning, "Use of R13 or PC is unpredictable");
+	      baseInstr = 0xF3600000;
+	    }
+	  break;
+	}
+
+      case eIsSBFX:
+      case eIsUBFX:
+	{
+	  widthInd = width - 1;
+	  if (State_GetInstrType () == eInstrType_ARM)
+	    {
+	      if (rd == 15 || rn == 15)
+		error (ErrorWarning, "Use of PC in unpredictable");
+	      if (rd == 13 || rn == 13)
+		error (ErrorWarning, "Use of R13 as Rd or Rn is deprecated");
+	      baseInstr = bitFieldType == eIsSBFX ? 0x07A00050 : 0x07E00050;
+	    }
+	  else
+	    {
+	      if (rd == 13 || rd == 15 || rn == 13 || rn == 15)
+		error (ErrorWarning, "Use of R13 or PC is unpredictable");
+	      baseInstr = bitFieldType == eIsSBFX ? 0xF3400000 : 0xF3C00000;
+	    }
+	  break;
+	}
+    }
+
+  if (State_GetInstrType () == eInstrType_ARM)
+    Put_Ins (4, baseInstr | cc | (widthInd << 16) | (rd << 12) | (lsb << 7) | rn);
+  else
+    {
+      // FIXME: condition
+      Put_Ins (4, baseInstr | (rn << 16) | ((lsb & 0x1C) << 12) | (rd << 8) | ((lsb & 3) << 6) | widthInd);
+    }
+  
+  return false;
+}
+
+
+/**
+ * Implements BFC
+ *   BFC{<c>}{<q>} <Rd>, #<lsb>, #<width>
+ */
+bool
+m_bfc (bool doLowerCase)
+{
+  return core_bitfield_instr (doLowerCase, eIsBFC);
+}
+
+
+/**
+ * Implements BFI
+ *   BFI{<c>}{<q>} <Rd>, <Rn>, #<lsb>, #<width>
+ */
+bool
+m_bfi (bool doLowerCase)
+{
+  return core_bitfield_instr (doLowerCase, eIsBFI);
+}
+
+
+/**
+ * Implements SBFX
+ *   SBFX{<c>}{<q>} <Rd>, <Rn>, #<lsb>, #<width>
+ */
+bool
+m_sbfx (bool doLowerCase)
+{
+  return core_bitfield_instr (doLowerCase, eIsSBFX);
+}
+
+
+/**
+ * Implements UBFX
+ *   UBFX{<c>}{<q>} <Rd>, <Rn>, #<lsb>, #<width>
+ */
+bool
+m_ubfx (bool doLowerCase)
+{
+  return core_bitfield_instr (doLowerCase, eIsUBFX);
+}
+
+
+/**
+ * Implements PKHBT and PKHTB
+ *   PKHBT{<c>}{<q>} {<Rd>}, <Rn>, <Rm>{, LSL #<imm>}
+ *   PKHTB{<c>}{<q>} {<Rd>}, <Rn>, <Rm>{, ASR #<imm>}
+ */
+bool
+m_pkh (bool doLowerCase)
+{
+  bool isTB;
+  if (Input_MatchString (doLowerCase ? "tb" : "TB"))
+    isTB = true;
+  else if (Input_MatchString (doLowerCase ? "bt" : "BT"))
+    isTB = false;
+  else
+    return true;
+
+  ARMWord cc = optionCond (doLowerCase);
+  if (cc == kOption_NotRecognized)
+    return true;
+
+  InstrWidth_e instrWidth = Option_GetInstrWidth (doLowerCase);
+  if (instrWidth == eInstrWidth_Unrecognized)
+    return true;
+
+  if (instrWidth == eInstrWidth_Enforce16bit)
+    {
+      error (ErrorError, "Narrow instruction qualifier for Thumb is not possible");
+      instrWidth = eInstrWidth_NotSpecified;
+    }
+
+  ARMWord regs[3];
+  const unsigned maxNumRegs = 3;
+  unsigned regIndex = 0;
+  bool pendingComma = false;
+  while (regIndex != maxNumRegs)
+    {
+      regs[regIndex] = Get_CPURegNoError ();
+      if (regs[regIndex] == INVALID_REG)
+	break;
+      ++regIndex;
+      pendingComma = Input_Match (',', true);
+      if (!pendingComma)
+	break;
+    }
+  unsigned shift = 0;
+  if (regIndex < maxNumRegs - 1)
+    {
+      error (ErrorError, "Not enough registers specified");
+      while (regIndex != maxNumRegs)
+	regs[regIndex++] = 0;
+    }
+  else if (pendingComma)
+    {
+      /* We expect to parse a LSL#<value> (isTB = false) or ASR#<value>
+	 (isTB = true).  */
+      const char * const shiftType = isTB ? "ASR" : "LSL";
+      if (!Input_MatchString (shiftType))
+	error (ErrorError, "%s expected", shiftType);
+      else
+	{
+	  skipblanks ();
+	  if (!Input_Match ('#', false))
+	    error (ErrorError, "%s #<value> expected", shiftType);
+	  else
+	    {
+	      const Value *shiftValue = exprBuildAndEval (ValueInt);
+	      /* TB : shift value from 1 to 32 (incl).
+		 BT: shift value from 0 to 31 (incl).  */
+	      if (shiftValue->Tag != ValueInt
+	          || (isTB && (shiftValue->Data.Int.i < 1 || shiftValue->Data.Int.i > 32))
+	          || (!isTB && (shiftValue->Data.Int.i < 0 || shiftValue->Data.Int.i > 31)))
+		error (ErrorError, "Wrong %s #<value>", shiftType);
+	      else
+		shift = shiftValue->Data.Int.i;
+	    }
+	}
+    }
+  if (isTB)
+    {
+      if (shift == 0)
+	isTB = false;
+      else if (shift == 32)
+	shift = 0;
+    }
+
+  const ARMWord rm = regs[--regIndex];
+  const ARMWord rn = regs[--regIndex];
+  const ARMWord rd = regIndex == 0 ? regs[regIndex] : regs[--regIndex];
+  assert (regIndex == 0);
+
+  if (State_GetInstrType () == eInstrType_ARM)
+    {
+      if (rd == 15 || rn == 15 || rm == 15)
+	error (ErrorWarning, "Use of PC for Rd, Rn or Rm is unpredictable");
+      const ARMWord baseInstr = 0x06800010;
+      Put_Ins (4, baseInstr | cc | (rn << 16) | (rd << 12) | (shift << 7) | (isTB ? (1<<6) : 0) | rm);
+    }
+  else
+    {
+      if (rd == 15 || rd == 13 || rn == 15 || rn == 13 || rm == 15 || rm == 13)
+	error (ErrorWarning, "Use of R13 or PC for Rd, Rn or Rm is unpredictable");
+      const ARMWord baseInstr = 0xEAC00000;
+      /* FIXME: condition code.  */
+      Put_Ins (4, baseInstr | (rn << 16) | ((shift & 0x1C) << 10) | (rd << 8) | ((shift & 3) << 6) | (isTB ? (1<<5) : 0) | rm);
+    }
+
+  return false;
+}
+
+
+typedef enum
+{
+  eIsByte,
+  eIsByte16,
+  eIsHalfword
+} Extend_e;
+
+/**
+ * Implements SXT/SXTA/LXT/LXTA.
+ */
+static bool
+core_sxt_lxt (bool doLowerCase, bool isLXT)
+{
+  bool isAcc = Input_Match (doLowerCase ? 'a' : 'A', false);
+  Extend_e extend;
+  if (Input_MatchString (doLowerCase ? "b16" : "B16"))
+    extend = eIsByte16;
+  else if (Input_Match (doLowerCase ? 'b' : 'B', false))
+    extend = eIsByte;
+  else if (Input_Match (doLowerCase ? 'h' : 'H', false))
+    extend = eIsHalfword;
+  else
+    return true;
+
+  ARMWord cc = optionCond (doLowerCase);
+  if (cc == kOption_NotRecognized)
+    return true;
+
+  InstrWidth_e instrWidth = Option_GetInstrWidth (doLowerCase);
+  if (instrWidth == eInstrWidth_Unrecognized)
+    return true;
+
+  /* Narrow instruction qualifier is not possible for accumulate versions
+     and the B16 non accumulate one.  */
+  if (instrWidth == eInstrWidth_Enforce16bit && (isAcc || extend == eIsByte16))
+    {
+      error (ErrorError, "Narrow instruction qualifier for Thumb is not possible");
+      instrWidth = eInstrWidth_NotSpecified;
+    }
+
+  ARMWord regs[3];
+  unsigned maxNumRegs = isAcc ? 3 : 2;
+  unsigned regIndex = 0;
+  bool pendingComma = false;
+  while (regIndex != maxNumRegs)
+    {
+      regs[regIndex] = Get_CPURegNoError ();
+      if (regs[regIndex] == INVALID_REG)
+	break;
+      ++regIndex;
+      pendingComma = Input_Match (',', true);
+      if (!pendingComma)
+	break;
+    }
+  unsigned ror = 0;
+  if (regIndex < maxNumRegs - 1)
+    {
+      error (ErrorError, "Not enough registers specified");
+      while (regIndex != maxNumRegs)
+	regs[regIndex++] = 0;
+    }
+  else if (pendingComma)
+    {
+      /* We expect to parse a ROR#<value>.  */
+      if (!Input_MatchString ("ROR"))
+	error (ErrorError, "%s expected", "ROR");
+      else
+	{
+	  skipblanks ();
+	  if (!Input_Match ('#', false))
+	    error (ErrorError, "%s #<value> expected", "ROR");
+	  else
+	    {
+	      const Value *rorValue = exprBuildAndEval (ValueInt);
+	      if (rorValue->Tag != ValueInt
+	          || (rorValue->Data.Int.i & ~0x18) != 0)
+		error (ErrorError, "Wrong %s #<value>", "ROR");
+	      else
+		ror = rorValue->Data.Int.i >> 3;
+	    }
+	}
+    }
+
+  const ARMWord rm = regs[--regIndex];
+  const ARMWord rn = isAcc ? regs[--regIndex] : 15;
+  const ARMWord rd = regIndex == 0 ? regs[regIndex] : regs[--regIndex];
+  assert (regIndex == 0);
+
+  /* Determine 16bit or 32bit Thumb.  */
+  if (State_GetInstrType () != eInstrType_ARM && instrWidth == eInstrWidth_NotSpecified)
+    instrWidth = !isAcc && extend != eIsByte16 && ror == 0 && rd < 8 && rm < 8 ? eInstrWidth_Enforce16bit : eInstrWidth_Enforce32bit;
+  if (instrWidth == eInstrWidth_Enforce16bit && ror != 0)
+    {
+      error (ErrorError, "16 bit Thumb can only encode ROR 0 value");
+      ror = 0;
+    }
+
+  if (State_GetInstrType () == eInstrType_ARM)
+    {
+      if (rd == 15 || rm == 15)
+	error (ErrorWarning, "Use of PC for Rd or Rm is unpredictable");
+      ARMWord baseInstr;
+      switch (extend)
+	{
+	  case eIsByte:
+	    baseInstr = 0x06A00070;
+	    break;
+	  case eIsByte16:
+	    baseInstr = 0x06800070;
+	    break;
+	  case eIsHalfword:
+	    baseInstr = 0x06b00070;
+	    break;
+	}
+      Put_Ins (4, baseInstr | cc | (isLXT ? (1<<22) : 0) | (rn << 16) | (rd << 12) | (ror << 10) | rm);
+    }
+  else if (instrWidth == eInstrWidth_Enforce16bit)
+    {
+      assert (extend == eIsByte || extend == eIsHalfword);
+      Put_Ins (2, 0xB200 | (rm << 3) | rd | (extend == eIsByte ? 0x40 : 0x00) | (isLXT ? 0x80 : 0x00));
+    }
+  else
+    {
+      if (rd == 13 || rd == 15 || rn == 13 || rm == 15 || rm == 15)
+	error (ErrorWarning, "Use of R13 or PC for Rd, Rn or Rm is unpredictable");
+      ARMWord baseInstr;
+      switch (extend)
+	{
+	  case eIsByte:
+	    baseInstr = 0xFA40F080;
+	    break;
+	  case eIsByte16:
+	    baseInstr = 0xFA20F080;
+	    break;
+	  case eIsHalfword:
+	    baseInstr = 0xFA00F080;
+	    break;
+	}
+      Put_Ins (4, baseInstr | (isLXT ? (1<<20) : 0) | (rn << 16) | (rd << 8) | (ror << 4) | rm);
+    }
+
+  return false;
+}
+
+/**
+ * Implements 
+ *   SXT{"A"}{"B"|"B16"|"H"}{<c>}{<q>} {<Rd>,} <Rn> {, <Rm>} {, <rotation>}
+ */
+bool
+m_sxt (bool doLowerCase)
+{
+  return core_sxt_lxt (doLowerCase, false);
+}
+
+
+/**
+ * Implements 
+ *   LXT{"A"}{"B"|"B16"|"H"}{<c>}{<q>} {<Rd>,} <Rn> {, <Rm>} {, <rotation>}
+ */
+bool
+m_uxt (bool doLowerCase)
+{
+  return  core_sxt_lxt (doLowerCase, true);
 }

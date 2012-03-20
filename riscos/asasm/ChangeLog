@@ -1,6 +1,129 @@
+Mon Mar 19 23:24:24 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/operator_index.s: Add tests based on labels.
+	* symbols.s (c_import): Implement a more liberal syntax for import
+	attributes.
+	* m_cpu.c (onlyregs): Add test on architecture.
+	(l_onlyregs): Likewise.
+	* eval.c (evalUnop): Add support for area symbols for :BASE: and
+	:INDEX:.
+
+Sat Mar 17 21:54:33 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/instr_pkhbt_pkhtb.s: Add.
+	* regression/tests_pass/instr_sxt_uxt.s: Mark IT cases.
+	* regression/tests_pass/instr_bfc_bfi_sbfx_ubfx.s: Likewise.
+	* decode.c (oDecodeTable): Add PKH.
+	* value.c (Value_ResolveSymbol): Fix comment.
+	* m_cpu.c, m_cpu.h (m_pkh): Add.
+
+Sat Mar 17 19:00:51 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/ldm_stm_pop_push.s: Renamed to...
+	* regression/tests_pass/instr_ldm_stm_pop_push.s: ...this.
+	* regression/tests_pass/operator_addition_logical.s: Removed ^
+	extension.  We no longer want to support this.
+	* regression/tests_pass/directive_rlist.s: Add.
+	* directive_symbol.c, directive_symbol.h (c_rout): Add.
+	* decode.c (oDecodeTable): Add RLIST.
+	* m_cpumem.c (dstreglist): Factor out register list parser to...
+	* get.c (Get_CPURList): ...here.
+	* get.h (Get_CPURList): Add.
+	* lex.c (lexGetBinop): Remove ^ support.
+	* value.c (Value_ResolveSymbol): Reserve integer type.
+	(valueTagAsString, valuePrint): Support eIntType_CPURList. 
+	* value.h (eIntType_CPURList): Add.
+
+Sat Mar 17 16:38:42 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c (inputSkipLook): Remove.
+	* input.h (inputSkipLook): Likewise.
+	* lex.c (lexGetBinop): Follow inputSkipLook removal.
+
+Sat Mar 17 16:28:53 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/dcb_dcw_dcd.s: Renamed to...
+	* regression/tests_pass/directive_data_integer.s: ...this. Add DCQ/DCQU
+	tests.
+	* regression/tests_pass/dcfs_dcfd.s: Renamed to...
+	* tests_pass/directive_data_fp.s: ..this.
+	* code.c (codeEvalLow): Implement implicit conversion from 1 char string
+	to integer when string result is not wanted.
+	* decode.c (oDecodeTable): Add DCQ entry.
+	* directive_data.c (DefineInt): Add size 8 case.
+	(c_dcq): Add.
+	* directive_data.h (c_dcq): Add.
+	* value.c (Value_Assign, valueFree, Value_ResolveSymbol, valueEqual,
+	valueTagAsString, valuePrint): Add ValueInt64 support.
+	* value.h (ValueInt64): Add.
+	(Value): Add Int64 struct.
+	(Value_Int64): Add.
+	* expr.c (prim): Add LexInt64 case.
+	* eval.c (Eval_NegValue): Add ValueInt64 case.
+	* targetcpu.c (Target_CheckFeature): Mark feature argument as unused.
+	* lex.c (lexint): Renamed to Lex_GetInt. Let it return a Lex object.
+	Add didOverflow parameter.  Make it LexInt64 aware.
+	(lexPrint): Add LexInt64 case.
+	* lex.h (LexInt64): Define.
+	(Lex): Add Int64 struct.
+
+Sat Mar 17 03:13:19 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/instr_sxt_uxt.s: Add.
+	* decode.c (oDecodeTable): Add SXT/UXT.
+	* m_cpu.c (core_bitfield_instr): Add test on Rn being 13.
+	(core_sxt_lxt, m_sxt, m_lxt): Add.
+	* m_cpu.h (m_sxt, m_lxt): Add.
+	* lex.c (Lex_GetBuiltinVariable): Let {CODESIZE} be 16 or 32, no longer
+	26.
+
+Tue Mar 13 22:52:57 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/instr_bfc_bfi.s: Renamed to...
+	* regression/tests_pass/instr_bfc_bfi_sbfx_ubfx.s: ...this.  Add SBFX
+	and UBFX tests.
+	* decode.c (oDecodeTable): Add SBFX and UBFX.
+	* m_cpu.c (BitFieldType_e): Add.
+	(core_bfc_bfi): Renamed to core_bitfield_instr.
+	(m_sbfx, m_ubfx): Add.
+	* m_cpu.h (m_sbfx, m_ubfx): Add.
+
+Tue Mar 13 02:53:20 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/instr_bfc_bfi.s: Add.
+	* decode.c (oDecodeTable): Add BFC/BFI.
+	* option.c (Option_GetInstrWidth): Fault narrow instruction specifier
+	in ARM mode.
+	* m_cpu.c (m_und): Remove check on narrow instruction specifier in
+	ARM mode.
+	(core_bfc_bfi, m_bfc, m_bfi): Add.
+	* m_cpu.h (m_bfc, m_bfi): Add.
+
+Sun Mar 11 22:41:30 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/dcfs_dcfd.s: Add floating point literal tests.
+	* put.c (Put_FloatDataWithOffset): Refactor union arm_float,
+	arm_double_fpa and arm_double_vfp definition out into...
+	* fpu.h: ...this.
+	* state.c (oDefaultSyntax): Initialise to eSyntax_Both instead of
+	eSyntax_PreUALOnly.
+	* main.c (main): --32 and --arm means eSyntax_Both, not
+	eSyntax_PreUALOnly. 
+	* get.h (ASL): Define as LSL.
+	* lex.c (Lex_GetFloatFloatingPointLiteral,
+	Lex_GetDoubleFloatingPointLiteral): Add.
+	(lexGetPrim): Add support for floating point literals.
+
+Sat Mar 10 18:44:51 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/align_instr.s: Add.
+	* m_cpuctrl.c (branch_shared): Support branch instructions at currently
+	unaligned area index.
+	* README: Add releases entry.
+
 Sat Mar  3 03:25:17 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
 
-	* regression/tests_pass/misc.s: Move SWP/SWPB tests too...
+	* regression/tests_pass/misc.s: Move SWP/SWPB tests to...
 	* regression/tests_pass/instr_swp.s: ...here.  Enhance test with
 	condition codes and UAL vs pre-UAL syntax.
 	* m_cpumem.c (m_swp): Ignore when in Thumb mode.  Add test on register
