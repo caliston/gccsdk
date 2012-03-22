@@ -70,7 +70,7 @@
 /* When building the native RISC OS compiler, we add an extra library path
    GCCSOLib:  */
 #  define SUBTARGET_EXTRA_LINK_SPEC \
-     "-m armelf_riscos -p %{!static:%{!fpic:-fPIC -L/GCCSOLib:}} " \
+     "-m armelf_riscos -p %{!static:%{!fpic:-fPIC -L/GCCSOLib:/abi-1.0 -L/GCCSOLib:}} " \
      "%{fpic:-fpic} %{mmodule:--ro-module-reloc} "
 #endif
 

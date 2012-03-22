@@ -266,6 +266,12 @@ buildstepsdir/src-gcc: $(SRCORIGDIR)/gcc-$(GCC_VERSION).tar.bz2 buildstepsdir/bu
 	cp -T -p -r $(SRCORIGDIR)/gcc-$(GCC_VERSION) $(SRCDIR)/gcc
 	cd $(SRCDIR)/gcc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 	-mkdir -p buildstepsdir
+
+	rm -f $(SRCDIR)/gcc/gcc/config/arm/riscos-abi.h
+	echo "/* Automatically generated from the value of GCCSDK_RISCOS_ABI_VERSION" >> $(SRCDIR)/gcc/gcc/config/arm/riscos-abi.h
+	echo "   defined in the file setup_gccsdk_params.  */" >> $(SRCDIR)/gcc/gcc/config/arm/riscos-abi.h
+	echo \"$(GCCSDK_RISCOS_ABI_VERSION)\" >> $(SRCDIR)/gcc/gcc/config/arm/riscos-abi.h
+
 	touch buildstepsdir/src-gcc
 
 # Unpack newlib source:

@@ -1,5 +1,5 @@
---- gcc/crtstuff.c.orig	2010-05-09 17:55:09.301451142 +0200
-+++ gcc/crtstuff.c	2010-05-09 17:53:08.621448799 +0200
+--- gcc/crtstuff.c.orig	2012-03-21 20:08:27.000000000 +0000
++++ gcc/crtstuff.c	2012-03-21 20:03:34.000000000 +0000
 @@ -181,7 +181,7 @@ STATIC func_ptr __CTOR_LIST__[1]
    __attribute__ ((__unused__, aligned(sizeof(func_ptr))))
    = { (func_ptr) (-1) };
@@ -54,7 +54,7 @@
    __attribute__((unused, section(".dtors"), aligned(sizeof(func_ptr))))
    = { (func_ptr) 0 };
  #endif
-@@ -513,7 +513,7 @@ STATIC void *__JCR_END__[1] 
+@@ -513,7 +513,7 @@ STATIC void *__JCR_END__[1]
  static void __attribute__((used))
  __do_global_ctors_aux (void)
  {
@@ -71,4 +71,18 @@
 +  const func_ptr *p;
  #if defined(USE_EH_FRAME_REGISTRY) || defined(JCR_SECTION_NAME)
    __do_global_ctors_1();
+ #endif
+@@ -578,6 +578,13 @@ __do_global_ctors (void)
+ #error "What are you doing with crtstuff.c, then?"
+ #endif
+ 
++#ifdef __riscos__
++static const char riscos_abi_version[]
++  __attribute__((used, section(".riscos.abi.version"), aligned(4))) =
++#include "config/arm/riscos-abi.h"
++  ;
++#endif
++
+ #else /* ! CRT_BEGIN && ! CRT_END */
+ #error "One of CRT_BEGIN or CRT_END must be defined."
  #endif

@@ -527,6 +527,16 @@ void _dl_boot(int args)
 	tpnt->libname =  _dl_strdup((char *) ppnt->p_offset + (dl_data[AT_PHDR] & 0xfffff000));
       }
     }
+
+    for (dpnt = (Elf32_Dyn *)app_tpnt->dynamic_addr;
+	 dpnt->d_tag && dpnt->d_tag != DT_RISCOS_ABI_VERSION;
+	 dpnt++)
+      /* Empty loop.  */;
+
+    if (dpnt->d_tag)
+      app_tpnt->abi_version = (char *)(dpnt->d_un.d_ptr + app_tpnt->loadaddr);
+    else
+      app_tpnt->abi_version = NULL;
   }
 
   if (argv[0])
@@ -586,7 +596,7 @@ void _dl_boot(int args)
 	*str2 = '\0';
 	if (!_dl_secure || _dl_strchr(str, '/') == NULL) {
 
-	  tpnt1 = _dl_load_shared_library(_dl_secure, NULL, str);
+	  tpnt1 = _dl_load_shared_library(app_tpnt, NULL, str);
 	  if (!tpnt1) {
 	    if (_dl_trace_loaded_objects)
 	      _dl_fdprintf(1, "\t%s => not found\n", str);
@@ -663,7 +673,7 @@ void _dl_boot(int args)
 	      c = *cp;
 	      *cp = '\0';
 
-	      tpnt1 = _dl_load_shared_library(0, NULL, cp2);
+	      tpnt1 = _dl_load_shared_library(app_tpnt, NULL, cp2);
 	      if (!tpnt1) {
 		if (_dl_trace_loaded_objects)
 		  _dl_fdprintf(1, "\t%s => not found\n", cp2);
@@ -727,7 +737,7 @@ void _dl_boot(int args)
 	    tpnt = NULL;
 	    continue;
 	  }
-	  if (!(tpnt1 = _dl_load_shared_library(0, tcurr, lpnt)))
+	  if (!(tpnt1 = _dl_load_shared_library(app_tpnt, tcurr, lpnt)))
 	  {
 	    if (_dl_trace_loaded_objects)
 	      _dl_fdprintf(1, "\t%s => not found\n", lpnt);

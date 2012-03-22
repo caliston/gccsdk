@@ -1,5 +1,5 @@
---- bfd/elf32-arm.c.orig	2012-03-11 19:48:43.000000000 +0000
-+++ bfd/elf32-arm.c	2012-03-11 19:48:19.000000000 +0000
+--- bfd/elf32-arm.c.orig	2010-11-10 15:30:54.000000000 +0000
++++ bfd/elf32-arm.c	2012-03-21 20:13:15.000000000 +0000
 @@ -1910,7 +1910,7 @@ typedef unsigned short int insn16;
  
  /* The name of the dynamic interpreter.  This is put in the .interp
@@ -299,7 +299,7 @@
  /* Free the derived linker hash table.  */
  
  static void
-@@ -6939,6 +7197,51 @@ elf32_arm_final_link_relocate (reloc_how
+@@ -6933,6 +7191,51 @@ elf32_arm_final_link_relocate (reloc_how
    else
      addend = signed_addend = rel->r_addend;
  
@@ -351,7 +351,7 @@
    switch (r_type)
      {
      case R_ARM_NONE:
-@@ -7880,7 +8183,8 @@ elf32_arm_final_link_relocate (reloc_how
+@@ -7874,7 +8177,8 @@ elf32_arm_final_link_relocate (reloc_how
           define _GLOBAL_OFFSET_TABLE in a different way, as is
           permitted by the ABI, we might have to change this
           calculation.  */
@@ -361,7 +361,7 @@
        return _bfd_final_link_relocate (howto, input_bfd, input_section,
  				       contents, rel->r_offset, value,
  				       rel->r_addend);
-@@ -9437,10 +9741,86 @@ elf32_arm_final_link (bfd *abfd, struct
+@@ -9431,10 +9735,86 @@ elf32_arm_final_link (bfd *abfd, struct
  {
    struct elf32_arm_link_hash_table *globals = elf32_arm_hash_table (info);
    asection *sec, *osec;
@@ -448,7 +448,7 @@
    /* Invoke the regular ELF backend linker to do all the work.  */
    if (!bfd_elf_final_link (abfd, info))
      return FALSE;
-@@ -9487,6 +9867,57 @@ elf32_arm_final_link (bfd *abfd, struct
+@@ -9481,6 +9861,57 @@ elf32_arm_final_link (bfd *abfd, struct
  	return FALSE;
      }
  
@@ -506,7 +506,7 @@
    return TRUE;
  }
  
-@@ -10837,6 +11268,18 @@ elf32_arm_check_relocs (bfd *abfd, struc
+@@ -10831,6 +11262,18 @@ elf32_arm_check_relocs (bfd *abfd, struc
  
        eh = (struct elf32_arm_link_hash_entry *) h;
  
@@ -525,7 +525,7 @@
        switch (r_type)
          {
  	  case R_ARM_GOT32:
-@@ -12035,8 +12478,7 @@ elf32_arm_size_dynamic_sections (bfd * o
+@@ -12029,8 +12472,7 @@ elf32_arm_size_dynamic_sections (bfd * o
  
        if (plt)
  	{
@@ -535,12 +535,19 @@
  	      || !add_dynamic_entry (DT_PLTREL,
  				     htab->use_rel ? DT_REL : DT_RELA)
  	      || !add_dynamic_entry (DT_JMPREL, 0))
-@@ -12061,6 +12503,12 @@ elf32_arm_size_dynamic_sections (bfd * o
+@@ -12055,6 +12497,19 @@ elf32_arm_size_dynamic_sections (bfd * o
  	    }
  	}
  
-+     if (!add_dynamic_entry (DT_RISCOS_GCC_DIR, 0))
-+       return FALSE;
++     /* Look through the input bfds to see if there's a '.riscos.abi.version'
++        section.  */
++     for (ibfd = info->input_bfds; ibfd != NULL; ibfd = ibfd->link_next)
++       if (bfd_get_section_by_name (ibfd, ".riscos.abi.version") != NULL)
++	 {
++	   if (!add_dynamic_entry (DT_RISCOS_ABI_VERSION, 0))
++	     return FALSE;
++	   break;
++	 }
 +
 +      if (!add_dynamic_entry (DT_PLTGOT, 0))
 +	return FALSE;
@@ -548,7 +555,7 @@
        /* If any dynamic relocs apply to a read-only section,
  	 then we need a DT_TEXTREL entry.  */
        if ((info->flags & DF_TEXTREL) == 0)
-@@ -12160,7 +12608,10 @@ elf32_arm_finish_dynamic_symbol (bfd * o
+@@ -12154,7 +12609,10 @@ elf32_arm_finish_dynamic_symbol (bfd * o
  	     in all the symbols for which we are making plt entries.  The
  	     first three entries in .got.plt are reserved; after that
  	     symbols appear in the same order as in .plt.  */
@@ -560,7 +567,7 @@
  
  	  /* Calculate the address of the GOT entry.  */
  	  got_address = (sgot->output_section->vma
-@@ -12252,6 +12703,41 @@ elf32_arm_finish_dynamic_symbol (bfd * o
+@@ -12246,6 +12704,41 @@ elf32_arm_finish_dynamic_symbol (bfd * o
  				  elf32_arm_plt_thumb_stub[1], ptr - 2);
  		}
  
@@ -602,7 +609,7 @@
  	      put_arm_insn (htab, output_bfd,
  			    elf32_arm_plt_entry[0]
  			    | ((got_displacement & 0x0ff00000) >> 20),
-@@ -12267,6 +12753,7 @@ elf32_arm_finish_dynamic_symbol (bfd * o
+@@ -12261,6 +12754,7 @@ elf32_arm_finish_dynamic_symbol (bfd * o
  #ifdef FOUR_WORD_PLT
  	      bfd_put_32 (output_bfd, elf32_arm_plt_entry[3], ptr + 12);
  #endif
@@ -610,7 +617,7 @@
  	    }
  
  	  /* Fill in the entry in the global offset table.  */
-@@ -12429,7 +12916,12 @@ elf32_arm_finish_dynamic_sections (bfd *
+@@ -12423,7 +12917,12 @@ elf32_arm_finish_dynamic_sections (bfd *
  		  && elf_vxworks_finish_dynamic_entry (output_bfd, &dyn))
  		bfd_elf32_swap_dyn_out (output_bfd, &dyn, dyncon);
  	      break;
@@ -618,13 +625,13 @@
 +	    case DT_RISCOS_PIC:
 +	      name = ".riscos.pic";
 +	      goto get_vma;
-+	    case DT_RISCOS_GCC_DIR:
-+	      name = ".riscos.gcc.dir";
++	    case DT_RISCOS_ABI_VERSION:
++	      name = ".riscos.abi.version";
 +	      goto get_vma;
  	    case DT_HASH:
  	      name = ".hash";
  	      goto get_vma_if_bpabi;
-@@ -12600,6 +13092,27 @@ elf32_arm_finish_dynamic_sections (bfd *
+@@ -12594,6 +13093,27 @@ elf32_arm_finish_dynamic_sections (bfd *
  	    {
  	      got_displacement = got_address - (plt_address + 16);
  
@@ -652,7 +659,7 @@
  	      plt0_entry = elf32_arm_plt0_entry;
  	      put_arm_insn (htab, output_bfd, plt0_entry[0],
  			    splt->contents + 0);
-@@ -12617,6 +13130,7 @@ elf32_arm_finish_dynamic_sections (bfd *
+@@ -12611,6 +13131,7 @@ elf32_arm_finish_dynamic_sections (bfd *
  #else
  	      bfd_put_32 (output_bfd, got_displacement, splt->contents + 16);
  #endif
@@ -660,7 +667,7 @@
  	    }
  	}
  
-@@ -13790,7 +14304,7 @@ elf32_arm_is_function_type (unsigned int
+@@ -13784,7 +14305,7 @@ elf32_arm_is_function_type (unsigned int
  /* We use this to override swap_symbol_in and swap_symbol_out.  */
  const struct elf_size_info elf32_arm_size_info =
  {
@@ -669,7 +676,7 @@
    sizeof (Elf32_External_Phdr),
    sizeof (Elf32_External_Shdr),
    sizeof (Elf32_External_Rel),
-@@ -13883,7 +14397,7 @@ const struct elf_size_info elf32_arm_siz
+@@ -13877,7 +14398,7 @@ const struct elf_size_info elf32_arm_siz
  #define elf_backend_may_use_rela_p     0
  #define elf_backend_default_use_rela_p 0
  

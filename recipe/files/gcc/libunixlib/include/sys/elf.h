@@ -147,6 +147,12 @@ typedef quad_t		Elf64_Sxword;
 #define DT_MIPS_HIPAGENO	0x70000014
 #define DT_MIPS_RLD_MAP		0x70000016
 
+#define DT_LOOS		0x6000000d
+#define DT_HIOS		0x6ffff000
+
+#define DT_RISCOS_PIC	DT_LOOS
+#define DT_RISCOS_ABI_VERSION DT_LOOS+1
+
 /* This info is needed when parsing the symbol table */
 #define STB_LOCAL  0
 #define STB_GLOBAL 1

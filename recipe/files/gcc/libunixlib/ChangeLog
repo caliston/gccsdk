@@ -1,3 +1,10 @@
+Thu Mar 22 19:56:15 GMT 2012  Lee Noar  <leenoar@sky.com>
+
+	* include/sys/elf.h(DT_RISCOS_PIC,DT_RISCOS_ABI_VERSION):
+	Define.
+	* gen-auto.pl: Generate file misc/abi.c.
+	* Makefile.am: Add misc/abi.c to list of files to compile.
+
 Sun Mar 11 18:59:09 GMT 2012  Lee Noar  <leenoar@sky.com>
 
 	* include/stdio.h: Fix build in 4.1.2 branch. fgets.c
