@@ -1,8 +1,8 @@
 Index: libstdc++-v3/src/c++98/Makefile.am
 ===================================================================
---- libstdc++-v3/src/c++98/Makefile.am	(revision 183850)
+--- libstdc++-v3/src/c++98/Makefile.am	(revision 185969)
 +++ libstdc++-v3/src/c++98/Makefile.am	(working copy)
-@@ -116,6 +116,58 @@
+@@ -108,6 +108,58 @@
  inst_sources =
  endif
  
@@ -61,7 +61,7 @@ Index: libstdc++-v3/src/c++98/Makefile.am
  # Sources present in the src directory, always present.
  sources = \
  	bitmap_allocator.cc \
-@@ -150,8 +202,10 @@
+@@ -137,8 +189,10 @@
  	streambuf.cc \
  	valarray.cc \
  	${host_sources} \
@@ -71,9 +71,9 @@ Index: libstdc++-v3/src/c++98/Makefile.am
  
 +vpath % $(top_srcdir)/libsupc++
  vpath % $(top_srcdir)/src/c++98
- vpath % $(top_srcdir)
  
-@@ -214,6 +268,32 @@
+ libc__98convenience_la_SOURCES = $(sources)
+@@ -179,6 +233,32 @@
  AM_MAKEFLAGS = \
  	"gxx_include_dir=$(gxx_include_dir)"
  
