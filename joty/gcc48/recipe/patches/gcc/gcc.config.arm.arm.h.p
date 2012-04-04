@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.h
 ===================================================================
---- gcc/config/arm/arm.h	(revision 183074)
+--- gcc/config/arm/arm.h	(revision 186145)
 +++ gcc/config/arm/arm.h	(working copy)
 @@ -203,7 +203,7 @@
  				         : TARGET_TPCS_FRAME)
@@ -42,7 +42,7 @@ Index: gcc/config/arm/arm.h
  
  #define FIRST_CIRRUS_FP_REGNUM	27
  #define LAST_CIRRUS_FP_REGNUM	42
-@@ -1274,7 +1286,7 @@
+@@ -1264,7 +1276,7 @@
     is at the high-address end of the local variables;
     that is, each additional local variable allocated
     goes at a more negative offset in the frame.  */
@@ -51,7 +51,7 @@ Index: gcc/config/arm/arm.h
  
  /* The amount of scratch space needed by _interwork_{r7,r11}_call_via_rN().
     When present, it is one word in size, and sits at the top of the frame,
-@@ -1294,7 +1306,8 @@
+@@ -1284,7 +1296,8 @@
     If FRAME_GROWS_DOWNWARD, this is the offset to the END of the
     first local allocated.  Otherwise, it is the offset to the BEGINNING
     of the first local allocated.  */
@@ -61,7 +61,7 @@ Index: gcc/config/arm/arm.h
  
  /* If we generate an insn to push BYTES bytes,
     this says how many the stack pointer really advances by.  */
-@@ -1369,6 +1382,7 @@
+@@ -1359,6 +1372,7 @@
    int soft_frame;	/* FRAME_POINTER_REGNUM.  */
    int locals_base;	/* THUMB_HARD_FRAME_POINTER_REGNUM.  */
    int outgoing_args;	/* STACK_POINTER_REGNUM.  */
@@ -69,7 +69,7 @@ Index: gcc/config/arm/arm.h
    unsigned int saved_regs_mask;
  }
  arm_stack_offsets;
-@@ -1395,6 +1409,8 @@
+@@ -1385,6 +1399,8 @@
    /* Records if sibcalls are blocked because an argument
       register is needed to preserve stack alignment.  */
    int sibcall_blocked;
@@ -78,7 +78,7 @@ Index: gcc/config/arm/arm.h
    /* The PIC register for this function.  This might be a pseudo.  */
    rtx pic_reg;
    /* Labels for per-function Thumb call-via stubs.  One per potential calling
-@@ -1447,6 +1463,8 @@
+@@ -1437,6 +1453,8 @@
    int nregs;
    /* This is the number of iWMMXt register arguments scanned so far.  */
    int iwmmxt_nregs;
@@ -87,7 +87,7 @@ Index: gcc/config/arm/arm.h
    int named_count;
    int nargs;
    /* Which procedure call variant to use for this call.  */
-@@ -1497,6 +1515,8 @@
+@@ -1487,6 +1505,8 @@
     (IN_RANGE ((REGNO), 0, 3)						\
      || (TARGET_AAPCS_BASED && TARGET_VFP && TARGET_HARD_FLOAT		\
  	&& IN_RANGE ((REGNO), FIRST_VFP_REGNUM, FIRST_VFP_REGNUM + 15))	\
@@ -96,7 +96,7 @@ Index: gcc/config/arm/arm.h
      || (TARGET_IWMMXT_ABI						\
  	&& IN_RANGE ((REGNO), FIRST_IWMMXT_REGNUM, FIRST_IWMMXT_REGNUM + 9)))
  
-@@ -1583,6 +1603,11 @@
+@@ -1573,6 +1593,11 @@
     pointer.  Note we have to use {ARM|THUMB}_HARD_FRAME_POINTER_REGNUM
     because the definition of HARD_FRAME_POINTER_REGNUM is not a constant.  */
  
@@ -108,7 +108,7 @@ Index: gcc/config/arm/arm.h
  #define ELIMINABLE_REGS						\
  {{ ARG_POINTER_REGNUM,        STACK_POINTER_REGNUM            },\
   { ARG_POINTER_REGNUM,        FRAME_POINTER_REGNUM            },\
-@@ -1591,6 +1616,7 @@
+@@ -1581,6 +1606,7 @@
   { FRAME_POINTER_REGNUM,      STACK_POINTER_REGNUM            },\
   { FRAME_POINTER_REGNUM,      ARM_HARD_FRAME_POINTER_REGNUM   },\
   { FRAME_POINTER_REGNUM,      THUMB_HARD_FRAME_POINTER_REGNUM }}
@@ -116,7 +116,7 @@ Index: gcc/config/arm/arm.h
  
  /* Define the offset between two registers, one to be eliminated, and the
     other its replacement, at the start of a routine.  */
-@@ -1636,8 +1662,8 @@
+@@ -1626,8 +1652,8 @@
  /* Don't allow the pc to be used.  */
  #define ARM_REGNO_OK_FOR_BASE_P(REGNO)			\
    (TEST_REGNO (REGNO, <, PC_REGNUM)			\
@@ -127,7 +127,7 @@ Index: gcc/config/arm/arm.h
  
  #define THUMB1_REGNO_MODE_OK_FOR_BASE_P(REGNO, MODE)		\
    (TEST_REGNO (REGNO, <=, LAST_LO_REGNUM)			\
-@@ -1704,6 +1730,11 @@
+@@ -1694,6 +1720,11 @@
    if (TARGET_THUMB2)			\
      thumb2_asm_output_opcode (STREAM);
  
@@ -139,7 +139,7 @@ Index: gcc/config/arm/arm.h
  /* The EABI specifies that constructors should go in .init_array.
     Other targets use .ctors for compatibility.  */
  #ifndef ARM_EABI_CTORS_SECTION_OP
-@@ -1749,6 +1780,7 @@
+@@ -1739,6 +1770,7 @@
  #   define DTORS_SECTION_ASM_OP ARM_DTORS_SECTION_OP
  # endif /* !defined (__ARM_EABI__) */
  #endif /* !defined (IN_LIBCC2) */
@@ -147,7 +147,7 @@ Index: gcc/config/arm/arm.h
  
  /* True if the operating system can merge entities with vague linkage
     (e.g., symbols in COMDAT group) during dynamic linking.  */
-@@ -1770,8 +1802,8 @@
+@@ -1760,8 +1792,8 @@
  #define ARM_REG_OK_FOR_BASE_P(X)		\
    (REGNO (X) <= LAST_ARM_REGNUM			\
     || REGNO (X) >= FIRST_PSEUDO_REGISTER	\
@@ -158,7 +158,7 @@ Index: gcc/config/arm/arm.h
  
  #define ARM_REG_OK_FOR_INDEX_P(X)		\
    ((REGNO (X) <= LAST_ARM_REGNUM		\
-@@ -2200,6 +2232,10 @@
+@@ -2190,6 +2222,10 @@
  # define MCPU_MTUNE_NATIVE_SPECS ""
  #endif
  
