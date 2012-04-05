@@ -1,3 +1,136 @@
+Thu Apr  5 02:02:54 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* README: Tune credits, release info and add "Future development"
+	section.
+
+Thu Apr  5 01:05:32 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile.am, output.h (GCCSDK_REVISION): Add svn branch.
+
+Wed Apr  4 23:56:17 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/include/load_literal_basic.s: Removed the MOVT
+	optimisation tests.
+	* regression/tests_pass/load_literal3.s: Likewise.
+	* m_cpumem.c (DestMem_RelocUpdater): Removed MOVT optimisation.
+	(m_push, m_pop): Add comments.
+	(CPUMem_ConstantInMOVT): Removed.
+	* m_cpumem.h (CPUMem_ConstantInMOVT): Removed.
+	* lit.c (Lit_RegisterInt, Lit_DumpPool): Removed MOVT optimisation.
+
+Sat Mar 31 03:53:17 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/instr_ldm_stm_pop_push.s: Add one register
+	PUSH/POP test.
+	* m_cpumem.c (dstreglist): Convert one register PUSH/POP into STR/LDR.
+	Add warnings for unpredictable constructs.
+
+Sat Mar 31 00:01:47 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpuctrl.c (ADR_RelocUpdater): Take imported symbol offset into
+	account.
+
+Thu Mar 29 22:50:57 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/variables.s: Add tests for initial :DEF:
+	value.
+	* regression/tests_fail/local_label2.s: Fix comment typo.
+	* symbol.c, symbol.h (symbolNew): Rename to Symbol_New.
+	(symbolFree): Rename to Symbol_Free.  Simplify.
+	(symbolGet): Rename to Symbol_Get.
+	(symbolFind): Rename to Symbol_Find.
+	(symbolRemove): Rename to Symbol_Remove.
+	(Symbol_RemoveVariables): Add.
+	* decode.c, local.c, directive_storagemap.c, area.c, variables.c,
+	expr.c, input.c, predef_reg.c, get.c, asm.c, lit.c, lex.c: Follow
+	symbol routine renames.
+	* variables.c (Var_PrepareForPhase): Add.
+	(assign_var): Merge into declare_var.
+	(declare_var): Rename to Var_Declare.
+	(Var_Define): Remove.
+	* variables.h (Var_PrepareForPhase): Add.
+	(Var_Define): Remove.
+	* phase.c (Phase_PrepareFor): Add Input_PrepareForPhase and
+	Var_PrepareForPhase.
+	* main.c (main): Remove support for -D as predefined strings (use
+	-PD instead).  Use Input_AddPredefine.
+	(predefines, num_predefines): Move to...
+	* input.c: ...here as oPreDefines and oPreDefCnt.
+	(oPreDefIdx): Add.
+	(Input_PrepareaForPhase): Add.
+	(Input_AddPredefine): Add.
+	(Input_NextLineCore): Use oPreDefines, oPreDefIdx, oPreDefCnt.
+	* input.c (Input_PrepareForPhase, Input_AddPredefine): Add.
+
+Sun Mar 25 21:47:33 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/load_literal3.s: Add MVN/MOVW/MOVT tests.
+	* regression/tests_pass/load_literal.s: Move to...
+	* regression/tests_pass/include/load_literal_basic.s: ...here.
+	Add MOVW/MOVT test cases.
+	* regression/tests_pass/load_literal_basic_archv4.s: Add.  Calls
+	tests_pass/include/load_literal_basic.s for Arch v4.
+	* regression/tests_pass/load_literal_basic_archv6t2.s: Add.  Calls
+	tests_pass/include/load_literal_basic_archv6t2 for Arch v6T2.
+	* m_cpumem.c (DestMem_RelocUpdater): Add MOVW/MOVT optimisation code.
+	* m_cpumem.c, m_cpumem.h (CPUMem_ConstantInMOVW, CPUMem_ConstantInMOVT):
+	Add.
+	* lit.c (Lit_RegisterInt, Lit_DumpPool): Add MOVW/MOVT optimisation
+	code.
+
+Sun Mar 25 14:39:10 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/align.s: Fix reference data.
+	* regression/tests_pass/assert.s: Add tests based on local labels.
+	* directive_misc.c (c_assert): Assert evaluation needs to be done
+	in both passes but its result should only be tested for in second
+	pass.
+
+Sat Mar 24 18:13:39 CET 2012  Jeffrey Lee  <me@phlamethrower.co.uk>
+                              John Tytgat  <John.Tytgat@aaug.net>
+
+	* regression/tests_pass/align.s: Add.
+	* put.c (ReportOverflow): Also show the hex version of value.
+	* directive_data.c (GetDefaultAlignValueSize): Add.
+	(c_align): Add support for fill value and fill value size.
+
+Sat Mar 24 17:43:41 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* area.c (ValidateORGValue): Add.
+	(c_area, c_org): Use ValidateORGValue.
+	(Area_Ensure): Set SYMBOL_ABSOLUTE for absolute area.
+
+Sat Mar 24 16:48:47 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* fix.c, fix.h (Fix_CheckForOverflow): Add.
+	(Fix_Int): Use Fix_CheckForOverflow.
+	* put.c (ReportOverflow): Use Fix_CheckForOverflow.
+
+Sat Mar 24 15:29:51 CET 2012  Jeffrey Lee  <me@phlamethrower.co.uk>
+
+	* main.c (main): Support comma separated include directories.
+
+Sat Mar 24 15:24:05 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* directive_storagemap.c (c_record): Make use of Value_* routines.
+	(oStorageMapValue): Initialise type subfield.
+	* area.c (c_area): Make use of Value_Int.  Copy complete Value object.
+
+Sat Mar 24 02:09:20 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* decode.c (decode): Avoid reporting unaligned instructions twice.
+	* area.c (Area_AlignOffset): Tune unaligned warning.
+	* error.c (Error_SuppressMsg): Add.  Implements option -NOWarn.
+	(errorCore, errorCoreLine): Remove Info, Warning suppress tests.
+	(error, errorLine): Add calls to Error_SuppressMsg.
+	* main.c, main.h (option_nowarn): Add.
+	(main): Add -NOWarn option support.
+
+Wed Mar 21 01:13:14 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpuctrl.c (m_msr, m_mrs): Corrected minimal architecture version.
+	* local.c (c_rout): Add Thumb mode support.
+
 Mon Mar 19 23:24:24 CET 2012  John Tytgat  <John.Tytgat@aaug.net>
 
 	* regression/tests_pass/operator_index.s: Add tests based on labels.

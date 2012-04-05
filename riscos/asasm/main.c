@@ -72,9 +72,7 @@ int option_apcs_softfloat = -1; /* -1 = option not specified.  */
 int option_aof = -1; /* -1 = option not specified.  */
 bool option_abs = false;
 bool option_uppercase = false;
-
-const char *predefines[MAX_PREDEFINES];
-int num_predefines = 0;
+bool option_nowarn = false;
 
 static const char *ObjFileName = NULL;
 const char *SourceFileName = NULL;
@@ -164,8 +162,6 @@ asasm_help (void)
 	   "Options:\n"
 	   "-o objfile                 Specifies destination AOF/ELF file.\n"
 	   "-I<directory>              Search 'directory' for included assembler files.\n"
-	   "-D<variable>               Define a string variable.\n"
-	   "-D<variable>=<value>       Define a string variable to a certain value.\n"
 	   "-PreDefine <value>         Predefine a value using SETA/SETS/SETL syntax.\n"
 	   "-UpperCase                 Recognise instruction mnemonics in upper case only.\n"
 	   "-Pedantic                  Display extra warnings.\n"
@@ -178,6 +174,7 @@ asasm_help (void)
 	   "-Depend <file>             Write 'make' source file dependency information to 'file'.\n"
 	   "-Help                      Display this help.\n"
 	   "-VERsion                   Display the version number.\n"
+           "-NOWarn                    Suppress all warnings.\n"
 	   "-From asmfile              Source assembler file (ObjAsm compatibility).\n"
 	   "-To objfile                Destination AOF file (ObjAsm compatibility).\n"
 	   "-ABSolute                  Accept AAsm source code.\n"
@@ -275,23 +272,8 @@ main (int argc, char **argv)
       if (arg[0] == '-')
 	++arg;
       
-      if (arg[0] == 'D')
-	{
-	  if (arg[1] == '\0')
-	    {
-	      if (--argc)
-		Var_Define (*++argv);
-	      else
-		{
-		  fprintf (stderr, PACKAGE_NAME ": Missing argument after -%s\n", arg);
-		  return EXIT_FAILURE;
-		}
-	    }
-	  else
-	    Var_Define (arg + 1);
-	}
-      else if (!strncasecmp (arg, "PD", sizeof ("PD")-1)
-	       || !strncasecmp (arg, "PreDefine", sizeof ("PreDefine")-1))
+      if (!strncasecmp (arg, "PD", sizeof ("PD")-1)
+	  || !strncasecmp (arg, "PreDefine", sizeof ("PreDefine")-1))
         {
 	  const char *val;
 	  if (arg[sizeof ("PD")-1] == '=')
@@ -306,12 +288,11 @@ main (int argc, char **argv)
 	  else
 	    val = *++argv;
 	    
-          if (num_predefines == MAX_PREDEFINES)
+          if (Input_AddPredefine (val))
             {
 	     fprintf (stderr, PACKAGE_NAME ": Too many predefines\n");
 	     return EXIT_FAILURE;
             }
-          predefines[num_predefines++] = val;
         }
       else if (!strcasecmp (arg, "o") || !strcasecmp (arg, "To"))
 	{
@@ -398,7 +379,15 @@ main (int argc, char **argv)
 	        }
 	      inclDir = *++argv;
 	    }
-	  Include_Add (inclDir);
+	  /* Support comma separated directories.  */
+	  while (inclDir)
+	    {
+	      char *c = strchr (inclDir, ',');
+	      if (c)
+		*c++ = '\0';
+	      Include_Add (inclDir);
+	      inclDir = c;
+	    }
 	}
       else if (!strcasecmp (arg, "version") || !strcasecmp (arg, "ver"))
 	{
@@ -415,6 +404,8 @@ main (int argc, char **argv)
 	  asasm_help ();
 	  return EXIT_SUCCESS;
 	}
+      else if (!strcasecmp (arg, "nowarn") || !strcasecmp (arg, "now"))
+	option_nowarn = true;
       else if (!strcasecmp (arg, "From"))
 	{
 	  if (--argc)
