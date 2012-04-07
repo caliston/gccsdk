@@ -1,3 +1,9 @@
+Sat Apr  7 20:01:05 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile.am (CMUNGEFLAGS): Add PACKAGE_VERSION define.
+	* somanager.cmhg (help-string): Use PACKAGE_VERSION for
+	version number (which get defined from configure.ac).
+
 Sun Sep 19 12:11:03 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 	* som_runcom.c(command_run): Update comments.
