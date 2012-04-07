@@ -1,6 +1,6 @@
 Index: gcc/doc/invoke.texi
 ===================================================================
---- gcc/doc/invoke.texi	(revision 185611)
+--- gcc/doc/invoke.texi	(revision 186212)
 +++ gcc/doc/invoke.texi	(working copy)
 @@ -473,6 +473,7 @@
  @gccoptlist{-mapcs-frame  -mno-apcs-frame @gol
@@ -10,7 +10,7 @@ Index: gcc/doc/invoke.texi
  -mapcs-float  -mno-apcs-float @gol
  -mapcs-reentrant  -mno-apcs-reentrant @gol
  -msched-prolog  -mno-sched-prolog @gol
-@@ -10565,7 +10566,8 @@
+@@ -10570,7 +10571,8 @@
  @item -mabi=@var{name}
  @opindex mabi
  Generate code for the specified ABI@.  Permissible values are: @samp{apcs-gnu},
@@ -20,7 +20,7 @@ Index: gcc/doc/invoke.texi
  
  @item -mapcs-frame
  @opindex mapcs-frame
-@@ -10579,8 +10581,6 @@
+@@ -10584,8 +10586,6 @@
  @opindex mapcs
  This is a synonym for @option{-mapcs-frame}.
  
@@ -29,7 +29,7 @@ Index: gcc/doc/invoke.texi
  @item -mapcs-stack-check
  @opindex mapcs-stack-check
  Generate code to check the amount of stack space available upon entry to
-@@ -10589,9 +10589,16 @@
+@@ -10594,9 +10594,16 @@
  @samp{__rt_stkovf_split_small} or @samp{__rt_stkovf_split_big} will be
  called, depending upon the amount of stack space required.  The runtime
  system is required to provide these functions.  The default is
@@ -48,7 +48,7 @@ Index: gcc/doc/invoke.texi
  @item -mapcs-float
  @opindex mapcs-float
  Pass floating-point arguments using the floating-point registers.  This is
-@@ -10601,6 +10608,7 @@
+@@ -10606,6 +10613,7 @@
  @option{-mno-apcs-float}, since integer only code is slightly increased in
  size if @option{-mapcs-float} is used.
  

@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.md
 ===================================================================
---- gcc/config/arm/arm.md	(revision 184959)
+--- gcc/config/arm/arm.md	(revision 186212)
 +++ gcc/config/arm/arm.md	(working copy)
 @@ -32,6 +32,7 @@
  (define_constants
@@ -19,7 +19,7 @@ Index: gcc/config/arm/arm.md
  ])
  
  ;; UNSPEC_VOLATILE Usage:
-@@ -5789,7 +5792,7 @@
+@@ -5806,7 +5809,7 @@
  	(mem:SI (plus:SI (match_operand:SI 1 "register_operand" "r")
  			 (unspec:SI [(match_operand:SI 2 "" "X")]
  				    UNSPEC_PIC_OFFSET))))]
@@ -28,7 +28,7 @@ Index: gcc/config/arm/arm.md
    "ldr%?\\t%0, [%1,%2]"
    [(set_attr "type" "load1")]
  )
-@@ -8346,7 +8349,7 @@
+@@ -8363,7 +8366,7 @@
        return thumb_call_via_reg (operands[0]);
      else if (operands[1] == const0_rtx)
        return \"bl\\t%__interwork_call_via_%0\";
@@ -37,7 +37,7 @@ Index: gcc/config/arm/arm.md
        return \"bl\\t%__interwork_r7_call_via_%0\";
      else
        return \"bl\\t%__interwork_r11_call_via_%0\";
-@@ -8458,7 +8461,7 @@
+@@ -8475,7 +8478,7 @@
        return thumb_call_via_reg (operands[1]);
      else if (operands[2] == const0_rtx)
        return \"bl\\t%__interwork_call_via_%1\";
@@ -46,7 +46,7 @@ Index: gcc/config/arm/arm.md
        return \"bl\\t%__interwork_r7_call_via_%1\";
      else
        return \"bl\\t%__interwork_r11_call_via_%1\";
-@@ -11392,6 +11395,8 @@
+@@ -11409,6 +11412,8 @@
  (include "ldmstm.md")
  ;; Load the FPA co-processor patterns
  (include "fpa.md")

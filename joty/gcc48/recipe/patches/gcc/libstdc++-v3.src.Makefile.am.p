@@ -1,6 +1,6 @@
 Index: libstdc++-v3/src/Makefile.am
 ===================================================================
---- libstdc++-v3/src/Makefile.am	(revision 185969)
+--- libstdc++-v3/src/Makefile.am	(revision 186212)
 +++ libstdc++-v3/src/Makefile.am	(working copy)
 @@ -63,13 +63,11 @@
  
@@ -39,7 +39,7 @@ Index: libstdc++-v3/src/Makefile.am
  # Symbol versioning for shared libraries.
  if ENABLE_SYMVERS
  libstdc++-symbols.ver:  ${glibcxx_srcdir}/$(SYMVER_FILE) \
-@@ -302,3 +316,43 @@
+@@ -303,3 +317,43 @@
  install-debug: build-debug
  	(cd ${debugdir} && $(MAKE) CXXFLAGS='$(DEBUG_FLAGS)' \
  	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install) ;
