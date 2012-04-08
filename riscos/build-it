@@ -187,9 +187,9 @@ elif [ "$GCCSDK_BUILD_ACTION" == "riscos" ] ; then
       arm-unknown-riscos-ln -s -f libgcc_s/so/1 $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libgcc_s.so,1c8
     fi
     if [ -f $GCCSDK_RISCOS_GCCPREFIX/$GCCSDK_TARGET_NAME/lib/libm.1.0.0.so ] ; then
-      cp $GCCSDK_RISCOS_GCCPREFIX/$GCCSDK_TARGET_NAME/lib/libm.1.0.0.so $GCCSDK_RISCOS_DSOPREFIX/lib/libm.1.0.0.so,e1f
-      arm-unknown-riscos-ln -s -f libm/1/0/0/so $GCCSDK_RISCOS_DSOPREFIX/lib/libm.so.1,1c8
-      arm-unknown-riscos-ln -s -f libm/1/0/0/so $GCCSDK_RISCOS_DSOPREFIX/lib/libm.so,1c8
+      cp $GCCSDK_RISCOS_GCCPREFIX/$GCCSDK_TARGET_NAME/lib/libm.1.0.0.so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libm.1.0.0.so,e1f
+      arm-unknown-riscos-ln -s -f libm/1/0/0/so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libm.so.1,1c8
+      arm-unknown-riscos-ln -s -f libm/1/0/0/so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libm.so,1c8
     fi
     if [ -f $GCCSDK_RISCOS_GCCPREFIX/$GCCSDK_TARGET_NAME/lib/libstdc++.6.0.8.so ] ; then
       cp $GCCSDK_RISCOS_GCCPREFIX/$GCCSDK_TARGET_NAME/lib/libstdc++.6.0.8.so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libstdc++.6.0.8.so,e1f
