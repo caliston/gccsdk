@@ -1,0 +1,227 @@
+#!/bin/bash -e
+# Written by John Tytgat <John.Tytgat@aaug.net>
+# Copyright (c) 2007-2012 GCCSDK Developers
+#
+# Builds the RISC OS specific binaries in GCCSDK, either for cross-compilation
+# usage, either a native RISC OS binaries.
+#
+# Syntax:
+#   "build-it <options>"
+#   "build-it <options> cross"
+#     Build the RISC OS specific binaries suited for cross-compilation usage
+#   "build-it <options> riscos"
+#     Build the RISC OS specific binaries for native execution on RISC OS
+#
+# With <options>
+#   -h
+#         Help
+
+pushd `dirname $0`/.. > /dev/null
+GCCSDK_ROOT=`pwd`
+popd > /dev/null
+source $GCCSDK_ROOT/setup-gccsdk-params
+
+give_help() {
+  echo -e "$0 [-h] [ \"\" | \"cross\" | \"riscos\" ]\n"
+  echo -e "\t-h\t\tThis help output"
+  echo
+  echo -e "\tcross\t\tBuild the RISC OS specific binaries suited for cross-compilation usage (default)"
+  echo -e "\triscos\t\tBuild the RISC OS specific binaries for native execution on RISC OS"
+}
+
+create_empty_dir() {
+  ( test ! -d $1 || rm -rf $1 ) && mkdir -p $1
+}
+
+# Setup the default values which can be overruled by user options given:
+GCCSDK_BUILD_ISSTATIC="NO"
+for param in $@ ; do
+  case "$param" in
+    -h | -help)
+       give_help
+       exit 0
+       ;;
+    -static)
+       GCCSDK_BUILD_ISSTATIC="YES"
+       ;;
+    -*)
+       echo "Unknown option $param" && echo
+       give_help
+       exit 1
+       ;;
+    *)
+       if [ ! -z "$GCCSDK_BUILD_ACTION" ] ; then
+         echo "More than one build action defined: $GCCSDK_BUILD_ACTION and $param" && echo
+         give_help
+         exit 1
+       fi
+       GCCSDK_BUILD_ACTION=$param
+       ;;
+  esac
+done
+
+# Use autotools we've built for building binutils.  This ensures we can rely on fixed
+# versions for autoconf/automake and avoid subtle build problems.
+PATH=$GCCSDK_BUILDDIR/installed-buildtools-for-binutils/bin:$PATH
+
+# Make sure our cross-compiler binaries can be found.
+PATH=$GCCSDK_CROSS_PREFIX/bin:$PATH
+
+GCCSDK_TARGET_NAME=arm-unknown-riscos
+GCCSDK_CROSS_CONFIGURE_ARGS="--target=$GCCSDK_TARGET_NAME"
+GCCSDK_RISCOS_CONFIGURE_ARGS="--host=$GCCSDK_TARGET_NAME --target=$GCCSDK_TARGET_NAME"
+if [ "$GCCSDK_BUILD_ACTION" == "" ] || [ "$GCCSDK_BUILD_ACTION" == "cross" ] ; then
+  # Build binaries suited for cross-compilation
+  GCCSDK_BUILDDIR=$GCCSDK_BUILDDIR/cross
+  GCCSDK_PREFIX=$GCCSDK_CROSS_PREFIX
+  GCCSDK_CONFIGURE_ARGS=$GCCSDK_CROSS_CONFIGURE_ARGS
+elif [ "$GCCSDK_BUILD_ACTION" == "riscos" ] ; then
+  # Build binaries suited for native RISC OS usage
+  GCCSDK_RISCOS_GCCPREFIX=$GCCSDK_RISCOS_PREFIX/\!GCC
+  GCCSDK_RISCOS_DSOPREFIX=$GCCSDK_RISCOS_PREFIX/\!SharedLibs
+  GCCSDK_RISCOS_SYSTEMPREFIX=$GCCSDK_RISCOS_PREFIX/system
+
+  GCCSDK_BUILDDIR=$GCCSDK_BUILDDIR/ronative
+  GCCSDK_PREFIX=$GCCSDK_RISCOS_GCCPREFIX
+  GCCSDK_CONFIGURE_ARGS=$GCCSDK_RISCOS_CONFIGURE_ARGS
+else
+  echo Error: called $0 with unknown build action $GCCSDK_BUILD_ACTION
+  exit 1
+fi
+
+# Build the programs which we use for cross-compiling and for native RISC OS compiling:
+for roapp in asasm cmunge elf2aif ln mkresfs ; do
+  if [ ! -f $GCCSDK_PREFIX/bin/$roapp -a ! -f $GCCSDK_PREFIX/bin/$roapp,ff8 -a ! -f $GCCSDK_PREFIX/bin/$roapp,e1f ] ; then
+    echo +++ Building $roapp
+    test -f $GCCSDK_RISCOS/$roapp/configure || ( cd $GCCSDK_RISCOS/$roapp && autoreconf --install )
+    create_empty_dir $GCCSDK_BUILDDIR/$roapp
+    cd $GCCSDK_BUILDDIR/$roapp
+    if [ "$GCCSDK_BUILD_ACTION" == "riscos" ] ; then
+      # These apps are using SCL as runtime library:
+      case $roapp in
+        asasm | cmunge | elf2aif | ln)
+          export CFLAGS="-O3 -mlibscl"
+          ;;
+        *)
+          unset CFLAGS
+          ;;
+      esac
+    fi
+    $GCCSDK_RISCOS/$roapp/configure --prefix=$GCCSDK_PREFIX $GCCSDK_CONFIGURE_ARGS
+    make $GCCSDK_MAKE_ARGS install
+  fi
+done
+
+if [ "$GCCSDK_BUILD_ACTION" == "" ] || [ "$GCCSDK_BUILD_ACTION" == "cross" ] ; then
+  # Only for cross-compilation:
+
+  if [ "$GCCSDK_BUILD_ISSTATIC" != "YES" ] ; then
+    # Dynamic loader:
+    echo +++ Building Dynamic Linker V1.9.9
+    PATH=$GCCSDK_CROSS_PREFIX/bin:$PATH
+    test -f $GCCSDK_RISCOS/soloader/dynamic/ld.so-1.9.9 || ( cd $GCCSDK_RISCOS/soloader/dynamic/ld.so-1.9.9 && autoreconf --install )
+    create_empty_dir $GCCSDK_BUILDDIR/soloader/dynamic/ld.so-1.9.9
+    cd $GCCSDK_BUILDDIR/soloader/dynamic/ld.so-1.9.9
+    $GCCSDK_RISCOS/soloader/dynamic/ld.so-1.9.9/configure --prefix=$GCCSDK_CROSS_PREFIX/$GCCSDK_TARGET_NAME $GCCSDK_RISCOS_CONFIGURE_ARGS
+    make BUILD_CROSS=1 $GCCSDK_MAKE_ARGS install
+  fi
+
+  # GDBServer module:
+  echo +++ Building GDBServer
+  test -f $GCCSDK_RISCOS/gdbserver/configure || ( cd $GCCSDK_RISCOS/gdbserver && autoreconf --install )
+  create_empty_dir $GCCSDK_BUILDDIR/gdbserver
+  cd $GCCSDK_BUILDDIR/gdbserver
+  $GCCSDK_RISCOS/gdbserver/configure --prefix=$GCCSDK_PREFIX --bindir=$GCCSDK_PREFIX/module $GCCSDK_RISCOS_CONFIGURE_ARGS
+  make $GCCSDK_MAKE_ARGS install
+
+  # syslogd module:
+  echo +++ Building syslogd
+  test -f $GCCSDK_RISCOS/syslogd/configure || ( cd $GCCSDK_RISCOS/syslogd && autoreconf --install )
+  create_empty_dir $GCCSDK_BUILDDIR/syslogd
+  cd $GCCSDK_BUILDDIR/syslogd
+  $GCCSDK_RISCOS/syslogd/configure --prefix=$GCCSDK_PREFIX --bindir=$GCCSDK_PREFIX/module $GCCSDK_RISCOS_CONFIGURE_ARGS
+  make $GCCSDK_MAKE_ARGS install
+
+  # DRenderer module:
+  echo +++ Building DRenderer
+  create_empty_dir $GCCSDK_BUILDDIR/drenderer
+  cd $GCCSDK_BUILDDIR/drenderer
+  make -f $GCCSDK_RISCOS/drenderer/Makefile
+
+elif [ "$GCCSDK_BUILD_ACTION" == "riscos" ] ; then
+  # These only make sense in the native RISC OS build:
+
+  # Shared library support:
+  if [ "$GCCSDK_BUILD_ISSTATIC" != "YES" ] ; then
+    # SOManager module:
+    if [ ! -f $GCCSDK_RELEASE_AREA/\!SharedLibs/SOManager,ffa ] ; then
+      echo +++ Building SOManager
+      test -f $GCCSDK_RISCOS/soloader/module2/configure || ( cd $GCCSDK_RISCOS/soloader/module2 && autoreconf --install )
+      create_empty_dir $GCCSDK_BUILDDIR/soloader/somanager
+      cd $GCCSDK_BUILDDIR/soloader/somanager
+      $GCCSDK_RISCOS/soloader/module2/configure --prefix=$GCCSDK_RISCOS_DSOPREFIX --bindir=$GCCSDK_RISCOS_DSOPREFIX $GCCSDK_CONFIGURE_ARGS
+      make $GCCSDK_MAKE_ARGS install
+    fi
+
+    # Dynamic loader:
+    if [ ! -f $GCCSDK_RELEASE_AREA/\!SharedLibs/libs/ld-1.9.9.so ] ; then
+      echo +++ Building Dynamic Linker V1.9.9
+      test -f $GCCSDK_RISCOS/soloader/dynamic/ld.so-1.9.9 || ( cd $GCCSDK_RISCOS/soloader/dynamic/ld.so-1.9.9 && autoreconf --install )
+      create_empty_dir $GCCSDK_BUILDDIR/soloader/dynamic/ld.so-1.9.9
+      cd $GCCSDK_BUILDDIR/soloader/dynamic/ld.so-1.9.9
+      $GCCSDK_RISCOS/soloader/dynamic/ld.so-1.9.9/configure --prefix=$GCCSDK_RISCOS_DSOPREFIX $GCCSDK_CONFIGURE_ARGS
+      make $GCCSDK_MAKE_ARGS install
+    fi
+
+    # Copy !SharedLibs skeleton + shared library files in the gcc build result:
+    svn export -q --force $GCCSDK_RISCOS/soloader/dist/\!SharedLibs $GCCSDK_RISCOS_DSOPREFIX
+    mkdir -p $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION
+
+    if [ -f $GCCSDK_RISCOS_GCCPREFIX/$GCCSDK_TARGET_NAME/lib/libunixlib.5.0.0.so ] ; then
+      cp $GCCSDK_RISCOS_GCCPREFIX/$GCCSDK_TARGET_NAME/lib/libunixlib.5.0.0.so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libunixlib.5.0.0.so,e1f
+      arm-unknown-riscos-ln -s -f libunixlib/5/0/0/so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libunixlib.so.5,1c8
+      arm-unknown-riscos-ln -s -f libunixlib/5/0/0/so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libunixlib.so,1c8
+    fi
+    if [ -f $GCCSDK_RISCOS_GCCPREFIX/lib/libgcc_s.so.1 ] ; then
+      cp $GCCSDK_RISCOS_GCCPREFIX/lib/libgcc_s.so.1 $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libgcc_s.so.1,e1f
+      arm-unknown-riscos-ln -s -f libgcc_s/so/1 $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libgcc_s.so,1c8
+    fi
+    if [ -f $GCCSDK_RISCOS_GCCPREFIX/$GCCSDK_TARGET_NAME/lib/libm.1.0.0.so ] ; then
+      cp $GCCSDK_RISCOS_GCCPREFIX/$GCCSDK_TARGET_NAME/lib/libm.1.0.0.so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libm.1.0.0.so,e1f
+      arm-unknown-riscos-ln -s -f libm/1/0/0/so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libm.so.1,1c8
+      arm-unknown-riscos-ln -s -f libm/1/0/0/so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libm.so,1c8
+    fi
+    if [ -f $GCCSDK_RISCOS_GCCPREFIX/$GCCSDK_TARGET_NAME/lib/libstdc++.6.0.8.so ] ; then
+      cp $GCCSDK_RISCOS_GCCPREFIX/$GCCSDK_TARGET_NAME/lib/libstdc++.6.0.8.so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libstdc++.6.0.8.so,e1f
+      arm-unknown-riscos-ln -s -f libstdc++/6/0/8/so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libstdc++.so.6,1c8
+      arm-unknown-riscos-ln -s -f libstdc++/6/0/8/so $GCCSDK_RISCOS_DSOPREFIX/lib/$GCCSDK_RISCOS_ABI_VERSION/libstdc++.so,1c8
+    fi
+
+    # DRenderer module:
+    echo +++ Building DRenderer
+    create_empty_dir $GCCSDK_BUILDDIR/drenderer
+    cd $GCCSDK_BUILDDIR/drenderer
+    make -f $GCCSDK_RISCOS/drenderer/Makefile
+  fi
+
+  # !System modules:
+  create_empty_dir $GCCSDK_RISCOS_SYSTEMPREFIX
+  mkdir -p $GCCSDK_RISCOS_SYSTEMPREFIX/\!System/310/Modules
+
+  # *** Copy !System skeleton:
+  svn export -q --force $GCCSDK_RISCOS/dist/\!System $GCCSDK_RISCOS_SYSTEMPREFIX/\!System
+
+  # *** SharedUnixLibrary module:
+  #   1. Copy SharedUnixLibrary module from !GCC/bin to !System:
+  cp $GCCSDK_RISCOS_GCCPREFIX/bin/sul $GCCSDK_RISCOS_SYSTEMPREFIX/\!System/310/Modules/SharedULib,ffa
+  #   2. Copy UnixLib/SharedUnixLibrary license:
+  mkdir -p $GCCSDK_RISCOS_SYSTEMPREFIX/docs/SharedULib
+  cp $GCCSDK_SRCDIR/gcc/libunixlib/COPYING $GCCSDK_RISCOS_SYSTEMPREFIX/docs/SharedULib
+
+  # *** DRenderer module:
+  #   1. Copy built DRenderer module from $GCCSDK_BUILDDIR/drenderer to !System:
+  cp $GCCSDK_BUILDDIR/drenderer/DRenderer,ffa $GCCSDK_RISCOS_SYSTEMPREFIX/\!System/310/Modules/
+  #   2. Copy license, changelog and documentation:
+  mkdir -p $GCCSDK_RISCOS_SYSTEMPREFIX/docs/DRenderer
+  cp $GCCSDK_RISCOS/drenderer/{COPYING,ChangeLog,DocDRender} $GCCSDK_RISCOS_SYSTEMPREFIX/docs/DRenderer
+fi
