@@ -1,8 +1,0 @@
-#!/bin/bash
-
-# Look for 'mv' in an 'install' context
-if echo "$@" | grep -q GCCSDK_ENV ; then
-  GCCSDK_ENV/ro-install mv $@
-else
-  /bin/mv $@
-fi

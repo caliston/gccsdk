@@ -1,2 +1,0 @@
-wimpslot -min 8192k -max 8192k
-make -C <Obey$Dir> RONATIVE=YES %*0

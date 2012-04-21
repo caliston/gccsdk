@@ -664,7 +664,7 @@ command_run (const char *arg_string, int argc)
   som_start_app (entry_point, ram_limit, SOM_RUN_STACK_SIZE);
 
   /* Should never get to here.  */
-  __builtin_unreachable();
+  return NULL;
 
 error:
   /* It's possible that an error may occur after the Dynamic Loader has
@@ -696,7 +696,6 @@ error:
 		      [os_generateerror] "i" (OS_GenerateError) /* Note: no X bit set.  */
 		    : "r0", "lr", "cc");
       /* Should never get to here.  */
-      __builtin_unreachable();
     }
 
   return err;

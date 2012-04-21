@@ -1,3 +1,8 @@
+Sat Apr 21 17:03:00 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* som_runcom.c (command_run): Don't call __builtin_unreachable, this
+	is only known to gcc 4.4 or later.
+
 Tue Apr 10 01:59:38 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
 
 	* som_os_swis.h (ddeutils_get_cl_size): Change return type into size_t.
