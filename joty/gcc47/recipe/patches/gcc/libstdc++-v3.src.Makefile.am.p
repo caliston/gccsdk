@@ -1,8 +1,8 @@
 Index: libstdc++-v3/src/Makefile.am
 ===================================================================
---- libstdc++-v3/src/Makefile.am	(revision 184613)
+--- libstdc++-v3/src/Makefile.am	(revision 186670)
 +++ libstdc++-v3/src/Makefile.am	(working copy)
-@@ -36,13 +36,11 @@
+@@ -63,13 +63,11 @@
  
  libstdc___la_LIBADD = \
  	$(GLIBCXX_LIBS) \
@@ -16,9 +16,9 @@ Index: libstdc++-v3/src/Makefile.am
  	$(top_builddir)/src/c++98/libc++98convenience.la \
  	$(top_builddir)/src/c++11/libc++11convenience.la
  
-@@ -98,6 +96,22 @@
- CXXLINK = $(LIBTOOL) --tag CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link \
- 	  $(CXX) $(OPT_LDFLAGS) $(SECTION_LDFLAGS) $(AM_CXXFLAGS) $(LTLDFLAGS) -o $@
+@@ -164,6 +162,22 @@
+ 	$(OPT_LDFLAGS) $(SECTION_LDFLAGS) $(AM_CXXFLAGS) $(LTLDFLAGS) -o $@
+ 
  
 +std_HEADERS = \
 +	../libsupc++/cxxabi.h ../libsupc++/exception \
@@ -39,7 +39,7 @@ Index: libstdc++-v3/src/Makefile.am
  # Symbol versioning for shared libraries.
  if ENABLE_SYMVERS
  libstdc++-symbols.ver:  ${glibcxx_srcdir}/$(SYMVER_FILE) \
-@@ -237,3 +251,43 @@
+@@ -302,3 +316,43 @@
  install-debug: build-debug
  	(cd ${debugdir} && $(MAKE) CXXFLAGS='$(DEBUG_FLAGS)' \
  	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install) ;
