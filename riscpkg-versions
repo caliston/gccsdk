@@ -12,15 +12,27 @@
 # The package version should be updated with each
 # release and reset only if the upstream version changes
 
-export RPKG_SHAREDLIBS_VERSION=2.0-$GCCSDK_RELEASE_NAME-1
+if [ -z "$GCCSDK_SUPPORTED_GCC_RELEASE" ] ; then
+  echo \$GCCSDK_SUPPORTED_GCC_RELEASE is not defined
+fi
+
+if [ -z "$GCCSDK_RELEASE_NAME" ] ; then
+  echo \$GCCSDK_RELEASE_NAME is not defined
+fi
+
+export RPKG_SHAREDLIBS_VERSION=3.0-$GCCSDK_RELEASE_NAME-1
 
 # The C shared libraries includes libunixlib, libgcc
 # and libm so use the GCCSDK version, but remember
 # to update the the package version if anything
 # else changes
-export RPKG_SHAREDLIBSC_VERSION=4.1.2-$GCCSDK_RELEASE_NAME-1
+export RPKG_SHAREDLIBSC_VERSION=$GCCSDK_SUPPORTED_GCC_RELEASE-$GCCSDK_RELEASE_NAME-1
 
-export RPKG_SHAREDLIBSGPP_VERSION=6.0.8-$GCCSDK_RELEASE_NAME-1
+# The version of SharedLibs-C++ package started to use the .so version
+# number which is in retrospect unfortunate.  Hence we now add the
+# gcc version number in order to make a difference between same
+# libstdc++ versions in different gcc releases.
+export RPKG_SHAREDLIBSGPP_VERSION=6.0.8.$GCCSDK_SUPPORTED_GCC_RELEASE-$GCCSDK_RELEASE_NAME-1
 
 # The following two modules, should only be uploaded to the
 # packaging site if they area actually changed and in this

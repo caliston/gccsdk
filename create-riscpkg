@@ -1,6 +1,6 @@
 #!/bin/bash -e
 # Written by Alan Buckley <alan_baa@hotmail.com>
-# Copyright (c) 2008,2009 GCCSDK Developers
+# Copyright (c) 2008,2009,2012 GCCSDK Developers
 #
 # Creates the RISC OS GCCSDK packages
 #
@@ -35,7 +35,6 @@ BKIT_GCCCORE_NAME=gccsdk-gcc-core-bin-$GCCSDK_FULL_RELEASE_NAME
 BKIT_GCCGPP_NAME=gccsdk-gcc-g++-bin-$GCCSDK_FULL_RELEASE_NAME
 BKIT_SYSTEM_NAME=system
 BKIT_SHAREDLIBSCORE_NAME=gccsdk-sharedlibs-core
-BKIT_SHAREDLIBSGPP_NAME=gccsdk-sharedlibs-g++
 
 RPKG_GCCCORE_NAME=GCC4
 RPKG_GCCGPP_NAME=GCC4-C++
@@ -240,11 +239,10 @@ mkdir temp
 cd temp
 mkdir -p Resources
 cp -r $GCCSDK_UNPACKED/$BKIT_SHAREDLIBSCORE_NAME/\!SharedLibs Resources
+SHAREDLIBS_ABI=`cd $GCCSDK_UNPACKED/$BKIT_SHAREDLIBSCORE_NAME/\!SharedLibs/lib && find . -maxdepth 1 -mindepth 1 -type d -name "abi-*"`
 
-# Remove C Libraries
-rm Resources/\!SharedLibs/lib/libgcc*
-rm Resources/\!SharedLibs/lib/libunixlib*
-rm Resources/\!SharedLibs/lib/libm*
+# Remove the abi specific libs:
+rm -rf Resources/\!SharedLibs/lib/$SHAREDLIBS_ABI
 
 mkdir RiscPkg
 
@@ -290,12 +288,11 @@ rm -rf temp
 
 mkdir temp
 cd temp
-mkdir -p Resources/\!SharedLibs
-cp -r $GCCSDK_UNPACKED/$BKIT_SHAREDLIBSCORE_NAME/\!SharedLibs/lib Resources/\!SharedLibs
+mkdir -p Resources/\!SharedLibs/lib
+cp -r $GCCSDK_UNPACKED/$BKIT_SHAREDLIBSCORE_NAME/\!SharedLibs/lib/$SHAREDLIBS_ABI Resources/\!SharedLibs/lib
 
-# Remove Non GCC C Libraries
-rm Resources/\!SharedLibs/lib/ld*
-rm Resources/\!SharedLibs/lib/libdl*
+# Remove C++ libs:
+rm Resources/\!SharedLibs/lib/$SHAREDLIBS_ABI/libstdc*
 
 mkdir RiscPkg
 
@@ -333,8 +330,8 @@ rm -rf temp
 
 mkdir temp
 cd temp
-mkdir -p Resources
-cp -r $GCCSDK_UNPACKED/$BKIT_SHAREDLIBSGPP_NAME/\!SharedLibs Resources
+mkdir -p Resources/\!SharedLibs/lib/$SHAREDLIBS_ABI
+cp -r $GCCSDK_UNPACKED/$BKIT_SHAREDLIBSCORE_NAME/\!SharedLibs/lib/$SHAREDLIBS_ABI/libstdc* Resources/\!SharedLibs/lib/$SHAREDLIBS_ABI
 
 mkdir RiscPkg
 
@@ -351,6 +348,7 @@ echo "Depends: $RPKG_SHAREDLIBSC_NAME (>=$RPKG_SHAREDLIBSC_VERSION)" >> RiscPkg/
 # Create copyright
 echo "GNU C++ shared libraries" > RiscPkg/Copyright
 copyright_header
+
 echo "GNU C++ shared libraries copyright" >> RiscPkg/Copyright
 echo "==================================" >> RiscPkg/Copyright
 gpl_copyright
@@ -419,7 +417,7 @@ echo "Priority: Optional" >> RiscPkg/Control
 echo "Section: Library" >> RiscPkg/Control
 echo "Maintainer: Alan Buckley <alan_baa@hotmail.com>" >> RiscPkg/Control
 echo "Standards-Version: 0.1.0" >> RiscPkg/Control
-echo "Version: $RPG_DRENDERER_VERSION" >> RiscPkg/Control
+echo "Version: $RPKG_DRENDERER_VERSION" >> RiscPkg/Control
 echo "Licence: Free" >> RiscPkg/Control
 echo "Description: Audio playback module" >> RiscPkg/Control
 echo " This module provide a polling, call-back or streaming interface between" >> RiscPkg/Control
