@@ -22,6 +22,7 @@ SWI_Territory_ConvertOrdinalsToTime (int __territory,
 		    : "r" (territory), "r" (ro_time), "r" (ordinals),
 		      [SWI_Territory_ConvertOrdinalsToTime] "i" (Territory_ConvertOrdinalsToTime | (1<<17))
 		    : "r14", "cc", "memory");
+  return err;
 }
 
 /* Convert broken local time to 5-byte RISC OS time (UTC).  */
