@@ -2,6 +2,12 @@ Noteworthy changes to the RISC OS GCCSDK releases made.
 
 For specific UnixLib changes, see !GCC.docs.UnixLib.Changes too.
 
+GCCSDK GCC 4.1.2 Release 2 (released xxx)
+==========================
+
+Bug fixes and other improvements:
+  - UnixLib: strftime fix (r5754, bug #226)
+
 GCCSDK GCC 4.1.2 Release 1 (released 21 April 2012)
 ==========================
 
