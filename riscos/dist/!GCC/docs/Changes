@@ -7,6 +7,7 @@ GCCSDK GCC 4.1.2 Release 2 (released xxx)
 
 Bug fixes and other improvements:
   - UnixLib: strftime fix (r5754, bug #226)
+  - UnixLib: getcwd fix (r5757, bug #227)
 
 GCCSDK GCC 4.1.2 Release 1 (released 21 April 2012)
 ==========================
