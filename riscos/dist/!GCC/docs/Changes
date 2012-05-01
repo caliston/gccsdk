@@ -11,6 +11,7 @@ Bug fixes and other improvements:
   - UnixLib: glob fix (r5766, r5776, bug #229, bug #231)
   - UnixLib: readdir inode fix (r5767)
   - UnixLib: support for alias-disabling prefix (r5775, bug #232)
+  - UnixLib: sendto return value fix (r5780, bug #233)
 
 GCCSDK GCC 4.1.2 Release 1 (released 21 April 2012)
 ==========================
