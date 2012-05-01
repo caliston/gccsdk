@@ -8,8 +8,9 @@ GCCSDK GCC 4.1.2 Release 2 (released xxx)
 Bug fixes and other improvements:
   - UnixLib: strftime fix (r5755, bug #226)
   - UnixLib: getcwd fix (r5758, bug #227)
-  - UnixLib: glob fix (r5766, bug #229)
+  - UnixLib: glob fix (r5766, r5776, bug #229, bug #231)
   - UnixLib: readdir inode fix (r5767)
+  - UnixLib: support for alias-disabling prefix (r5775, bug #232)
 
 GCCSDK GCC 4.1.2 Release 1 (released 21 April 2012)
 ==========================
