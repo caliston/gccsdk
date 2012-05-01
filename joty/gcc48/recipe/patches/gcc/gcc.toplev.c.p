@@ -1,6 +1,6 @@
 Index: gcc/toplev.c
 ===================================================================
---- gcc/toplev.c	(revision 186884)
+--- gcc/toplev.c	(revision 187012)
 +++ gcc/toplev.c	(working copy)
 @@ -95,6 +95,11 @@
  				   declarations for e.g. AIX 4.x.  */
@@ -14,7 +14,7 @@ Index: gcc/toplev.c
  static void general_init (const char *);
  static void do_compile (void);
  static void process_options (void);
-@@ -689,6 +694,10 @@
+@@ -688,6 +693,10 @@
  void
  print_version (FILE *file, const char *indent)
  {
@@ -25,7 +25,7 @@ Index: gcc/toplev.c
    static const char fmt1[] =
  #ifdef __GNUC__
      N_("%s%s%s %sversion %s (%s)\n%s\tcompiled by GNU C version %s, ")
-@@ -697,7 +706,12 @@
+@@ -696,7 +705,12 @@
  #endif
      ;
    static const char fmt2[] =
@@ -39,7 +39,7 @@ Index: gcc/toplev.c
    static const char fmt3[] =
      N_("%s%swarning: %s header version %s differs from library version %s.\n");
    static const char fmt4[] =
-@@ -729,7 +743,11 @@
+@@ -728,7 +742,11 @@
  #endif
    fprintf (file,
  	   file == stderr ? _(fmt2) : fmt2,
@@ -52,7 +52,7 @@ Index: gcc/toplev.c
    if (strcmp (GCC_GMP_STRINGIFY_VERSION, gmp_version))
      fprintf (file,
  	     file == stderr ? _(fmt3) : fmt3,
-@@ -745,6 +763,20 @@
+@@ -744,6 +762,20 @@
  	     file == stderr ? _(fmt3) : fmt3,
  	     indent, *indent != 0 ? " " : "",
  	     "MPC", MPC_VERSION_STRING, mpc_get_version ());

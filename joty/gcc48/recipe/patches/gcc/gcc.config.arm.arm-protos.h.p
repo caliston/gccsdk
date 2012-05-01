@@ -1,8 +1,8 @@
 Index: gcc/config/arm/arm-protos.h
 ===================================================================
---- gcc/config/arm/arm-protos.h	(revision 184959)
+--- gcc/config/arm/arm-protos.h	(revision 187012)
 +++ gcc/config/arm/arm-protos.h	(working copy)
-@@ -248,4 +248,13 @@
+@@ -250,4 +250,13 @@
  extern void arm_expand_vec_perm (rtx target, rtx op0, rtx op1, rtx sel);
  extern bool arm_expand_vec_perm_const (rtx target, rtx op0, rtx op1, rtx sel);
  
