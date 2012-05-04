@@ -1,6 +1,6 @@
 Index: gcc/collect2.c
 ===================================================================
---- gcc/collect2.c	(revision 185443)
+--- gcc/collect2.c	(revision 187175)
 +++ gcc/collect2.c	(working copy)
 @@ -50,6 +50,11 @@
  #include "intl.h"
@@ -36,7 +36,7 @@ Index: gcc/collect2.c
  const char *c_file_name;		/* pathname of gcc */
  static char *initname, *fininame;	/* names of init and fini funcs */
  
-@@ -1011,6 +1024,87 @@
+@@ -1017,6 +1030,87 @@
        post_ld_pass (false);
      }
  }
@@ -124,7 +124,7 @@ Index: gcc/collect2.c
  
  /* Main program.  */
  
-@@ -1028,6 +1122,9 @@
+@@ -1034,6 +1128,9 @@
  #endif
    static const char *const strip_suffix = "strip";
    static const char *const gstrip_suffix = "gstrip";
@@ -134,7 +134,7 @@ Index: gcc/collect2.c
  
  #ifdef CROSS_DIRECTORY_STRUCTURE
    /* If we look for a program in the compiler directories, we just use
-@@ -1315,6 +1412,12 @@
+@@ -1321,6 +1418,12 @@
    if (strip_file_name == 0)
      strip_file_name = find_a_file (&path, full_strip_suffix);
  
@@ -147,7 +147,7 @@ Index: gcc/collect2.c
    /* Determine the full path name of the C compiler to use.  */
    c_file_name = getenv ("COLLECT_GCC");
    if (c_file_name == 0)
-@@ -1377,6 +1480,12 @@
+@@ -1383,6 +1486,12 @@
  	*c_ptr++ = xstrdup (q);
        if (strcmp (q, "-shared") == 0)
  	shared_obj = 1;
@@ -160,7 +160,7 @@ Index: gcc/collect2.c
        if (*q == '-' && q[1] == 'B')
  	{
  	  *c_ptr++ = xstrdup (q);
-@@ -1707,6 +1816,10 @@
+@@ -1713,6 +1822,10 @@
  #endif
        fprintf (stderr, "strip_file_name     = %s\n",
  	       (strip_file_name ? strip_file_name : "not found"));
@@ -171,7 +171,7 @@ Index: gcc/collect2.c
        fprintf (stderr, "c_file              = %s\n",
  	       (c_file ? c_file : "not found"));
        fprintf (stderr, "o_file              = %s\n",
-@@ -1766,6 +1879,11 @@
+@@ -1772,6 +1885,11 @@
  
  	maybe_unlink (c_file);
  	maybe_unlink (o_file);
@@ -183,7 +183,7 @@ Index: gcc/collect2.c
  	return 0;
        }
    }
-@@ -1838,6 +1956,11 @@
+@@ -1844,6 +1962,11 @@
  
        maybe_unlink (c_file);
        maybe_unlink (o_file);
@@ -195,7 +195,7 @@ Index: gcc/collect2.c
        return 0;
      }
  
-@@ -1938,6 +2061,10 @@
+@@ -1944,6 +2067,10 @@
    maybe_unlink (export_file);
  #endif
  
