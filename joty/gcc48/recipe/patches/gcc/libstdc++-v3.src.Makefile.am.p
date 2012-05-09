@@ -1,6 +1,6 @@
 Index: libstdc++-v3/src/Makefile.am
 ===================================================================
---- libstdc++-v3/src/Makefile.am	(revision 186212)
+--- libstdc++-v3/src/Makefile.am	(revision 187346)
 +++ libstdc++-v3/src/Makefile.am	(working copy)
 @@ -63,13 +63,11 @@
  
@@ -16,7 +16,7 @@ Index: libstdc++-v3/src/Makefile.am
  	$(top_builddir)/src/c++98/libc++98convenience.la \
  	$(top_builddir)/src/c++11/libc++11convenience.la
  
-@@ -164,6 +162,22 @@
+@@ -164,6 +162,17 @@
  	$(OPT_LDFLAGS) $(SECTION_LDFLAGS) $(AM_CXXFLAGS) $(LTLDFLAGS) -o $@
  
  
@@ -31,15 +31,10 @@ Index: libstdc++-v3/src/Makefile.am
 +
 +headers = $(std_HEADERS) $(bits_HEADERS)
 +
-+if GLIBCXX_HOSTED
-+  c_sources = \
-+	cp-demangle.c 
-+endif
-+
  # Symbol versioning for shared libraries.
  if ENABLE_SYMVERS
  libstdc++-symbols.ver:  ${glibcxx_srcdir}/$(SYMVER_FILE) \
-@@ -303,3 +317,43 @@
+@@ -303,3 +312,43 @@
  install-debug: build-debug
  	(cd ${debugdir} && $(MAKE) CXXFLAGS='$(DEBUG_FLAGS)' \
  	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install) ;
