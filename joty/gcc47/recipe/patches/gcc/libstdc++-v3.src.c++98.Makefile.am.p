@@ -1,11 +1,16 @@
 Index: libstdc++-v3/src/c++98/Makefile.am
 ===================================================================
---- libstdc++-v3/src/c++98/Makefile.am	(revision 186670)
+--- libstdc++-v3/src/c++98/Makefile.am	(revision 187211)
 +++ libstdc++-v3/src/c++98/Makefile.am	(working copy)
-@@ -108,6 +108,58 @@
+@@ -108,6 +108,63 @@
  inst_sources =
  endif
  
++if GLIBCXX_HOSTED
++  c_sources = \
++	cp-demangle.c
++endif
++
 +# Sources present in the libsupc++ directory.
 +supc_sources = \
 +	array_type_info.cc \
@@ -30,8 +35,8 @@ Index: libstdc++-v3/src/c++98/Makefile.am
 +	eh_ptr.cc \
 +	eh_term_handler.cc \
 +	eh_terminate.cc \
-+	eh_throw.cc \
 +	eh_tm.cc \
++	eh_throw.cc \
 +	eh_type.cc \
 +	eh_unex_handler.cc \
 +	enum_type_info.cc \
@@ -61,7 +66,7 @@ Index: libstdc++-v3/src/c++98/Makefile.am
  # Sources present in the src directory, always present.
  sources = \
  	bitmap_allocator.cc \
-@@ -137,8 +189,10 @@
+@@ -137,8 +194,10 @@
  	streambuf.cc \
  	valarray.cc \
  	${host_sources} \
@@ -73,14 +78,14 @@ Index: libstdc++-v3/src/c++98/Makefile.am
  vpath % $(top_srcdir)/src/c++98
  
  libc__98convenience_la_SOURCES = $(sources)
-@@ -179,6 +233,32 @@
+@@ -179,6 +238,32 @@
  AM_MAKEFLAGS = \
  	"gxx_include_dir=$(gxx_include_dir)"
  
 +# Use special rules for pulling things out of libiberty.  These
 +# objects should be compiled with the "C" compiler, not the C++
 +# compiler, and also should not use the C++ includes.
-+C_INCLUDES = -I.. -I$(toplevel_srcdir)/libiberty -I$(toplevel_srcdir)/include
++C_INCLUDES = -I../.. -I$(toplevel_srcdir)/libiberty -I$(toplevel_srcdir)/include
 +C_COMPILE = \
 +	$(CC) $(DEFS) $(C_INCLUDES) \
 +	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
