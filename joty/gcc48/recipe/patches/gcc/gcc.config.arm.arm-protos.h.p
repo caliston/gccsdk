@@ -1,10 +1,10 @@
 Index: gcc/config/arm/arm-protos.h
 ===================================================================
---- gcc/config/arm/arm-protos.h	(revision 187012)
+--- gcc/config/arm/arm-protos.h	(revision 187346)
 +++ gcc/config/arm/arm-protos.h	(working copy)
-@@ -250,4 +250,13 @@
- extern void arm_expand_vec_perm (rtx target, rtx op0, rtx op1, rtx sel);
- extern bool arm_expand_vec_perm_const (rtx target, rtx op0, rtx op1, rtx sel);
+@@ -252,4 +252,13 @@
+ 
+ extern bool arm_autoinc_modes_ok_p (enum machine_mode, enum arm_auto_incmodes);
  
 +extern bool arm_apcs_frame_needed (void);
 +extern void arm_expand_save_stack_block (rtx, rtx);

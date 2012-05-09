@@ -1,6 +1,6 @@
 Index: gcc/config/arm/arm.h
 ===================================================================
---- gcc/config/arm/arm.h	(revision 186145)
+--- gcc/config/arm/arm.h	(revision 187346)
 +++ gcc/config/arm/arm.h	(working copy)
 @@ -203,7 +203,7 @@
  				         : TARGET_TPCS_FRAME)
@@ -116,7 +116,7 @@ Index: gcc/config/arm/arm.h
  
  /* Define the offset between two registers, one to be eliminated, and the
     other its replacement, at the start of a routine.  */
-@@ -1626,8 +1652,8 @@
+@@ -1650,8 +1676,8 @@
  /* Don't allow the pc to be used.  */
  #define ARM_REGNO_OK_FOR_BASE_P(REGNO)			\
    (TEST_REGNO (REGNO, <, PC_REGNUM)			\
@@ -127,7 +127,7 @@ Index: gcc/config/arm/arm.h
  
  #define THUMB1_REGNO_MODE_OK_FOR_BASE_P(REGNO, MODE)		\
    (TEST_REGNO (REGNO, <=, LAST_LO_REGNUM)			\
-@@ -1694,6 +1720,11 @@
+@@ -1718,6 +1744,11 @@
    if (TARGET_THUMB2)			\
      thumb2_asm_output_opcode (STREAM);
  
@@ -139,7 +139,7 @@ Index: gcc/config/arm/arm.h
  /* The EABI specifies that constructors should go in .init_array.
     Other targets use .ctors for compatibility.  */
  #ifndef ARM_EABI_CTORS_SECTION_OP
-@@ -1739,6 +1770,7 @@
+@@ -1763,6 +1794,7 @@
  #   define DTORS_SECTION_ASM_OP ARM_DTORS_SECTION_OP
  # endif /* !defined (__ARM_EABI__) */
  #endif /* !defined (IN_LIBCC2) */
@@ -147,7 +147,7 @@ Index: gcc/config/arm/arm.h
  
  /* True if the operating system can merge entities with vague linkage
     (e.g., symbols in COMDAT group) during dynamic linking.  */
-@@ -1760,8 +1792,8 @@
+@@ -1784,8 +1816,8 @@
  #define ARM_REG_OK_FOR_BASE_P(X)		\
    (REGNO (X) <= LAST_ARM_REGNUM			\
     || REGNO (X) >= FIRST_PSEUDO_REGISTER	\
@@ -158,7 +158,7 @@ Index: gcc/config/arm/arm.h
  
  #define ARM_REG_OK_FOR_INDEX_P(X)		\
    ((REGNO (X) <= LAST_ARM_REGNUM		\
-@@ -2190,6 +2222,10 @@
+@@ -2214,6 +2246,10 @@
  # define MCPU_MTUNE_NATIVE_SPECS ""
  #endif
  
