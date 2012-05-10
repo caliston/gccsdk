@@ -242,6 +242,53 @@ Wed Jun 23 01:08:51 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 // ------------------------------------ ^^^ gcc4.6trunk ^^^ port -----------------
 
+Sat May  5 00:30:08 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* incl-local/internal/fd.h (BADF): Simplify expression.
+	* debug/debug.c (debug_printf): Dump more info on file handles.
+	* unix/dev.c (__fsclose): Detach OS_ChangeRedirection handle we're
+	about to close.  Fixes bug 236.
+	* test/sys/bug236.c: Added.
+	* test/sys/test236.c: Likewise.
+
+Tue May  1 21:33:26 CEST 2012  Chris Gransden  <chrisg@care4free.net>
+
+	* incl-local/sys/socket.h (_sendto): Fix return value.  Fixes bug 233.
+
+Tue May  1 17:28:14 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* unix/glob.c (glob, glob3): Avoid the use of mbrtowc.  Fixes bug 231.
+
+Tue May  1 16:03:56 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* sys/exec.c (execve): Add checks for alias-disabling prefix. Fixes bug
+	232.
+	Fix DEBUG build.  Add missing test for __riscosify_std failure.
+	* test/stdlib/system-alias.c: Added.
+
+Sat Apr 28 19:02:48 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* incl-local/dirent.h (struct __dir_stream): Made dd_name_can const
+	pointer.
+	* common/serial.c (__get_file_ino): Fix the directory + filename case.
+	Simplified code.  Made inode calculation unsigned.
+	* test/dirent/tst-dirent-ino.c: Added.
+
+Sat Apr 28 15:37:26 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* unix/glob.c (g_Ctoc): Reimplement and avoid the wcrtomb call.  Fixes
+	bug 229.
+
+Thu Apr 26 03:32:38 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* unix/getcwd.c (getcwd): Support buffer being NULL.  Fixes bug 227.
+	* test/unix/getcwd.c: Enhance test case.
+
+Wed Apr 25 20:57:01 BST 2012  Lee Noar  <leenoar@sky.com>
+
+	* time/broken.c(SWI_Territory_ConvertOrdinalsToTime): Add
+	missing return statement. Fix for bug 226.
+
 Thu Mar 22 19:56:15 GMT 2012  Lee Noar  <leenoar@sky.com>
 
 	* include/sys/elf.h(DT_RISCOS_PIC,DT_RISCOS_ABI_VERSION):
