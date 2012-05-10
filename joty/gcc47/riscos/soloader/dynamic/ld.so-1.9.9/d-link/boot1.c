@@ -427,7 +427,7 @@ void _dl_boot(int args)
       }
     }
 
-  if (goof)    _dl_exit(14);
+  if (goof)    DL_INTERNAL(_dl_exit)(14);
 
   /* OK, at this point we have a crude malloc capability.  Start to build
      the tables of the modules that are required for this beast to run.
@@ -525,7 +525,14 @@ void _dl_boot(int args)
 #ifdef ALLOW_ZERO_PLTGOT
 	if (lpnt)
 #endif
-	  INIT_GOT(lpnt, _dl_loaded_modules);
+	{
+	  /* GCC 4.1.* produces Global Offset Tables with a 5 word header instead
+	     of 3. We can use this to identify its binaries.  */
+	  if (lpnt[3] == 0)
+	    INIT_41_GOT (lpnt, _dl_loaded_modules)
+	  else
+	    INIT_GOT(lpnt, _dl_loaded_modules)
+	}
       }
 
       if(ppnt->p_type == PT_INTERP) { /* OK, fill this in - we did not have
@@ -552,6 +559,16 @@ void _dl_boot(int args)
       app_tpnt->exidx = 0;
       app_tpnt->exidx_size = 0;
     }
+
+    for (dpnt = (Elf32_Dyn *)app_tpnt->dynamic_addr;
+	 dpnt->d_tag && dpnt->d_tag != DT_RISCOS_ABI_VERSION;
+	 dpnt++)
+      /* Empty loop.  */;
+
+    if (dpnt->d_tag)
+      app_tpnt->abi_version = (char *)(dpnt->d_un.d_ptr + app_tpnt->loadaddr);
+    else
+      app_tpnt->abi_version = NULL;
   }
 
   if (argv[0])
@@ -611,14 +628,14 @@ void _dl_boot(int args)
 	*str2 = '\0';
 	if (!_dl_secure || _dl_strchr(str, '/') == NULL) {
 
-	  tpnt1 = _dl_load_shared_library(_dl_secure, NULL, str);
+	  tpnt1 = _dl_load_shared_library(app_tpnt, NULL, str);
 	  if (!tpnt1) {
 	    if (_dl_trace_loaded_objects)
 	      _dl_fdprintf(1, "\t%s => not found\n", str);
 	    else {
 	      _dl_fdprintf(2, "%s: can't load library '%s'\n",
 			   _dl_progname, str);
-	      _dl_exit(15);
+	      DL_INTERNAL(_dl_exit)(15);
 	    }
 	  } else {
 	    if (_dl_trace_loaded_objects && !tpnt1->usage_count) {
@@ -688,14 +705,14 @@ void _dl_boot(int args)
 	      c = *cp;
 	      *cp = '\0';
 
-	      tpnt1 = _dl_load_shared_library(0, NULL, cp2);
+	      tpnt1 = _dl_load_shared_library(app_tpnt, NULL, cp2);
 	      if (!tpnt1) {
 		if (_dl_trace_loaded_objects)
 		  _dl_fdprintf(1, "\t%s => not found\n", cp2);
 		else {
 		  _dl_fdprintf(2, "%s: can't load library '%s'\n",
 			       _dl_progname, cp2);
-		  _dl_exit(15);
+		  DL_INTERNAL(_dl_exit)(15);
 		}
 	      } else {
 		if (_dl_trace_loaded_objects && !tpnt1->usage_count)
@@ -752,7 +769,7 @@ void _dl_boot(int args)
 	    tpnt = NULL;
 	    continue;
 	  }
-	  if (!(tpnt1 = _dl_load_shared_library(0, tcurr, lpnt)))
+	  if (!(tpnt1 = _dl_load_shared_library(app_tpnt, tcurr, lpnt)))
 	  {
 	    if (_dl_trace_loaded_objects)
 	      _dl_fdprintf(1, "\t%s => not found\n", lpnt);
@@ -760,7 +777,7 @@ void _dl_boot(int args)
 	    {
 	      _dl_fdprintf(2, "%s: can't load library '%s'\n",
 			   _dl_progname, lpnt);
-	      _dl_exit(16);
+	      DL_INTERNAL(_dl_exit)(16);
 	    }
 	  }
 	  else
@@ -787,13 +804,13 @@ void _dl_boot(int args)
 #endif
 
   if (_dl_generate_runtime_array())
-    _dl_exit(1);
+    DL_INTERNAL(_dl_exit)(1);
 
   /* ldd uses uses this.  I am not sure how you pick up the other flags */
   if(_dl_trace_loaded_objects)
     {
       _dl_warn = _dl_getenv("LD_WARN", envp);
-      if (!_dl_warn) _dl_exit(0);
+      if (!_dl_warn) DL_INTERNAL(_dl_exit)(0);
     }
 
   /*
@@ -846,7 +863,7 @@ void _dl_boot(int args)
   if (_dl_symbol_tables)
     goof += _dl_copy_fixups(_dl_symbol_tables);
 
-  if(goof || _dl_trace_loaded_objects) _dl_exit(0);
+  if(goof || _dl_trace_loaded_objects) DL_INTERNAL(_dl_exit)(0);
 
   /* OK, at this point things are pretty much ready to run.  Now we
      need to touch up a few items that are required, and then
@@ -956,7 +973,7 @@ int _dl_fixup(struct elf_resolve * tpnt)
   if(tpnt->dynamic_info[DT_REL]) {
 #ifdef ELF_USES_RELOCA
     _dl_fdprintf(2, "%s: can't handle REL relocation records\n", _dl_progname);
-    _dl_exit(17);
+    DL_INTERNAL(_dl_exit)(17);
 #else
     if (tpnt->init_flag & RELOCS_DONE) return goof;
     tpnt->init_flag |= RELOCS_DONE;
@@ -974,7 +991,7 @@ int _dl_fixup(struct elf_resolve * tpnt)
 					     tpnt->dynamic_info[DT_RELASZ], 0);
 #else
     _dl_fdprintf(2, "%s: can't handle RELA relocation records\n", _dl_progname);
-    _dl_exit(18);
+    DL_INTERNAL(_dl_exit)(18);
 #endif
   }
 

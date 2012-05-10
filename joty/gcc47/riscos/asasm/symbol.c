@@ -57,7 +57,7 @@ static bool oKeepAllSymbols;
 static bool oAllExportSymbolsAreWeak; /* FIXME: support this.  */
 
 static Symbol *
-symbolNew (const char *str, size_t len)
+Symbol_New (const char *str, size_t len)
 {
   Symbol *result;
   if ((result = (Symbol *) malloc (sizeof (Symbol) + len)) == NULL)
@@ -75,17 +75,19 @@ symbolNew (const char *str, size_t len)
   return result;
 }
 
+
+/**
+ * Unlink symbol from its lists and free its data.
+ */
 static void
-symbolFree (Symbol **symPP)
+Symbol_Free (Symbol **symPP)
 {
-  register Symbol *symP = *symPP;
-  if (symP)
-    {
-      *symPP = symP->next;
-      valueFree (&symP->value);
-      free (symP);
-    }
+  Symbol *symP = *symPP;
+  *symPP = symP->next;
+  valueFree (&symP->value);
+  free (symP);
 }
+
 
 static bool
 EqSymLex (const Symbol *str, const Lex *lx)
@@ -97,13 +99,14 @@ EqSymLex (const Symbol *str, const Lex *lx)
 
 
 /**
+ * Retrieve an existing symbol or create a new one if there wasn't one.
  * \return Always a non-NULL value pointing to symbol representing given Lex
  * object.
  */
 Symbol *
-symbolGet (const Lex *l)
+Symbol_Get (const Lex *l)
 {
-  assert (l->tag == LexId && "Internal symbolGet: non-ID");
+  assert (l->tag == LexId && "non-ID");
 
   Symbol **isearch;
   for (isearch = &symbolTable[l->Data.Id.hash]; *isearch; isearch = &(*isearch)->next)
@@ -112,13 +115,17 @@ symbolGet (const Lex *l)
 	return *isearch;
     }
 
-  *isearch = symbolNew (l->Data.Id.str, l->Data.Id.len);
+  *isearch = Symbol_New (l->Data.Id.str, l->Data.Id.len);
   return *isearch;
 }
 
 
+/**
+ * Retrieve an existing symbol.
+ * \return NULL when symbol doesn't exist, pointer to that symbol otherwise.
+ */
 Symbol *
-symbolFind (const Lex *l)
+Symbol_Find (const Lex *l)
 {
   if (l->tag != LexId)
     return NULL;
@@ -225,12 +232,12 @@ Symbol_Define (Symbol *symbol, unsigned newSymbolType, const Value *newValue)
 
 
 /**
- * Removes symbol from symbol table.
+ * Removes an existing symbol from symbol table.
  */
 void
-symbolRemove (const Lex *l)
+Symbol_Remove (const Lex *l)
 {
-  assert (l->tag == LexId && "Internal symbolRemove: non-ID");
+  assert (l->tag == LexId && "non-ID");
 
   for (Symbol **isearch = &symbolTable[l->Data.Id.hash];
        *isearch != NULL;
@@ -238,12 +245,32 @@ symbolRemove (const Lex *l)
     {
       if (EqSymLex (*isearch, l))
 	{
-          symbolFree (isearch);
+          Symbol_Free (isearch);
 	  return;
 	}
     }
 
-  error (ErrorAbort, "Internal error: symbolRemove");
+  assert (0 && "Not an existing symbol");
+}
+
+
+void
+Symbol_RemoveVariables (void)
+{
+  for (int i = 0; i != SYMBOL_TABLESIZE; i++)
+    {
+      Symbol **symPP = &symbolTable[i];
+      while (*symPP)
+	{
+	  if ((*symPP)->type & SYMBOL_RW)
+	    {
+	      assert ((*symPP)->value.Tag == ValueBool || (*symPP)->value.Tag == ValueString || (*symPP)->value.Tag == ValueInt);
+	      Symbol_Free (symPP);
+	    }
+	  else
+	    symPP = &(*symPP)->next;
+	}
+    }
 }
 
 
@@ -717,7 +744,7 @@ symFlag (unsigned int flags, const char *err)
     return NULL;
 
   /* When the symbol is not known yet, it will automatically be created.  */
-  Symbol *sym = symbolGet (&lex);
+  Symbol *sym = Symbol_Get (&lex);
   if (Local_IsLocalLabel (sym->str))
     error (ErrorError, "Local labels cannot be %s", err);
   else if (Area_IsMappingSymbol (sym->str))
@@ -732,8 +759,8 @@ symFlag (unsigned int flags, const char *err)
 
 /**
  * Implements EXPORT / GLOBAL.
- * "EXPORT <symbol>[FPREGARGS,DATA,LEAF,WEAK]"
- * "EXPORT [WEAK]"
+ *   "EXPORT <symbol> [FPREGARGS,DATA,LEAF,WEAK]"
+ *   "EXPORT [WEAK]"
  *
  */
 bool
@@ -816,7 +843,19 @@ c_keep (void)
 
 /**
  * Implements IMPORT / EXTERN.
- *   IMPORT <symbol>[,NOCASE][,WEAK][,COMMON=<size>][,FPREGARGS]
+ * Not clear which syntax really should be supported.  Hence, go for a liberal
+ * implementation:
+ *   IMPORT <symbol> [ <attrs-list-main> ]
+ *     <attrs-list-main> := "," <attr> [ <attrs-list> ]
+ *                       := "[" <attrs-comma> ] "]"
+ *     <attrs-list>      := "," <attrs> [ <attrs-list> ]
+ *                       := "," "[" <attrs-comma> ] "]"
+ *     <attrs-comma> := <attr> [ "," <attrs-comma> ]
+ *     <attr> := "NOCASE"
+ *            := "WEAK"
+ *            := "COMMON=" <size>
+ *            := "FPREGARGS"
+ * FIXME: support ELF attributes
  */
 bool
 c_import (void)
@@ -832,42 +871,57 @@ c_import (void)
       return false;
     }
 
-  while (Input_Match (',', false))
+  skipblanks ();
+  if (!Input_IsEolOrCommentStart ())
     {
-      Lex attribute = lexGetId ();
-      if (attribute.Data.Id.len == sizeof ("NOCASE")-1
-          && !memcmp ("NOCASE", attribute.Data.Id.str, attribute.Data.Id.len))
-	sym->type |= SYMBOL_NOCASE;
-      else if (attribute.Data.Id.len == sizeof ("WEAK")-1
-               && !memcmp ("WEAK", attribute.Data.Id.str, attribute.Data.Id.len))
-	sym->type |= SYMBOL_WEAK;
-      else if (attribute.Data.Id.len == sizeof ("COMMON")-1
-               && !memcmp ("COMMON", attribute.Data.Id.str, attribute.Data.Id.len))
-        {
-	  skipblanks ();
-	  if (Input_Match ('=', false))
-	    error (ErrorError, "COMMON attribute needs size specification");
-	  else
+      bool start = true;
+      bool bracket = false;
+      while (Input_Match (',', true) || start)
+	{
+	  start = false;
+	  if (!bracket)
+	    bracket = Input_Match ('[', true);
+
+	  Lex attribute = lexGetId ();
+	  if (attribute.Data.Id.len == sizeof ("NOCASE")-1
+	      && !memcmp ("NOCASE", attribute.Data.Id.str, attribute.Data.Id.len))
+	    sym->type |= SYMBOL_NOCASE;
+	  else if (attribute.Data.Id.len == sizeof ("WEAK")-1
+	           && !memcmp ("WEAK", attribute.Data.Id.str, attribute.Data.Id.len))
+	    sym->type |= SYMBOL_WEAK;
+	  else if (attribute.Data.Id.len == sizeof ("COMMON")-1
+	           && !memcmp ("COMMON", attribute.Data.Id.str, attribute.Data.Id.len))
 	    {
-	      const Value *size = exprBuildAndEval (ValueInt);
-	      switch (size->Tag)
-	        {
-		  case ValueInt:
-		    Value_Assign (&sym->value, size);
-		    sym->type |= SYMBOL_COMMON;
-		    break;
-		  default:
-		    error (ErrorError, "Illegal COMMON attribute expression");
-		    break;
-	        }
+	      skipblanks ();
+	      if (!Input_Match ('=', false))
+		error (ErrorError, "COMMON attribute needs size specification");
+	      else
+		{
+		  const Value *size = exprBuildAndEval (ValueInt);
+		  switch (size->Tag)
+		    {
+		      case ValueInt:
+			Value_Assign (&sym->value, size);
+			sym->type |= SYMBOL_COMMON;
+			break;
+		      default:
+			error (ErrorError, "Illegal COMMON attribute expression");
+			break;
+		    }
+		}
 	    }
+	  else if (attribute.Data.Id.len == sizeof ("FPREGARGS")-1
+	           && !memcmp ("FPREGARGS", attribute.Data.Id.str, attribute.Data.Id.len))
+	    sym->type |= SYMBOL_FPREGARGS;
+	  else
+	    error (ErrorError, "Illegal IMPORT attribute %s", attribute.Data.Id.str);
+
+	  skipblanks ();
+	  if (bracket && Input_Match (']', true))
+	    bracket = false;
 	}
-      else if (attribute.Data.Id.len == sizeof ("FPREGARGS")-1
-               && !memcmp ("FPREGARGS", attribute.Data.Id.str, attribute.Data.Id.len))
-	sym->type |= SYMBOL_FPREGARGS;
-      else
-	error (ErrorError, "Illegal IMPORT attribute %s", attribute.Data.Id.str);
-      skipblanks ();
+      if (bracket && !Input_Match (']', false))
+	error (ErrorError, "Missing ]");
     }
   return false;
 }

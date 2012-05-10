@@ -32,6 +32,7 @@
 #include "input.h"
 #include "main.h"
 #include "option.h"
+#include "state.h"
 #include "targetcpu.h"
 
 /**
@@ -156,8 +157,11 @@ GetCCode (bool doLowerCase)
 
 /**
  * Try to read the instruction width indicator (".W"/".w" or ".N"/".n").
- * \return doLowerCase When true, instruction width indication should be
+ * \param doLowerCase When true, instruction width indication should be
  * lowercase, uppercase otherwise.
+ * \return Instruction qualifier when specified, or indication if there wasn't
+ * any qualifier specified.  Narrow instruction qualifier will be faulted when
+ * in ARM mode.
  */
 InstrWidth_e
 Option_GetInstrWidth (bool doLowerCase)
@@ -165,7 +169,14 @@ Option_GetInstrWidth (bool doLowerCase)
   if (Input_MatchKeyword (doLowerCase ? ".w" : ".W"))
     return eInstrWidth_Enforce32bit;
   if (Input_MatchKeyword (doLowerCase ? ".n" : ".N"))
-    return eInstrWidth_Enforce16bit;
+    {
+      if (State_GetInstrType () == eInstrType_ARM)
+	{
+	  error (ErrorError, "Narrow instruction qualifier is not possible in ARM mode");
+	  return eInstrWidth_NotSpecified;
+	}
+      return eInstrWidth_Enforce16bit;
+    }
   return Input_IsEndOfKeyword () ? eInstrWidth_NotSpecified : eInstrWidth_Unrecognized;
 }
 
@@ -339,12 +350,28 @@ Option_CondSP (bool doLowerCase)
 }
 
 
+/**
+ * Try to parse <CC><B> (pre-UAL) and/or <B><CC> (UAL).
+ * For SWPB<CC> / SWP<CC>B parsing.
+ */
 ARMWord
-optionCondB (bool doLowerCase)
+Option_CondB (bool doLowerCase)
 {
-  ARMWord option = GetCCode (doLowerCase);
-  if (Input_Match (doLowerCase ? 'b' : 'B', false))
-    option |= B_FLAG;
+  Syntax_e syntax = State_GetSyntax ();
+
+  ARMWord option;
+  if ((syntax == eSyntax_UALOnly || syntax == eSyntax_Both)
+      && Input_Match (doLowerCase ? 'b' : 'B', false))
+    option = B_FLAG | GetCCode (doLowerCase);
+  else if (syntax == eSyntax_PreUALOnly || syntax == eSyntax_Both)
+    {
+      option = GetCCode (doLowerCase);
+      if (Input_Match (doLowerCase ? 'b' : 'B', false))
+	option |= B_FLAG;
+    }
+  else
+    option = kOption_NotRecognized;
+
   return IsEndOfKeyword (option);
 }
 

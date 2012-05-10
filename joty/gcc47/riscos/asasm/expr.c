@@ -46,11 +46,17 @@ prim (void)
   switch (lex.tag)
     {
       case LexId:
-	codeSymbol (symbolGet (&lex), 0);
+	codeSymbol (Symbol_Get (&lex), 0);
         break;
       case LexInt:
         codeInt (lex.Data.Int.value);
         break;
+      case LexInt64:
+	{
+	  const Value valInt64 = Value_Int64 (lex.Data.Int64.value);
+	  codeValue (&valInt64, false);
+	  break;
+	}
       case LexString:
         codeString (lex.Data.String.str, lex.Data.String.len);
         break;

@@ -1,4 +1,5 @@
 ; Tests LDM, STM, PUSH and POP.
+; LDM/STM/PUSH/POP support for RLIST is tested in directive_rlist.s.
 
 		AREA |C$$code|, CODE, READONLY
 
@@ -193,6 +194,15 @@
 		STMLEIA	r1,{r2-r3}
 		STMALIA	r1,{r2-r3}
 		STMIA	r1,{r2-r3}
+	]
+
+	; Tests one register PUSH/POP get changed into STR/LDR.
+	[ :LNOT: REFERENCE
+		PUSHCC {r5}
+		POPGE {r7}
+	|
+		STRCC	r5, [r13, #-4]!
+		LDRGE	r7, [r13], #4
 	]
 
 		END

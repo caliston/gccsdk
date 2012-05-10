@@ -48,6 +48,7 @@
 #include "os.h"
 #include "phase.h"
 #include "put.h"
+#include "state.h"
 #include "targetcpu.h"
 #include "value.h"
 
@@ -229,7 +230,10 @@ Branch_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 static bool
 branch_shared (ARMWord cc, bool isBLX)
 {
-  const ARMWord offset = areaCurrentSymbol->area.info->curIdx;
+  /* At this point the current area index can be unaligned for ARM/Thumb
+     instructions, upfront correct this index.  */
+  const ARMWord instrAlign = State_GetInstrType () == eInstrType_ARM ? 4 : 2;
+  const ARMWord offset = (areaCurrentSymbol->area.info->curIdx + instrAlign-1) & -instrAlign;
 
   exprBuild ();
 
@@ -551,7 +555,7 @@ ADR_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 		    Put_InsWithOffset (offset + 4, 4, 0);
 		  return true;
 		}
-	      ADR_RelocUpdaterCore (fileName, lineNum, offset, -(offset + 8), 15, true /* final */, privDataP->userIntendedTwoInstr);
+	      ADR_RelocUpdaterCore (fileName, lineNum, offset, valP->Data.Symbol.offset - (offset + 8), 15, true /* final */, privDataP->userIntendedTwoInstr);
 	      if (Reloc_Create (HOW2_INIT | HOW2_SIZE | HOW2_RELATIVE, offset, valP) == NULL)
 		return true;
 	    }
@@ -752,7 +756,7 @@ m_msr (bool doLowerCase)
   if (cc == kOption_NotRecognized)
     return true;
 
-  Target_NeedAtLeastArch (ARCH_ARMv4);
+  Target_NeedAtLeastArch (ARCH_ARMv3);
 
   cc |= getpsr (false) | 0x0120F000;
   skipblanks ();
@@ -787,7 +791,7 @@ m_mrs (bool doLowerCase)
   if (cc == kOption_NotRecognized)
     return true;
 
-  Target_NeedAtLeastArch (ARCH_ARMv4);
+  Target_NeedAtLeastArch (ARCH_ARMv3);
 
   cc |= getCpuReg () << 12 | 0x01000000;
   skipblanks ();

@@ -1,6 +1,23 @@
-THE DIGITAL RENDERER MODULE, V0.52
+THE DIGITAL RENDERER MODULE, V0.54
 ==================================
 
+
+
+NOTE ON VERSION 0.54 (20 Apr 2011)
+==================================
+
+This version by Christopher Martin contains substantial bugfixes, work-arounds
+and optimisations for newer systems based on ARMv5 and later architectures
+(eg. Iyonix and BeagleBoard). The primary fault in 0.52 addressed by this
+version could cause some systems to play audio files at the wrong speed.
+
+This version is also the first translation of the build sources from BASIC to
+ObjAsm assembly language. This will allow the DRenderer module to be
+automatically built by the GCCSDK autobuilder via the ASASM assembler. Since
+DigitalRenderer is distributed as a component of the SharedUnixLibrary, future
+development should be performed using the ObjAsm-format file <DRenderer.s> and
+C-format file <makelogtable.c> as the primary sources. The original BASIC file
+<DigiRendV> is now deprecated.
 
 
 NOTE ON VERSION 0.52 (15 Jan 2006)
@@ -380,6 +397,7 @@ R0	Digital Renderer State. Bits and their meaning when set:
 	0:	DigitalRenderer active
 	1:	New sample data required
 	2:	Buffer overflow occurred
+	4:	Playback is paused
 	5:	16bit sound hardware used
 
 
@@ -421,7 +439,7 @@ Don't call this SWI if you're using the call-back method or the streaming interf
 this is for single-buffer polling only. Call this when DigitalRenderer_ReadState
 returned with Bit 1 set. The buffer must have the correct size (number of channels
 times Sample length) and contain data that can be sent directly to the VIDC, i.e. 8
-bit logarithmic data, interleafed for multiple channels.
+bit logarithmic data, interleaved for multiple channels.
 
 
 Errors:
@@ -624,7 +642,9 @@ On Entry:
 ---------
 
 R0	number of channels or 0 to read
-R1	format (1: 8bit ulaw, 2 16bit signed linear, 3: 16bit signed linear channel-swapped)
+R1	format (1: 8bit ulaw;
+	        2: 16bit signed linear little-endian right-left;
+	        3: 16bit signed linear little-endian left-right)
 	or 0 to read
 R2	sample period or 0 to read
 R3	buffer size per channel or 0 to read
@@ -680,10 +700,9 @@ Use this SWI to activate the DigitalRenderer using the new 16bit RISC OS sound
 rather than the old 8bit system. All other SWIs automatically adapt to the system
 chosen without needing to worry about internal details. The call will return with
 an error in case no 16bit sound is available.
-In stereo mode, the samples are by default assumed to be in the correct order for
-left/right channel. If this is not the case, you'll have to call the new SWI
-DigitalRenderer_SampleFormat with format 3 (16bit signed linear swapped).
-
+In stereo mode, the samples are by default assumed to be in the correct right-left
+channel order for Acorn's 16-bit sound system. If this is not the case, you'll have
+to call the new SWI DigitalRenderer_SampleFormat with format 3 (left-right).
 
 
 
@@ -791,9 +810,11 @@ DRenderDefaults [-c # -f # -p # -s # -n #]
 	you want to write to the DRender: filing system (see also SWI
 	DigitalRenderer_SetDefaults). Parameters are
 	-c #: set number of channels (1,2,4,8)
-	-f #: set sample format: 1 for ubit ulaw, 2 for 16bit signed linear,
-	      3 for 16 bit signed linear with left/right channel in wrong order
-	-p #: set sample period, e.g. 44 for 44kHz, 23 for 22kHz
+	-f #: set sample format,
+	      1 for 8 bit ulaw
+	      2 for 16 bit signed linear little-endian right-left
+	      3 for 16 bit signed linear little-endian left-right
+	-p #: set sample period in usecs, i.e. 1e6 / frequency
 	-q #: set sample frequency in Hz. Specifying a positive value automatically
 	      tries 16bit sound first, otherwise the old 8bit sound is used.
 	-s #: set buffer size per channel (keep it small)

@@ -579,7 +579,8 @@ if UNIXLIB_BUILDING_SCL
 misc_src =
 else
 misc_src = \
-	misc/dirname.c
+	misc/dirname.c \
+	misc/abi.c
 endif
 
 if UNIXLIB_BUILDING_SCL
@@ -608,6 +609,7 @@ netlib_src += \
 	netlib/getpeernam.c \
 	netlib/getsocknam.c \
 	netlib/getsockopt.c \
+	netlib/get_ro_socket.c \
 	netlib/h_errno.c \
 	netlib/listen.c \
 	netlib/net_error.c \
@@ -1467,6 +1469,13 @@ stackalloc.lo: sys/stackalloc.c
 dvsprintf.lo: debug/dvsprintf.c
 	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(EXTRA_STACK_CFLAGS) -MT dvsprintf.lo -MD -MP -MF $(DEPDIR)/dvsprintf.Tpo -c -o dvsprintf.lo `test -f 'debug/dvsprintf.c' || echo '$(srcdir)/'`debug/dvsprintf.c
 	$(am__mv) $(DEPDIR)/dvsprintf.Tpo $(DEPDIR)/dvsprintf.Plo
+
+# Compile __sincos() with -fno-builtin-cos and -fno-builtin-sin to prevent GCC converting
+# calls to sin() and cos() into a call to __cexp(). __cexp() already calls __sincos()
+# and this would cause an infinite loop.
+s_sincos.lo: libm-dbl64/s_sincos.c
+	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -fno-builtin-cos -fno-builtin-sin -MT s_sincos.lo -MD -MP -MF $(DEPDIR)/s_sincos.Tpo -c -o s_sincos.lo `test -f 'libm-dbl64/s_sincos.c' || echo '$(srcdir)/'`libm-dbl64/s_sincos.c
+	$(am__mv) $(DEPDIR)/s_sincos.Tpo $(DEPDIR)/s_sincos.Plo
 
 # crt ----------------------
 

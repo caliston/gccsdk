@@ -122,8 +122,8 @@ static const decode_table_t oDecodeTable[] =
   { "ASSERT", eCB_NoLex, 0, 0, {.nolex = c_assert } }, /* ASSERT */
   { "ATN", eCB_VoidPMatch, 1, 1, {.vdpm = m_atn } }, /* ATN CC P R */
   { "B", eCB_VoidPMatch, 1, 1, {.vdpm = m_branch } }, /* B [L] CC */
-  /* FIXME: BFC */
-  /* FIXME: BFI */
+  { "BFC", eCB_VoidPMatch, 1, 1, { .vdpm = m_bfc } }, /* BFC */
+  { "BFI", eCB_VoidPMatch, 1, 1, { .vdpm = m_bfi } }, /* BFC */
   { "BIC", eCB_VoidPMatch, 1, 1, {.vdpm = m_bic } }, /* BIC CC S */
   { "BIN", eCB_NoLex, 0, 0, {.nolex = c_incbin } }, /* BIN / INCBIN */
   { "BKPT", eCB_Void, 1, 1, {.vd = m_bkpt } }, /* BKPT */
@@ -153,7 +153,7 @@ static const decode_table_t oDecodeTable[] =
   { "DCFD", eCB_VoidPMatch, 0, 1, {.vdpm = c_dcfd } }, /* DCFD / DCFDU */
   { "DCFS", eCB_VoidPMatch, 0, 1, {.vdpm = c_dcfs } }, /* DCFS / DCFSU */
   { "DCI", eCB_VoidPMatch, 0, 1, {.vdpm = c_dci } }, /* DCI */
-  /* FIXME: DCQ, DCQU */
+  { "DCQ", eCB_VoidPMatch, 0, 1, { .vdpm = c_dcq } }, /* DCQ / DCQU */
   { "DCW", eCB_VoidPMatch, 0, 1, {.vdpm = c_dcw } }, /* DCW / DCWU */
   /* FIXME: DN */
   { "DMB", eCB_Void, 1, 1, {.vd = m_dmb } }, /* DMB */
@@ -235,7 +235,7 @@ static const decode_table_t oDecodeTable[] =
   { "OPT", eCB_NoLex, 0, 0, {.nolex = c_opt } }, /* OPT */
   { "ORG", eCB_NoLex, 0, 0, {.nolex = c_org } }, /* ORG */
   { "ORR", eCB_VoidPMatch, 1, 1, {.vdpm = m_orr } }, /* ORR CC S */
-  /* FIXME: PKH */
+  { "PKH", eCB_VoidPMatch, 1, 1, { .vdpm = m_pkh } }, /* PKHBT / PKHTB */
   { "PL", eCB_VoidPMatch, 1, 1, {.vdpm = m_pl } }, /* PLD, PLDW, PLI */
   { "POL", eCB_VoidPMatch, 1, 1, {.vdpm = m_pol } }, /* POL CC P R */
   { "POP", eCB_VoidPMatch, 1, 1, {.vdpm = m_pop } }, /* POP CC */
@@ -257,7 +257,7 @@ static const decode_table_t oDecodeTable[] =
   { "RFC", eCB_VoidPMatch, 1, 1, {.vdpm = m_rfc } }, /* RFC CC */
   { "RFE", eCB_VoidPMatch, 1, 1, {.vdpm = m_rfe } }, /* RFE MODE */
   { "RFS", eCB_VoidPMatch, 1, 1, {.vdpm = m_rfs } }, /* RFS CC */
-  /* FIXME: RLIST */
+  { "RLIST", eCB_Symbol, 0, 0, { .sym = c_rlist } }, /* RLIST */
   { "RMF", eCB_VoidPMatch, 1, 1, {.vdpm = m_rmf } }, /* RMF CC P R */
   { "RN", eCB_Symbol, 0, 0, {.sym = c_rn } }, /* RN */
   { "RND", eCB_VoidPMatch, 1, 1, {.vdpm = m_rnd } }, /* RND CC P R */
@@ -271,7 +271,7 @@ static const decode_table_t oDecodeTable[] =
   /* FIXME: SADD16/SADD8 */
   /* FIXME: SASX */
   { "SBC", eCB_VoidPMatch, 1, 1, {.vdpm = m_sbc } }, /* SBC CC S */
-  /* FIXME: SBFX */
+  { "SBFX", eCB_VoidPMatch, 1, 1, { .vdpm = m_sbfx } }, /* SBFX */
   /* FIXME: SEL */
   { "SET", eCB_LexPMatch, 0, 0, { .lex = c_set } }, /* SETA, SETL, SETS */
   /* FIXME: SETEND */
@@ -326,7 +326,7 @@ static const decode_table_t oDecodeTable[] =
   { "SVC", eCB_VoidPMatch, 1, 1, {.vdpm = m_swi } }, /* SVC CC */
   { "SWI", eCB_VoidPMatch, 1, 1, {.vdpm = m_swi } }, /* SWI CC */
   { "SWP", eCB_VoidPMatch, 1, 1, {.vdpm = m_swp } }, /* SWP CC B */
-  /* FIXME: SXTAB, SXTAB16, SXTAH, SXTB, SXTB16, SXTH */
+  { "SXT", eCB_VoidPMatch, 1, 1, { .vdpm = m_sxt } }, /* SXT */
   { "TAN", eCB_VoidPMatch, 1, 1, {.vdpm = m_tan } }, /* TAN CC P R */
   { "TEQ", eCB_VoidPMatch, 1, 1, {.vdpm = m_teq } }, /* TEQ CC */
   { "THUMB", eCB_NoLex, 0, 0, {.nolex = c_thumb } }, /* THUMB */
@@ -335,7 +335,7 @@ static const decode_table_t oDecodeTable[] =
   { "TTL", eCB_NoLex, 0, 0, {.nolex = c_title } }, /* TTL */
   /* FIXME: UADD16, UADD8 */
   /* FIXME: UASX */
-  /* FIXME: UBFX */
+  { "UBFX", eCB_VoidPMatch, 1, 1, { .vdpm = m_ubfx } }, /* UBFX */
   /* FIXME: UHADD16, UHADD8 */
   /* FIXME: UHASX, UHSA */
   /* FIXME: UHSUB16, UHSUB8 */
@@ -350,8 +350,8 @@ static const decode_table_t oDecodeTable[] =
   /* FIXME: USAT, USAT16 */
   /* FIXME: USAX */
   /* FIXME: USUB16, USUB8 */
-  /* FIXME: UXTAB, UXTAB16, UXTAH, UXTAB, UXTB16, UXTH */
   { "URD", eCB_VoidPMatch, 1, 1, {.vdpm = m_urd } }, /* URD CC P R */
+  { "UXT", eCB_VoidPMatch, 1, 1, { .vdpm = m_uxt } }, /* UXT */
   /* FIXME: V* */
   { "WEND", eCB_NoLex, 0, 0, {.nolex = c_wend } }, /* WEND */
   { "WFC", eCB_VoidPMatch, 1, 1, {.vdpm = m_wfc } }, /* WFC CC */
@@ -578,7 +578,7 @@ decode (const Lex *label)
 		  if (IsARMOrThumbInstr (&oDecodeTable[indexFound]))
 		    {
 		      unsigned alignValue = State_GetInstrType () == eInstrType_ARM ? 4 : 2;
-		      startOffset = Area_AlignOffset (startAreaSymbol, startOffset, alignValue, "instruction");
+		      startOffset = Area_AlignOffset (startAreaSymbol, startOffset, alignValue, NULL);
 		    }
 		  labelSymbol = tryAsMacro ? NULL : ASM_DefineLabel (label, startOffset);
 		}
@@ -607,7 +607,7 @@ decode (const Lex *label)
 	      tryAsMacro = oDecodeTable[indexFound].parse_opcode.lex (labelLexP);
 	      if (!tryAsMacro)
 		{
-		  labelSymbol = symbolFind (labelLexP);
+		  labelSymbol = Symbol_Find (labelLexP);
 		  if (lclLabelWarn)
 		    error (ErrorWarning, "Local label not allowed here - ignoring");
 		}
@@ -628,7 +628,7 @@ decode (const Lex *label)
 	  case eCB_Symbol:
 	    {
 	      assert (!doLowerCase);
-	      Symbol *symbol = label->tag == LexId ? symbolGet (label) : NULL;
+	      Symbol *symbol = label->tag == LexId ? Symbol_Get (label) : NULL;
 	      bool lclLabelWarn = label->tag == LexLocalLabel;
 	      tryAsMacro = oDecodeTable[indexFound].parse_opcode.sym (symbol);
 	      if (!tryAsMacro)

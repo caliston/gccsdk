@@ -53,6 +53,7 @@ Value_Assign (Value *dst, const Value *src)
     {
       case ValueIllegal:
       case ValueInt:
+      case ValueInt64:
       case ValueFloat:
       case ValueBool:
       case ValueAddr:
@@ -86,6 +87,7 @@ valueFree (Value *value)
     {
       case ValueIllegal:
       case ValueInt:
+      case ValueInt64:
       case ValueFloat:
       case ValueBool:
       case ValueAddr:
@@ -147,7 +149,15 @@ Value_ResolveSymbol (Value *valueP)
 	      break;
 	    }
 	  case ValueInt:
-	    *valueP = Value_Int (factor * newValueP->Data.Int.i + offset, eIntType_PureInt);
+	    if (newValueP->Data.Int.type == eIntType_PureInt)
+	      *valueP = Value_Int (factor * newValueP->Data.Int.i + offset, eIntType_PureInt);
+	    else if (factor == 1 && offset == 0) /* You can not do maths on registers or register lists.  */
+	      *valueP = *newValueP;
+	    else
+	      return true;
+	    break;
+	  case ValueInt64:
+	    *valueP = Value_Int64 (factor * newValueP->Data.Int.i + offset);
 	    break;
 	  case ValueFloat:
 	    *valueP = Value_Float (factor * newValueP->Data.Float.f + offset);
@@ -219,6 +229,10 @@ valueEqual (const Value *a, const Value *b)
 		   || (b->Tag == ValueFloat && (ARMFloat)a->Data.Int.i == b->Data.Float.f);
 	break;
 
+      case ValueInt64:
+	result = b->Tag == ValueInt64 && a->Data.Int64.i == b->Data.Int64.i;
+	break;
+	
       case ValueFloat:
 	result = (b->Tag == ValueFloat && a->Data.Float.f == b->Data.Float.f)
 		   || (b->Tag == ValueInt && a->Data.Float.f == (ARMFloat)b->Data.Int.i);
@@ -277,8 +291,11 @@ valueTagAsString (ValueTag tag)
         str = "illegal";
         break;
       case ValueInt:
-        str = "integer/register/coprocessornumber";
+        str = "integer/register/coprocessornumber/registerlist";
         break;
+      case ValueInt64:
+	str = "int64";
+	break;
       case ValueFloat:
         str = "float";
         break;
@@ -323,47 +340,62 @@ valuePrint (const Value *v)
 	    printf ("Int <%d = 0x%x>", v->Data.Int.i, v->Data.Int.i);
 	  else
 	    {
-	      char type;
-	      bool isReg;
-	      switch (v->Data.Int.type)
+	      if (v->Data.Int.type == eIntType_CPURList)
 		{
-		  case eIntType_CPU:
-		    type = 'r';
-		    isReg = true;
-		    break;
-		  case eIntType_FPU:
-		    type = 'f';
-		    isReg = true;
-		    break;
-		  case eIntType_NeonQuadReg:
-		    type = 'q';
-		    isReg = true;
-		    break;
-		  case eIntType_NeonOrVFPDoubleReg:
-		    type = 'd';
-		    isReg = true;
-		    break;
-		  case eIntType_VFPSingleReg:
-		    type = 's';
-		    isReg = true;
-		    break;
-		  case eIntType_CoProReg:
-		    type = 'p';
-		    isReg = true;
-		    break;
-		  case eIntType_CoProNum:
-		    type = 'c';
-		    isReg = false;
-		    break;
-		  default:
-		    type = '?';
-		    isReg = true;
-		    break;
+		  unsigned regList = v->Data.Int.i & 0xFFFF;
+		  printf ("RegList { ");
+		  for (unsigned i = 0; i != 16; ++i)
+		    if (regList & (1<<i))
+		      printf ("R%d ", i);
+		  printf ("}");
 		}
-	      printf ("%s %c%d", isReg ? "Reg" : "CoPro num ", type, v->Data.Int.i);
+	      else
+		{
+		  char type;
+		  bool isReg;
+		  switch (v->Data.Int.type)
+		    {
+		      case eIntType_CPU:
+			type = 'r';
+			isReg = true;
+			break;
+		      case eIntType_FPU:
+			type = 'f';
+			isReg = true;
+			break;
+		      case eIntType_NeonQuadReg:
+			type = 'q';
+			isReg = true;
+			break;
+		      case eIntType_NeonOrVFPDoubleReg:
+			type = 'd';
+			isReg = true;
+			break;
+		      case eIntType_VFPSingleReg:
+			type = 's';
+			isReg = true;
+			break;
+		      case eIntType_CoProReg:
+			type = 'p';
+			isReg = true;
+			break;
+		      case eIntType_CoProNum:
+			type = 'c';
+			isReg = false;
+			break;
+		      default:
+			type = '?';
+			isReg = true;
+			break;
+		    }
+		  printf ("%s %c%d", isReg ? "Reg" : "CoPro num ", type, v->Data.Int.i);
+		}
 	    }
 	  break;
 	}
+      case ValueInt64:
+	printf ("Int64 <%ld = 0x%lx>", (int64_t)v->Data.Int64.i, v->Data.Int64.i);
+	break;
       case ValueFloat:
 	printf ("Float <%g>", v->Data.Float.f);
 	break;

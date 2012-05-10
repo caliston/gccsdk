@@ -133,4 +133,14 @@ bool m_lsr (bool doLowerCase);
 bool m_ror (bool doLowerCase);
 bool m_rrx (bool doLowerCase);
 
+bool m_bfc (bool doLowerCase);
+bool m_bfi (bool doLowerCase);
+bool m_sbfx (bool doLowerCase);
+bool m_ubfx (bool doLowerCase);
+
+bool m_pkh (bool doLowerCase);
+
+bool m_sxt (bool doLowerCase);
+bool m_uxt (bool doLowerCase);
+
 #endif

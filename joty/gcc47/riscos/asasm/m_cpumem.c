@@ -28,6 +28,7 @@
 #elif HAVE_INTTYPES_H
 #  include <inttypes.h>
 #endif
+#include <strings.h>
 
 #include "area.h"
 #include "code.h"
@@ -47,6 +48,7 @@
 #include "option.h"
 #include "phase.h"
 #include "put.h"
+#include "state.h"
 #include "targetcpu.h"
 
 /**
@@ -89,10 +91,13 @@ DestMem_RelocUpdater (const char *fileName, unsigned lineNum, ARMWord offset,
 	      ARMWord im;
 	      if (valueP->Data.Code.len == 1
 	          && (im = help_cpuImm8s4 (valP->Data.Int.i)) != (ARMWord)-1)
-		newIR |= M_MOV | IMM_RHS | im;
+		newIR |= M_MOV | IMM_RHS | im; /* Optimize to MOV.  */
 	      else if (valueP->Data.Code.len == 1
 		       && (im = help_cpuImm8s4 (~valP->Data.Int.i)) != (ARMWord)-1)
-		newIR |= M_MVN | IMM_RHS | im;
+		newIR |= M_MVN | IMM_RHS | im; /* Optimize to MVN.  */
+	      else if (valueP->Data.Code.len == 1
+	               && CPUMem_ConstantInMOVW (valP->Data.Int.i))
+		newIR |= 0x03000000 | ((valP->Data.Int.i & 0xF000) << 4) | (valP->Data.Int.i & 0x0FFF); /* Optimize to MOVW.  */
 	      else if ((areaCurrentSymbol->area.info->type & AREA_ABS) != 0)
 		{
 		  ARMWord newOffset = valP->Data.Int.i - (Area_GetBaseAddress (areaCurrentSymbol) + offset + 8);
@@ -696,55 +701,44 @@ dstreglist (ARMWord ir, bool isPushPop)
       if (!Input_Match (',', true))
 	error (ErrorError, "Inserting missing comma before reglist");
     }
-  if (!Input_Match ('{', true))
-    error (ErrorError, "Inserting missing '{' before reglist");
-  int op = 0;
-  do
+
+  /* Parse register list.  */
+  ARMWord regList;
+  if (inputLook () == '{')
+    regList = Get_CPURList ();
+  else
     {
-      int low = getCpuReg ();
-      skipblanks ();
-      int high;
-      switch (inputLook ())
+      const Value *rlistValue = exprBuildAndEval (ValueInt);
+      if (rlistValue->Tag != ValueInt || rlistValue->Data.Int.type != eIntType_CPURList)
 	{
-	  case '-':
-	    inputSkip ();
-	    high = getCpuReg ();
-	    skipblanks ();
-	    if (low > high)
-	      {
-		error (ErrorInfo, "Register interval in wrong order r%d-r%d", low, high);
-		int c = low;
-		low = high;
-		high = c;
-	      }
-	    break;
+	  error (ErrorError, "Not a register list");
+	  regList = 0;
+	}
+      else
+	{
+	  assert ((unsigned)rlistValue->Data.Int.i <= 0xFFFF);
+	  regList = rlistValue->Data.Int.i;
+	}
+    }
 
-	  case ',':
-	  case '}':
-	    high = low;
-	    break;
+  skipblanks ();
+  if (Input_Match ('^', true))
+    {
+      if ((ir & W_FLAG) && !(regList & (1 << 15)))
+	error (ErrorInfo, "Writeback together with force user");
+      ir |= FORCE_FLAG;
+    }
 
-          default:
-	    error (ErrorError, "Illegal character '%c' in register list", inputLook ());
-	    high = 15;
-	    break;
-        }
-      if ((1 << low) < op)
-	error (ErrorInfo, "Registers in wrong order");
-      if (((1 << (high + 1)) - (1 << low)) & op)
-	error (ErrorInfo, "Register occurs more than once in register list");
-      op |= (1 << (high + 1)) - (1 << low);
-    } while (Input_Match (',', true));
+  /* Count number of registers loaded or saved.  */
+  int numRegs = 0;
+  for (int i = 0; i < 16; ++i)
+    {
+      if (regList & (1<<i))
+	++numRegs;
+    }
   if (GET_BASE_MULTI (ir) == 13 && (ir & W_FLAG))
     {
-      /* Count number of registers loaded or saved.  */
-      int i, c = 0;
-      for (i = 0; i < 16; ++i)
-	{
-	  if (op & (1<<i))
-	    ++c;
-	}
-      if (c & 1)
+      if (numRegs & 1)
 	{
 	  if (gArea_Preserve8 == ePreserve8_Yes)
 	    error (ErrorWarning, "Stack pointer update potentially breaks 8 byte stack alignment");
@@ -752,34 +746,46 @@ dstreglist (ARMWord ir, bool isPushPop)
 	    gArea_Preserve8Guessed = false;
 	}
     }
-  if ((ir & W_FLAG) /* Write-back is specified.  */
-      && (ir & L_FLAG) /* Is LDM/POP.  */
-      && (op & (1 << GET_BASE_MULTI (ir))) /* Base reg. in reg. list.  */
-      && (!isPushPop || (op ^ (1 << GET_BASE_MULTI (ir))) != 0) /* Is either LDM/STM, either multi-reg. POP/PUSH.  */)
+  if (GET_BASE_MULTI (ir) == 15)
+    error (ErrorWarning, "Use of PC as Rn is UNPREDICTABLE");
+  if (numRegs == 0)
+    error (ErrorWarning, "Specifying no registers to %s is UNPREDICTABLE", ir & L_FLAG ? "load" : "save");
+  if ((ir & W_FLAG) && numRegs == 1 && Target_GetArch () >= ARCH_ARMv7)
+    error (ErrorWarning, "%s one register with writeback is UNPREDICTABLE for ARMv7 onwards, use %s instead",
+           (ir & L_FLAG) ? "Loading" : "Saving",
+           (ir & L_FLAG) ? "POP" : "PUSH");
+  if (isPushPop && numRegs == 1)
     {
-      /* LDM instructions and multi-register POP instructions that specify base
-         register writeback and load their base register are permitted but
-         deprecated before ARMv7.
-         Use of such instructions is obsolete in ARMv7.  */
-      const char *what = isPushPop ? "multi-register POP" : "LDM";
-      if (Target_GetArch () < ARCH_ARMv7)
-	error (ErrorWarning,
-	       "Deprecated before ARMv7 : %s with writeback and base register in register list",
-	       what);
-      else
-	error (ErrorWarning,
-	       "Obsoleted from ARMv7 onwards : %s with writeback and base register in register list",
-	       what);
+      /* Switch to LDR/STR.  */
+      bool isLoad = ir & L_FLAG;
+      int rt = ffs (regList) - 1;
+      assert (regList == (1 << rt));
+      ir = (ir & NV) | (isLoad ? 0x049D0004 : 0x052D0004) | (rt << 12);
+      if (rt == 13)
+	error (ErrorWarning, "%s r13 is UNPREDICTABLE", isLoad ? "Loading" : "Saving");
     }
-  if (!Input_Match ('}', false))
-    error (ErrorError, "Inserting missing '}' after reglist");
-  ir |= op;
-  skipblanks ();
-  if (Input_Match ('^', true))
+  else
     {
-      if ((ir & W_FLAG) && !(ir & (1 << 15)))
-	error (ErrorInfo, "Writeback together with force user");
-      ir |= FORCE_FLAG;
+      if ((ir & W_FLAG) /* Write-back is specified.  */
+	  && (ir & L_FLAG) /* Is LDM/POP.  */
+	  && (regList & (1 << GET_BASE_MULTI (ir))) /* Base reg. in reg. list.  */
+	  && (!isPushPop || (regList ^ (1 << GET_BASE_MULTI (ir))) != 0) /* Is either LDM/STM, either multi-reg. POP/PUSH.  */)
+	{
+	  /* LDM instructions and multi-register POP instructions that specify base
+	     register writeback and load their base register are permitted but
+	     deprecated before ARMv7.
+	     Use of such instructions is obsolete in ARMv7.  */
+	  const char *what = isPushPop ? "multi-register POP" : "LDM";
+	  if (Target_GetArch () < ARCH_ARMv7)
+	    error (ErrorWarning,
+	           "Deprecated before ARMv7 : %s with writeback and base register in register list",
+	           what);
+	  else
+	    error (ErrorWarning,
+	           "Obsoleted from ARMv7 onwards : %s with writeback and base register in register list",
+	           what);
+	}
+      ir |= regList;
     }
   if (option_pedantic && (ir & L_FLAG) && (1 << 15) && Target_GetArch() == ARCH_ARMv4T)
     error (ErrorWarning, "ARMv4T does not switch ARM/Thumb state when LDM/POP specifies PC (use BX instead)");
@@ -802,8 +808,9 @@ m_ldm (bool doLowerCase)
 
 
 /**
- * Implements POP, i.e. LDM<cond>FD sp!, {...}
- * (= LDM<cond>IA sp!, {...})
+ * Implements POP, i.e. LDM<cond>FD sp!, {...} (= LDM<cond>IA sp!, {...})
+ * when more than one register is to be popped from the stack, or
+ * LDR Rx, [sp, #4]! when one register is to be popped from the stack.
  * UAL syntax.
  */
 bool
@@ -832,8 +839,9 @@ m_stm (bool doLowerCase)
 
 
 /**
- * Implements PUSH, i.e. STM<cond>FD sp!, {...}
- * (= STM<cond>DB sp!, {...})
+ * Implements PUSH, i.e. STM<cond>FD sp!, {...} (= STM<cond>DB sp!, {...})
+ * when more than one register is to be pushed on the stack, or
+ * STR Rx, [sp], #-4 when one register is to be pushed on the stack.
  * UAL syntax.
  */
 bool
@@ -848,12 +856,16 @@ m_push (bool doLowerCase)
 
 
 /**
- * Implements SWP.
+ * Implements SWP / SWPB.
  */
 bool
 m_swp (bool doLowerCase)
 {
-  ARMWord cc = optionCondB (doLowerCase);
+  /* There is no Thumb equivalent of SWP/SWPB.  */
+  if (State_GetInstrType () != eInstrType_ARM)
+    return true;
+
+  ARMWord cc = Option_CondB (doLowerCase);
   if (cc == kOption_NotRecognized)
     return true;
 
@@ -862,20 +874,29 @@ m_swp (bool doLowerCase)
     error (ErrorWarning, "The use of SWP/SWPB is deprecated from ARMv6 onwards");
 
   int ir = cc | 0x01000090;
-  ir |= DST_OP (getCpuReg ());
+  ARMWord rt = getCpuReg ();
+  ir |= DST_OP (rt);
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%sdst", InsertCommaAfter);
-  ir |= RHS_OP (getCpuReg ());	/* Note wrong order swp dst,rhs,[lsh] */
+  ARMWord rt2 = getCpuReg ();
+  ir |= RHS_OP (rt2);	/* Note wrong order swp dst,rhs,[lsh] */
   skipblanks ();
   if (!Input_Match (',', true))
     error (ErrorError, "%slhs", InsertCommaAfter);
   if (!Input_Match ('[', true))
     error (ErrorError, "Inserting missing '['");
-  ir |= DST_MUL (getCpuReg ());
+  ARMWord rn = getCpuReg ();
+  ir |= DST_MUL (rn);
   skipblanks ();
   if (!Input_Match (']', true))
     error (ErrorError, "Inserting missing ']'");
+
+  if (rt == 15 || rt2 == 15 || rn == 15)
+    error (ErrorError, "SWP(B) registers can not be r15");
+  if (rn == rt || rn == rt2)
+    error (ErrorError, "SWP(B) address register can not be the same as one of the swap registers");
+
   Put_Ins (4, ir);
   return false;
 }
@@ -1093,4 +1114,14 @@ m_srs (bool doLowerCase)
   Put_Ins (4, 0xF84D0500 | option | mode);
 
   return false;
+}
+
+
+/**
+ * \return true when ARM MOVW instruction can be used to load given constant.
+ */
+bool
+CPUMem_ConstantInMOVW (uint32_t constant)
+{
+  return Target_GetArch () >= ARCH_ARMv6T2 && (constant & 0xFFFF0000U) == 0;
 }

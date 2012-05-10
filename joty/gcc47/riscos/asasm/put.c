@@ -33,36 +33,19 @@
 
 #include "area.h"
 #include "error.h"
+#include "fix.h"
+#include "fpu.h"
 #include "main.h"
 #include "put.h"
 #include "state.h"
 
 
-/* FIXME: too similar as Fix_Int */
 static void
-ReportOverflow (unsigned dataSize, uint64_t dataValue)
+ReportOverflow (unsigned dataSize, uint32_t dataValue)
 {
-  int64_t dataValueMin, dataValueMax;
-  switch (dataSize)
-    {
-      case 1:
-	dataValueMin = INT8_MIN;
-	dataValueMax = UINT8_MAX;
-	break;
-      case 2:
-	dataValueMin = INT16_MIN;
-	dataValueMax = UINT16_MAX;
-	break;
-      case 4:
-	dataValueMin = INT32_MIN;
-	dataValueMax = UINT32_MAX;
-	break;
-      case 8:
-	return;
-    }
-  if ((int64_t)dataValue < dataValueMin || (int64_t)dataValue > dataValueMax)
-    error (ErrorWarning, "Size value %" PRId64 " exceeds %d byte%s", (int64_t)dataValue,
-           dataSize, dataSize == 1 ? "" : "s");
+  if (Fix_CheckForOverflow (dataSize, dataValue))
+    error (ErrorWarning, "Size value %" PRId32 " (= 0x%" PRIx32 ") exceeds %d byte%s",
+           (int32_t)dataValue, (int32_t)dataValue, dataSize, dataSize == 1 ? "" : "s");
 }
 
 
@@ -163,92 +146,71 @@ Put_Data (unsigned size, ARMWord data)
 void
 Put_FloatDataWithOffset (uint32_t offset, unsigned size, ARMFloat data, bool alignBefore)
 {
-  const union ieee754_float flt = { .f = (float)data };
-  const union ieee754_double dbl = { .d = data };
-
-  /* float : ARM/FPA and ARM/VFP.  */
-  const union arm_float
-    {
-      uint32_t i;
-      struct
-	{
-	  unsigned int mantissa:23;
-	  unsigned int exponent:8;
-	  unsigned int negative:1;
-	} flt;
-    } armflt =
-    {
-      .flt =
-	{
-	  .mantissa = flt.ieee.mantissa,
-	  .exponent = flt.ieee.exponent,
-	  .negative = flt.ieee.negative
-	}
-    };
-  assert (sizeof (armflt) == 4);
-
-  /* double : ARM/FPA.  */
-  const union arm_double_fpa
-    {
-      uint64_t i;
-      struct
-	{
-	  unsigned int mantissa0:20;
-	  unsigned int exponent:11;
-	  unsigned int negative:1;
-	  unsigned int mantissa1:32;
-	} dbl;
-    } armdbl_fpa =
-    {
-      .dbl =
-	{
-	  .mantissa0 = dbl.ieee.mantissa0,
-	  .exponent = dbl.ieee.exponent,
-	  .negative = dbl.ieee.negative,
-	  .mantissa1 = dbl.ieee.mantissa1
-	}
-    };
-  assert (sizeof (armdbl_fpa) == 8);
-
-#if 0
-  /* FIXME: support VPA ! */
-  /* double : ARM/VFP.  */
-  union arm_double_vfp
-    {
-      char c[8];
-      struct
-	{
-	  unsigned int mantissa1:32;
-	  unsigned int mantissa0:20;
-	  unsigned int exponent:11;
-	  unsigned int negative:1;
-	} dbl;
-    } armdbl_vfp =
-    {
-      .dbl =
-	{
-	  .mantissa1 = dbl.ieee.mantissa1
-	  .mantissa0 = dbl.ieee.mantissa0,
-	  .exponent = dbl.ieee.exponent,
-	  .negative = dbl.ieee.negative,
-	}
-    };
-  assert (sizeof (armdbl_vfp) == 8);
-#endif
-
   uint64_t toWrite;
   switch (size)
     {
       case 4:
-	if (alignBefore)
-	  offset = Area_AlignTo (offset, 4, "float single");
-	toWrite = armflt.i;
-	break;
+	{
+	  if (alignBefore)
+	    offset = Area_AlignTo (offset, 4, "float single");
+
+	  const union ieee754_float flt = { .f = (float)data };
+	  /* float : ARM/FPA and ARM/VFP.  */
+	  const union arm_float armflt =
+	    {
+	      .flt =
+		{
+		  .mantissa = flt.ieee.mantissa,
+		  .exponent = flt.ieee.exponent,
+		  .negative = flt.ieee.negative
+		}
+	    };
+	  assert (sizeof (armflt) == 4);
+	  toWrite = armflt.i;
+	  break;
+	}
+
       case 8:
-	if (alignBefore)
-	  offset = Area_AlignTo (offset, 4 /* yes, 4, not 8 */, "float double");
-	toWrite = armdbl_fpa.i;
-	break;
+	{
+	  if (alignBefore)
+	    offset = Area_AlignTo (offset, 4 /* yes, 4, not 8 */, "float double");
+
+	  const union ieee754_double dbl = { .d = data };
+	  if (1 /* FIXME: VFP support test missing */)
+	    {
+	      /* double : ARM/FPA.  */
+	      const union arm_double_fpa armdbl_fpa =
+		{
+		  .dbl =
+		    {
+		      .mantissa0 = dbl.ieee.mantissa0,
+		      .exponent = dbl.ieee.exponent,
+		      .negative = dbl.ieee.negative,
+		      .mantissa1 = dbl.ieee.mantissa1
+		    }
+		};
+	      assert (sizeof (armdbl_fpa) == 8);
+	      toWrite = armdbl_fpa.i;
+	    }
+	  else
+	    {
+	      /* double : ARM/VFP.  */
+	      union arm_double_vfp armdbl_vfp =
+		{
+		  .dbl =
+		    {
+		      .mantissa1 = dbl.ieee.mantissa1,
+		      .mantissa0 = dbl.ieee.mantissa0,
+		      .exponent = dbl.ieee.exponent,
+		      .negative = dbl.ieee.negative,
+		    }
+		};
+	      assert (sizeof (armdbl_vfp) == 8);
+	      toWrite = armdbl_vfp.i;
+	    }
+	  break;
+	}
+
       default:
 	errorAbort ("Internal Put_FloatDataWithOffset: illegal size %u", size);
 	break;

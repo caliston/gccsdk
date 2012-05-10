@@ -37,6 +37,7 @@
 #include "filestack.h"
 #include "lex.h"
 #include "local.h"
+#include "state.h"
 
 #ifdef DEBUG
 //#  define DEBUG_LOCAL
@@ -122,7 +123,7 @@ Local_ReportMissingFwdLabel (const Local_OutstandingForward *fwdLocalP)
 
 
 /**
- * Called at the end of a phase.
+ * Called at the end of a phase or via ROUT.
  */
 static void
 Local_FinishPhaseOrROUT (void)
@@ -205,7 +206,7 @@ Local_DefineLabel (unsigned labelNum)
 	  int r = snprintf (fwdSym, sizeof (fwdSym), oLocal_IntFwdLabelFormat, fwdLocalP->label, fwdLocalP->counter);
 	  assert (r >= 0 && (size_t)r < sizeof (fwdSym));
 	  const Lex keyLex = lexTempLabel(fwdSym, strlen (fwdSym));
-	  Symbol *keySymbol = symbolGet (&keyLex);
+	  Symbol *keySymbol = Symbol_Get (&keyLex);
 #ifdef DEBUG_LOCAL
 	  const char *levelStr = (fwdLocalP->level == eThisLevelOnly) ? "t" : (fwdLocalP->level == eAllLevels) ? "a" : "";
 	  const char *dirStr = "f"; // (dir == eBackward) ? "b" : (dir == eForward) ? "f" : "";
@@ -216,7 +217,7 @@ Local_DefineLabel (unsigned labelNum)
 	  char lblSym[256];
 	  Local_CreateSymbol (lblP, macroDepth, true, lblSym, sizeof (lblSym));
 	  const Lex valueLex = lexTempLabel (lblSym, strlen (lblSym));
-	  Symbol *valueSymbol = symbolGet (&valueLex);
+	  Symbol *valueSymbol = Symbol_Get (&valueLex);
 	  const Value valueValue = Value_Symbol (valueSymbol, 1, 0);
 
           bool err = Symbol_Define (keySymbol, SYMBOL_DEFINED | SYMBOL_ABSOLUTE, &valueValue);
@@ -336,8 +337,8 @@ c_rout (const Lex *label)
   char *newROUTId;
   if (label->tag == LexId)
     {
-      /* FIXME: alignment depending on ARM vs Thumb mode ? */
-      size_t curIdx = Area_AlignArea (areaCurrentSymbol, 4, "instruction");
+      unsigned alignValue = State_GetInstrType () == eInstrType_ARM ? 4 : 2;
+      size_t curIdx = Area_AlignArea (areaCurrentSymbol, alignValue, "instruction");
       ASM_DefineLabel (label, curIdx);
       newROUTId = strndup (label->Data.Id.str, label->Data.Id.len);
     }

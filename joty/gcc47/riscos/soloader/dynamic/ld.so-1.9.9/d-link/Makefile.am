@@ -34,7 +34,9 @@ ld_1_9_9_so_SOURCES = \
 		riscos/stkovf.s \
 		riscos/dl_open.c \
 		riscos/dl_stat.c \
-		riscos/dl_unwind.c
+		riscos/dl_unwind.c \
+		riscos/dl_misc.c
+
 ld_1_9_9_so_CPPFLAGS = -I$(top_srcdir)/d-link -I$(top_srcdir)/d-link/riscos \
 		      -DNO_UNDERSCORE -DVERBOSE_DLINKER -DUSE_CACHE -D__TARGET_SOLOADER__
 ld_1_9_9_so_CFLAGS = -fPIC -O4 -Wall -std=gnu99
@@ -59,4 +61,5 @@ install-data-hook:
 	ln -s -f ld-1.9.9.so $(prefix)/lib/ld-riscos.so.1
         else
 	$(LN) -s -f ld-1/9/9/so $(prefix)/lib/ld-riscos.so.1,1c8
+	test -f $(prefix)/lib/ld-1.9.9.so && mv $(prefix)/lib/ld-1.9.9.so $(prefix)/lib/ld-1.9.9.so,e1f
         endif

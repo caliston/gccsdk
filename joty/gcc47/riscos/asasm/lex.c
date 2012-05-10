@@ -23,6 +23,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <ieee754.h>
 #include <limits.h>
 #include <math.h>
 #include <string.h>
@@ -37,6 +38,7 @@
 #include "common.h"
 #include "error.h"
 #include "filestack.h"
+#include "fpu.h"
 #include "input.h"
 #include "lex.h"
 #include "local.h"
@@ -99,44 +101,74 @@ lexHashStr (const char *s, size_t maxn)
 }
 
 
-static int
-lexint (int base)
+/**
+ * Parses integer and returns this as LexInt or LexInt64 Lex object.
+ * \param base When 16, use base 16.  Any other base value is considered
+ * as default base value and can be overruled by "<base>_" (with <base> a
+ * digit from 2 to 9 (incl)) or "0x"/"0X" prefix.
+ * \param didOverflow Indicates whether an 64-bit integer overflow happened.
+ */
+static Lex
+Lex_GetInt (int base, bool *didOverflow)
 {
+  *didOverflow = false;
+
+  /* Determine base (when not forced to 16).  */
   if (base != 16)
     {
-      char c;
-      if ((c = inputLook ()) == '0')
+      char c1, c2;
+      if ((c1 = inputLookN (0)) == '0' && ((c2 = inputLookN (1)) == 'x' || c2 == 'X'))
 	{
-	  if ((c = inputSkipLook ()) == 'x' || c == 'X')
-	    {
-	      base = 16;
-	      inputSkip ();
-	    }
+	  inputSkipN (2);
+	  base = 16; /* Overrule default base value.  */
 	}
-      else
+      else if (inputLookN (1) == '_')
 	{
-	  if (inputLookN (1) == '_')
-	    {
-	      inputSkipN (2);
-	      if ((base = c - '0') < 2 || base > 9)
-		error (ErrorError, "Illegal base %d", base);
-	    }
+	  inputSkipN (2);
+	  base = c1 - '0'; /* Overrule default base value.  */
+	  if (base < 2 || base > 9)
+	    error (ErrorError, "Illegal base %d", base);
 	}
     }
 
-  int res;
+  uint64_t res;
   char c;
+  bool atLeastOneDigit = false;
   for (res = 0; isxdigit (c = inputLookLower ()); inputSkip ())
     {
       c -= (c >= 'a') ? 'a' - 10 : '0';
 
       if (c >= base)
-	return res;
+	break;
 
-      res = res * base + c;
+      atLeastOneDigit = true;
+      
+      uint64_t resNext = res * base + c;
+      if (resNext < res)
+	*didOverflow = true;
+      res = resNext;
     }
 
-  return res;
+  if (!atLeastOneDigit)
+    {
+      const Lex badInt = { .tag = LexNone };
+      return badInt;
+    }
+  if (res <= UINT32_MAX)
+    {
+      const Lex lexInt32 =
+	{
+	  .tag = LexInt,
+	  .Data.Int = { .value = (int)res }
+	};
+      return lexInt32;
+    }
+  const Lex lexInt64 =
+    {
+      .tag = LexInt64,
+      .Data.Int64 = { .value = res }
+    };
+  return lexInt64;
 }
 
 
@@ -385,7 +417,7 @@ Lex_GetDefiningLabel (void)
  * \return LexId which can be used to create a label symbol.  Can also
  * be LexNone in case of an error (like malformed local label, or wrong
  * routine name).
- * FIXME: should be removed as it leaks memory, teach symbolGet to accept LexLocalLabel.
+ * FIXME: should be removed as it leaks memory, teach Symbol_Get() to accept LexLocalLabel.
  */
 Lex
 Lex_DefineLocalLabel (const Lex *lexP)
@@ -492,7 +524,7 @@ Lex_GetUnaryOp (Lex *lex)
 	      {
 	        /* :DEF: only returns {TRUE} when the symbol is defined and it is
 		   not a macro local variable.  */
-		const Symbol *symP = symbolFind (lex);
+		const Symbol *symP = Symbol_Find (lex);
 		lex->Data.Bool.value = symP != NULL && !(symP->type & SYMBOL_MACRO_LOCAL);
 		lex->tag = LexBool;
 		return;
@@ -750,7 +782,16 @@ Lex_GetBuiltinVariable (Lex *lex)
       case 'c':
 	{
 	  /* FIXME: {COMMANDLINE} */
-	  if (Input_MatchStringLower ("onfig}") || Input_MatchStringLower ("odesize}")) /* {CONFIG} or {CODESIZE} */
+	  if (Input_MatchStringLower ("odesize}")) /* {CODESIZE} */
+	    {
+	      /* {CODESIZE} is documented as synonym for {CONFIG} but {CONFIG}
+	         can be 26 which is really legacy and is a bit odd to have 26
+	         as 'code size'.  Hence, {CODESIZE} can only be 16 or 32.  */
+	      lex->tag = LexInt;
+	      lex->Data.Int.value = State_GetInstrType () == eInstrType_ARM ? 32 : 16;
+	      return;
+	    }
+	  else if (Input_MatchStringLower ("onfig}")) /* {CONFIG} */
 	    {
 	      lex->tag = LexInt;
 	      lex->Data.Int.value = State_GetInstrType () == eInstrType_ARM ? ((gOptionAPCS & APCS_OPT_32BIT) ? 32 : 26) : 16;
@@ -900,6 +941,84 @@ Lex_Char2Int (size_t len, const char *str, ARMWord *result)
 }
 
 
+/**
+ * Parse floating point literal starting with "0f_" + followed by exactly
+ * 8 hex digits.
+ * The initial '0' is already parsed.  The "f_" are already checked but not
+ * yet consumed.
+ */
+static void
+Lex_GetFloatFloatingPointLiteral (Lex *result)
+{
+  inputSkipN (2); /* Skip "f_" */
+  uint32_t fltAsInt = 0;
+  for (int i = 0; i != 8; inputSkip (), ++i)
+    {
+      char c = inputLookLower ();
+      if (!isxdigit (c))
+	{
+	  error (ErrorError, "Float floating point literal needs exactly 8 hex digits");
+	  result->tag = LexNone;
+	  return;
+	}
+      fltAsInt = 16*fltAsInt + c - ((c >= 'a') ? 'a' - 10 : '0');
+    }
+  const union arm_float armflt = { .i = fltAsInt };
+  const union ieee754_float flt =
+    {
+      .ieee =
+	{
+	  .mantissa = armflt.flt.mantissa,
+	  .exponent = armflt.flt.exponent,
+	  .negative = armflt.flt.negative
+	}
+    };
+
+  result->tag = LexFloat;
+  result->Data.Float.value = (double)flt.f;
+}
+
+
+/**
+ * Parse floating point literal starting with "0d_" + followed by exactly
+ * 16 hex digits.
+ * The initial '0' is already parsed.  The "d_" are already checked but not
+ * yet consumed.
+ */
+static void
+Lex_GetDoubleFloatingPointLiteral (Lex *result)
+{
+  inputSkipN (2); /* Skip "f_" */
+  uint64_t fltAsInt = 0;
+  for (int i = 0; i != 16; inputSkip (), ++i)
+    {
+      char c = inputLookLower ();
+      if (!isxdigit (c))
+	{
+	  error (ErrorError, "Double floating point literal needs exactly 16 hex digits");
+	  result->tag = LexNone;
+	  return;
+	}
+      fltAsInt = 16*fltAsInt + c - ((c >= 'a') ? 'a' - 10 : '0');
+    }
+  /* FIXME: VFP support missing ! */
+  const union arm_double_fpa armdbl_fpa = { .i = fltAsInt };
+  const union ieee754_double dbl =
+    {
+      .ieee =
+	{
+	  .mantissa0 = armdbl_fpa.dbl.mantissa0,
+	  .exponent = armdbl_fpa.dbl.exponent,
+	  .negative = armdbl_fpa.dbl.negative,
+	  .mantissa1 = armdbl_fpa.dbl.mantissa1
+	}
+    };
+
+  result->tag = LexFloat;
+  result->Data.Float.value = dbl.d;
+}
+
+
 Lex
 lexGetPrim (void)
 {
@@ -953,11 +1072,29 @@ lexGetPrim (void)
 	break;
 
       case '&':
-	result.tag = LexInt;
-	result.Data.Int.value = lexint (16);
-	break;
+	{
+	  bool didOverflow;
+	  result = Lex_GetInt (16, &didOverflow);
+	  if (didOverflow)
+	    error (ErrorWarning, "64-bit integer overflow");
+	  break;
+	}
 
       case '0':
+	{
+	  /* Floating point literal 0f_... or 0d_... ? */
+	  if (inputLookN (0) == 'f' && inputLookN (1) == '_')
+	    {
+	      Lex_GetFloatFloatingPointLiteral (&result);
+	      break;
+	    }
+	  if (inputLookN (0) == 'd' && inputLookN (1) == '_')
+	    {
+	      Lex_GetDoubleFloatingPointLiteral (&result);
+	      break;
+	    }
+	  /* Fall through.  */
+	}
       case '1':
       case '2':
       case '3':
@@ -970,8 +1107,8 @@ lexGetPrim (void)
 	{
 	  inputUnGet (c);
 	  const char *mark = Input_GetMark ();
-	  result.tag = LexInt;
-	  result.Data.Int.value = lexint (10);
+	  bool didOverflow;
+	  result = Lex_GetInt (10, &didOverflow);
 	  if (Input_Match ('.', false))
 	    {
 	      Input_RollBackToMark (mark);
@@ -982,6 +1119,8 @@ lexGetPrim (void)
 		error (ErrorError, "Failed to read floating point value");
 	      inputSkipN (newMark - mark);
 	    }
+	  else if (didOverflow)
+	    error (ErrorWarning, "64-bit integer overflow");
 	  break;
 	}
 
@@ -1162,23 +1301,15 @@ lexGetBinop (void)
 	result.Data.Operator.pri = kPrioOp_AddAndLogical;
 	break;
 
-      case '^':
-	result.tag = LexOperator;
-	result.Data.Operator.op = eOp_XOr; /* ^ EOR */
-	result.Data.Operator.pri = kPrioOp_AddAndLogical;
-	break;
-
       case '>':
 	result.tag = LexOperator;
 	switch (inputLook ())
 	  {
 	    case '>':
 	      result.Data.Operator.pri = kPrioOp_Shift;
-	      if (inputSkipLook () == '>')
-		{
-		  inputSkip ();
-		  result.Data.Operator.op = eOp_ASR; /* >>> */
-		}
+	      inputSkip ();
+	      if (Input_Match ('>', false))
+		result.Data.Operator.op = eOp_ASR; /* >>> */
 	      else
 		result.Data.Operator.op = eOp_SHR; /* >> */
 	      break;
@@ -1332,7 +1463,10 @@ lexPrint (const Lex *lex)
 	printf ("Str <%.*s> ", (int)lex->Data.String.len, lex->Data.String.str);
 	break;
       case LexInt:
-	printf ("Int <%d> ", lex->Data.Int.value);
+	printf ("Int <%d = 0x%x> ", lex->Data.Int.value, lex->Data.Int.value);
+	break;
+      case LexInt64:
+	printf ("Int64 <%ld = 0x%lx> ", (int64_t)lex->Data.Int64.value, lex->Data.Int64.value);
 	break;
       case LexFloat:
 	printf ("Flt <%g> ", lex->Data.Float.value);

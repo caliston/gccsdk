@@ -1,5 +1,5 @@
---- ld/scripttempl/elf.sc.orig	2011-04-11 17:38:12.000000000 +0200
-+++ ld/scripttempl/elf.sc	2011-11-21 19:42:18.722236359 +0100
+--- ld/scripttempl/elf.sc.orig	2012-03-17 18:10:23.000000000 +0000
++++ ld/scripttempl/elf.sc	2012-03-17 18:09:52.000000000 +0000
 @@ -301,6 +301,14 @@ else
     test -z "${TEXT_BASE_ADDRESS}" && TEXT_BASE_ADDRESS="${TEXT_START_ADDR}"
  fi

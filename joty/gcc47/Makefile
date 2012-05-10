@@ -205,7 +205,7 @@ cross-gdb-done: cross-gdb-built
 
 clean: $(GCCSDK_INTERNAL_GETENV)
 clean-done:
-	-rm -rf $(BUILDDIR) $(BUILDSTEPSDIR) $(SRCDIR) $(PREFIX_CROSS) $(PREFIX_RONATIVE)
+	-rm -rf $(BUILDDIR) $(BUILDSTEPSDIR) $(SRCDIR) $(GCCSDK_CROSS_PREFIX) $(GCCSDK_RISCOS_PREFIX)
 	-svn revert -R $(SRCORIGDIR)/gcc-trunk
 	-svn status $(SRCORIGDIR)/gcc-trunk | grep -E "^?" | cut -b 9- | xargs rm -rf
 	-svn status --no-ignore | grep "^I       " | cut -b 9- | grep -v -E "^(gccsdk-params|srcdir\.orig|release-area)$$" | xargs rm -rf
@@ -213,12 +213,12 @@ clean-done:
 # Return to a state for doing a full fresh cross build (using the current binutils/gcc sources).
 clean-cross: $(GCCSDK_INTERNAL_GETENV)
 clean-cross-done:
-	-rm -rf $(BUILDSTEPSDIR)/cross-* $(BUILDDIR)/cross* $(PREFIX_CROSS)
+	-rm -rf $(BUILDSTEPSDIR)/cross-* $(BUILDDIR)/cross* $(GCCSDK_CROSS_PREFIX)
 
 # Return to a state for doing a full fresh ronative build (using the current binutils/gcc sources).
 clean-ronative: $(GCCSDK_INTERNAL_GETENV)
 clean-ronative-done:
-	-rm -rf $(BUILDSTEPSDIR)/ronative-* $(BUILDDIR)/ronative* $(PREFIX_RONATIVE)
+	-rm -rf $(BUILDSTEPSDIR)/ronative-* $(BUILDDIR)/ronative* $(GCCSDK_RISCOS_PREFIX)
 
 distclean: $(GCCSDK_INTERNAL_GETENV)
 distclean-done: clean-done
@@ -497,6 +497,11 @@ endif
 ifeq ($(TARGET),arm-unknown-riscos)
 	cd $(SRCDIR)/gcc && PATH="$(PREFIX_BUILDTOOL_GCC)/bin:$(PATH)" && $(SCRIPTSDIR)/do-patch-and-copy $(RECIPEDIR)
 endif
+	rm -f $(SRCDIR)/gcc/gcc/config/arm/riscos-abi.h
+	echo "/* Automatically generated from the value of GCCSDK_RISCOS_ABI_VERSION" >> $(SRCDIR)/gcc/gcc/config/arm/riscos-abi.h
+	echo "   defined in the file setup_gccsdk_params.  */" >> $(SRCDIR)/gcc/gcc/config/arm/riscos-abi.h
+	echo \"$(GCCSDK_RISCOS_ABI_VERSION)\" >> $(SRCDIR)/gcc/gcc/config/arm/riscos-abi.h
+
 	touch $(BUILDSTEPSDIR)/src-gcc-copied
 
 # Unpack gmp source:
