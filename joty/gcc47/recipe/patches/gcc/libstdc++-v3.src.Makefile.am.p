@@ -1,6 +1,6 @@
 Index: libstdc++-v3/src/Makefile.am
 ===================================================================
---- libstdc++-v3/src/Makefile.am	(revision 187211)
+--- libstdc++-v3/src/Makefile.am	(revision 187371)
 +++ libstdc++-v3/src/Makefile.am	(working copy)
 @@ -63,13 +63,11 @@
  
@@ -16,25 +16,23 @@ Index: libstdc++-v3/src/Makefile.am
  	$(top_builddir)/src/c++98/libc++98convenience.la \
  	$(top_builddir)/src/c++11/libc++11convenience.la
  
-@@ -164,6 +162,17 @@
+@@ -164,6 +162,15 @@
  	$(OPT_LDFLAGS) $(SECTION_LDFLAGS) $(AM_CXXFLAGS) $(LTLDFLAGS) -o $@
  
  
 +std_HEADERS = \
-+	../libsupc++/cxxabi.h ../libsupc++/exception \
-+	../libsupc++/initializer_list ../libsupc++/new \
-+	../libsupc++/typeinfo 
++	../libsupc++/cxxabi.h ../libsupc++/exception ../libsupc++/initializer_list ../libsupc++/new ../libsupc++/typeinfo
 +
 +bits_HEADERS = \
-+	../libsupc++/cxxabi_forced.h ../libsupc++/hash_bytes.h \
-+	../libsupc++/exception_defines.h ../libsupc++/exception_ptr.h ../libsupc++/nested_exception.h 
++	../libsupc++/atomic_lockfree_defines.h ../libsupc++/cxxabi_forced.h \
++	../libsupc++/exception_defines.h ../libsupc++/exception_ptr.h ../libsupc++/hash_bytes.h ../libsupc++/nested_exception.h
 +
 +headers = $(std_HEADERS) $(bits_HEADERS)
 +
  # Symbol versioning for shared libraries.
  if ENABLE_SYMVERS
  libstdc++-symbols.ver:  ${glibcxx_srcdir}/$(SYMVER_FILE) \
-@@ -302,3 +311,43 @@
+@@ -302,3 +309,43 @@
  install-debug: build-debug
  	(cd ${debugdir} && $(MAKE) CXXFLAGS='$(DEBUG_FLAGS)' \
  	toolexeclibdir=$(glibcxx_toolexeclibdir)/debug install) ;
