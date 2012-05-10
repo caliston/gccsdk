@@ -15,7 +15,7 @@ Index: configure.ac
  esac
  
 +case "${target}" in
-+  arm-riscos*-* | arm-*-riscos)
++  arm*-*-riscos)
 +    ;;
 +  *)
 +    noconfigdirs="$noconfigdirs target-libunixlib"

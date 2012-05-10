@@ -6,7 +6,7 @@ Index: libstdc++-v3/crossconfig.m4
      GLIBCXX_CHECK_MATH_SUPPORT
      GLIBCXX_CHECK_STDLIB_SUPPORT
      ;;
-+  arm*-*-riscos*)
++  arm*-*-riscos)
 +    SECTION_FLAGS='-ffunction-sections -fdata-sections'
 +    AC_SUBST(SECTION_FLAGS)
 +
