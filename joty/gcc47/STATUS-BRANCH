@@ -1,6 +1,11 @@
 This gccsdk/branches/developers/joty/gcc47 branch is to develop a GCCSDK based
 on gcc4.7trunk together with binutils 2.21.1.
 
+GCC 4.7 specific issues:
+
+- In RISC OS native build we have warnings about EXTRA_SPEC_FUNCTIONS being
+  redefined.  This needs fixing.
+
 It also follows gccsdk/trunk/gcc4 (i.e. GCCSDK 4.6 developments) :
 
 Status build:
