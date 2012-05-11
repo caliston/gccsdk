@@ -1,7 +1,16 @@
 Index: gcc/config.host
 ===================================================================
---- gcc/config.host	(revision 185475)
+--- gcc/config.host	(revision 187387)
 +++ gcc/config.host	(working copy)
+@@ -100,7 +100,7 @@
+ esac
+ 
+ case ${host} in
+-  arm*-*-linux*)
++  arm*-*-linux* | arm*-*-riscos)
+     case ${target} in
+       arm*-*-*)
+ 	host_extra_gcc_objs="driver-arm.o"
 @@ -185,6 +185,9 @@
  
  # Machine-specific settings.

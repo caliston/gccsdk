@@ -8,7 +8,7 @@ Index: libjava/configure.ac
      case "$host" in
 -     *-*-cygwin*)
 -	# Don't set THREADLIBS here.  Cygwin doesn't have -lpthread.
-+     *-*-cygwin* | arm*-riscos*)
++     *-*-cygwin* | arm*-*-riscos)
 +	# Don't set THREADLIBS here.  These environments do not have -lpthread.
  	;;
       *-*-freebsd[[34]].*)
