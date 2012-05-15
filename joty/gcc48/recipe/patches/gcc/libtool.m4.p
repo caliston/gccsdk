@@ -1,8 +1,8 @@
 Index: libtool.m4
 ===================================================================
---- libtool.m4	(revision 170155)
+--- libtool.m4	(revision 187550)
 +++ libtool.m4	(working copy)
-@@ -1735,6 +1735,12 @@
+@@ -1742,6 +1742,12 @@
      ])
      ;;
  
@@ -15,7 +15,7 @@ Index: libtool.m4
    *)
      AC_CHECK_FUNC([shl_load],
  	  [lt_cv_dlopen="shl_load"],
-@@ -2665,6 +2671,14 @@
+@@ -2672,6 +2678,14 @@
    shlibpath_var=LD_LIBRARY_PATH
    ;;
  
@@ -30,7 +30,7 @@ Index: libtool.m4
  *)
    dynamic_linker=no
    ;;
-@@ -3641,6 +3655,11 @@
+@@ -3648,6 +3662,11 @@
        # it will coredump.
        _LT_TAGVAR(lt_prog_compiler_pic, $1)='-fPIC -shared'
        ;;
@@ -42,7 +42,7 @@ Index: libtool.m4
      *)
        _LT_TAGVAR(lt_prog_compiler_pic, $1)='-fPIC'
        ;;
-@@ -3866,6 +3885,11 @@
+@@ -3873,6 +3892,11 @@
  	;;
        vxworks*)
  	;;
@@ -54,7 +54,7 @@ Index: libtool.m4
        *)
  	_LT_TAGVAR(lt_prog_compiler_can_build_shared, $1)=no
  	;;
-@@ -3964,6 +3988,12 @@
+@@ -3971,6 +3995,12 @@
        fi
        ;;
  
@@ -67,7 +67,7 @@ Index: libtool.m4
      *)
        _LT_TAGVAR(lt_prog_compiler_pic, $1)='-fPIC'
        ;;
-@@ -4142,6 +4172,12 @@
+@@ -4149,6 +4179,12 @@
        _LT_TAGVAR(lt_prog_compiler_static, $1)='-Bstatic'
        ;;
  
@@ -80,7 +80,7 @@ Index: libtool.m4
      *)
        _LT_TAGVAR(lt_prog_compiler_can_build_shared, $1)=no
        ;;
-@@ -5161,6 +5197,10 @@
+@@ -5168,6 +5204,10 @@
        _LT_TAGVAR(hardcode_shlibpath_var, $1)=no
        ;;
  
@@ -91,7 +91,7 @@ Index: libtool.m4
      *)
        _LT_TAGVAR(ld_shlibs, $1)=no
        ;;
-@@ -6388,6 +6428,10 @@
+@@ -6395,6 +6435,10 @@
          _LT_TAGVAR(ld_shlibs, $1)=no
          ;;
  
