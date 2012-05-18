@@ -1,8 +1,8 @@
 Index: gcc/config/arm/arm-protos.h
 ===================================================================
---- gcc/config/arm/arm-protos.h	(revision 187346)
+--- gcc/config/arm/arm-protos.h	(revision 187650)
 +++ gcc/config/arm/arm-protos.h	(working copy)
-@@ -252,4 +252,13 @@
+@@ -255,4 +255,13 @@
  
  extern bool arm_autoinc_modes_ok_p (enum machine_mode, enum arm_auto_incmodes);
  
