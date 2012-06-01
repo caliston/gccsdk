@@ -1,3 +1,21 @@
+Fri May 18 20:46:41 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* input.c (inputEnvSub): Remove.
+	(Input_ArgSub): No longer call inputEnvSub.  Simplify.
+	* filename.c (FN_AnyToNative): Resolve RISC OS OS variable use in
+	filenames on non-RISC OS platforms.
+	* directive_file.c (c_get, c_lnk): Fix memory leak.
+
+Fri May 18 18:28:20 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* macros.c (c_macro): Prevent dollar expansion between vertical bar
+	characters.
+	* regression/tests_pass/variable_substitution.s: Enhance test.
+
+Fri May 18 15:47:53 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* m_cpumem.c (dstreglist): Fix compiler warning.
+
 Sat Apr  7 15:39:45 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
 
 	* README: Add v2.00 testers.  Updated contributors list.

@@ -1,3 +1,43 @@
+Fri Jun  1 00:29:28 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* include/fcntl.h (O_BINARY, O_TEXT): Assign value 0 as UnixLib won't
+	do anything when set.
+	(O_PIPE, O_UNLINKED): Move too...
+	* incl-local/fcntl.h: ...here.  New file.
+	* sys/_vfork.s: Tuned some comments.
+
+Wed May 16 02:38:43 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
+
+	* stdlib/mkstemp.c (mkstemp): Change O_TRUNC into O_EXCL.
+	(mkstemp64): Add.
+	* include/stdlib.h (mkstemp64): Add.
+	* stdio/tmpfile.c (generate_temporary_filename): Simplify. Improve
+	template checking.  Add offset to start index.
+	(get_tmpdir, isdir): Add.
+	(__tmpbuf): Adjust length to L_tmpnam.
+	(tmpnam, tmpnam_r): Support __RISCOSIFY_NO_PROCESS case.  Fixes bug
+	#238.
+	(tempnam): Remove strategy 4, was the same as 3.  Support
+	__RISCOSIFY_NO_PROCESS case.
+
+Mon May 14 03:08:50 CST 2012  Christopher Martin  <belles@internode.on.net>
+
+	* sound/DRender.h: Added. Having made improvements to
+	DigitalRenderer, imported and adapted the DRender interface
+	included in the DigitalRenderer sources. Substantial use of
+	inline assembly functions to optimise calls to most
+	DigitalRenderer SWIs.
+	* sound/DRender.s (DRender_SetDefaults): Likewise. A function to
+	call SWI DigitalRenderer_SetDefaults is provided here because it
+	uses so many registers that it is not practical to implement in
+	inline assembly.
+	* sound/DRender.s (DRender_LoadModule): Likewise. This function
+	uses SWI OS_Module to load System:Modules.DRenderer which is
+	preferable to using *RMLoad through SWI OS_CLI.
+	* sound/dsp.c: Extensive changes allowed by the new DRender
+	interface allowing /dev/dsp emulation to be made simpler and
+	more efficient.
+
 Wed Apr  4 11:55:56 BST 2012  Lee Noar  <leenoar@sky.com>
 
 	* unix/ul_select.c(select): Set errno to EBADF and return
@@ -206,7 +246,7 @@ Sun May 15 19:58:43 2011  Lee Noar <leenoar@sky.com>
 Sat Feb  5 20:20:02 2011  Lee Noar <leenoar@sky.com>
 
 	* gcccompat/_eh_support.s(__ehs_unwind_stack_chunk): Add
-	implementation for SCL. 
+	implementation for SCL.
 	(UnixLib version): Fix return register list in the case
 	of fp == 0. Change 1st arg to void ** (so the SCL version
 	can return a different frame pointer) and alter code
@@ -538,9 +578,9 @@ Fri Oct 28 04:04:12 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 Thu Oct 27 01:36:00 BST 2011  John-Mark Bell  <jmb@netsurf-browser.org>
 
-	* sys/_syslib.s: Prevent stack extension trampling the signal handler 
-	stack chunk. This is achieved by inserting an 8 byte gap between the 
-	signal handler stack and the initial stack chunk which is then used 
+	* sys/_syslib.s: Prevent stack extension trampling the signal handler
+	stack chunk. This is achieved by inserting an 8 byte gap between the
+	signal handler stack and the initial stack chunk which is then used
 	by the stack allocator for its heap metadata.
 	* sys/stackalloc.c (__stackalloc_init): Reflect above change, and
 	ensure that the signal handler block size/startofcon fields are
@@ -586,7 +626,7 @@ Sun May 29 18:32:56 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
 Sun May 29 17:21:43 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
 
-	* unix/dev.c (__fsopen): Return ENOENT iso EAGAIN when unexisting
+	* unix/dev.c (__fsopen): Return ENOENT iso EAGAIN when non-existing
 	file is opened without O_CREAT set.
 
 Sun Apr 24 13:16:13 CEST 2011  John Tytgat  <John.Tytgat@aaug.net>
@@ -769,12 +809,12 @@ Tue Feb  8 03:17:42 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
 Sat Feb  5 10:55:00 UTC 2011  John-Mark Bell  <jmb@netsurf-browser.org>
 
 	* module/sul.s: Test the existence of the canonicalised	filename on
-	program initialisation, rather than the original sul_exec() argument. 
-	Fixes detection of child application that lives on Run$Path. 
+	program initialisation, rather than the original sul_exec() argument.
+	Fixes detection of child application that lives on Run$Path.
 	Additionally, fix stripping of FS name in process structure search to
-	accept the program name provided by OS_GetEnv having no colons in it 
+	accept the program name provided by OS_GetEnv having no colons in it
 	(e.g. when it resides on RPCEmu's HostFS). Otherwise, it will skip over
-	the first entry in the process list without considering it. 
+	the first entry in the process list without considering it.
 	Bump version number and update copyright years.
 
 Wed Feb  2 00:29:05 CET 2011  John Tytgat  <John.Tytgat@aaug.net>
@@ -972,7 +1012,7 @@ Thu Sep  9 00:21:32 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
 
 	* unix/dev.c (__fsopen): Give error EISDIR when directory is opened
 	for O_RDWR.  Reported by John-Mark Bell.
-	* Makefile.am: Removed unexisting sys/netdb.h for install.  Avoid
+	* Makefile.am: Removed non-existing sys/netdb.h for install.  Avoid
 	creating empty resolv include subdirectory.
 
 Thu Aug 26 03:36:17 CEST 2010  John Tytgat  <John.Tytgat@aaug.net>
@@ -6184,7 +6224,7 @@ Sat May 01 23:33:35 2004  John Tytgat  <John.Tytgat@aaug.net>
 Wed Apr 21 20:42:11 2004  Alex Waugh  <alex@alexwaugh.com>
 
 	* clib/fcntl.h: Don't define O_BINARY or O_TEXT if _POSIX_SOURCE.
-	* netlib/accept.c: Remove unecessary use of O_BINARY.
+	* netlib/accept.c: Remove unnecessary use of O_BINARY.
 	* netlib/socket.c: Likewise.
 
 Tue Apr 20 21:57:51 2004  John Tytgat  <John.Tytgat@aaug.net>
