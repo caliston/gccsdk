@@ -67,7 +67,7 @@ along with GCC; see the file COPYING3.  If not see
      "%{fpic:-fpic} %{mmodule:--ro-module-reloc --target2=rel} "
 #else
 extern const char * riscos_multilib_dir (int argc, const char **argv);
-#  define EXTRA_SPEC_FUNCTIONS \
+#  define SUBTARGET_EXTRA_SPEC_FUNCTIONS \
      { "riscos_multilib_dir", riscos_multilib_dir },
 
 /* When building the native RISC OS compiler, we add an extra library path
