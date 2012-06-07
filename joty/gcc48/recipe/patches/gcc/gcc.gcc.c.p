@@ -1,6 +1,6 @@
 Index: gcc/gcc.c
 ===================================================================
---- gcc/gcc.c	(revision 187811)
+--- gcc/gcc.c	(revision 188281)
 +++ gcc/gcc.c	(working copy)
 @@ -249,7 +249,7 @@
  static void init_gcc_specs (struct obstack *, const char *, const char *,
@@ -11,7 +11,7 @@ Index: gcc/gcc.c
  static const char *convert_filename (const char *, int, int);
  #endif
  
-@@ -2893,7 +2893,7 @@
+@@ -2896,7 +2896,7 @@
  
  const char **outfiles;
  
@@ -20,7 +20,7 @@ Index: gcc/gcc.c
  
  /* Convert NAME to a new name if it is the standard suffix.  DO_EXE
     is true if we should look for an executable suffix.  DO_OBJ
-@@ -2903,6 +2903,9 @@
+@@ -2906,6 +2906,9 @@
  convert_filename (const char *name, int do_exe ATTRIBUTE_UNUSED,
  		  int do_obj ATTRIBUTE_UNUSED)
  {
@@ -30,7 +30,7 @@ Index: gcc/gcc.c
  #if defined(HAVE_TARGET_EXECUTABLE_SUFFIX)
    int i;
  #endif
-@@ -2946,6 +2949,7 @@
+@@ -2949,6 +2952,7 @@
  #endif
  
    return name;
@@ -38,7 +38,7 @@ Index: gcc/gcc.c
  }
  #endif
  
-@@ -3499,7 +3503,7 @@
+@@ -3511,7 +3515,7 @@
  
      case OPT_o:
        have_o = 1;
@@ -47,7 +47,7 @@ Index: gcc/gcc.c
        arg = convert_filename (arg, ! have_c, 0);
  #endif
        /* Save the output name in case -save-temps=obj was used.  */
-@@ -3798,7 +3802,7 @@
+@@ -3810,7 +3814,7 @@
            char *fname;
  	  long offset;
  	  int consumed;
