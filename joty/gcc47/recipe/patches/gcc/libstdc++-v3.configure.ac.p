@@ -1,6 +1,6 @@
 Index: libstdc++-v3/configure.ac
 ===================================================================
---- libstdc++-v3/configure.ac	(revision 184782)
+--- libstdc++-v3/configure.ac	(revision 188171)
 +++ libstdc++-v3/configure.ac	(working copy)
 @@ -88,6 +88,11 @@
  # up critical shell variables.
@@ -41,3 +41,19 @@ Index: libstdc++-v3/configure.ac
  
  # Define documentation rules conditionally.
  
+@@ -421,11 +436,11 @@
+ GLIBCXX_EXPORT_INCLUDES
+ GLIBCXX_EXPORT_FLAGS
+ 
+-if test "$enable_shared" = yes; then
+-  PIC_CXXFLAGS="-prefer-pic"
+-else
++#if test "$enable_shared" = yes; then
++#  PIC_CXXFLAGS="-prefer-pic"
++#else
+   PIC_CXXFLAGS=
+-fi
++#fi
+ AC_SUBST(PIC_CXXFLAGS)
+ 
+ dnl In autoconf 2.5x, AC_OUTPUT is replaced by four AC_CONFIG_* macros,
