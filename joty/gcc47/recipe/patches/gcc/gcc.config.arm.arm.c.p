@@ -195,7 +195,7 @@ Index: gcc/config/arm/arm.c
  static bool
  arm_function_ok_for_sibcall (tree decl, tree exp)
  {
-+  if (TARGET_AAPCS_BASED)
++  if (TARGET_APCS_STACK)
 +    {
 +      /* Sibcalls can cause problems with the stack extension routines in
 +	 UnixLib and there is logic here to prevent a sibcall if stack
