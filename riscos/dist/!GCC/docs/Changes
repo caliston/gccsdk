@@ -1,6 +1,12 @@
 Noteworthy changes to the RISC OS GCCSDK releases made.
 
-For specific UnixLib changes, see !GCC.docs.UnixLib.Changes too.
+For more details on all UnixLib changes, see !GCC.docs.libunixlib.ChangeLog.
+
+GCCSDK GCC 4.1.2 Release 3 (released ???)
+==========================
+
+Bug fixes and other improvements:
+  - UnixLib: Fix include problems of byteswap.h and sys/socket.h.
 
 GCCSDK GCC 4.1.2 Release 2 (released 1 October 2012)
 ==========================
