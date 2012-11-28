@@ -7,6 +7,7 @@ GCCSDK GCC 4.1.2 Release 3 (released ???)
 
 Bug fixes and other improvements:
   - UnixLib: Fix include problems of byteswap.h and sys/socket.h.
+  - UnixLib: Add basic support for three argument signal handlers (r6193)
 
 GCCSDK GCC 4.1.2 Release 2 (released 1 October 2012)
 ==========================
