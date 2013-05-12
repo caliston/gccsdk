@@ -1,3 +1,10 @@
+Sun May 12 17:18:29 BST 2013  Lee Noar  <leenoar@sky.com>
+
+	* som_history.c (som_history_add_client): Fix memory leaks in
+	history list; free the memory used to store the object names.
+	Also fix bug where a stray '&' was added meaning that the client
+	name was never free'd.
+
 Sat Apr 21 17:03:00 CEST 2012  John Tytgat  <John.Tytgat@aaug.net>
 
 	* som_runcom.c (command_run): Don't call __builtin_unreachable, this

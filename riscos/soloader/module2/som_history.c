@@ -1,6 +1,6 @@
 /* som_history.c
  *
- * Copyright 2009, 2010 GCCSDK Developers
+ * Copyright 2009-2013 GCCSDK Developers
  * Written by Lee Noar
  */
 
@@ -69,7 +69,15 @@ som_history_add_client(som_client *client)
 		(som_client_history *)global.client_history.first;
 
       linklist_remove (&global.client_history, &to_be_removed->link);
-      som_free (&to_be_removed->name);
+
+      for (object_count = to_be_removed->object_history_size - 1;
+	   object_count >= 0;
+	   object_count--)
+	{
+	  som_free (to_be_removed->object_history[object_count].name);
+	}
+
+      som_free (to_be_removed->name);
       som_free (to_be_removed);
     }
 
