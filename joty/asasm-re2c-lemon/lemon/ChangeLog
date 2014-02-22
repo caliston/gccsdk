@@ -1,0 +1,13 @@
+Sat Feb 22 15:44:33 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* README: Add.
+	* upstream: Likewise.
+
+	upstream:
+	* lemon.c: Copy of
+	https://www.sqlite.org/src/raw/tool/lemon.c?name=07aba6270d5a5016ba8107b09e431eea4ecdc123
+	* lempar.c: Copy of
+	http://www.sqlite.org/src/raw/tool/lempar.c?name=01ca97f87610d1dac6d8cd96ab109ab1130e76dc
+	* lemon.html: Copy of
+	https://www.sqlite.org/src/raw/doc/lemon.html?name=334dbf6621b8fb8790297ec1abf3cfa4621709d1
+
