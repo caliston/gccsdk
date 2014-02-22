@@ -1,0 +1,6 @@
+This is a copy of re2c, a tool for writing very fast and very flexible scanners.
+
+Homepage: http://re2c.org/
+
+Directory 'upstream': copy of subdirectory re2c after
+git clone git://git.code.sf.net/p/re2c/code-git/
