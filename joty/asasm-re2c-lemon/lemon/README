@@ -12,6 +12,11 @@ In directory 'upstream':
   - lemon.html : Copy of
     https://www.sqlite.org/src/artifact?ci=trunk&filename=doc/lemon.html
 
+In directory 'current':
+
+  Copy of directory 'upstream' constaining autotools based build system
+  and possibly private changes.
+
 Copyright:
 
   All original Lemon sources (lemon.c, lempar.c) carry the following notice:

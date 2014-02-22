@@ -1,0 +1,10 @@
+This is a copy of Lemon, a well known LALR(1) parser generator.  Lemon is
+maintained as part of the SQLite project. 
+
+Lemon homepage: http://www.hwaci.com/sw/lemon/
+
+Copyright:
+
+  All original Lemon sources (lemon.c, lempar.c) carry the following notice:
+  "The author of this program disclaims copyright.".
+

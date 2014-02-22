@@ -1,0 +1,7 @@
+Sat Feb 22 16:29:08 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* COPYING: Add.
+	* INSTALL: Likewise.
+	* Makefile.am: Likewise.
+	* configure.ac: Likewise.
+
