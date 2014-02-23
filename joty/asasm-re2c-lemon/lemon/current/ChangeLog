@@ -1,3 +1,8 @@
+Sun Feb 23 03:33:33 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lempar.c: Fix compiler warning
+	'parser.c:87:40: warning: unused variable ‘state’ [-Wunused-variable]'
+
 Sun Feb 23 02:56:12 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
 
 	* configure.ac: Change version number to 1.00.
