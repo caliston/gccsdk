@@ -1,3 +1,9 @@
+Sun Feb 23 03:45:13 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lempar.c: Remove the unconditional stdio.h include as it is already
+	included when needed (i.e. on NDEBUG non definition); Add include
+	of assert.h as assert() is used.
+
 Sun Feb 23 03:40:59 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
 
 	* lempar.c (Parse): Avoid yyendofinput variable being set without
