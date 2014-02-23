@@ -707,7 +707,9 @@ void Parse(
 ){
   YYMINORTYPE yyminorunion;
   int yyact;            /* The parser action. */
+#if !defined(NDEBUG) || !defined(YYERRORSYMBOL) && !defined(YYNOERRORRECOVERY)
   int yyendofinput;     /* True if we are at the end of input */
+#endif
 #ifdef YYERRORSYMBOL
   int yyerrorhit = 0;   /* True if yymajor has invoked an error */
 #endif
@@ -730,7 +732,9 @@ void Parse(
     yypParser->yystack[0].major = 0;
   }
   yyminorunion.yy0 = yyminor;
+#if !defined(NDEBUG) || !defined(YYERRORSYMBOL) && !defined(YYNOERRORRECOVERY)
   yyendofinput = (yymajor==0);
+#endif
   ParseARG_STORE;
 
 #ifndef NDEBUG

@@ -1,3 +1,8 @@
+Sun Feb 23 03:40:59 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lempar.c (Parse): Avoid yyendofinput variable being set without
+	being used.
+
 Sun Feb 23 03:33:33 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
 
 	* lempar.c: Fix compiler warning
