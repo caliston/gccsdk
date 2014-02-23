@@ -1,0 +1,14 @@
+Sun Feb 23 14:37:28 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* upstream: Add svn:ignore property.
+
+Sun Feb 23 00:08:00 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* Makefile: Add.
+
+Sat Feb 22 19:07:57 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* README: Add.
+	* upstream: Add as contents of subdirectory re2c after
+	git clone git://git.code.sf.net/p/re2c/code-git/
+
