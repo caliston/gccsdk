@@ -1,3 +1,8 @@
+Sun Feb 23 16:05:00 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lempar.c (ParseTrace): Constify trace prompt parameter.
+	(yyTracePrompt): Add const.
+
 Sun Feb 23 03:47:32 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
 
 	* lempar.c (yy_parse_failed): When 'error' non-terminal is used,
