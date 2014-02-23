@@ -1,3 +1,9 @@
+Sun Feb 23 03:47:32 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* lempar.c (yy_parse_failed): When 'error' non-terminal is used,
+	YYERRORSYMBOL is defined and that means that yy_parse_failed() needs
+	to be defined as well.
+
 Sun Feb 23 03:45:13 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
 
 	* lempar.c: Remove the unconditional stdio.h include as it is already

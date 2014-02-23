@@ -629,7 +629,7 @@ static void yy_reduce(
 /*
 ** The following code executes when the parse fails
 */
-#ifndef YYNOERRORRECOVERY
+#if defined(YYERRORSYMBOL) || !defined(YYNOERRORRECOVERY)
 static void yy_parse_failed(
   yyParser *yypParser           /* The parser */
 ){
