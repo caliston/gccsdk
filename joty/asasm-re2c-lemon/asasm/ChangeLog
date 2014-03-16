@@ -1,3 +1,75 @@
+Sun Mar 16 15:49:25 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/m_cpuctrl.c (GetBranchLabel): Improve support for branches to
+	absolute addresses.
+	(m_branch): Support ValueInt ELF relocs.
+	(m_cbnz_cbz): Likewise.
+	(m_blx): Likewise.
+	* src/reloc.c (Reloc_CreateInternal): Add support for ValueInt
+	ELF relocs.
+	* src/symbol.h (SymbolAttr::value): Improve comments.
+
+	unittest/reloc:
+	* src/branch_no_org.s: Add
+	* src/branch_with_org.s: Likewise.
+	* src/include/branch.s: Likewise.
+	* ref/branch_no_org_aof.txt: Likewise.
+	* ref/branch_no_org_elf.txt: Likewise.
+	* ref/branch_with_org_aof.txt: Likewise.
+	* ref/branch_with_org_elf.txt: Likewise.
+
+Mon Mar 10 02:05:56 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/m_cpuctrl.c (m_branch): Simplify test for calling Reloc_CreateELF.
+	(m_cbnz_cbz): Likewise.
+	(m_blx): Likewise.
+	(m_bx): Likewise.
+	(m_adr): Likewise.
+
+Sun Mar  9 19:18:48 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/reloc.c (Reloc_SplitRelocAndAddend): Fail during pass one when
+	there would be relocation symbol not yet defined/declared.
+	* src/reloc.h (RelocAndAddend_t): Fix comments.
+	* unittests/compare/core/operator_base_index.s: Add test case.
+
+Sun Mar  9 19:14:35 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/reloc.c (Reloc_GetRawRelocData): Fix mask value in assert.
+
+Sun Mar  9 18:46:15 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/aoffile.h (HOW2_*): Update comments.
+
+Sun Mar  9 18:33:20 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/lit.c (DEBUG_LIT): Fix build.
+
+Thu Feb 27 02:15:48 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/m_cpuctrl.c (m_adr): Better support for expression which can
+	not yet evaluated during pass one.
+	* unittests/compare/core/include/adr.s: Add extra test case.
+
+Tue Feb 25 03:43:08 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/eval.c (GetInt): Support absolute area labels.
+	* unittests/compare/core/org_label.s: Add.
+
+Tue Feb 25 03:02:44 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/eval.c (Eval_Unop): Support 1 character string and symbol
+	for unary +.  Support 1 character string for :INDEX:.
+
+Sun Feb 23 19:37:37 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/symbol.c (Symbol_Print): Fix DEBUG build.
+
+Sun Feb 23 19:07:06 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/error.c (errorCore): Flush stdout first.
+	(errorCoreLine): Likewise.
+
 Sun Feb 23 17:49:42 CET 2014  John Tytgat  <John.Tytgat@aaug.net>
 
 	* common.h: Include string.h when strndup or strdup is available.

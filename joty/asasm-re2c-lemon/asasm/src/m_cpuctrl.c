@@ -76,54 +76,102 @@ GetBranchLabel (bool isBLX)
     };
 
   const Value *valP = Expr_BuildAndEval (ValueInt | ValueSymbol);
-  bool stateIsARM = State_GetInstrType () == eInstrType_ARM;
+
   Value value;
+  if (valP->Tag == ValueSymbol
+      && valP->Data.Symbol.factor != 1
+      && valP->Data.Symbol.symbol == areaCurrentSymbol
+      && (areaCurrentSymbol->attr.area->type & AREA_ABS) != 0)
+    {
+      uint32_t areaOffset = Area_GetBaseAddress (areaCurrentSymbol);
+      value = Value_Symbol (areaCurrentSymbol, 1, valP->Data.Int.i + (valP->Data.Symbol.factor - 1)*areaOffset);
+      valP = &value;
+    }
+
+  /* Translate jump from an absolute area to an absolute address to a jump
+     to a symbol address instead.
+     For ELF, only when it jumps into the current aboslute area.  */
+  if (valP->Tag == ValueInt
+      && (areaCurrentSymbol->attr.area->type & AREA_ABS) != 0
+      && (option_aof
+	  || (Area_GetBaseAddress (areaCurrentSymbol) <= (uint32_t)valP->Data.Int.i
+	      && (uint32_t)valP->Data.Int.i < Area_GetBaseAddress (areaCurrentSymbol) + areaCurrentSymbol->attr.area->maxIdx)))
+    {
+      uint32_t areaOffset = (areaCurrentSymbol->attr.area->type & AREA_ABS) != 0 ? Area_GetBaseAddress (areaCurrentSymbol) : 0;
+      value = Value_Symbol (areaCurrentSymbol, 1, valP->Data.Int.i - areaOffset);
+      valP = &value;
+    }
+
+  bool stateIsARM = State_GetInstrType () == eInstrType_ARM;
+
+  /* Catch the unsupported cases.  */
   if (valP->Tag == ValueIllegal
       || (valP->Tag == ValueSymbol
-          && (valP->Data.Symbol.factor != 1 || (gPhase == ePassOne && valP->Data.Symbol.symbol != areaCurrentSymbol))))
+	  && (valP->Data.Symbol.factor != 1 || (gPhase == ePassOne && valP->Data.Symbol.symbol != areaCurrentSymbol))))
     {
       if (gPhase != ePassOne)
 	{
 	  Error (ErrorError, "Illegal branch expression");
 	  return result;
 	}
+      /* Go for "B {PC} + 4/8" until pass two.  */
       value = Value_Symbol (areaCurrentSymbol, 1, result.instrOffset + (stateIsARM ? 8 : 4));
       valP = &value;
       result.forwardLabel = true;
     }
 
-  /* Switch to ValueSymbol when possible.
-     FIXME: still needed ? As this will probably be wrong when branching to
-     another area which happens to be absolute.  */
+  /* Check for reloc.  */
   if (valP->Tag == ValueInt)
     {
-      const uint32_t areaOffset = (areaCurrentSymbol->attr.area->type & AREA_ABS) ? Area_GetBaseAddress (areaCurrentSymbol) : 0;
-      value = Value_Symbol (areaCurrentSymbol, 1, valP->Data.Int.i - areaOffset);
-      valP = &value;
-    }
+      if (option_aof)
+	{
+	  /* In AOF, we don't have absolute address relocation possibilities,
+	     so make it relative to our area.  */
+	  uint32_t areaOffset = (areaCurrentSymbol->attr.area->type & AREA_ABS) != 0 ? Area_GetBaseAddress (areaCurrentSymbol) : 0;
+	  value = Value_Symbol (areaCurrentSymbol, 1, valP->Data.Int.i - areaOffset);
+	  valP = &value;
 
-  /* Branch instruction with value 0 means a branch to {PC} + 8 which is
-     current area base + branch instruction offset + 8.
-     So start to compensate with this value, the result is a value what needs
-     to be added to that branch instruction with value 0.  */
-  result.branchOffset = -(result.instrOffset + (stateIsARM ? 8 : 4));
-
-  assert (valP->Tag == ValueSymbol);
-  assert (valP->Data.Symbol.factor == 1);
-  if (valP->Data.Symbol.symbol != areaCurrentSymbol)
-    {
-      /* The R_ARM_CALL/R_ARM_JUMP24 ELF reloc needs to happen for a
-	 "B {PC}" instruction, while for AOF Type 2 relocations this needs
-	 to happen for a "B <area origin>" instruction.  */
-      if (!option_aof)
-	result.branchOffset += result.instrOffset;
+	  result.branchOffset += areaOffset;
+	}
+      else
+	result.branchOffset -= valP->Data.Int.i;
       Value_Assign (&result.relocValue,  valP);
     }
-  int32_t targetAddr = !stateIsARM && isBLX ? (valP->Data.Symbol.offset & ~2) | (result.instrOffset & 2) : valP->Data.Symbol.offset;
+  else
+    {
+      assert (valP->Tag == ValueSymbol && valP->Data.Symbol.factor == 1);
+      if (valP->Data.Symbol.symbol != areaCurrentSymbol)
+	Value_Assign (&result.relocValue,  valP);
+    }
+
+  /* Calculate value to be encoded in branch instruction.  */
+  if (result.relocValue.Tag != ValueIllegal)
+    {
+      /* When there is relocation needed, the ELF relocs R_ARM_CALL,
+	 R_ARM_THM_CALL, R_ARM_JUMP24, R_ARM_THM_JUMP6, R_ARM_THM_JUMP8,
+	 R_ARM_THM_JUMP11, R_ARM_THM_JUMP19, R_ARM_THM_JUMP24 need to happen for
+	 a "B {PC}" instruction, while for AOF Type 2 relocations this needs to
+	 happen for a "B <area origin>" instruction.  */
+      result.branchOffset -= stateIsARM ? 8 : 4;
+      if (option_aof)
+	result.branchOffset -= result.instrOffset;
+    }
+  else
+    {
+      /* Branch instruction with value 0 means a branch to {PC} + 8 which is
+	 current area base + branch instruction offset + 8.
+	 So start to compensate with this value, the result is a value what needs
+	 to be added to that branch instruction with value 0.  */
+      result.branchOffset -= result.instrOffset + (stateIsARM ? 8 : 4);
+    }
+  /* Transfer specified branch offset.  */
+  assert (valP->Tag == ValueInt || valP->Tag == ValueSymbol);
+  int32_t branchOffset = valP->Tag == ValueInt ? valP->Data.Int.i : valP->Data.Symbol.offset;
+  int32_t targetAddr = !stateIsARM && isBLX ? ((branchOffset & ~2) | (int32_t)(result.instrOffset & 2)) : branchOffset;
   result.branchOffset += targetAddr;
 
-  unsigned mask = ((State_GetInstrType () == eInstrType_ARM) ^ isBLX) ? 3 : 1;
-  if ((valP->Data.Symbol.offset & mask) != 0)
+  unsigned mask = (stateIsARM ^ isBLX) ? 3 : 1;
+  if ((branchOffset & mask) != 0)
     Error (ErrorWarning, "Branch target is not a multiple of %s", mask == 1 ? "two" : "four");
 
   return result;
@@ -172,8 +220,7 @@ m_branch (bool doLowerCase)
 	  Put_Ins (4, cc | 0x0B000000 | ((brLabel.branchOffset & 0x3fffffc) >> 2));
 
 	  /* FIXME: should emit reloc when label is function and when it marked for export.  */
-	  if (brLabel.relocValue.Tag == ValueSymbol
-	      && brLabel.relocValue.Data.Symbol.symbol != areaCurrentSymbol)
+	  if (brLabel.relocValue.Tag != ValueIllegal)
 	    Reloc_CreateELF (R_ARM_CALL, brLabel.instrOffset, &brLabel.relocValue);
 	}
       else
@@ -195,8 +242,7 @@ m_branch (bool doLowerCase)
 	   		| ((brLabel.branchOffset & 0xfff) >> 1));
 
 	  /* FIXME: should emit reloc when label is function and when it marked for export.  */
-	  if (brLabel.relocValue.Tag == ValueSymbol
-	      && brLabel.relocValue.Data.Symbol.symbol != areaCurrentSymbol)
+	  if (brLabel.relocValue.Tag != ValueIllegal)
 	    Reloc_CreateELF (R_ARM_THM_CALL, brLabel.instrOffset, &brLabel.relocValue);
 	}
     }
@@ -212,8 +258,7 @@ m_branch (bool doLowerCase)
 	  Put_Ins (4, cc | 0x0A000000 | ((brLabel.branchOffset & 0x3fffffc) >> 2));
 
 	  /* FIXME: should emit reloc when label is function and when it marked for export.  */
-	  if (brLabel.relocValue.Tag == ValueSymbol
-	      && brLabel.relocValue.Data.Symbol.symbol != areaCurrentSymbol)
+	  if (brLabel.relocValue.Tag != ValueIllegal)
 	    Reloc_CreateELF (R_ARM_JUMP24, brLabel.instrOffset, &brLabel.relocValue);
 	}
       else
@@ -299,12 +344,11 @@ m_branch (bool doLowerCase)
 
 	  if (instrWidth == eInstrWidth_Enforce16bit)
 	    {
-	      Put_Ins (2, useLongRange ? 0xE000 | ((brLabel.branchOffset & 0xffe) >> 1)
-				       : 0xD000 | (cc >> 20) | ((brLabel.branchOffset & 0x1fe) >> 1));
+	      Put_Ins (2, useLongRange ? 0xE000u | ((brLabel.branchOffset & 0xffe) >> 1)
+				       : 0xD000u | (cc >> 20) | ((brLabel.branchOffset & 0x1fe) >> 1));
 
 	      /* FIXME: should emit reloc when label is function and when it marked for export.  */
-	      if (brLabel.relocValue.Tag == ValueSymbol
-		  && brLabel.relocValue.Data.Symbol.symbol != areaCurrentSymbol)
+	      if (brLabel.relocValue.Tag != ValueIllegal)
 		Reloc_CreateELF (useLongRange ? R_ARM_THM_JUMP11 : R_ARM_THM_JUMP8,
 				 brLabel.instrOffset, &brLabel.relocValue);
 	    }
@@ -329,18 +373,16 @@ m_branch (bool doLowerCase)
 	      /* Note, R_ARM_THM_JUMP19 is misleading as it is relocating
 		 20 bits.  */
 	      /* FIXME: should emit reloc when label is function and when it marked for export.  */
-	      if (brLabel.relocValue.Tag == ValueSymbol
-		  && brLabel.relocValue.Data.Symbol.symbol != areaCurrentSymbol)
+	      if (brLabel.relocValue.Tag != ValueIllegal)
 		Reloc_CreateELF (useLongRange ? R_ARM_THM_JUMP24 : R_ARM_THM_JUMP19,
 				 brLabel.instrOffset, &brLabel.relocValue);
 	    }
 	}
     }
 
-  if (brLabel.relocValue.Tag == ValueSymbol
-      && brLabel.relocValue.Data.Symbol.symbol != areaCurrentSymbol)
+  if (brLabel.relocValue.Tag != ValueIllegal)
     Reloc_CreateAOF (HOW2_INIT | HOW2_INSTR_UNLIM | HOW2_RELATIVE,
-                     brLabel.instrOffset, &brLabel.relocValue);
+		     brLabel.instrOffset, &brLabel.relocValue);
 
   return false;
 }
@@ -394,8 +436,7 @@ m_cbnz_cbz (bool doLowerCase)
 		    | rn);
 
       /* FIXME: should emit reloc when label is function and when it marked for export.  */
-      if (brLabel.relocValue.Tag == ValueSymbol
-	  && brLabel.relocValue.Data.Symbol.symbol != areaCurrentSymbol) 
+      if (brLabel.relocValue.Tag != ValueIllegal)
 	{
 	  Reloc_CreateAOF (HOW2_INIT | HOW2_INSTR_UNLIM | HOW2_RELATIVE, brLabel.instrOffset,
 	                   &brLabel.relocValue);
@@ -461,8 +502,7 @@ m_blx (bool doLowerCase)
 			| (brLabel.branchOffset & 0xffc) >> 1);
 	}
       /* FIXME: should emit reloc when label is function and when it marked for export.  */
-      if (brLabel.relocValue.Tag == ValueSymbol
-	  && brLabel.relocValue.Data.Symbol.symbol != areaCurrentSymbol) 
+      if (brLabel.relocValue.Tag != ValueIllegal)
 	{
 	  Reloc_CreateAOF (HOW2_INIT | HOW2_INSTR_UNLIM | HOW2_RELATIVE, brLabel.instrOffset,
 			   &brLabel.relocValue);
@@ -1000,12 +1040,6 @@ m_adr (bool doLowerCase)
   ir &= ~1;
 
   const Value *valP = Expr_BuildAndEval (ValueInt | ValueAddr | ValueSymbol);
-  if (valP->Tag == ValueIllegal
-      || (valP->Tag == ValueInt && valP->Data.Int.type != eIntType_PureInt))
-    {
-      Error (ErrorError, "Illegal %s expression", isADRL ? "ADRL" : "ADR");
-      return false;
-    }
 
   const uint32_t instrOffset = Area_CurIdxAligned ();
 
@@ -1013,6 +1047,28 @@ m_adr (bool doLowerCase)
 								  areaCurrentSymbol,
 								  instrOffset,
 								  true);
+
+  if (gPhase == ePassOne
+      && (valP->Tag == ValueIllegal || relocAddend.relocSymbol.Tag == ValueSymbol))
+    {
+      /* Two cases:
+	   - We have a non evaluatable expression.  Wait until pass two to do
+	     the work.  This means that when ADRL is used, we can't go back
+	     to ADR anymore.
+	   - We have a forward label (not yet seen) or relocation symbol.
+	     Equally here, no switch from ADRL to ADR possible.  */
+      Put_Ins (4, 0);
+      if (isADRL)
+	Put_Ins (4, 0);
+      return false;
+    }
+  if (valP->Tag == ValueIllegal
+      || (valP->Tag == ValueInt && valP->Data.Int.type != eIntType_PureInt))
+    {
+      Error (ErrorError, "Illegal %s expression", isADRL ? "ADRL" : "ADR");
+      return false;
+    }
+
   valP = &relocAddend.addend;
 
   /* During PassOne, we're at liberty to change ADR into ADRL and/or ADRL
@@ -1020,95 +1076,78 @@ m_adr (bool doLowerCase)
      (at this point, it is not even sure that a relocation symbol at PassOne
      will be a relocation symbol at PassTwo).  */
   CanSwitch_e canSwitch = gPhase == ePassOne || Put_GetWord (instrOffset) != 0 ? eCS_Yes : eCS_NoBecauseForwardLabel;
-  /* Don't switch from a probably well meant ADRL to ADR when there is a
-     relocation to be done.  */
   if (relocAddend.relocSymbol.Tag == ValueSymbol)
     canSwitch = eCS_NoBecauseReloc;
 
-  if (valP->Tag == ValueIllegal
-      || (gPhase == ePassOne && canSwitch != eCS_Yes))
+  int constant, baseReg;
+  switch (valP->Tag)
     {
-      if (gPhase == ePassOne)
-	{
-	  /* We have unresolved symbols.  Wait until pass two to do the work.
-	     This means also that when ADRL is used, we can't go back to ADR
-	     anymore.  */
-	  Put_Ins (4, 0);
-	  if (isADRL)
-	    Put_Ins (4, 0);
-	}
-      else
-	Error (ErrorError, "Relocation failed");
+      case ValueInt:
+	/* Absolute value : results in MOV/MVN (followed by ADD/SUB in
+	   case of ADRL) or MOVW or MOV32.  */
+	constant = valP->Data.Int.i;
+	baseReg = -1;
+	break;
+
+      case ValueAddr:
+	/* Storage map, pc-relative, AREA + BASED.  */
+	constant = valP->Data.Addr.i;
+	baseReg = valP->Data.Addr.r;
+	break;
+
+      default:
+	Error (ErrorError, "Illegal %s expression", isADRL ? "ADRL" : "ADR");
+	constant = 8; /* FIXME: Thumb support missing.  */
+	baseReg = 15;
+	break;
     }
-  else
+  const ADRResult_t result = ADR_RelocUpdaterCore (constant,
+						   baseReg, ir | DST_OP (regD) | IMM_RHS,
+						   isADRL, canSwitch);
+  if (relocAddend.relocSymbol.Tag == ValueSymbol)
     {
-      int constant, baseReg;
-      switch (valP->Tag)
+      bool isPCrel = baseReg == 15;
+      for (unsigned i = 0; i != result.numInstr; ++i)
 	{
-	  case ValueInt:
-	    /* Absolute value : results in MOV/MVN (followed by ADD/SUB in
-	       case of ADRL) or MOVW or MOV32.  */
-	    constant = valP->Data.Int.i;
-	    baseReg = -1;
-	    break;
+	  if (result.instrType[i] == eADRInstrType_NOP)
+	    continue;
 
-	  case ValueAddr:
-	    /* Storage map, pc-relative, AREA + BASED.  */
-	    constant = valP->Data.Addr.i;
-	    baseReg = valP->Data.Addr.r;
-	    break;
-
-	  default:
-	    Error (ErrorError, "Illegal %s expression", isADRL ? "ADRL" : "ADR");
-	    constant = 8; /* FIXME: Thumb support missing.  */
-	    baseReg = 15;
-	    break;
-	}
-      const ADRResult_t result = ADR_RelocUpdaterCore (constant,
-						       baseReg, ir | DST_OP (regD) | IMM_RHS,
-						       isADRL, canSwitch);
-      if (relocAddend.relocSymbol.Tag == ValueSymbol)
-	{
-	  bool isPCrel = baseReg == 15;
-	  for (unsigned i = 0; i != result.numInstr; ++i)
+	  uint32_t elfHow;
+	  switch (result.instrType[i])
 	    {
-	      if (result.instrType[i] == eADRInstrType_NOP)
-		continue;
-
-	      uint32_t elfHow;
-	      switch (result.instrType[i])
+	      case eADRInstrType_ALU:
 		{
-		  case eADRInstrType_ALU:
+		  if (i == 0)
 		    {
-		      if (i == 0)
-			{
-			  if (i + 1 == result.numInstr)
-			    elfHow = isPCrel ? R_ARM_ALU_PC_G0 : R_ARM_ALU_SB_G0;
-			  else
-			    elfHow = isPCrel ? R_ARM_ALU_PC_G0_NC : R_ARM_ALU_SB_G0_NC;
-			}
+		      if (i + 1 == result.numInstr)
+			elfHow = isPCrel ? R_ARM_ALU_PC_G0 : R_ARM_ALU_SB_G0;
 		      else
-			elfHow = isPCrel ? R_ARM_ALU_PC_G1 : R_ARM_ALU_SB_G1;
-		      break;
+			elfHow = isPCrel ? R_ARM_ALU_PC_G0_NC : R_ARM_ALU_SB_G0_NC;
 		    }
-		  case eADRInstrType_MOVW:
-		    /* If result.numInstr is 1, we should be using R_ARM_MOVW_PREL
-		       and R_ARM_MOVW_ABS but that doesn't seem to exist ?! */
-		    elfHow = isPCrel ? R_ARM_MOVW_PREL_NC : R_ARM_MOVW_ABS_NC;
-		    break;
-		  case eADRInstrType_MOVT:
-		    elfHow = isPCrel ? R_ARM_MOVT_PREL : R_ARM_MOVT_ABS;
-		    break;
-		  case eADRInstrType_NOP:
-		    /* Already filtered upfront.  */
-		    assert (0);
-		    break;
+		  else
+		    elfHow = isPCrel ? R_ARM_ALU_PC_G1 : R_ARM_ALU_SB_G1;
+		  break;
 		}
-	      Reloc_CreateELF (elfHow, instrOffset + 4*i, &relocAddend.relocSymbol);
+
+	      case eADRInstrType_MOVW:
+		/* If result.numInstr is 1, we should be using R_ARM_MOVW_PREL
+		 and R_ARM_MOVW_ABS but that doesn't seem to exist ?! */
+		elfHow = isPCrel ? R_ARM_MOVW_PREL_NC : R_ARM_MOVW_ABS_NC;
+		break;
+
+	      case eADRInstrType_MOVT:
+		elfHow = isPCrel ? R_ARM_MOVT_PREL : R_ARM_MOVT_ABS;
+		break;
+
+	      case eADRInstrType_NOP:
+		/* Already filtered upfront.  */
+		assert (0);
+		break;
 	    }
-	  uint32_t aofHow = HOW2_INIT | HOW2_INSTR_UNLIM | (isPCrel ? HOW2_RELATIVE : HOW2_BASED);
-	  Reloc_CreateAOF (aofHow, instrOffset, &relocAddend.relocSymbol);
+	  Reloc_CreateELF (elfHow, instrOffset + 4*i, &relocAddend.relocSymbol);
 	}
+      uint32_t aofHow = HOW2_INIT | HOW2_INSTR_UNLIM | (isPCrel ? HOW2_RELATIVE : HOW2_BASED);
+      Reloc_CreateAOF (aofHow, instrOffset, &relocAddend.relocSymbol);
     }
 
   return false;
