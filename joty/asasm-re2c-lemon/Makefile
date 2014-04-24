@@ -25,7 +25,7 @@ all: asasm
 
 install: asasm-install
 
-asasm: $(BUILDDIR)/asasm/Makefile $(ASASMROOT)/configure $(TOOLSDIR)/bin/lemon $(TOOLSDIR)/bin/re2c
+asasm: $(BUILDDIR)/asasm/Makefile
 	PATH=$(TOOLSDIR)/bin:$(PATH) && make -C $(BUILDDIR)/asasm BUILDDIR=$(BUILDDIR)/asasm INSTALLDIR=$(INSTALLDIR) CONFIGPARAM='$(CONFIGPARAM)' RONATIVE=$(RONATIVE)
 
 asasm-install: asasm $(INSTALLDIR)
@@ -58,9 +58,9 @@ $(TOOLSDIR)/bin/re2c:
 # --------------------
 
 # Autoconfiguring etc:
-$(BUILDDIR)/asasm/Makefile: $(ASASMROOT)/Makefile.in $(ASASMROOT)/configure
+$(BUILDDIR)/asasm/Makefile: $(ASASMROOT)/Makefile.in $(ASASMROOT)/configure $(TOOLSDIR)/bin/lemon $(TOOLSDIR)/bin/re2c
 	-mkdir -p $(BUILDDIR)/asasm
-	cd $(BUILDDIR)/asasm && sh $(ASASMROOT)/configure --prefix=$(INSTALLDIR) $(CONFIGPARAM) CFLAGS=$(CFLAGS)
+	PATH=$(TOOLSDIR)/bin:$(PATH) && cd $(BUILDDIR)/asasm && sh $(ASASMROOT)/configure --prefix=$(INSTALLDIR) $(CONFIGPARAM) CFLAGS=$(CFLAGS)
 
 $(ASASMROOT)/Makefile.in: $(ASASMROOT)/Makefile.am
 	cd $(ASASMROOT) && autoreconf --install
