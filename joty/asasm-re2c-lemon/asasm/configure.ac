@@ -26,5 +26,15 @@ AC_CHECK_HEADERS([stddef.h stdint.h stdlib.h string.h])
 AC_C_BIGENDIAN
 AC_C_CONST
 
+# We need lemon running on host:
+AC_PATH_PROG([LEMON], [lemon])
+AS_IF([test "x${LEMON}" == "x"],
+    [AC_MSG_ERROR([Lemon parser generator "lemon" not found.])])
+
+# We need re2c running on host:
+AC_PATH_PROG([RE2C], [re2c])
+AS_IF([test "x${RE2C}" == "x"],
+    [AC_MSG_ERROR([re2c scanner generator "re2c" not found.])])
+
 AC_CONFIG_FILES([Makefile src/Makefile unittests/compare/Makefile unittests/reloc/Makefile])
 AC_OUTPUT
