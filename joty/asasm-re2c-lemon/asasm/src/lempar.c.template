@@ -371,21 +371,13 @@ int ParseStackPeak(void *p){
 }
 #endif
 
-/*
-** Find the appropriate action for a parser given the terminal
-** look-ahead token iLookAhead.
-**
-** If the look-ahead token is YYNOCODE, then check to see if the action is
-** independent of the look-ahead.  If it is, return the action, otherwise
-** return YY_NO_ACTION.
-*/
-static int yy_find_shift_action(
-  yyParser *pParser,        /* The parser */
-  YYCODETYPE iLookAhead     /* The look-ahead token */
-){
+static int yy_get_action_for_state(
+  int stateno,
+  YYCODETYPE iLookAhead
+)
+{
   int i;
-  int stateno = pParser->yystack[pParser->yyidx].stateno;
- 
+
   if( stateno>YY_SHIFT_COUNT
    || (i = yy_shift_ofst[stateno])==YY_SHIFT_USE_DFLT ){
     return yy_default[stateno];
@@ -404,7 +396,7 @@ static int yy_find_shift_action(
              yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[iFallback]);
         }
 #endif
-        return yy_find_shift_action(pParser, iFallback);
+        return yy_get_action_for_state(stateno, iFallback);
       }
 #endif
 #ifdef YYWILDCARD
@@ -434,6 +426,22 @@ static int yy_find_shift_action(
   }else{
     return yy_action[i];
   }
+}
+
+/*
+** Find the appropriate action for a parser given the terminal
+** look-ahead token iLookAhead.
+**
+** If the look-ahead token is YYNOCODE, then check to see if the action is
+** independent of the look-ahead.  If it is, return the action, otherwise
+** return YY_NO_ACTION.
+*/
+static int yy_find_shift_action(
+  yyParser *pParser,        /* The parser */
+  YYCODETYPE iLookAhead     /* The look-ahead token */
+){
+  int stateno = pParser->yystack[pParser->yyidx].stateno;
+  return yy_get_action_for_state(stateno, iLookAhead);
 }
 
 /*

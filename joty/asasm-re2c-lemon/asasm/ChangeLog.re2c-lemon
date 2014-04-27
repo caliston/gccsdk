@@ -1,3 +1,9 @@
+Sun Apr 27 13:59:40 CEST 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* src/lempar.c.template(yy_find_shift_action): Factor out checking
+	code into...
+	(yy_get_action_for_state): ...this.
+
 Sun Apr 27 13:56:35 CEST 2014  John Tytgat  <John.Tytgat@aaug.net>
 
 	* src/lempar.c.template(Parse): Pass yyminor parameter by const
