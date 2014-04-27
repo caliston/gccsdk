@@ -702,7 +702,7 @@ static void yy_accept(
 void Parse(
   void *yyp,                   /* The parser */
   int yymajor,                 /* The major token code number */
-  ParseTOKENTYPE yyminor       /* The value for the token */
+  const ParseTOKENTYPE *yyminor       /* The value for the token */
   ParseARG_PDECL               /* Optional %extra_argument parameter */
 ){
   YYMINORTYPE yyminorunion;
@@ -731,7 +731,7 @@ void Parse(
     yypParser->yystack[0].stateno = 0;
     yypParser->yystack[0].major = 0;
   }
-  yyminorunion.yy0 = yyminor;
+  yyminorunion.yy0 = *yyminor;
 #if !defined(NDEBUG) || !defined(YYERRORSYMBOL) && !defined(YYNOERRORRECOVERY)
   yyendofinput = (yymajor==0);
 #endif

@@ -1,8 +1,13 @@
-Fri Apr 25 00:28:28 CEST 2014  John Tytgat  <John.Tytgat@aaug.net>
+Sun Apr 27 13:56:35 CEST 2014  John Tytgat  <John.Tytgat@aaug.net>
 
-	* configure.ac: Add re2c/lemon availability test.
+	* src/lempar.c.template(Parse): Pass yyminor parameter by const
+	pointer (instead of value).
 
 Sun Apr 27 13:53:46 CEST 2014  John Tytgat  <John.Tytgat@aaug.net>
 
 	* src/lempar.c.template: Copy from
 	^/branches/developers/joty/asasm-re2c-lemon/lemon/current/lempar.c
+
+Fri Apr 25 00:28:28 CEST 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	* configure.ac: Add re2c/lemon availability test.
