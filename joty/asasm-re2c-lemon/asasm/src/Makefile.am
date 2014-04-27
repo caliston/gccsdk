@@ -30,13 +30,41 @@ asasm_LDFLAGS = -static -lm
 asasm_LDADD = ../elftoolchain/libelftc/libelftc.la \
 	../elftoolchain/libelf/libelf.la \
 	../elftoolchain/libdwarf/libdwarf.la
+
+# re2c generates expr-scanner.c from expr-scanner.re
+# lemon generates expr-parser-part2.c and expr-parser-part2.h from expr-parser-part2.y
 asasm_SOURCES=area.c asm.c code.c common.c debug_dwarf.c decode.c depend.c \
 	directive_data.c directive_file.c directive_misc.c \
 	directive_storagemap.c directive_symbol.c error.c \
-	eval.c expr.c filename.c filestack.c fix.c frame.c get.c help_cop.c \
+	eval.c expr.c expr-parser.c \
+	filename.c filestack.c fix.c frame.c get.c help_cop.c \
 	help_cpu.c include.c input.c it.c lex.c lit.c \
 	local.c macros.c main.c m_coprocessor.c m_cpu.c m_cpuctrl.c \
 	m_cpumem.c m_fpe.c opt.c option.c os.c output.c phase.c \
 	predef_reg.c put.c reloc.c state.c \
 	symbol.c targetcpu.c \
 	value.c variables.c whileif.c
+nodist_asasm_SOURCES=expr-scanner.c expr-parser-part2.h
+
+# We don't mention expr-parser-part2.c in BUILT_SOURCES as otherwise it will be
+# built on its own.  We're building it as part of expr-parser.c.
+BUILT_SOURCES = expr-scanner.c expr-parser-part2.h
+# FIXME: EXTRA_DIST
+
+AM_V_LEMON = $(am__v_LEMON_@AM_V@)
+am__v_LEMON_ = $(am__v_LEMON_@AM_DEFAULT_V@)
+am__v_LEMON_0 = @echo "  LEMON   " $@;
+
+AM_V_RE2C = $(am__v_RE2C_@AM_V@)
+am__v_RE2C_ = $(am__v_RE2C_@AM_DEFAULT_V@)
+am__v_RE2C_0 = @echo "  RE2C    " $@;
+
+expr-scanner.c: $(srcdir)/expr-scanner.re
+	$(AM_V_RE2C)@RE2C@ -o $(srcdir)/expr-scanner.c $(srcdir)/expr-scanner.re || \
+		(rm -f $(srcdir)/expr-scanner.c ; false)
+
+# expr-parser-part2.h's date doesn't seem to get updated after using lemon on an
+# updated expr-parser-part2.y, hence we need to touch expr-parser-part2.h.
+expr-parser-part2.h: $(srcdir)/lempar.c.template $(srcdir)/expr-parser-part2.y
+	$(AM_V_LEMON)@LEMON@ -q T=$(srcdir)/lempar.c.template $(srcdir)/expr-parser-part2.y && touch $(srcdir)/expr-parser-part2.h || \
+		(rm -f $(srcdir)/expr-parser-part2.{c,h,out} ; false)

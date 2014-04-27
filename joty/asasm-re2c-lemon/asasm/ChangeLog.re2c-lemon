@@ -1,3 +1,14 @@
+Sun Apr 27 16:22:19 CEST 2014  John Tytgat  <John.Tytgat@aaug.net>
+
+	src:
+	* Makefile.am(expr-parser-part2.y): Build with lemon.
+	(expr-scanner.re): Build with re2c.
+	* expr-parser.c, expr-parser.h, expr-parser-part1.c,
+	expr-parser-part3.c: Add.
+	* expr-parser-part2.y: Add (based on eval.c).
+	* expr-scanner.h: Add.
+	* expr-scanner.re: Add (based on lex.c).
+
 Sun Apr 27 13:59:40 CEST 2014  John Tytgat  <John.Tytgat@aaug.net>
 
 	* src/lempar.c.template(yy_find_shift_action): Factor out checking
