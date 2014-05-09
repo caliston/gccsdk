@@ -2,9 +2,9 @@
 
 bin_PROGRAMS = re2c
 win_BINARIES = $(WINBUILDDIR)/re2c.exe
-re2c_SOURCES = code.cc dfa.cc main.cc parser.cc actions.cc scanner.re substr.cc\
-	translate.cc scanner.cc mbo_getopt.cc \
-	enc.cc utf8.cc utf8_range.cc \
+re2c_SOURCES = code.cc dfa.cc main.cc parser.cc actions.cc scanner.re substr.cc range.cc \
+	translate.cc scanner.cc mbo_getopt.cc print.cc \
+	enc.cc utf8.cc utf8_range.cc utf8_regexp.cc utf16.cc utf16_range.cc utf16_regexp.cc range_suffix.cc \
 	basics.h dfa.h globals.h ins.h parser.h re.h scanner.h \
 	substr.h token.h mbo_getopt.h code.h stream_lc.h code_names.h
 BUILT_SOURCES = parser.cc scanner.cc
@@ -13,6 +13,7 @@ man_MANS     = re2c.1
 
 #CXXFLAGS     = -O2 -Wall -Wno-unused -Wno-parentheses -Wno-deprecated
 #CXXFLAGS     = -ggdb -fno-inline -O2 -Wall -Wextra -pedantic -Wconversion -Wpointer-arith -Wwrite-strings -Wredundant-decls -Werror -Wunused-function -DPEDANTIC
+CXXFLAGS     = -W -Wall -Wextra -pedantic -Wredundant-decls -DPEDANTIC -O2 -g
 YFLAGS       = -d
 
 RE2C         = re2c$(EXEEXT)

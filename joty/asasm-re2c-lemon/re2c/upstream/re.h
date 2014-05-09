@@ -10,56 +10,13 @@
 #include <string>
 #include "token.h"
 #include "ins.h"
+#include "free_list.h"
 #include "globals.h"
+#include "range.h"
 #include "smart_ptr.h"
 
 namespace re2c
 {
-
-template<class _Ty>
-class free_list: protected std::set<_Ty>
-{
-public:
-	typedef typename std::set<_Ty>::iterator   iterator;
-	typedef typename std::set<_Ty>::size_type  size_type;
-	typedef typename std::set<_Ty>::key_type   key_type;
-	
-	free_list(): in_clear(false)
-	{
-	}
-	
-	using std::set<_Ty>::insert;
-
-	size_type erase(const key_type& key)
-	{
-		if (!in_clear)
-		{
-			return std::set<_Ty>::erase(key);
-		}
-		return 0;
-	}
-	
-	void clear()
-	{
-		in_clear = true;
-
-		for(iterator it = this->begin(); it != this->end(); ++it)
-		{
-			delete *it;
-		}
-		std::set<_Ty>::clear();
-		
-		in_clear = false;
-	}
-
-	~free_list()
-	{
-		clear();
-	}
-
-protected:
-	bool in_clear;
-};
 
 typedef struct extop
 {
@@ -90,40 +47,6 @@ struct CharSet
 	CharPtn	*ptn;
 };
 
-class Range
-{
-
-public:
-	Range	*next;
-	uint	lb, ub;		// [lb,ub)
-
-	static free_list<Range*> vFreeList;
-
-public:
-	Range(uint l, uint u) : next(NULL), lb(l), ub(u)
-	{
-		vFreeList.insert(this);
-	}
-
-	Range(Range &r) : next(NULL), lb(r.lb), ub(r.ub)
-	{
-		vFreeList.insert(this);
-	}
-
-	~Range()
-	{
-		vFreeList.erase(this);
-	}
-
-	friend std::ostream& operator<<(std::ostream&, const Range&);
-	friend std::ostream& operator<<(std::ostream&, const Range*);
-};
-
-inline std::ostream& operator<<(std::ostream &o, const Range *r)
-{
-	return r ? o << *r : o;
-}
-
 class RegExp
 {
 
@@ -149,7 +72,10 @@ public:
 	 * [\x80-\xBF] factored out, but they won't share instructions.
 	 */
 	Ins*	ins_cache; /* if non-NULL, points to compiled instructions */
-	bool	must_recompile;
+	enum InsAccess
+		{ SHARED
+		, PRIVATE
+		} ins_access;
 
 	static free_list<RegExp*> vFreeList;
 
@@ -157,7 +83,7 @@ public:
 	RegExp()
 		: size(0)
 		, ins_cache(NULL)
-		, must_recompile(false)
+		, ins_access(SHARED)
 	{
 		vFreeList.insert(this);
 	}
@@ -177,7 +103,7 @@ public:
 	virtual void calcSize(Char*) = 0;
 	virtual uint fixedLength();
 	virtual uint compile(Char*, Ins*) = 0;
-	virtual void uncompile() = 0;
+	virtual void decompile() = 0;
 	virtual void display(std::ostream&) const = 0;
 	friend std::ostream& operator<<(std::ostream&, const RegExp&);
 	friend std::ostream& operator<<(std::ostream&, const RegExp*);
@@ -210,7 +136,7 @@ public:
 	void calcSize(Char*);
 	uint fixedLength();
 	uint compile(Char*, Ins*);
-	void uncompile();
+	void decompile();
 	void display(std::ostream &o) const
 	{
 		o << "_";
@@ -238,7 +164,7 @@ public:
 	void calcSize(Char*);
 	uint fixedLength();
 	uint compile(Char*, Ins*);
-	void uncompile();
+	void decompile();
 	void display(std::ostream&) const;
 
 #ifdef PEDANTIC
@@ -273,7 +199,7 @@ public:
 	uint     line;
 
 public:
-	RuleOp(RegExp*, RegExp*, Token*, uint, bool must_recompile);
+	RuleOp(RegExp*, RegExp*, Token*, uint, InsAccess);
 
 	~RuleOp()
 	{
@@ -288,7 +214,7 @@ public:
 	void split(CharSet&);
 	void calcSize(Char*);
 	uint compile(Char*, Ins*);
-	void uncompile();
+	void decompile();
 	void display(std::ostream &o) const
 	{
 		o << exp << "/" << ctx << ";";
@@ -361,7 +287,7 @@ public:
 	void calcSize(Char*);
 	uint fixedLength();
 	uint compile(Char*, Ins*);
-	void uncompile();
+	void decompile();
 	void display(std::ostream &o) const
 	{
 		o << exp1 << "|" << exp2;
@@ -413,7 +339,7 @@ public:
 	void calcSize(Char*);
 	uint fixedLength();
 	uint compile(Char*, Ins*);
-	void uncompile();
+	void decompile();
 	void display(std::ostream &o) const
 	{
 		o << exp1 << exp2;
@@ -458,7 +384,7 @@ public:
 	void split(CharSet&);
 	void calcSize(Char*);
 	uint compile(Char*, Ins*);
-	void uncompile();
+	void decompile();
 	void display(std::ostream &o) const
 	{
 		o << exp << "+";
@@ -496,7 +422,7 @@ public:
 		, min(lb)
 		, max(ub)
 	{
-		exp->must_recompile = true;
+		exp->ins_access = PRIVATE;
 	}
 
 	const char *typeOf()
@@ -507,7 +433,7 @@ public:
 	void split(CharSet&);
 	void calcSize(Char*);
 	uint compile(Char*, Ins*);
-	void uncompile();
+	void decompile();
 	void display(std::ostream &o) const
 	{
 		o << exp << "+";
@@ -536,6 +462,7 @@ typedef std::vector<std::string>        RegExpIndices;
 typedef std::list<RuleOp*>              RuleOpList;
 typedef std::pair<uint, std::string>    LineCode;
 typedef std::map<std::string, LineCode> SetupMap;
+typedef std::map<std::string, Token*>   DefaultMap;
 
 class DFA;
 

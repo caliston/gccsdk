@@ -76,13 +76,14 @@ public:
 	Range * mkRange(SubStr &s) const;
 	Range * getRange(SubStr &s) const;
 	RegExp * matchSymbol(uint c) const;
-	RegExp * matchChar(uint c) const;
+	RegExp * matchSymbolRange(Range * r) const;
 	RegExp * strToName(SubStr s) const;
 	RegExp * strToRE(SubStr s) const;
 	RegExp * strToCaseInsensitiveRE(SubStr s) const;
 	RegExp * ranToRE(SubStr s) const;
 	RegExp * invToRE(SubStr s) const;
 	RegExp * mkDot() const;
+	RegExp * mkDefault() const;
 };
 
 inline size_t Scanner::get_pos() const

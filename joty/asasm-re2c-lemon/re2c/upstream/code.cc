@@ -11,6 +11,7 @@
 #include "globals.h"
 #include "dfa.h"
 #include "parser.h"
+#include "print.h"
 #include "code.h"
 
 namespace re2c
@@ -132,42 +133,32 @@ void Go::compact()
 	nSpans = i + 1;
 }
 
+/*
+ * Find all spans, that map to the given state. For each of them,
+ * find upper adjacent span, that maps to another state (if such
+ * span exists, otherwize try lower one).
+ * If input contains single span that maps to the given state,
+ * then output contains 0 spans.
+ */
 void Go::unmap(Go *base, const State *x)
 {
-	Span *s = span, *b = base->span, *e = &b[base->nSpans];
-	uint lb = 0;
-	s->ub = 0;
-	s->to = NULL;
-
-	for (; b != e; ++b)
+	nSpans = 0;
+	for (uint i = 0; i < base->nSpans; ++i)
 	{
-		if (b->to == x)
+		if (base->span[i].to != x)
 		{
-			if ((s->ub - lb) > 1)
+			if (nSpans > 0 && span[nSpans - 1].to == base->span[i].to)
+				span[nSpans - 1].ub = base->span[i].ub;
+			else
 			{
-				s->ub = b->ub;
+				span[nSpans].to = base->span[i].to;
+				span[nSpans].ub = base->span[i].ub;
+				++nSpans;
 			}
-		}
-		else
-		{
-			if (b->to != s->to)
-			{
-				if (s->ub)
-				{
-					lb = s->ub;
-					++s;
-				}
-
-				s->to = b->to;
-			}
-
-			s->ub = b->ub;
 		}
 	}
-
-	s->ub = e[ -1].ub;
-	++s;
-	nSpans = s - span;
+	if (nSpans > 0)
+		span[nSpans - 1].ub = base->span[base->nSpans - 1].ub;
 }
 
 static void doGen(const Go *g, const State *s, uint *bm, uint f, uint m)
@@ -917,9 +908,11 @@ static bool genCases(std::ostream &o, uint ind, uint lb, Span *s, bool &newLine,
 					o << indent(ind) << "case ";
 					prtChOrHex(o, lb);
 					o << ":";
-					if (dFlag && encoding.isEBCDIC() && lb < 256u && isprint(encoding.talx(lb)))
+					if (dFlag && encoding.is(Enc::EBCDIC))
 					{
-						o << " /* " << std::string(1, encoding.talx(lb)) << " */";
+						const uint c = encoding.decodeUnsafe(lb);
+						if (isprint(c))
+							o << " /* " << std::string(1, c) << " */";
 					}
 				}
 				newLine = false;
@@ -1155,7 +1148,7 @@ void Go::genCpGoto(std::ostream &o, uint ind, const State *from, const State *ne
 	}
 
 	readCh = false;
-	if (encoding.szChar() > 1)
+	if (encoding.szCodeUnit() > 1)
 	{
 		o << indent(ind) << "if (" << sYych <<" & ~0xFF) {\n";
 		genBase(o, ind+1, from, next, readCh, 1);
@@ -1199,7 +1192,7 @@ void Go::genCpGoto(std::ostream &o, uint ind, const State *from, const State *ne
 
 void Go::genGoto(std::ostream &o, uint ind, const State *from, const State *next, bool &readCh)
 {
-	if ((gFlag || (encoding.szChar() > 1)) && wSpans == ~0u)
+	if ((gFlag || (encoding.szCodeUnit() > 1)) && wSpans == ~0u)
 	{
 		uint nBitmaps = 0;
 		std::set<uint> vTargets;
@@ -1212,7 +1205,7 @@ void Go::genGoto(std::ostream &o, uint ind, const State *from, const State *next
 			{
 				wSpans++;
 			}
-			if (span[i].ub < 0x100 || (encoding.szChar() <= 1))
+			if (span[i].ub < 0x100 || (encoding.szCodeUnit() <= 1))
 			{
 				lSpans++;
 
@@ -1272,7 +1265,7 @@ void Go::genGoto(std::ostream &o, uint ind, const State *from, const State *next
 						sYych = mapCodeName["yych"];
 					}
 					readCh = false;
-					if (encoding.szChar() > 1)
+					if (encoding.szCodeUnit() > 1)
 					{
 						o << indent(ind) << "if (" << sYych << " & ~0xFF) {\n";
 						sYych = mapCodeName["yych"];
@@ -2254,38 +2247,55 @@ void Scanner::config(const Str& cfg, int num)
 	{
 		bUseYYSetStateNaked = num != 0;
 	}
+	else if (cfg.to_string() == "flags:e")
+	{
+		if (num != 0)
+		{
+			if (!encoding.set(Enc::EBCDIC))
+				fatal("Cannot set '-e' switch: please reset '-w', '-x', '-u' and '-8' switches at first.\n");
+		}
+		else
+			encoding.unset(Enc::EBCDIC);
+	}
 	else if (cfg.to_string() == "flags:u")
 	{
-		if (!rFlag)
-		{
-			fatalf("cannot use configuration name '%s' without -r flag", cfg.to_string().c_str());
-		}
 		if (num != 0)
-			encoding.setUTF32();
+		{
+			if (!encoding.set(Enc::UTF32))
+				fatal("Cannot set '-u' switch: please reset '-e', '-w', '-x' and '-8' switches at first.\n");
+		}
 		else
-			encoding.unsetUTF32();
+			encoding.unset(Enc::UTF32);
 	}
 	else if (cfg.to_string() == "flags:w")
 	{
-		if (!rFlag)
-		{
-			fatalf("cannot use configuration name '%s' without -r flag", cfg.to_string().c_str());
-		}
 		if (num != 0)
-			encoding.setUTF16();
+		{
+			if (!encoding.set(Enc::UCS2))
+				fatal("Cannot set '-w' switch: please reset '-e', '-x', '-u' and '-8' switches at first.\n");
+		}
 		else
-			encoding.unsetUTF16();
+			encoding.unset(Enc::UCS2);
 	}
-	else if (cfg.to_string() == "flags:z")
+	else if (cfg.to_string() == "flags:x")
 	{
-		if (!rFlag)
-		{
-			fatalf("cannot use configuration name '%s' without -r flag", cfg.to_string().c_str());
-		}
 		if (num != 0)
-			encoding.setUTF8();
+		{
+			if (!encoding.set(Enc::UTF16))
+				fatal("Cannot set '-x' switch: please reset '-e', '-x', '-u' and '-8' switches at first.\n");
+		}
 		else
-			encoding.unsetUTF8();
+			encoding.unset(Enc::UTF16);
+	}
+	else if (cfg.to_string() == "flags:8")
+	{
+		if (num != 0)
+		{
+			if (!encoding.set(Enc::UTF8))
+				fatal("Cannot set '-8' switch: please reset '-e', '-w', '-x' and '-u' switches at first.\n");
+		}
+		else
+			encoding.unset(Enc::UTF8);
 	}
 	else
 	{

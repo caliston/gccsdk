@@ -8,7 +8,9 @@
 #include "globals.h"
 #include "parser.h"
 #include "dfa.h"
-#include "utf8_range.h"
+#include "print.h"
+#include "utf8_regexp.h"
+#include "utf16_regexp.h"
 
 namespace re2c
 {
@@ -108,7 +110,7 @@ uint NullOp::compile(Char*, Ins*)
 	return 0;
 }
 
-void NullOp::uncompile()
+void NullOp::decompile()
 {
 	;
 }
@@ -116,131 +118,6 @@ void NullOp::uncompile()
 void NullOp::split(CharSet&)
 {
 	;
-}
-
-std::ostream& operator<<(std::ostream &o, const Range &r)
-{
-	if ((r.ub - r.lb) == 1)
-	{
-		prtCh(o, r.lb);
-	}
-	else
-	{
-		prtCh(o, r.lb);
-		o << "-";
-		prtCh(o, r.ub - 1);
-	}
-
-	return o << r.next;
-}
-
-Range *doUnion(Range *r1, Range *r2)
-{
-	Range *r, **rP = &r;
-
-	for (;;)
-	{
-		Range *s;
-
-		if (r1->lb <= r2->lb)
-		{
-			s = new Range(*r1);
-		}
-		else
-		{
-			s = new Range(*r2);
-		}
-
-		*rP = s;
-		rP = &s->next;
-
-		for (;;)
-		{
-			if (r1->lb <= r2->lb)
-			{
-				if (r1->lb > s->ub)
-					break;
-
-				if (r1->ub > s->ub)
-					s->ub = r1->ub;
-
-				if (!(r1 = r1->next))
-				{
-					uint ub = 0;
-
-					for (; r2 && r2->lb <= s->ub; r2 = r2->next)
-						ub = r2->ub;
-
-					if (ub > s->ub)
-						s->ub = ub;
-
-					*rP = r2;
-
-					return r;
-				}
-			}
-			else
-			{
-				if (r2->lb > s->ub)
-					break;
-
-				if (r2->ub > s->ub)
-					s->ub = r2->ub;
-
-				if (!(r2 = r2->next))
-				{
-					uint ub = 0;
-
-					for (; r1 && r1->lb <= s->ub; r1 = r1->next)
-						ub = r1->ub;
-
-					if (ub > s->ub)
-						s->ub = ub;
-
-					*rP = r1;
-
-					return r;
-				}
-			}
-		}
-	}
-
-	*rP = NULL;
-	return r;
-}
-
-Range *doDiff(Range *r1, Range *r2)
-{
-	Range *r, *s, **rP = &r;
-
-	for (; r1; r1 = r1->next)
-	{
-		uint lb = r1->lb;
-
-		for (; r2 && r2->ub <= r1->lb; r2 = r2->next)
-
-			;
-		for (; r2 && r2->lb < r1->ub; r2 = r2->next)
-		{
-			if (lb < r2->lb)
-			{
-				*rP = s = new Range(lb, r2->lb);
-				rP = &s->next;
-			}
-
-			if ((lb = r2->ub) >= r1->ub)
-				goto noMore;
-		}
-
-		*rP = s = new Range(lb, r1->ub);
-		rP = &s->next;
-
-noMore:
-		;
-	}
-
-	*rP = NULL;
-	return r;
 }
 
 MatchOp *merge(MatchOp *m1, MatchOp *m2)
@@ -302,14 +179,14 @@ uint MatchOp::compile(Char *rep, Ins *i)
 			}
 		}
 
-		if (must_recompile)
-			uncompile();
+		if (ins_access == PRIVATE)
+			decompile();
 
 		return size;
 	}
 }
 
-void MatchOp::uncompile()
+void MatchOp::decompile()
 {
 	ins_cache = NULL;
 }
@@ -456,19 +333,19 @@ uint AltOp::compile(Char *rep, Ins *i)
 		const uint sz2 = exp2->compile(rep, &j[1]);
 		j->i.link = &j[sz2 + 1];
 
-		if (must_recompile)
-			uncompile();
+		if (ins_access == PRIVATE)
+			decompile();
 
 		return sz1 + sz2 + 2;
 	}
 }
 
-void AltOp::uncompile()
+void AltOp::decompile()
 {
 	if (ins_cache)
 	{
-		exp1->uncompile();
-		exp2->uncompile();
+		exp1->decompile();
+		exp2->decompile();
 		ins_cache = NULL;
 	}
 }
@@ -510,19 +387,19 @@ uint CatOp::compile(Char *rep, Ins *i)
 		const uint sz1 = exp1->compile(rep, &i[0]);
 		const uint sz2 = exp2->compile(rep, &i[sz1]);
 
-		if (must_recompile)
-			uncompile();
+		if (ins_access == PRIVATE)
+			decompile();
 
 		return sz1 + sz2;
 	}
 }
 
-void CatOp::uncompile()
+void CatOp::decompile()
 {
 	if (ins_cache)
 	{
-		exp1->uncompile();
-		exp2->uncompile();
+		exp1->decompile();
+		exp2->decompile();
 		ins_cache = NULL;
 	}
 }
@@ -555,18 +432,18 @@ uint CloseOp::compile(Char *rep, Ins *i)
 		++i;
 
 		const uint sz = i - ins_cache;
-		if (must_recompile)
-			uncompile();
+		if (ins_access == PRIVATE)
+			decompile();
 
 		return sz;
 	}
 }
 
-void CloseOp::uncompile()
+void CloseOp::decompile()
 {
 	if (ins_cache)
 	{
-		exp->uncompile();
+		exp->decompile();
 		ins_cache = NULL;
 	}
 }
@@ -621,18 +498,18 @@ uint CloseVOp::compile(Char *rep, Ins *i)
 		}
 
 		const uint sz = i - ins_cache;
-		if (must_recompile)
-			uncompile();
+		if (ins_access == PRIVATE)
+			decompile();
 
 		return sz;
 	}
 }
 
-void CloseVOp::uncompile()
+void CloseVOp::decompile()
 {
 	if (ins_cache)
 	{
-		exp->uncompile();
+		exp->decompile();
 		ins_cache = NULL;
 	}
 }
@@ -706,17 +583,17 @@ uint Scanner::unescape(SubStr &s) const
 			}
 
 			uint l = 0;
-						
 			if (s.str[0] == '0')
 			{
 				l++;
 				if (s.str[1] == '0')
 				{
 					l++;
-					if (s.str[2] == '0' || (s.str[2] == '1' && (encoding.szSymbol() == 4)))
+					if (s.str[2] == '0' || (s.str[2] == '1' && encoding.szCodePoint() == 4))
 					{
 						l++;
-						if (encoding.szSymbol() == 4) {
+						if (encoding.szCodePoint() == 4)
+						{
 							const char *u3 = strchr(hex, tolower(s.str[2]));
 							const char *u4 = strchr(hex, tolower(s.str[3]));
 							if (u3 && u4)
@@ -780,7 +657,7 @@ uint Scanner::unescape(SubStr &s) const
 				       + (uint)((p4 - hex))
 				       + ucb;
 	
-				if (v >= encoding.nSymbols())
+				if (v >= encoding.nCodePoints())
 				{
 					fatal(s.ofs(),
 						c == 'X'
@@ -858,7 +735,7 @@ std::string& Scanner::unescape(SubStr& str_in, std::string& str_out) const
 
 Range * Scanner::getRange(SubStr &s) const
 {
-	uint lb = unescape(s), ub, xlb, xub;
+	uint lb = unescape(s), ub;
 
 	if (s.len < 2 || *s.str != '-')
 	{
@@ -877,45 +754,23 @@ Range * Scanner::getRange(SubStr &s) const
 		}
 	}
 
-	xlb = encoding.xlat(lb);
-	xub = encoding.xlat(ub);
-
-	if (encoding.isEBCDIC())
-	{
-		Range * r = new Range(xlb, xlb + 1);
-		for (uint c = lb + 1; c <= ub; ++c)
-		{
-			uint xc = encoding.xlat(c);
-			r = doUnion(r, new Range(xc, xc + 1));
-		}
-		return r;
-	}
-	else
-	{
-		return new Range(xlb, xub + 1);
-	}
-}
-
-RegExp * Scanner::matchChar(uint c) const
-{
-	uint xc = encoding.xlat(c);
-	return new MatchOp(new Range(xc, xc + 1));
+	Range * r = encoding.encodeRange(lb, ub);
+	if (r == NULL)
+		fatalf("Bad code point range: '0x%X - 0x%X'", lb, ub);
+	return r;
 }
 
 RegExp * Scanner::matchSymbol(uint c) const
 {
-	RegExp *re = NULL;
-	if (encoding.isUTF8())
-	{
-		uchar bytes[4];
-		const int bytes_count = utf8::rune_to_bytes(bytes, c);
-		re = matchChar(bytes[0]);
-		for (int i = 1; i < bytes_count; ++i)
-			re = new CatOp (re, matchChar(bytes[i]));
-	}
+	if (!encoding.encode(c))
+		fatalf("Bad code point: '0x%X'", c);
+
+	if (encoding.is(Enc::UTF16))
+		return UTF16Symbol(c);
+	else if (encoding.is(Enc::UTF8))
+		return UTF8Symbol(c);
 	else
-		re = matchChar(c);
-	return re;
+		return new MatchOp(new Range(c, c + 1));
 }
 
 RegExp * Scanner::strToRE(SubStr s) const
@@ -985,6 +840,16 @@ Range * Scanner::mkRange(SubStr &s) const
 	return r;
 }
 
+RegExp * Scanner::matchSymbolRange(Range * r) const
+{
+	if (encoding.is(Enc::UTF16))
+		return UTF16Range(r);
+	else if (encoding.is(Enc::UTF8))
+		return UTF8Range(r);
+	else
+		return new MatchOp(r);
+}
+
 RegExp * Scanner::ranToRE(SubStr s) const
 {
 	s.len -= 2;
@@ -993,10 +858,7 @@ RegExp * Scanner::ranToRE(SubStr s) const
 	if (s.len == 0)
 		return new NullOp;
 
-	Range *r = mkRange(s);
-	return encoding.isUTF8()
-		? UTF8Range(r)
-		: new MatchOp(r);
+	return matchSymbolRange(mkRange(s));
 }
 
 RegExp * Scanner::invToRE(SubStr s) const
@@ -1004,32 +866,46 @@ RegExp * Scanner::invToRE(SubStr s) const
 	s.len -= 3;
 	s.str += 2;
 
-	Range * any = new Range(0, encoding.nSymbols());
+	Range * full = encoding.fullRange();
 
 	Range * r = s.len == 0
-		? any
-		: doDiff(any, mkRange (s));
+		? full
+		: doDiff(full, mkRange (s));
 
-	return encoding.isUTF8()
-		? UTF8Range(r)
-		: new MatchOp(r);
+	return matchSymbolRange(r);
 }
 
 RegExp * Scanner::mkDot() const
 {
-	Range * any = new Range(0, encoding.nSymbols());
-	const uint c = encoding.xlat('\n');
+	Range * full = encoding.fullRange();
+	uint c = '\n';
+	if (!encoding.encode(c))
+		fatalf("Bad code point: '0x%X'", c);
 	Range * ran = new Range(c, c + 1);
-	Range * inv = doDiff(any, ran);
+	Range * inv = doDiff(full, ran);
 
-	return encoding.isUTF8()
-		? UTF8Range(inv)
-		: new MatchOp(inv);
+	return matchSymbolRange(inv);
+}
+
+/*
+ * Create a byte range that includes all possible input characters.
+ * This may include characters, which do not map to any valid symbol
+ * in current encoding. For encodings, which directly map symbols to
+ * input characters (ASCII, EBCDIC, UTF-32), it equals [^]. For other
+ * encodings (UTF-16, UTF-8), [^] and this range are different.
+ *
+ * Also note that default range doesn't respect encoding policy
+ * (the way invalid code points are treated).
+ */
+RegExp * Scanner::mkDefault() const
+{
+	Range * def = new Range(0, encoding.nCodeUnits());
+	return new MatchOp(def);
 }
 
 const char *RuleOp::type = "RuleOp";
 
-RuleOp::RuleOp(RegExp *e, RegExp *c, Token *t, uint a, bool b)
+RuleOp::RuleOp(RegExp *e, RegExp *c, Token *t, uint a, InsAccess access)
 	: exp(e)
 	, ctx(c)
 	, ins(NULL)
@@ -1037,13 +913,13 @@ RuleOp::RuleOp(RegExp *e, RegExp *c, Token *t, uint a, bool b)
 	, code(t)
 	, line(0)
 {
-	must_recompile = b;
+	ins_access = access;
 }
 
 RuleOp* RuleOp::copy(uint a) const
 {
 	Token *token = new Token(*code);
-	return new RuleOp(exp, ctx, token, a, must_recompile);
+	return new RuleOp(exp, ctx, token, a, ins_access);
 }
 
 void RuleOp::calcSize(Char *rep)
@@ -1074,19 +950,19 @@ uint RuleOp::compile(Char *rep, Ins *i)
 		++i;
 
 		const uint sz = i - ins_cache;
-		if (must_recompile)
-			uncompile();
+		if (ins_access == PRIVATE)
+			decompile();
 
 		return sz;
 	}
 }
 
-void RuleOp::uncompile()
+void RuleOp::decompile()
 {
 	if (ins_cache)
 	{
-		exp->uncompile();
-		ctx->uncompile();
+		exp->decompile();
+		ctx->decompile();
 		ins_cache = NULL;
 	}
 }
@@ -1144,19 +1020,19 @@ CharSet::CharSet()
 	: fix(0)
 	, freeHead(0)
 	, freeTail(0)
-	, rep(new CharPtr[encoding.nChars()])
-	, ptn(new CharPtn[encoding.nChars()])
+	, rep(new CharPtr[encoding.nCodeUnits()])
+	, ptn(new CharPtn[encoding.nCodeUnits()])
 {
-	for (uint j = 0; j < encoding.nChars(); ++j)
+	for (uint j = 0; j < encoding.nCodeUnits(); ++j)
 	{
 		rep[j] = &ptn[0];
-		ptn[j].nxt = &ptn[j + 1]; /* wrong for j=encoding.nChars() but will be corrected below */
+		ptn[j].nxt = &ptn[j + 1]; /* wrong for j=encoding.nCodeUnits() - 1 but will be corrected below */
 		ptn[j].card = 0;
 	}
 
 	freeHead = &ptn[1];
-	*(freeTail = &ptn[encoding.nChars() - 1].nxt) = NULL;
-	ptn[0].card = encoding.nChars();
+	*(freeTail = &ptn[encoding.nCodeUnits() - 1].nxt) = NULL;
+	ptn[0].card = encoding.nCodeUnits();
 	ptn[0].nxt = NULL;
 }
 	
@@ -1169,24 +1045,24 @@ CharSet::~CharSet()
 smart_ptr<DFA> genCode(RegExp *re)
 {
 	CharSet cs;
-	uint j;
-
 	re->split(cs);
-	/*
-	    for(uint k = 0; k < encoding.nChars();){
-		for(j = k; ++k < encoding.nChars() && cs.rep[k] == cs.rep[j];);
-		printSpan(cerr, j, k);
-		cerr << "\t" << cs.rep[j] - &cs.ptn[0] << endl;
-	    }
-	*/
-	Char *rep = new Char[encoding.nChars()];
+	
+	/*for(uint k = 0; k < encoding.nCodeUnits();)
+	{
+		uint j;
+		for(j = k; ++k < encoding.nCodeUnits() && cs.rep[k] == cs.rep[j];);
+		printSpan(std::cerr, j, k);
+		std::cerr << "\t" << cs.rep[j] - &cs.ptn[0] << std::endl;
+	}*/
+	
+	Char *rep = new Char[encoding.nCodeUnits()];
 
-	for (j = 0; j < encoding.nChars(); ++j)
+	for (uint j = 0; j < encoding.nCodeUnits(); ++j)
 	{
 		if (!cs.rep[j]->nxt)
 			cs.rep[j]->nxt = &cs.ptn[j];
 
-		rep[j] = (Char) (cs.rep[j]->nxt - &cs.ptn[0]);
+		rep[j] = cs.rep[j]->nxt - &cs.ptn[0];
 	}
 
 	re->calcSize(rep);
@@ -1205,7 +1081,7 @@ smart_ptr<DFA> genCode(RegExp *re)
 	}
 	*/
 
-	for (j = 0; j < size;)
+	for (uint j = 0; j < size;)
 	{
 		unmark(&ins[j]);
 
@@ -1219,7 +1095,7 @@ smart_ptr<DFA> genCode(RegExp *re)
 		}
 	}
 
-	return make_smart_ptr(new DFA(ins, size, 0, encoding.nChars(), rep));
+	return make_smart_ptr(new DFA(ins, size, 0, encoding.nCodeUnits(), rep));
 }
 
 } // end namespace re2c

@@ -123,17 +123,19 @@ static const mbo_opt_struct OPTIONS[] =
 	mbo_opt_struct('v', 0, "version"),
 	mbo_opt_struct('V', 0, "vernum"),
 	mbo_opt_struct('w', 0, "wide-chars"),
-	mbo_opt_struct('z', 0, "utf-8"),
+	mbo_opt_struct('x', 0, "utf-16"),
+	mbo_opt_struct('8', 0, "utf-8"),
 	mbo_opt_struct('1', 0, "single-pass"),
 	mbo_opt_struct(10,  0, "no-generation-date"),
 	mbo_opt_struct(11,  0, "case-insensitive"),
 	mbo_opt_struct(12,  0, "case-inverted"),
+	mbo_opt_struct(13,  1, "encoding-policy"),
 	mbo_opt_struct('-', 0, NULL) /* end of args */
 };
 
 static void usage()
 {
-	std::cerr << "usage: re2c [-bcdDefFghirsuvVw1] [-o of] [-t th] file\n"
+	std::cerr << "usage: re2c [-bcdDefFghirsuvVwx18] [-o of] [-t th] file\n"
 	"\n"
 	"-? -h  --help           Display this info.\n"
 	"\n"
@@ -150,8 +152,10 @@ static void usage()
 	"\n"
 	"-D     --emit-dot       Emit a Graphviz dot view of the DFA graph\n"
 	"\n"
-	"-e     --ecb            Cross-compile from an ASCII platform to an EBCDIC one.\n"
-	"                        This cannot be combined with -w, -u or -r.\n"
+	"-e     --ecb            Generate a parser that supports EBCDIC. The generated code\n"
+	"                        can deal with any character up to 0xFF. In this mode re2c\n"
+	"                        assumes that input character size is 1 byte. This switch is\n"
+	"                        incompatible with -w, -u, -x and -8\n"
 	"\n"
 	"-f     --storable-state Generate a scanner that supports storable states.\n"
 	"\n"
@@ -165,25 +169,35 @@ static void usage()
 	"-o of  --output=of      Specify the output file (of) instead of stdout\n"
 	"\n"
 	"-r     --reusable       Allow reuse of scanner definitions.\n"
-	"                        This cannot be used together with -e switch.\n"
 	"\n"
 	"-s     --nested-ifs     Generate nested ifs for some switches. Many compilers\n"
 	"                        need this assist to generate better code.\n"
 	"\n"
 	"-t th  --type-header=th Generate a type header file (th) with type definitions.\n"
 	"\n"
-	"-u     --unicode        Implies -w but supports the full Unicode character set.\n"
-	"                        This cannot be used together with -e switch.\n"
+	"-u     --unicode        Generate a parser that supports UTF-32. The generated code\n"
+	"                        can deal with any valid Unicode character up to 0x10FFFF.\n"
+	"                        In this mode re2c assumes that input character size is 4 bytes.\n"
+	"                        This switch is incompatible with -e, -w, -x and -8. It implies -s.\n"
 	"\n"
 	"-v     --version        Show version information.\n"
 	"\n"
 	"-V     --vernum         Show version as one number.\n"
 	"\n"
-	"-w     --wide-chars     Create a parser that supports wide chars (UCS-2). This\n"
-	"                        implies -s and cannot be used together with -e switch.\n"
+	"-w     --wide-chars     Generate a parser that supports UCS-2. The generated code can\n"
+	"                        deal with any valid Unicode character up to 0xFFFF. In this mode\n"
+	"                        re2c assumes that input character size is 2 bytes. This switch is\n"
+	"                        incompatible with -e, -x, -u and -8. It implies -s."
 	"\n"
-	"-z     --utf-8          Create a parser that supports UTF-8. This can't be used\n"
-	"                        together with -e, -w or -u switch.\n"
+	"-x     --utf-16         Generate a parser that supports UTF-16. The generated code can\n"
+	"                        deal with any valid Unicode character up to 0x10FFFF. In this mode\n"
+	"                        re2c assumes that input character size is 2 bytes. This switch is\n"
+	"                        incompatible with -e, -w, -u and -8. It implies -s."
+	"\n"
+	"-8     --utf-8          Generate a parser that supports UTF-8. The generated code can\n"
+	"                        deal with any valid Unicode character up to 0x10FFFF. In this mode\n"
+	"                        re2c assumes that input character size is 1 byte. This switch is\n"
+	"                        incompatible with -e, -w, -x and -u."
 	"\n"
 	"-1     --single-pass    Force single pass generation, this cannot be combined\n"
 	"                        with -f and disables YYMAXFILL generation prior to last\n"
@@ -198,6 +212,9 @@ static void usage()
 	"--case-inverted         Invert the meaning of single and double quoted strings.\n"
 	"                        With this switch single quotes are case sensitive and\n"
 	"                        double quotes are case insensitive.\n"
+	"\n"
+	"--encoding-policy ep    Specify what re2c should do when given bad code unit.\n"
+	"                        ep can be one of the following: fail, substitute, ignore.\n"
 	;
 }
 
@@ -233,7 +250,11 @@ int main(int argc, char *argv[])
 			break;
 
 			case 'e':
-			encoding.setEBCDIC();
+			if (!encoding.set(Enc::EBCDIC))
+			{
+				std::cerr << "re2c: error: Only one of switches -e, -w, -x, -u and -8 must be set\n";
+				return 2;
+			}
 			break;
 
 			case 'd':
@@ -312,16 +333,37 @@ int main(int argc, char *argv[])
 			
 			case 'w':
 			sFlag = true;
-			encoding.setUTF16();
+			if (!encoding.set(Enc::UCS2))
+			{
+				std::cerr << "re2c: error: Only one of switches -e, -w, -x, -u and -8 must be set\n";
+				return 2;
+			}
+			break;
+
+			case 'x':
+			sFlag = true;
+			if (!encoding.set(Enc::UTF16))
+			{
+				std::cerr << "re2c: error: Only one of switches -e, -w, -x, -u and -8 must be set\n";
+				return 2;
+			}
 			break;
 
 			case 'u':
 			sFlag = true;
-			encoding.setUTF32();
+			if (!encoding.set(Enc::UTF32))
+			{
+				std::cerr << "re2c: error: Only one of switches -e, -w, -x, -u and -8 must be set\n";
+				return 2;
+			}
 			break;
 
-			case 'z':
-			encoding.setUTF8();
+			case '8':
+			if (!encoding.set(Enc::UTF8))
+			{
+				std::cerr << "re2c: error: Only one of switches -e, -w, -x, -u and -8 must be set\n";
+				return 2;
+			}
 			break;
 	  
 			default:
@@ -341,6 +383,20 @@ int main(int argc, char *argv[])
 			case 12:
 			bCaseInverted = true;
 			break;
+
+			case 13:
+			if (strcmp(opt_arg, "fail") == 0)
+				encoding.setPolicy(Enc::POLICY_FAIL);
+			else if (strcmp(opt_arg, "substitute") == 0)
+				encoding.setPolicy(Enc::POLICY_SUBSTITUTE);
+			else if (strcmp(opt_arg, "ignore") == 0)
+				encoding.setPolicy(Enc::POLICY_IGNORE);
+			else
+			{
+				std::cerr << "re2c: error: Invalid encoding policy: \"" << opt_arg << "\"\n";
+				return 1;
+			}
+			break;
 		}
 	}
 
@@ -351,18 +407,6 @@ int main(int argc, char *argv[])
 	if (!cFlag && headerFileName)
 	{
 		std::cerr << "re2c: error: Can only output a header file when using -c switch\n";
-		return 2;
-	}
-
-	if (rFlag && encoding.isEBCDIC())
-	{
-		std::cerr << "re2c: error: Cannot combine -e with -r switch\n";
-		return 2;
-	}
-
-	if (encoding.isBad())
-	{
-		std::cerr << "re2c: error: Cannot combine -z with -w or -u or -e switch\n";
 		return 2;
 	}
 

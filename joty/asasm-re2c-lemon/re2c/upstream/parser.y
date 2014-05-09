@@ -36,6 +36,8 @@ static RuleOpList       specStar;
 static Scanner          *in = NULL;
 static Scanner::ParseMode  parseMode;
 static SetupMap            ruleSetupMap;
+static Token               *ruleDefault = NULL;
+static DefaultMap          ruleDefaultMap;
 static bool                foundRules;
 
 /* Bison version 1.875 emits a definition that is not working
@@ -81,12 +83,14 @@ void context_none(CondList *clist)
 void context_rule(CondList *clist, RegExp *expr, RegExp *look, Str *newcond, Token *code)
 {
 	context_check(clist);
-	const bool must_recompile = clist->size() > 1;
+	const RegExp::InsAccess ins_access = clist->size() > 1
+		? RegExp::PRIVATE
+		: RegExp::SHARED;
 	for(CondList::const_iterator it = clist->begin(); it != clist->end(); ++it)
 	{
 		//Str *condcpy = newcond ? new Str(*newcond) : newcond;
 		Token *token = new Token(code, sourceFileInfo, newcond);//condcpy);
-		RuleOp *rule = new RuleOp(expr, look, token, accept++, must_recompile);
+		RuleOp *rule = new RuleOp(expr, look, token, accept++, ins_access);
 
 		RegExpMap::iterator itRE = specMap.find(*it);
 
@@ -125,6 +129,25 @@ void setup_rule(CondList *clist, Token *code)
 	}
 	delete clist;
 	delete code;
+}
+
+void default_rule(CondList *clist, Token *code)
+{
+	assert(clist);
+	assert(code);
+	context_check(clist);
+	if (bFirstPass)
+	{
+		for(CondList::const_iterator it = clist->begin(); it != clist->end(); ++it)
+		{
+			if (ruleDefaultMap.find(*it) != ruleDefaultMap.end())
+			{
+				in->fatalf_at(code->line, "code to default rule '%s' is already defined", it->c_str());
+			}
+			ruleDefaultMap[*it] = code;
+		}
+	}
+	delete clist;
 }
 
 %}
@@ -176,7 +199,7 @@ decl:
 			{
 				in->fatal("sym already defined");
 			}
-			$3->must_recompile = true;
+			$3->ins_access = RegExp::PRIVATE;
 			$1->re = $3;
 		}
 	|	FID expr
@@ -185,7 +208,7 @@ decl:
 			{
 				in->fatal("sym already defined");
 			}
-			$2->must_recompile = true;
+			$2->ins_access = RegExp::PRIVATE;
 			$1->re = $2;
 		}
 	|	ID '=' expr '/'
@@ -216,8 +239,17 @@ rule:
 			{
 				in->fatal("condition or '<*>' required when using -c switch");
 			}
-			$$ = new RuleOp($1, $2, $3, accept++, false);
+			$$ = new RuleOp($1, $2, $3, accept++, RegExp::SHARED);
 			spec = spec? mkAlt(spec, $$) : $$;
+		}
+	|	STAR CODE /* default rule */
+		{
+			if (cFlag)
+				in->fatal("condition or '<*>' required when using -c switch");
+			if (ruleDefault != NULL)
+				in->fatal("code to default rule is already defined");
+			else
+				ruleDefault = $2;
 		}
 	|	'<' cond '>' expr look newcond CODE
 		{
@@ -239,13 +271,17 @@ rule:
 			context_none($2);
 			delete $6;
 		}
+	|	'<' cond '>' STAR CODE /* default rule for conditions */
+		{
+			default_rule($2, $5);
+		}
 	|	'<' STAR '>' expr look newcond CODE
 		{
 			context_check(NULL);
 			Token *token = new Token($7, $7->source, $7->line, $6);
 			delete $7;
 			delete $6;
-			specStar.push_back(new RuleOp($4, $5, token, accept++, true));
+			specStar.push_back(new RuleOp($4, $5, token, accept++, RegExp::PRIVATE));
 		}
 	|	'<' STAR '>' expr look ':' newcond
 		{
@@ -253,7 +289,7 @@ rule:
 			context_check(NULL);
 			Token *token = new Token(NULL, sourceFileInfo, $7);
 			delete $7;
-			specStar.push_back(new RuleOp($4, $5, token, accept++, true));
+			specStar.push_back(new RuleOp($4, $5, token, accept++, RegExp::PRIVATE));
 		}
 	|	'<' STAR '>' look newcond CODE
 		{
@@ -266,6 +302,12 @@ rule:
 			context_none(NULL);
 			delete $6;
 		}
+	|	'<' STAR '>' STAR CODE /* default rule for all conditions */
+		{
+			CondList *clist = new CondList();
+			clist->insert("*");
+			default_rule(clist, $5);
+		}
 	|	NOCOND newcond CODE
 		{
 			context_check(NULL);
@@ -276,7 +318,7 @@ rule:
 			Token *token = new Token($3, $3->source, $3->line, $2);
 			delete $2;
 			delete $3;
-			$$ = specNone = new RuleOp(new NullOp(), new NullOp(), token, accept++, false);
+			$$ = specNone = new RuleOp(new NullOp(), new NullOp(), token, accept++, RegExp::SHARED);
 		}
 	|	NOCOND ':' newcond
 		{
@@ -288,7 +330,7 @@ rule:
 			}
 			Token *token = new Token(NULL, sourceFileInfo, $3);
 			delete $3;
-			$$ = specNone = new RuleOp(new NullOp(), new NullOp(), token, accept++, false);
+			$$ = specNone = new RuleOp(new NullOp(), new NullOp(), token, accept++, RegExp::SHARED);
 		}
 	|	SETUP STAR '>' CODE
 		{
@@ -517,6 +559,7 @@ void parse(Scanner& i, std::ostream& o, std::ostream* h)
 		}
 		accept = 0;
 		spec = NULL;
+		ruleDefault = NULL;
 		in->set_in_parse(true);
 		yyparse();
 		in->set_in_parse(false);
@@ -532,6 +575,7 @@ void parse(Scanner& i, std::ostream& o, std::ostream* h)
 				parse_cleanup();
 				spec = NULL;
 				accept = 0;
+				ruleDefault = NULL;
 				in->set_in_parse(true);
 				yyparse();
 				in->set_in_parse(false);
@@ -549,6 +593,7 @@ void parse(Scanner& i, std::ostream& o, std::ostream* h)
 		{
 			RegExpMap::iterator it;
 			SetupMap::const_iterator itRuleSetup;
+			DefaultMap::const_iterator itRuleDefault;
 
 			if (parseMode != Scanner::Reuse)
 			{
@@ -607,6 +652,21 @@ void parse(Scanner& i, std::ostream& o, std::ostream* h)
 							yySetupRule = "";
 						}
 					}
+					itRuleDefault = ruleDefaultMap.find(it->first);
+					if (itRuleDefault != ruleDefaultMap.end())
+					{
+						RuleOp * def = new RuleOp(in->mkDefault(), new NullOp(), itRuleDefault->second, accept++, RegExp::SHARED);
+						it->second.second = it->second.second ? mkAlt(def, it->second.second) : def;
+					}
+					else
+					{
+						itRuleDefault = ruleDefaultMap.find("*");
+						if (itRuleDefault != ruleDefaultMap.end())
+						{
+							RuleOp * def = new RuleOp(in->mkDefault(), new NullOp(), itRuleDefault->second, accept++, RegExp::SHARED);
+							it->second.second = it->second.second ? mkAlt(def, it->second.second) : def;
+						}
+					}
 					dfa_map[it->first] = genCode(it->second.second);
 					dfa_map[it->first]->prepare();
 				}
@@ -620,16 +680,24 @@ void parse(Scanner& i, std::ostream& o, std::ostream* h)
 				genTypes(typesInline, 0, specMap);
 			}
 		}
-		else if (spec || !dfa_map.empty())
+		else
 		{
-			if (parseMode != Scanner::Reuse)
+			if (ruleDefault != NULL && parseMode != Scanner::Reuse)
 			{
-				dfa_map[""] = genCode(spec);
-				dfa_map[""]->prepare();
+				RuleOp * def = new RuleOp(in->mkDefault(), new NullOp(), ruleDefault, accept++, RegExp::SHARED);
+				spec = spec ? mkAlt(def, spec) : def;
 			}
-			if (parseMode != Scanner::Rules && dfa_map.find("") != dfa_map.end())
+			if (spec || !dfa_map.empty())
 			{
-				dfa_map[""]->emit(o, topIndent, NULL, "", 0, bPrologBrace);
+				if (parseMode != Scanner::Reuse)
+				{
+					dfa_map[""] = genCode(spec);
+					dfa_map[""]->prepare();
+				}
+				if (parseMode != Scanner::Rules && dfa_map.find("") != dfa_map.end())
+				{
+					dfa_map[""]->emit(o, topIndent, NULL, "", 0, bPrologBrace);
+				}
 			}
 		}
 		o << sourceFileInfo;

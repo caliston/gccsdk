@@ -2,18 +2,9 @@
 
 namespace re2c {
 
-const uint Enc::ASCII_SYMBOLS  = 0x100;
-const uint Enc::ASCII_CHARS    = 0x100;
-const uint Enc::EBCDIC_SYMBOLS = 0x100;
-const uint Enc::EBCDIC_CHARS   = 0x100;
-const uint Enc::UTF16_SYMBOLS  = 0x10000;
-const uint Enc::UTF16_CHARS    = 0x10000;
-const uint Enc::UTF32_SYMBOLS  = 0x110000;
-const uint Enc::UTF32_CHARS    = 0x110000;
-const uint Enc::UTF8_SYMBOLS   = 0x110000;
-const uint Enc::UTF8_CHARS     = 0x100;
-
-const uint Enc::BAD = 0;
+const uint Enc::SURR_MIN = 0xD800;
+const uint Enc::SURR_MAX = 0xDFFF;
+const uint Enc::UNICODE_ERROR = 0xFFFD;
 
 const uint Enc::asc2ebc[256] =
     { /* Based on ISO 8859/1 and Code Page 37 */
@@ -54,5 +45,154 @@ const uint Enc::ebc2asc[256] =
         0x5c, 0xf7, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0xb2, 0xd4, 0xd6, 0xd2, 0xd3, 0xd5,
         0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0xb3, 0xdb, 0xdc, 0xd9, 0xda, 0x9f
     };
+
+/*
+ * Returns code point representation for current
+ * encoding with regard to current policy.
+ *
+ * Since code point is exacly specified by user,
+ * it is assumed that user considers it to be valid.
+ * We must check it.
+ *
+ * Returns false if this code point is forbidden
+ * by current policy, otherwise returns true.
+ * Overwrites code point.
+ */
+bool Enc::encode(uint & c) const
+{
+	switch (type)
+	{
+		case ASCII:
+			c &= 0xFF;
+			return true;
+		case EBCDIC:
+			c = asc2ebc[c & 0xFF];
+			return true;
+		case UCS2:
+		case UTF16:
+		case UTF32:
+		case UTF8:
+			if (c < SURR_MIN || c > SURR_MAX)
+				return true;
+			else
+			{
+				switch (policy)
+				{
+					case POLICY_FAIL:
+						return false;
+					case POLICY_SUBSTITUTE:
+						c = UNICODE_ERROR;
+						return true;
+					case POLICY_IGNORE:
+						return true;
+				}
+			}
+	}
+	return false; // to silence gcc warning
+}
+
+/*
+ * Returns original representation of code point.
+ * Assumes code point is valid (hence 'unsafe').
+ */
+uint Enc::decodeUnsafe(uint c) const
+{
+	switch (type)
+	{
+		case EBCDIC:
+			c = ebc2asc[c & 0xFF];
+			break;
+		case ASCII:
+		case UCS2:
+		case UTF16:
+		case UTF32:
+		case UTF8:
+			break;
+	}
+	return c;
+}
+
+/*
+ * Returns [l - h] range representation for current
+ * encoding with regard to current policy.
+ *
+ * Since range borders are exacly specified by user,
+ * it is assumed that user considers that all code
+ * points from this range are valid. re2c must check it.
+ *
+ * Returns NULL if range contains code points forbidden
+ * by current policy, otherwise returns pointer to newly
+ * constructed Range.
+ */
+Range * Enc::encodeRange(uint l, uint h) const
+{
+	Range * r = NULL;
+	switch (type)
+	{
+		case ASCII:
+			l &= 0xFF;
+			h &= 0xFF;
+			r = new Range(l, h + 1);
+			break;
+		case EBCDIC:
+		{
+			const uint el = asc2ebc[l & 0xFF];
+			r = new Range(el, el + 1);
+			for (uint c = l + 1; c <= h; ++c)
+			{
+				const uint ec = asc2ebc[c & 0xFF];
+				r = doUnion(r, new Range(ec, ec + 1));
+			}
+			break;
+		}
+		case UCS2:
+		case UTF16:
+		case UTF32:
+		case UTF8:
+			r = new Range(l, h + 1);
+			if (l <= SURR_MAX && h >= SURR_MIN)
+			{
+				switch (policy)
+				{
+					case POLICY_FAIL:
+						r = NULL;
+						break;
+					case POLICY_SUBSTITUTE:
+					{
+						Range * surrs = new Range(SURR_MIN, SURR_MAX + 1);
+						Range * error = new Range(UNICODE_ERROR, UNICODE_ERROR + 1);
+						r = doDiff(r, surrs);
+						r = doUnion(r, error);
+						break;
+					}
+					case POLICY_IGNORE:
+						break;
+				}
+			}
+			break;
+	}
+	return r;
+}
+
+/*
+ * Returns [0 - CPOINT_MAX] (full range) representation
+ * for current encoding with regard to current policy.
+ *
+ * Since range is defined declaratively, re2c does
+ * all the necessary corrections 'for free'.
+ *
+ * Always succeeds, returns pointer to newly constructed
+ * Range.
+ */
+Range * Enc::fullRange() const
+{
+	Range * r = new Range(0, nCodePoints());
+	if (policy != POLICY_IGNORE)
+	{
+		Range * surrs = new Range(SURR_MIN, SURR_MAX + 1);
+		r = doDiff(r, surrs);
+	}
+	return r;
+}
 
 } // namespace re2c

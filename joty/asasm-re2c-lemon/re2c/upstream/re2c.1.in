@@ -11,7 +11,7 @@
 \*(re \- convert \*(rxs to C/C++
 
 .SH SYNOPSIS
-\*(re [\fB-bdDefFghisuvVw1\fP] [\fB-o output\fP] [\fB-c\fP [\fB-t header\fP]] \fBfile\fP
+\*(re [\fB-bdDefFghisuvVwx18\fP] [\fB-o output\fP] [\fB-c\fP [\fB-t header\fP]] \fBfile\fP
 
 .SH DESCRIPTION
 \*(re is a preprocessor that generates C-based recognizers from regular
@@ -115,7 +115,9 @@ Emit Graphviz dot data. It can then be processed with e.g.
 may crash dot.
 .TP
 \fB-e\fP
-Cross-compile from an ASCII platform to an EBCDIC one. 
+Generate a parser that supports EBCDIC. The generated code can deal with any 
+character up to 0xFF. In this mode \*(re assumes that input character size is 
+1 byte. This switch is incompatible with \fB-w\fP, \fB-x\fP, \fB-u\fP and \fB-8\fP.
 .TP
 \fB-f\fP
 Generate a scanner with support for storable state.
@@ -148,7 +150,8 @@ Allows reuse of scanner definitions with '\fB/*!use:re2c\fP' after
 '\fB/*!rules:re2c\fP'. In this mode no '\fB/*!re2c\fP' block and exactly one
 '\fB/*!rules:re2c\fP' must be present. The rules are being saved and used by
 every '\fB/*!use:re2c\fP' block that follows. These blocks can contain
-inplace configurations, especially '\fBre2c:flags:w\fP' and '\fBre2c:flags:u\fP'.
+inplace configurations, especially '\fBre2c:flags:e\fP', '\fBre2c:flags:w\fP', 
+'\fBre2c:flags:x\fP', '\fBre2c:flags:u\fP' and '\fBre2c:flags:8\fP'.
 That way it is possible to create the same scanner multiple times for different
 character types, different input mechanisms or different output mechanisms.
 The '\fB/*!use:re2c\fP' blocks can also contain additional rules that will be
@@ -163,10 +166,10 @@ Create a header file that contains types for the (f)lex-like condition support.
 This can only be activated when \fB-c\fP is in use.
 .TP
 \fB-u\fP
-Generate a parser that supports Unicode chars (UTF-32). This means the 
-generated code can deal with any valid Unicode character up to 0x10FFFF. When
-UTF-8 or UTF-16 needs to be supported you need to convert the incoming stream
-to UTF-32 upon input yourself.
+Generate a parser that supports UTF-32. The generated code can deal with any 
+valid Unicode character up to 0x10FFFF. In this mode \*(re assumes that input 
+character size is 4 bytes. This switch is incompatible with \fB-e\fP, \fB-w\fP, \fB-x\fP 
+and \fB-8\fP. This implies \fB-s\fP.
 .TP
 \fB-v\fP
 Show version information.
@@ -175,12 +178,26 @@ Show version information.
 Show the version as a number XXYYZZ.
 .TP
 \fB-w\fP
-Create a parser that supports wide chars (UCS-2). This implies \fB-s\fP and 
-cannot be used together with \fB-e\fP switch.
+Generate a parser that supports UCS-2. The generated code can deal with any 
+valid Unicode character up to 0xFFFF. In this mode \*(re assumes that input 
+character size is 2 bytes. This switch is incompatible with \fB-e\fP, \fB-x\fP, \fB-u\fP 
+and \fB-8\fP. This implies \fB-s\fP.
+.TP
+\fB-x\fP
+Generate a parser that supports UTF-16. The generated code can deal with any 
+valid Unicode character up to 0x10FFFF. In this mode \*(re assumes that input 
+character size is 2 bytes. This switch is incompatible with \fB-e\fP, \fB-w\fP, \fB-u\fP 
+and \fB-8\fP. This implies \fB-s\fP.
 .TP
 \fB-1\fP
 Force single pass generation, this cannot be combined with -f and disables 
 YYMAXFILL generation prior to last \*(re block.
+.TP
+\fB-8\fP
+Generate a parser that supports UTF-8. The generated code can deal with any 
+valid Unicode character up to 0x10FFFF. In this mode \*(re assumes that input 
+character size is 1 byte. This switch is incompatible with \fB-e\fP, \fB-w\fP, \fB-x\fP 
+and \fB-u\fP.
 .TP
 \fB--no-generation-date\fP
 Suppress date output in the generated output so that it only shows the re2c
@@ -373,6 +390,60 @@ When \*(re generates the code for a rule whose state does not have a
 setup rule and a star'd setup rule is present, than that code will be used
 as setup code.
 
+.SH "ENCODINGS"
+\*(re supports the following encodings: ASCII, EBCDIC (\fB-e\fP), UCS-2 (\fB-w\fP), 
+UTF-16 (\fB-x\fP), UTF-32 (\fB-u\fP) and UTF-8 (\fB-8\fP). ASCII is default. You can 
+either pass cmd flag or use inplace configuration.
+.LP
+The following concepts should be clarified when talking about encoding. \fBCode point\fP 
+is an abstract number, which represents single encoding symbol. \fBCode unit\fP is the 
+smallest unit of memory, which is used in the encoded text (it corresponds to one 
+character in the input stream). One or more code units can be needed to represent 
+a single code point, depending on the encoding. In \fBfixed-length\fP encoding, each 
+code point is represented with equal number of code units. In \fBvariable-length\fP 
+encoding, different code points can be represented with different number of code units.
+.TP
+\fC\fBASCII\fP
+is a fixed-length encoding. Its code space includes 0x100 code points, from 0 
+to 0xFF (note that this is \*(re-specific understanding of ASCII). One code point 
+is represented with exactly one 1-byte code unit, which has the same value as the 
+code point. Size of YYCTYPE must be 1 byte.
+.TP
+\fC\fBEBCDIC\fP
+is a fixed-length encoding. Its code space includes 0x100 code points, from 0 
+to 0xFF. One code point is represented with exactly one 1-byte code unit, which has 
+the same value as the code point. Size of YYCTYPE must be 1 byte.
+.TP
+\fC\fBUCS-2\fP
+is a fixed-length encoding. Its code space includes 0x10000 code points, from 0 
+to 0xFFFF. One code point is represented with exactly one 2-byte code unit, which has 
+the same value as the code point. Size of YYCTYPE must be 2 bytes.
+.TP
+\fC\fBUTF-16\fP
+is a variable-length encoding. Its code space includes all Unicode code points, 
+from 0 to 0xD7FF and from 0xE000 to 0x10FFFF. One code point is represented with one or 
+two 2-byte code units. Size of YYCTYPE must be 2 bytes.
+.TP
+\fC\fBUTF-32\fP
+is a fixed-length encoding. Its code space includes all Unicode code points, 
+from 0 to 0xD7FF and from 0xE000 to 0x10FFFF. One code point is represented with exactly 
+one 4-byte code unit. Size of YYCTYPE must be 4 bytes.
+.TP
+\fC\fBUTF-8\fP
+is a variable-length encoding. Its code space includes all 
+Unicode code points, from 0 to 0xD7FF and from 0xE000 to 0x10FFFF. One code point 
+is represented with sequence of one, two, three or four 1-byte code units. Size of 
+YYCTYPE must be 1 bytes.
+.LP
+In Unicode, values from range 0xD800 to 0xDFFF (surrogates) are not valid Unicode 
+code points, any encoded sequence of code units, that would map to Unicode code points 
+in the range 0xD800-0xDFFF, is ill-formed.
+.LP
+For some encodings, there are code units, that never occur in valid encoded stream 
+(e.g. 0xFF byte in UTF-8). If the generated scanner must check for such input symbols, 
+the only way to do so is to use default rule \fB*\fP. Note, that full range rule \fB[^]\fP 
+means "all valid code points", while default rule \fB*\fP means "all possible code units".
+
 .SH "SCANNER SPECIFICATIONS"
 Each scanner specification consists of a set of \fIrules\fP, \fInamed
 definitions\fP and \fIconfigurations\fP.
@@ -382,7 +453,8 @@ is to be executed when the associated \fI\*(rx\fP is matched. You can either
 start the code with an opening curly brace or the sequence '\fB:=\fP'. When
 the code with a curly brace then \*(re counts the brace depth and stops looking
 for code automatically. Otherwise curly braces are not allowed and \*(re stops
-looking for code at the first line that does not begin with whitespace.
+looking for code at the first line that does not begin with whitespace. If two
+or more rules overlap, the first rule is preferred.
 .P
 .RS
 \fI\*(rx\fP \fC{\fP \fIC/C++ code\fP \fC}\fP
@@ -390,6 +462,30 @@ looking for code at the first line that does not begin with whitespace.
 \fI\*(rx\fP \fC:=\fP \fIC/C++ code\fP
 .RE
 .P
+There is one special rule: default rule \fB*\fP.
+.P
+.RS
+\fI*\fP \fC{\fP \fIC/C++ code\fP \fC}\fP
+.P
+\fI*\fP \fC:=\fP \fIC/C++ code\fP
+.RE
+.P
+The former "default" rule \fB[^]\fP differs from \fB*\fP:
+.P
+.RS
+- \fB*\fP can occur anywhere a normal rule can occur, but regardless to its place, 
+\fB*\fP has the lowest priority.
+.P
+- \fB[^]\fP matches all valid symbols in current encoding, while \fB*\fP matches 
+any input character, either valid or invalid.
+.P
+- \fB[^]\fP can consume multiple input characters, while \fB*\fP always consumes 
+one input character.
+.RE
+.P
+In fact, when variable-length encoding is used, \fB*\fP is the only possible way 
+to match invalid input character.
+.LP
 If \fB-c\fP is active then each \*(rx is preceeded by a list of 
 comma separated condition names. Besides normal naming rules there are two 
 special cases. A rule may contain the single condition name '*' and no contition 
@@ -409,6 +505,10 @@ jumps) you can doso by using <! pseudo-rules.
 .P
 \fC<\fP\fIcondition-list\fP\fC>\fP \fI\*(rx\fP \fC:=\fP \fIC/C++ code\fP
 .P
+\fC<\fP\fIcondition-list\fP\fC>\fP \fI*\fP \fC{\fP \fIC/C++ code\fP \fC}\fP
+.P
+\fC<\fP\fIcondition-list\fP\fC>\fP \fI*\fP \fC:=\fP \fIC/C++ code\fP
+.P
 \fC<\fP\fIcondition-list\fP\fC>\fP \fI\*(rx\fP \fC=>\fP \fP\fIcondition\fP \fC{\fP \fIC/C++ code\fP \fC}\fP
 .P
 \fC<\fP\fIcondition-list\fP\fC>\fP \fI\*(rx\fP \fC=>\fP \fP\fIcondition\fP \fC:=\fP \fIC/C++ code\fP
@@ -418,6 +518,10 @@ jumps) you can doso by using <! pseudo-rules.
 \fC<\fP\fI*\fP\fC>\fP \fI\*(rx\fP \fC{\fP \fIC/C++ code\fP \fC}\fP
 .P
 \fC<\fP\fI*\fP\fC>\fP \fI\*(rx\fP \fC:=\fP \fIC/C++ code\fP
+.P
+\fC<\fP\fI*\fP\fC>\fP \fI*\fP \fC{\fP \fIC/C++ code\fP \fC}\fP
+.P
+\fC<\fP\fI*\fP\fC>\fP \fI*\fP \fC:=\fP \fIC/C++ code\fP
 .P
 \fC<\fP\fI*\fP\fC>\fP \fI\*(rx\fP \fC=>\fP \fP\fIcondition\fP \fC{\fP \fIC/C++ code\fP \fC}\fP
 .P
@@ -549,8 +653,7 @@ by either a lowercased \fBu\fP and its four hexadecimal digits or an uppercased
 \fBU\fP and its eight hexadecimal digits. However only in \fB-u\fP mode the
 generated code can deal with any valid Unicode character up to 0x10FFFF.
 .LP
-Since characters greater \fB\\X00FF\fP are not allowed in non unicode mode, the 
-only portable "\fBany\fP" rules are \fB(.|"\\n")\fP and \fB[^]\fP.
+The only portable "\fBany\fP" rule is the default rule \fB*\fP.
 .LP
 The \*(rxs listed above are grouped according to
 precedence, from highest precedence at the top to lowest at the bottom.
@@ -774,11 +877,8 @@ can be compiled and actually work.
 
 .SH FEATURES
 .LP
-\*(re does not provide a default action:
-the generated code assumes that the input
-will consist of a sequence of tokens.
-Typically this can be dealt with by adding a rule such as the one for
-unexpected characters in the example above.
+\*(re provides default action: \fB*\fP. When the default rule matches, 
+exactly one input character is consumed.
 .LP
 The user must arrange for a sentinel token to appear at the end of input
 (and provide a rule for matching it):
@@ -793,13 +893,27 @@ else then e detection of end of data/file.
 
 .SH BUGS
 .LP
-Difference only works for character sets.
+Difference only works for character sets, and not in UTF-8 mode.
+.LP
+The generated DFA is not minimal.
+.LP
+Features, that are naturally orthogonal (such as reusable rules, conditions, 
+setup rules and default rules), cannot always be combined. E.g., one cannot set 
+setup/default rule for condition in scanner with reusable rules.
+.LP
+\*(re does too much unnecessary work: e.g., if /*!use:re2c ... */ block has 
+additional rules, these rules are parsed 4 times, while they should be parsed 
+only once.
 .LP
 The \*(re internal algorithms need documentation.
 
 .SH "SEE ALSO"
 .LP
-flex(1), lex(1).
+flex(1), lex(1), quex(
+.PD 0
+.B http://quex.sourceforge.net
+.PD 1
+).
 .P
 More information on \*(re can be found here:
 .PD 0

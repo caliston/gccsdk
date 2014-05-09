@@ -8,6 +8,7 @@
 #include "y.tab.h"
 #include "globals.h"
 #include "dfa.h"
+#include "print.h"
 
 extern YYSTYPE yylval;
 
@@ -29,8 +30,7 @@ namespace re2c
 
 /*!re2c
 zero    = "\000";
-any     = [\000-\377];
-dot     = any \ [\n];
+dot     = .;
 esc     = dot \ [\\];
 istring = "[" "^" ((esc \ [\]]) | "\\" dot)* "]" ;
 cstring = "["     ((esc \ [\]]) | "\\" dot)* "]" ;
@@ -40,7 +40,7 @@ letter  = [a-zA-Z];
 digit   = [0-9];
 lineno  = [1-9] digit*;
 number  = "0" | ("-"? [1-9] digit*);
-name    = (letter|"_") (letter|digit|"_")*;
+name    = (letter|digit|"_")+;
 cname   = ":" name;
 space   = [ \t];
 ws      = (space | [\r\n]);
@@ -219,7 +219,7 @@ echo:
 						RETURN(Stop);
 					}
 				}
-	any			{
+	*			{
 					goto echo;
 				}
 */
@@ -439,7 +439,7 @@ scan:
 					goto scan;
 				}
 
-	any			{
+	*			{
 					std::ostringstream msg;
 					msg << "unexpected character: ";
 					prtChOrHex(msg, *tok);
@@ -522,7 +522,10 @@ code:
 					}
 					goto code;
 				}
-	dstring | sstring | any	{
+	dstring | sstring	{
+					goto code;
+				}
+	*			{
 					goto code;
 				}
 */
@@ -557,7 +560,7 @@ comment:
 					cline++;
 					goto comment;
 				}
-	any			{
+	*			{
 					if (cursor == eof)
 					{
 						RETURN(0);
@@ -575,7 +578,7 @@ nextLine:
                cline++;
                goto scan;
             }
-   any      {  if(cursor == eof) {
+   *        {  if(cursor == eof) {
                   RETURN(0);
                }
                goto nextLine;
@@ -592,7 +595,7 @@ config:
 					cur = cursor;
 					RETURN('=');
 				}
-	any			{
+	*			{
 					fatal("missing '='");
 				}
 */
@@ -641,7 +644,7 @@ sourceline:
 			  		tok = cursor;
 			  		return; 
 				}
-	any			{
+	*			{
   					goto sourceline;
   				}
 */
