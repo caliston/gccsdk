@@ -27,11 +27,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
-#ifdef HAVE_STDINT_H
-#  include <stdint.h>
-#elif HAVE_INTTYPES_H
-#  include <inttypes.h>
-#endif
+#include <stdint.h>
 
 #include "area.h"
 #include "common.h"
@@ -196,7 +192,7 @@ Lex_ReadReferringLocalLabel (void)
 
   /* If a routinename is given, check if thats the one given with ROUT.  */
   size_t routLen;
-  const char *rout = Input_Symbol2 (&routLen, '\0');
+  const char *rout = Input_Symbol (&routLen);
   if (Lex_CheckForROUTMismatch (rout, routLen))
     return UINT_MAX;
 
@@ -325,12 +321,12 @@ Lex_GetDefiningLabel (void)
 	(void) Input_GetC ();
       /* Possibly followed by a ROUT identifier.  */
       size_t routLen;
-      (void) Input_Symbol2 (&routLen, '\0');
+      (void) Input_Symbol (&routLen);
 
       Lex result =
 	{
 	  .tag = LexLocalLabel,
-	  .Data.LocalLabel.len = Input_GetMark () - beginLabel,
+	  .Data.LocalLabel.len = Input_GetMark () - beginLabel, /* FIXME: not correct for e.g. 02|.xyz| local labels.  */
 	  .Data.LocalLabel.str = beginLabel
 	};
       return result;
@@ -385,7 +381,7 @@ Lex_SkipDefiningLabel (void)
 	} while (isdigit ((unsigned char)Input_Look ()));
 
       size_t len;
-      (void) Input_Symbol2 (&len, '\0');
+      (void) Input_Symbol (&len);
       return true;
     }
 
