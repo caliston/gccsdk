@@ -1,0 +1,18 @@
+
+AB_ROVERISON=1
+
+AB_CONFLAGS=\''--without-ssl --with-gnutls --with-ca-bundle=/<CaCertificates$Dir>/ca-certificates.crt'\'
+
+export RO_SHAREDLIBS=no
+
+ab_package() {
+  ab_create_command_app Curl Apps/Network
+  ab_add_commands $S/src/*$AB_EXEEXT
+
+  ab_docs -h $S/RELEASE-NOTES $S/README $S/CHANGES $S/COPYING
+
+  $AB_HOME/add-riscpkg -unixlib -copyrightfile COPYING -depends CACertificates
+}
+
+export LIBS='-lcrypto -lssh2 -ldl -lnettle -lgmp -ltasn1 -lhogweed'
+

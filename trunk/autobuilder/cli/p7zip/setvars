@@ -1,0 +1,17 @@
+cp $H/makefile.riscos $S/makefile.machine
+AB_ROVERSION=3
+
+ab_package() {
+  mv $S/bin/7za $S/bin/7za$AB_EXEEXT  
+
+  ab_create_command_app p7zip Apps/Utilities
+  ab_add_commands $S/bin/7za$AB_EXEEXT
+
+  rman -f HTML $S/man1/7za.1 > $A/\!Help,faf  
+
+  mkdir $A/\doc
+  cp $H/README.RISCOS $A/\doc
+  cp $S/DOCS/copying.txt $S/README $A/\doc
+
+  $AB_HOME/add-riscpkg -unixlib  
+}

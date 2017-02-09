@@ -1,0 +1,21 @@
+
+AB_URL=http://poppler.freedesktop.org/poppler-0.26.0.tar.xz
+
+AB_CONFLAGS='--enable-zlib --enable-libcurl'
+
+autoreconf -fi
+
+ab_package() {
+  # Package programs
+  ab_create_command_app PDFUtils Apps/Document
+  ab_add_commands $S/utils/*$AB_EXEEXT
+
+  cp $S/AUTHORS $S/ChangeLog $S/COPYING $S/NEWS $S/README $S/README-XPDF $S/TODO $A/
+
+  ab_docs $S/utils/*.1
+
+  $AB_HOME/add-riscpkg -unixlib -copyrightfile COPYING -package pdfutils -name PDFUtils -section Document
+
+ }
+
+export LIBS='-lz -ljpeg'

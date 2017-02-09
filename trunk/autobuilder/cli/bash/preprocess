@@ -1,0 +1,2 @@
+tar xfJ bash-*.tar.xz
+mv bash-*/* .

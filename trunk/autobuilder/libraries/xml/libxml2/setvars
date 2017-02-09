@@ -1,0 +1,32 @@
+AB_INSTALL=yes
+AB_CONFLAGS="--enable-ipv6=no --with-python=no"
+
+ab_package()
+{
+  ab_create_app LibXML2 Apps/Library libxml2-dev
+
+  HERE=`pwd`
+  cd $A
+
+  unzip $AB_OUTPUTLIB/$RO_PKG.zip
+
+  mv include/libxml2 .
+  rm -rf include
+
+  mv lib/*.a .
+  rm -rf lib
+
+  cd doc
+  docdir=`echo *`
+  mv $docdir/* .
+  rm -rf $docdir
+
+  cp README ../\!Help,feb
+
+  cd $HERE
+
+  $AB_HOME/add-riscpkg -unixlib
+}
+
+
+

@@ -1,0 +1,64 @@
+AB_INSTALL=yes
+
+AB_CONFLAGS='--with-icu=no'
+
+ab_package() {
+  #libharfbuzz-dev
+  ab_create_app LibHarfbuzz Apps/Library libharfbuzz-dev
+
+  HERE=`pwd`
+  cd $A
+
+  unzip $AB_OUTPUTLIB/$RO_PKG.zip
+
+  mv include/harfbuzz harfbuzz
+  rm -rf include
+
+  mv lib/*.a .
+  rm -rf lib
+
+  mv doc/$RO_PKG/* doc
+  rm -rf doc/$RO_PKG
+
+  cd $HERE
+
+  $AB_HOME/add-riscpkg -package "libharfbuzz-dev"
+
+  #libharfbuzz-lib
+  if [ "$RO_SHAREDLIBS" == "yes" ]; then
+    ab_create_app SharedLibs Apps/Library libharfbuzz-lib
+
+    AB_COMPONENTS=""
+
+    # Create a skeleton !SharedLibs directory and copy shared library.
+    # Determine which ABI is in use and therefor which directory to install
+    # to. We assume that GCC 4.1.1 is obsolete. For GCC 4.1.2, the ABI
+    # directory is "abi-1.0", for newer versions of GCC, it is "abi-2.0".
+    abi_dir=abi-2.0
+    gcc_version=$($GCCSDK_INSTALL_CROSSBIN/arm-unknown-riscos-gcc --version)
+    if [[ "$gcc_version" == *4.1.2* ]]; then
+      abi_dir=abi-1.0
+    fi
+
+    mkdir -p $A/lib/$abi_dir
+    ux_lib_name=$(readlink src/.libs/libharfbuzz.so)
+    ro_lib_name=$(echo $ux_lib_name | tr /. ./)
+    cp -T $S/src/.libs/$ux_lib_name $A/lib/$abi_dir/$ux_lib_name,E1F
+    $GCCSDK_INSTALL_CROSSBIN/arm-unknown-riscos-ln -s -f $ro_lib_name $A/lib/$abi_dir/libharfbuzz.so,1C8
+    $GCCSDK_INSTALL_CROSSBIN/arm-unknown-riscos-ln -s -f $ro_lib_name $A/lib/$abi_dir/libharfbuzz.so.0,1C8
+
+    if [ -e src/.libs/libharfbuzz-icu.so ]; then
+      ux_lib_name=$(readlink src/.libs/libharfbuzz-icu.so)
+      ro_lib_name=$(echo $ux_lib_name | tr /. ./)
+      cp -T $S/src/.libs/$ux_lib_name $A/lib/$abi_dir/$ux_lib_name,E1F
+      $GCCSDK_INSTALL_CROSSBIN/arm-unknown-riscos-ln -s -f $ro_lib_name $A/lib/$abi_dir/libharfbuzz-icu.so,1C8
+      $GCCSDK_INSTALL_CROSSBIN/arm-unknown-riscos-ln -s -f $ro_lib_name $A/lib/$abi_dir/libharfbuzz-icu.so.0,1C8
+    fi
+
+    $AB_HOME/add-riscpkg -package "libharfbuzz-lib" \
+	-depends SharedLibs
+
+    # Don't overwrite the original !SharedLibs.!Boot.
+    rm $A/\!Boot,feb
+  fi
+}

@@ -1,0 +1,15 @@
+# OSLib trunk suppors both ELF as AOF building:
+AB_SVN=https://svn.code.sf.net/p/ro-oslib/code/trunk/!OSLib
+AB_PVERSION=svn-$(date +%Y%m%d)
+
+AB_INSTALL=yes
+
+# ro-make turns an empty $CC into our cross-compiler filename.
+if [ "$AB_ELFBUILD" == "yes" ] ; then
+AB_MAKE="CC=$HOST_CC $AB_MAKE oslib-elf"
+AB_INSTALLTARGET=install-elf
+else
+AB_MAKE="CC=$HOST_CC $AB_MAKE oslib-aof"
+AB_INSTALLTARGET=install-aof
+fi
+

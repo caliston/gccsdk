@@ -1,0 +1,19 @@
+AB_URL=http://sourceforge.net/projects/legendofedgar/files/0.94/edgar-0.94-2.tar.gz
+AB_ROVERSION=2
+
+$HOST_CC -O2 src/pak_creator.c -o pak -lz
+touch pak_creator.o
+make buildpak
+
+ab_package() {
+  ab_create_app Edgar Apps/Games
+  ab_makerun $S/edgar
+
+  mkdir -p $A/data/
+  cp -av $S/edgar.pak $A/data
+
+  mkdir $A/doc
+  cp -av $S/doc/* $A/doc/
+
+  $AB_HOME/add-riscpkg -unixlib -copyrightfile doc/license
+}

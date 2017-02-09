@@ -1,0 +1,11 @@
+AB_SVN=http://source.riscpkg.org/svn/RiscPkg-GenControl/trunk/
+AB_INSTALL=yes
+AB_PVERSION=`grep "^Version:" RiscPkg/Control | cut -d' ' -f2 | cut -d'-' -f1`
+
+cp $H/Makefile $S
+
+ab_make()
+{
+   make
+}
+
